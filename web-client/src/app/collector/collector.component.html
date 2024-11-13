@@ -1,0 +1,641 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">Collector</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>Collector</span>
+        </li>
+    </ul>
+    <div class="pt-5">
+
+        <div class="mb-5">
+            <div class="mt-3 flex flex-wrap">
+                <a href="javascript:;"
+                    class="-mb-[1px] block rounded p-3.5 py-2 !outline-none transition duration-300 hover:bg-primary hover:text-white ltr:mr-2 rtl:ml-2"
+                    [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'home' }" (click)="tab2 = 'home'">
+                    Collector Analyzer
+                </a>
+
+                <a href="javascript:;"
+                    class="-mb-[1px] block rounded p-3.5 py-2 !outline-none transition duration-300 hover:bg-primary hover:text-white ltr:mr-2 rtl:ml-2"
+                    [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'profile' }" (click)="tab2 = 'profile'">
+                    Storage Strategy
+                </a>
+
+                <a href="javascript:;"
+                    class="-mb-[1px] block rounded p-3.5 py-2 !outline-none transition duration-300 hover:bg-primary hover:text-white ltr:mr-2 rtl:ml-2"
+                    [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'contact' }" (click)="tab2 = 'contact'">
+                    Decode
+                </a>
+
+            </div>
+            <div class="flex-1 pt-5 text-sm">
+                <div *ngIf="tab2.toLowerCase() === 'home'">
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <h2 class="text-xl"></h2>
+                            <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                                <div class="flex gap-3">
+                                    <div>
+                                        <button type="button" class="btn btn-primary" (click)="editUser()">
+                                            <icon-plus class="ltr:mr-2 rtl:ml-2" />
+
+                                            Add
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-primary p-2"
+                                            [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
+                                            (click)="displayType = 'list'">
+                                            <icon-list-check />
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-primary p-2"
+                                            [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
+                                            (click)="displayType = 'grid'">
+                                            <icon-layout-grid />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="relative">
+                                    <input type="text" placeholder="Search Contacts"
+                                        class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchUser"
+                                        name="searchUser" (ngModelChange)="searchContacts()" />
+                                    <div
+                                        class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                                        <icon-search class="mx-auto" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel mt-5 overflow-hidden border-0 p-0">
+                            <ng-container *ngIf="displayType === 'list'">
+                                <div class="table-responsive">
+                                    <table class="table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Collector Name</th>
+                                                <th>Creation Time</th>
+                                                <th>Adapter</th>
+                                                <th>Storage Strategy</th>
+                                                <th>Filter Strategy</th>
+                                                <th>Protocol Analysis Enabled</th>
+                                                <th>IDS Enabled</th>
+                                                <th class="!text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                            <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
+                                                <tr>
+                                                    <td>
+                                                        {{ contact.name }}
+                                                    </td>
+                                                    <td>
+                                                        {{ contact.creationTime }}
+                                                    </td>
+                                                    <td>{{ contact.interfaceName }}</td>
+                                                    <td class="whitespace-nowrap">{{ contact.storageStrategy }}</td>
+                                                    <td class="whitespace-nowrap">{{ contact.filterStrategy }}</td>
+                                                    <td class="whitespace-nowrap">
+                                                        <label class="w-12 h-6 relative">
+                                                            <input type="checkbox" checked
+                                                                class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
+                                                                id="custom_switch_checkbox2" />
+                                                            <span for="custom_switch_checkbox2"
+                                                                class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                                        </label>
+                                                    </td>
+                                                    <td class="whitespace-nowrap">
+                                                        <label class="w-12 h-6 relative">
+                                                            <input type="checkbox"
+                                                                class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
+                                                                id="custom_switch_checkbox2" />
+                                                            <span for="custom_switch_checkbox2"
+                                                                class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                                        </label>
+                                                    </td>
+                                                    <td>
+                                                        <div class="flex items-center justify-center gap-4">
+                                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                (click)="editUser(contact)">Edit</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                                (click)="deleteUser(contact)">Delete</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-success" 
+                                                                (click)="deleteUser(contact)">
+                                                                Start
+                                                            </button>
+
+                                                            <button type="button" class="btn btn-sm btn-outline-success" 
+                                                            (click)="deleteUser(contact)">
+                                                                <app-analyze-animation></app-analyze-animation>
+                                                            </button>
+                                                            
+
+                                                            <button type="button" class="btn btn-sm btn-outline-dark"
+                                                                (click)="deleteUser(contact)">Stop</button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </ng-container>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </ng-container>
+                        </div>
+                        <ng-container *ngIf="displayType === 'grid'">
+                            <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                                <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
+                                    <div
+                                        class="relative overflow-hidden rounded-md bg-white text-center shadow dark:bg-[#1c232f]">
+                                        <div
+                                            class="rounded-t-md bg-white/40 bg-[url('/assets/images/notification-bg.png')] bg-cover bg-center p-6 pb-0">
+                                            <!-- <ng-container *ngIf="contact.path">
+                                                <img class="mx-auto max-h-40 w-4/5 object-contain"
+                                                    [src]="'/assets/images/' + contact.path" />
+                                            </ng-container> -->
+                                            <div class="relative overflow-hidden">
+                                                <apx-chart [series]="revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
+                                                  [stroke]="revenueChart.stroke" [colors]="revenueChart.colors" [markers]="revenueChart.markers"
+                                                  [labels]="revenueChart.labels" [xaxis]="revenueChart.xaxis" [yaxis]="revenueChart.yaxis"
+                                                  [grid]="revenueChart.grid" [legend]="revenueChart.legend" [tooltip]="revenueChart.tooltip"
+                                                  [fill]="revenueChart.fill" class="rounded-lg bg-white dark:bg-black">
+                                                  <!-- loader -->
+                                                  <div class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+                                                    <span
+                                                      class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+                                                  </div>
+                                                </apx-chart>
+                                              </div>
+                                        </div>
+                                        <div class="relative -mt-10 px-6 pb-24">
+                                            <div class="rounded-md bg-white px-2 py-4 shadow-md dark:bg-gray-900">
+                                                <div class="text-xl">{{ contact.name }}</div>
+                                                <div class="text-white-dark">{{ contact.role }}</div>
+                                                <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+                                                    <div class="flex-auto">
+                                                        <div class="text-info">{{ contact.posts }}</div>
+                                                        <div>Duration</div>
+                                                    </div>
+                                                    <div class="flex-auto">
+                                                        <div class="text-info">{{ contact.following }}</div>
+                                                        <div>Event</div>
+                                                    </div>
+                                                    <div class="flex-auto">
+                                                        <div class="text-info">{{ contact.followers }}</div>
+                                                        <div>Logs</div>
+                                                    </div>
+                                                </div>
+                                                <!-- <div class="mt-4">
+                                                    <ul
+                                                        class="flex items-center justify-center space-x-4 rtl:space-x-reverse">
+                                                        <li>
+                                                            <a href="javascript:;"
+                                                                class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                                <icon-facebook />
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:;"
+                                                                class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                                <icon-instagram />
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:;"
+                                                                class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                                <icon-linkedin />
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:;"
+                                                                class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                                <icon-twitter />
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div> -->
+                                            </div>
+                                            <div class="mt-6 grid grid-cols-1 gap-4 ltr:text-left rtl:text-right">
+                                                <div class="flex items-center">
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Creation Time :</div>
+                                                    <div class="truncate text-white-dark">2024/01/01 12:00:00</div>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Adapter :</div>
+                                                    <div class="text-white-dark">DPDK</div>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Filter Strategy :</div>
+                                                    <div class="text-white-dark">bbbb</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
+                                            <button type="button" class="btn btn-outline-primary w-1/2"
+                                                (click)="editUser(contact)">Edit</button>
+                                            <button type="button" class="btn btn-outline-danger w-1/2"
+                                                (click)="deleteUser(contact)">Delete</button>
+                                        </div>
+                                    </div>
+                                </ng-container>
+                            </div>
+                        </ng-container>
+
+                        <!-- add contact modal -->
+                        <ngx-custom-modal #addContactModal class="no-footer">
+                            <ng-template #modalHeader>
+                                <div class="!font-medium">{{ params.controls['id'].value ? 'Edit' : 'Add' }}
+                                </div>
+                            </ng-template>
+                            <ng-template #modalBody>
+                                <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>
+                                    <div class="mb-5">
+                                        <label for="name">Collector Name</label>
+                                        <input id="name" type="text" placeholder="Enter Name" class="form-input"
+                                            formControlName="name" />
+                                    </div>
+                                    <div class="mb-5">
+                                        <label for="email">Adapter List</label>
+                                        <ng-select [items]="options" formControlName="interfaceName"  [clearable]="false"
+                                            placeholder="Select an option" class="custom-multiselect" (change)="onAdapterChange($event)">
+                                        </ng-select>
+                                        
+                                    </div>
+
+                                    <div class="mb-5" *ngIf="showChannels">
+                                        <label for="ctnFile">Channel</label>
+                                        <label class="inline-flex mr-5">
+                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
+                                            <span>Channel 1</span>
+                                        </label>
+                                        <label class="inline-flex mr-5">
+                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
+                                            <span>Channel 2</span>
+                                        </label>
+                                        <label class="inline-flex mr-5">
+                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
+                                            <span>Channel 3</span>
+                                        </label>
+                                        <label class="inline-flex mr-5">
+                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
+                                            <span>Channel 4</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="mb-5"  *ngIf="showUpload">
+                                        <div class="custom-file-container" data-upload-id="myFirstImage"></div>
+                                    </div>
+                                
+                                    <div class="mb-5">
+                                        <label for="number">Storage Strategy</label>
+                                        <ng-select [items]="options" formControlName="storageStrategy"  [clearable]="false"
+                                            placeholder="Select an option" class="custom-multiselect">
+                                        </ng-select>
+                                    </div>
+                                    <div class="mb-5">
+                                        <label for="occupation">Filter Strategy</label>
+                                        <ng-select [items]="options" formControlName="filterStrategy" [clearable]="false"
+                                            placeholder="Select an option" class="custom-multiselect">
+                                        </ng-select>
+                                    </div>
+                                    <div class="mb-5">
+                                        <label for="address">Protocol Analysis Enabled</label>
+                                        <label class="w-12 h-6 relative">
+                                            <input type="checkbox" checked
+                                                class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
+                                                id="custom_switch_checkbox2" />
+                                            <span for="custom_switch_checkbox2"
+                                                class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                        </label>
+                                    </div>
+                                    <div class="mb-5">
+                                        <label for="address">IDS Enabled </label>
+                                        <label class="w-12 h-6 relative">
+                                            <input type="checkbox" 
+                                                class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
+                                                id="custom_switch_checkbox2" />
+                                            <span for="custom_switch_checkbox2"
+                                                class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                        </label>
+                                    </div>
+                                    <div class="mt-8 flex items-center justify-end">
+                                        <button type="button" class="btn btn-outline-danger"
+                                            (click)="addContactModal.close()">Cancel</button>
+                                        <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">{{
+                                            params.controls['id'].value ? 'Update' : 'Add' }}</button>
+                                    </div>
+                                </form>
+                            </ng-template>
+                        </ngx-custom-modal>
+                    </div>
+
+                </div>
+                <div *ngIf="tab2.toLowerCase() === 'profile'">
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <h2 class="text-xl"></h2>
+                            <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                                <div class="flex gap-3">
+                                    <div>
+                                        <button type="button" class="btn btn-primary" (click)="editUser()">
+                                            <icon-plus class="ltr:mr-2 rtl:ml-2" />
+
+                                            Add
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-primary p-2"
+                                            [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
+                                            (click)="displayType = 'list'">
+                                            <icon-list-check />
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-primary p-2"
+                                            [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
+                                            (click)="displayType = 'grid'">
+                                            <icon-layout-grid />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="relative">
+                                    <input type="text" placeholder="Search Contacts"
+                                        class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchUser"
+                                        name="searchUser" (ngModelChange)="searchContacts()" />
+                                    <div
+                                        class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                                        <icon-search class="mx-auto" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel mt-5 overflow-hidden border-0 p-0">
+                            <ng-container *ngIf="displayType === 'list'">
+                                <div class="table-responsive">
+                                    <table class="table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Creation Time</th>
+                                                <th>File Size</th>
+                                                <th>File Count</th>
+                                                <th>Out of Disk Space Action</th>
+                                                <th>File Type</th>
+                                                <th>Trigger Type</th>
+                                                <th class="!text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                            <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
+                                                <tr>
+                                                    <td>
+                                                        {{ contact.name }}
+                                                    </td>
+                                                    <td>
+                                                        {{ contact.creationTime }}
+                                                    </td>
+                                                    <td>10kb</td>
+                                                    <td class="whitespace-nowrap">12</td>
+                                                    <td class="whitespace-nowrap">Wrap</td>
+                                                    <td class="whitespace-nowrap">
+                                                       PCAP
+                                                    </td>
+                                                    <td class="whitespace-nowrap">
+                                                        Timer
+                                                    </td>
+                                                    <td>
+                                                        <div class="flex items-center justify-center gap-4">
+                                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                (click)="editUser(contact)">Edit</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                                (click)="deleteUser(contact)">Delete</button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </ng-container>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </ng-container>
+                        </div>
+                        <ng-container *ngIf="displayType === 'grid'">
+                            <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                                <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
+                                    <div
+                                        class="relative overflow-hidden rounded-md bg-white text-center shadow dark:bg-[#1c232f]">
+                                        <div
+                                            class="rounded-t-md bg-white/40 bg-[url('/assets/images/notification-bg.png')] bg-cover bg-center p-6 pb-0">
+                                            <!-- <ng-container *ngIf="contact.path">
+                                                <img class="mx-auto max-h-40 w-4/5 object-contain"
+                                                    [src]="'/assets/images/' + contact.path" />
+                                            </ng-container> -->
+                                            <div class="relative overflow-hidden">
+                                                <apx-chart [series]="revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
+                                                  [stroke]="revenueChart.stroke" [colors]="revenueChart.colors" [markers]="revenueChart.markers"
+                                                  [labels]="revenueChart.labels" [xaxis]="revenueChart.xaxis" [yaxis]="revenueChart.yaxis"
+                                                  [grid]="revenueChart.grid" [legend]="revenueChart.legend" [tooltip]="revenueChart.tooltip"
+                                                  [fill]="revenueChart.fill" class="rounded-lg bg-white dark:bg-black">
+                                                  <!-- loader -->
+                                                  <div class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+                                                    <span
+                                                      class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+                                                  </div>
+                                                </apx-chart>
+                                              </div>
+                                        </div>
+                                        <div class="relative -mt-10 px-6 pb-24">
+                                            <div class="rounded-md bg-white px-2 py-4 shadow-md dark:bg-gray-900">
+                                                <div class="text-xl">{{ contact.name }}</div>
+                                                <div class="text-white-dark">{{ contact.role }}</div>
+                                                <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+                                                    <div class="flex-auto">
+                                                        <div class="text-info">{{ contact.posts }}</div>
+                                                        <div>Duration</div>
+                                                    </div>
+                                                    <div class="flex-auto">
+                                                        <div class="text-info">{{ contact.following }}</div>
+                                                        <div>Event</div>
+                                                    </div>
+                                                    <div class="flex-auto">
+                                                        <div class="text-info">{{ contact.followers }}</div>
+                                                        <div>Logs</div>
+                                                    </div>
+                                                </div>
+                                                <!-- <div class="mt-4">
+                                                    <ul
+                                                        class="flex items-center justify-center space-x-4 rtl:space-x-reverse">
+                                                        <li>
+                                                            <a href="javascript:;"
+                                                                class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                                <icon-facebook />
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:;"
+                                                                class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                                <icon-instagram />
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:;"
+                                                                class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                                <icon-linkedin />
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:;"
+                                                                class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                                <icon-twitter />
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div> -->
+                                            </div>
+                                            <div class="mt-6 grid grid-cols-1 gap-4 ltr:text-left rtl:text-right">
+                                                <div class="flex items-center">
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Creation Time :</div>
+                                                    <div class="truncate text-white-dark">2024/01/01 12:00:00</div>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Adapter :</div>
+                                                    <div class="text-white-dark">DPDK</div>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Filter Strategy :</div>
+                                                    <div class="text-white-dark">bbbb</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
+                                            <button type="button" class="btn btn-outline-primary w-1/2"
+                                                (click)="editUser(contact)">Edit</button>
+                                            <button type="button" class="btn btn-outline-danger w-1/2"
+                                                (click)="deleteUser(contact)">Delete</button>
+                                        </div>
+                                    </div>
+                                </ng-container>
+                            </div>
+                        </ng-container>
+
+                        <!-- add contact modal -->
+                        <ngx-custom-modal #addContactModal class="no-footer">
+                            <ng-template #modalHeader>
+                                <div class="!font-medium">{{ params.controls['id'].value ? 'Edit' : 'Add' }}
+                                </div>
+                            </ng-template>
+                            <ng-template #modalBody>
+                                <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>
+                                    <div class="mb-5">
+                                        <label for="name">Collector Name</label>
+                                        <input id="name" type="text" placeholder="Enter Name" class="form-input"
+                                            formControlName="name" />
+                                    </div>
+                                    <div class="mb-5">
+                                        <label for="email">File Size</label>
+                                        <ng-select [items]="optionsFileSize" formControlName="interfaceName"  [clearable]="false"
+                                            placeholder="Select an option" class="custom-multiselect">
+                                        </ng-select>
+                                        
+                                    </div>
+                                
+                                    <div class="mb-5">
+                                        <label for="number">File Count</label>
+                                        <input id="name" type="number" placeholder="Enter Name" class="form-input"
+                                        formControlName="name" />
+                                    </div>
+                                    <div class="mb-5">
+                                        <label for="occupation">Out of Disk Space Action</label>
+                                        <ng-select [items]="options" formControlName="filterStrategy" [clearable]="false"
+                                            placeholder="Select an option" class="custom-multiselect">
+                                        </ng-select>
+                                    </div>
+                                    <div class="mb-5">
+                                        <label for="address">File Type</label>
+                                        <label class="inline-flex  mr-5">
+                                            <input type="radio" name="outline_radio" class="form-radio  outline-primary" checked />
+                                            <span>PCAP</span>
+                                        </label>
+                                        <label class="inline-flex">
+                                            <input type="radio" name="outline_radio" class="form-radio  outline-primary"  />
+                                            <span>PCAPNG</span>
+                                        </label>
+                                    </div>
+                                    <div class="mb-5">
+                                        <label for="occupation">Trigger</label>
+                                        <ng-select [items]="optionsTrigger" formControlName="filterStrategy" [clearable]="false"
+                                            placeholder="Select an option" class="custom-multiselect" (change)="onTriggerChange($event)">
+                                        </ng-select>
+                                    </div>
+
+                                    <div class="mb-5" *ngIf="showTimeRange">
+                                        <label for="occupation">Time Range</label>
+                                        <form [formGroup]="form3">
+                                            <input type="text" mwlFlatpickr formControlName="date3" [options]="rangeCalendar" class="form-input" />
+                                        </form>
+                                    </div>
+
+                                    <div class="mb-5" *ngIf="showAlarm">
+                                        <label for="occupation">Alarm</label>
+                                        <ng-select [items]="optionsAlarm" formControlName="filterStrategy" [clearable]="false"
+                                            placeholder="Select an option" class="custom-multiselect">
+                                        </ng-select>
+                                    </div>
+                                  
+                                    <div class="mt-8 flex items-center justify-end">
+                                        <button type="button" class="btn btn-outline-danger"
+                                            (click)="addContactModal.close()">Cancel</button>
+                                        <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">{{
+                                            params.controls['id'].value ? 'Update' : 'Add' }}</button>
+                                    </div>
+                                </form>
+                            </ng-template>
+                        </ngx-custom-modal>
+                    </div>
+                </div>
+                <div *ngIf="tab2.toLowerCase() === 'contact'" >
+                    <div class="panel h-full p-0 lg:col-span-2">
+                        <div class="mb-5 flex items-start justify-between border-b border-[#e0e6ed] p-5 dark:border-[#1b2e4b] dark:text-white-light">
+                            <a href="javascript:;" class="flex font-semibold">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-secondary text-white ltr:mr-4 rtl:ml-4">
+                                    <span>PCAP</span>
+                                </div>
+                                <div>
+                                    <h6>802.1q.vlans10-20.pcap</h6>
+                                    <p class="mt-1 text-xs text-white-dark">13.1 kb · 100 packets</p>
+                                </div>
+                            </a>
+                            <div hlMenu class="dropdown">
+                                <button type="button" hlMenuButton>
+                                    <icon-horizontal-dots class="text-black/70 hover:!text-primary dark:text-white/70" />
+                                </button>
+                                <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
+                                    <li>
+                                        <a href="javascript:;" *hlMenuItem="let menuItem">View</a>
+                                    </li>
+                                    <li>
+                                        <a href="javascript:;" *hlMenuItem="let menuItem">Update</a>
+                                    </li>
+                                    <li>
+                                        <a href="javascript:;" *hlMenuItem="let menuItem">Download</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+            
+                        <div class="overflow-hidden">
+                            <iframe src="assets/decode/index.html" width="100%" height="800px"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

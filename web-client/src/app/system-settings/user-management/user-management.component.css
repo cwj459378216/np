@@ -1,0 +1,9 @@
+/* permissions.component.css */
+ng-datatable ng-dt-row ng-dt-cell {
+    padding: 8px;
+  }
+  
+  ng-datatable .child-row {
+    padding-left: 20px;
+  }
+  

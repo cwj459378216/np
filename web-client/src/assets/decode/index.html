@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+ <head>
+   <title>CS Personal on cloudshark.org</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=1280" />
+    <meta http-equiv="content-language" content="en">
+
+    <link href="css/core.css" type="text/css" rel="Stylesheet" charset="utf-8" media="all" /><link href="css/cloudshark.css" type="text/css" rel="Stylesheet" charset="utf-8" media="all" />
+    <link href="css/ipad.css" type="text/css" rel="Stylesheet" charset="utf-8" media="only screen and (device-width: 768px)" />
+    <script src="js/jq.js" type="text/javascript" charset="utf-8"></script>
+
+  </head>
+  <body>
+  <script src="js/shark-3.15.0.js" type="text/javascript" charset="utf-8"></script>
+<link href="css/sharkcss-3.15.0.css" type="text/css" rel="Stylesheet" charset="utf-8" media="all" />
+
+<div id='decode-header'>
+  <div style='display:flex; height: 28px'>
+    <div class='filter-buttonset' style='flex-grow:1; display:flex'>
+      <a href='#' style='display:none' data-note='placeholder for buttonset'></a>
+      <textarea name='filter' tabindex=1 id='filter-field' spellcheck='false' 
+                autocorrect='off' autocapitalize='off' 
+                placeholder="Start typing a Display Filter"></textarea>
+      <a href='#' class='button' data-icon='check' style='margin-left: -4px' id='filter-button'>Apply</a>
+      <a href='#' class='button' id='filter-clear-button'>Clear</a>
+    </div>
+
+
+    <div style='display:flex'>
+      <div id='nav-count'><span id='range-count'></span></div>
+      <div cid="ca3302fd7d41" class="spark" data-plot="[0,3.0,1.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,1.0,3.0,1.0,2.0,1.0,0.0,0.0,2.0,1.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,0.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,0.0,0.0,2.0,2.0,2.0,0.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,1.0,1.0,2.0,2.0,2.0,0.0,0.0,2.0,1.0,0.0,0]" id="nav"></div>
+
+
+      <a id="graphs-button" class="button is-split" data-toggle="graphs-menu" data-icon="image" href="/captures/ca3302fd7d41/graphs/index.html">Graphs</a>
+
+      <a data-toggle="capture-export-menu" class="button dropdown" data-icon="extlink" id="export-button" href="#">Export</a>
+
+
+    </div>
+
+  </div>
+
+  <ul class='menu' id='analysis-tools-menu'>
+  <li><a id='follow-stream-button' href='#' original_href='/analysis/ca3302fd7d41/follow?window=yes' title='Follow Stream'>
+      <img src='img/chain.png'> Follow Stream
+    </a>
+  </li>
+
+  <li>
+    <a id='follow-ssl-button' href='#' original_href='/analysis/ca3302fd7d41/follow?window=yes&proto=tls' title='Follow TLS Stream'>
+      <img src='img/unlock.png'> Follow TLS
+    </a>
+  </li>
+
+  <li>
+    <a id='follow-http-button' href='#' original_href='/analysis/ca3302fd7d41/follow?window=yes&proto=http' title='Follow HTTP Stream'>
+      <img src='img/chain.png'> Follow HTTP
+    </a>
+  </li>
+
+
+
+    <li><a class="at-menuitem" id="ay-ladder" href="/analysis/ca3302fd7d41/ladder/index.html"><img src='img/ladder.png'>Ladder Diagrams</a></li>
+    <li><a class="at-menuitem" id="ay-endpoints" href="/analysis/ca3302fd7d41/endpoints/index.html"><img src='img/network.png'>Network Endpoints</a></li>
+    <li><a class="at-menuitem" id="ay-map" href="/analysis/ca3302fd7d41/map/index.html"><img src='img/world.png'>GeoIP World Map</a></li>
+    <li><a class="at-menuitem" id="ay-conversations" href="/analysis/ca3302fd7d41/conversations/index.html"><img src='img/chat-.png'>Protocol Conversations</a></li>
+    <li><a class="at-menuitem" id="ay-protocol-stats" href="/analysis/ca3302fd7d41/protocol_stats/index.html"><img src='img/tree.png'>Protocol Hierarchy</a></li>
+    <li><a class="at-menuitem" id="ay-packet-lengths" href="/analysis/ca3302fd7d41/packet_lengths/index.html"><img src='img/bar-chart.png'>Packet Lengths</a></li>
+    <li><a class="at-menuitem" id="ay-dns" href="/analysis/ca3302fd7d41/dns/index.html"><img src='img/network-pc.png'>DNS Activity</a></li>
+    <li><a class="at-menuitem" id="ay-voip-calls" href="/analysis/ca3302fd7d41/voip_calls/index.html"><img src='img/phone.png'>VoIP
+Calls</a></li>
+    <li><a class="at-menuitem" id="ay-rtp-streams" href="/analysis/ca3302fd7d41/rtp_streams/index.html"><img src='img/headphone.png'>RTP
+Streams</a></li>
+    <li><a class="at-menuitem" id="ay-http-req" href="/analysis/ca3302fd7d41/http_req/index.html"><img src='img/connections.png'>HTTP Analysis</a></li>
+    <li><a class="at-menuitem" id="ay-wlan-stats" href="/analysis/ca3302fd7d41/wlan_stats/index.html"><img src='img/satellite.png'>Wireless Networks</a></li>
+    <li><a class="at-menuitem" id="ay-threats" href="/analysis/ca3302fd7d41/threats/index.html"><img src='img/shield.png'>Threat Assessment</a></li>
+
+  <li><a title="Open Zeek Logs" class="at-menuitem" href="/captures/ca3302fd7d41/zeek/index.html"><img src='img/z.png'/>Zeek Logs</a></li>
+
+</ul>
+
+  <ul class='menu' id='graphs-menu'>
+  <li><a class="graph-gallery-link" id="all-traffic-graph-link" href="/captures/ca3302fd7d41/graphs/~?window=true">All Traffic</a></li>
+  <li><a class="graph-gallery-link" id="current-graph-link" href="/captures/ca3302fd7d41/graphs/~?window=true">Current Display Filter</a></li>
+</ul>
+
+  <ul class='menu' id='capture-export-menu'>
+    <li><a id="download-button" href="/captures/ca3302fd7d41/export/index.html">Download File</a></li>
+
+    <li><a id="disabled-new-capture-session-button" class="ui-state-disabled" href="#">Create New Session</a></li>
+</ul>
+
+
+<script>
+  $("#download-button, #new-capture-session-button").fancybox({});
+  $("#disabled-download-button, #disabled-new-capture-session-button").click(function() { return false; });
+</script>
+
+  <ul class='menu' id='df-menu'>
+  
+
+  <li>
+      <a class="disabled-df-management-link" title="File is read-only. You may not change these settings." href="#">Manage saved filters</a>
+
+  </li>
+</ul>
+
+<script>
+$(".df-management-link").fancybox();
+$(".disabled-df-management-link").addClass('ui-state-disabled').click(function() { return false; })
+
+$(".df-menu-link").click(function() {
+  $("#wrapper").trigger('set-filter', $(this).data('filter'));
+  $("#df-menu").hide();
+  $("#df-menu-toggle").removeClass("ui-state-focus");
+  return false;
+});
+$(".df-menu-expand").click(function(e) {
+  e.stopPropagation()
+  return false
+})
+</script>
+
+
+</div>
+
+<div id='wrapper'></div>
+
+<script>
+  // set our various helper URL's here so we can use Merb's URL helpers
+var Filename = "802.1q.vlans10-20.pcap";
+var TotalPacketCount = 100;
+var TotalDuration     = 0.120929;
+
+// Annotation support
+var AnnotationUrlBase = "./captures/ca3302fd7d41/annotations";
+var ShowAnnotationsByDefault = true;
+
+
+  // You are logged in as guest and do NOT have write
+  //  permissions on this file. Annotating will be disabled.
+  var WriteAccess = false;
+
+$(document).ready(function() {  
+
+  // update the title
+  var title = $(document).attr('title');
+  title = Filename + " - " + title;
+  $(document).attr('title', title);
+
+  // userprefs
+  if ( $("#user-prefs").length > 0 ) {
+    $("#user-prefs").fancybox();
+  }
+
+  // load our initial summary
+  $("#wrapper").cloudsharkTable({
+    totalPackets: TotalPacketCount, 
+    displayRangeMax: TotalDuration,
+    filter: $("#filter-field").val(),
+    loadingText: "Loading...",
+    baseUrl: "http://localhost:8000/captures/ca3302fd7d41/tf"
+  });
+
+  if (WriteAccess === false) {
+    $("#wrapper").addClass('readonly');
+  }
+
+  $("#profile-menu-button").fancybox({scrolling: "no"});
+  $("#profile-menu a").fancybox({scrolling: 'no', title: 'Profile Editor'});
+
+});
+
+</script>
+
+
+   <div id='footer'>
+     <div style='margin:auto; width:50%; text-align:center'>
+       
+     </div>
+     Support: <a href="mailto:support@qacafe.com">support@qacafe.com</a>
+     |
+       Twitter: <a href="http://twitter.com/cloudshark">@cloudshark</a>
+     <br/>
+     CS Personal v3.15.0 ge05f57cb (CaaS-release)
+     <br/>
+     &copy; 2024 <a href="https://www.qacafe.com">QA Cafe</a>
+    </div>
+
+   
+
+<script>
+  $(document).ready(function() {
+    $("#notify span").delay(5000).fadeOut();
+
+    $("ul.topnav li.menutrigger > a").click(function() {
+      var menu = $(this).parent();
+
+      //Following events are applied to the subnav itself (moving subnav up and down)
+      menu.find("ul.subnav").slideToggle('fast');
+      menu.toggleClass("expanded");
+
+      if (menu.hasClass('expanded')) {
+        $(document).one('click', function(event) {
+          if ($.contains(menu.get(0), event.target)) {
+            return true;
+          } else {
+            menu.find('ul.subnav').slideUp('fast');
+            menu.removeClass('expanded');
+          }
+        });
+      } else {
+        $(document).off('click');
+      }
+
+      return false;
+    });
+
+    // this closes the menu if you click on an item in there
+    $("ul.topnav li.menutrigger ul.subnav li a").click(function() {
+      $(this).parents("ul.subnav").slideUp('fast');
+      $(this).parents("li.menutrigger").removeClass('expanded');
+      return true;
+    });
+
+    $("#upgrade-account-button").button({icons: {primary: 'ui-icon-unlocked'}}).fancybox({
+      href: "https://www.cloudshark.org/_/plans?guest=1",
+      scrolling: 'no',
+      type: 'iframe',
+      height: 655,
+      width: 925,
+      padding:0,
+    });
+
+  });
+</script>
+
+    
+    </body>
+  </html>
