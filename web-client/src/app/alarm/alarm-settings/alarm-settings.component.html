@@ -1,0 +1,219 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">Alarm</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>Settings</span>
+        </li>
+    </ul>
+    <div class="pt-5">
+        <div>
+            <div class="relative flex h-full gap-5 sm:h-[calc(100vh_-_150px)]">
+                <div class="absolute z-10 hidden h-full w-full rounded-md bg-black/60"
+                    [ngClass]="{ '!block xl:!hidden': isShowNoteMenu }" (click)="isShowNoteMenu = !isShowNoteMenu">
+                </div>
+                <div class="panel absolute z-10 hidden h-full w-[240px] flex-none space-y-4 overflow-hidden p-4 ltr:rounded-r-none rtl:rounded-l-none ltr:lg:rounded-r-md rtl:lg:rounded-l-md xl:relative xl:block xl:h-auto"
+                    [ngClass]="{ 'hidden shadow': !isShowNoteMenu, '!block h-full ltr:left-0 rtl:right-0': isShowNoteMenu }">
+                    <div class="flex h-full flex-col pb-16">
+                        <div class="flex items-center text-center">
+                            <div class="shrink-0">
+                                <icon-bell />
+                            </div>
+                            <h3 class="text-lg font-semibold ltr:ml-3 rtl:mr-3">Alarm Settings</h3>
+                        </div>
+                        <div class="my-4 h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b]"></div>
+                        <ng-scrollbar class="relative h-full grow ltr:pr-3.5 rtl:pl-3.5" appearance="compact">
+                            <div class="space-y-1">
+                                <button type="button"
+                                    class="flex h-10 w-full items-center justify-between rounded-md p-2 font-medium hover:bg-white-dark/10 hover:text-primary dark:hover:bg-[#181F32] dark:hover:text-primary"
+                                    [ngClass]="{'bg-gray-100 dark:text-primary text-primary dark:bg-[#181F32]': selectedTab === 'all' }"
+                                    (click)="tabChanged('all')">
+                                    <div class="flex items-center">
+                                        <icon-bell class="shrink-0" />
+                                        <div class="ltr:ml-3 rtl:mr-3">All Alarms</div>
+                                    </div>
+                                </button>
+                                <button type="button"
+                                    class="flex h-10 w-full items-center justify-between rounded-md p-2 font-medium hover:bg-white-dark/10 hover:text-primary dark:hover:bg-[#181F32] dark:hover:text-primary"
+                                    [ngClass]="{'bg-gray-100 dark:text-primary text-primary dark:bg-[#181F32]': selectedTab === 'enabled' }"
+                                    (click)="tabChanged('enabled')">
+                                    <div class="flex items-center">
+                                        <icon-circle-check class="shrink-0" />
+                                        <div class="ltr:ml-3 rtl:mr-3">Enabled Alarms</div>
+                                    </div>
+                                </button>
+                                <button type="button"
+                                    class="flex h-10 w-full items-center justify-between rounded-md p-2 font-medium hover:bg-white-dark/10 hover:text-primary dark:hover:bg-[#181F32] dark:hover:text-primary"
+                                    [ngClass]="{'bg-gray-100 dark:text-primary text-primary dark:bg-[#181F32]': selectedTab === 'disabled' }"
+                                    (click)="tabChanged('disabled')">
+                                    <div class="flex items-center">
+                                        <icon-x-circle class="shrink-0" />
+                                        <div class="ltr:ml-3 rtl:mr-3">Disabled Alarms</div>
+                                    </div>
+                                </button>
+                                <div class="h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b]"></div>
+                                <div class="px-1 py-3 text-white-dark">Priority</div>
+                                <button type="button"
+                                    class="flex h-10 w-full items-center rounded-md p-1 font-medium text-danger duration-300 hover:bg-white-dark/10 ltr:hover:pl-3 rtl:hover:pr-3 dark:hover:bg-[#181F32]"
+                                    [ngClass]="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'high' }"
+                                    (click)="tabChanged('high')">
+                                    <icon-square-rotated class="shrink-0 fill-danger" />
+                                    <div class="ltr:ml-3 rtl:mr-3">High</div>
+                                </button>
+                                <button type="button"
+                                    class="flex h-10 w-full items-center rounded-md p-1 font-medium text-warning duration-300 hover:bg-white-dark/10 ltr:hover:pl-3 rtl:hover:pr-3 dark:hover:bg-[#181F32]"
+                                    [ngClass]="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'medium' }"
+                                    (click)="tabChanged('medium')">
+                                    <icon-square-rotated class="shrink-0 fill-warning" />
+                                    <div class="ltr:ml-3 rtl:mr-3">Medium</div>
+                                </button>
+                                <button type="button"
+                                    class="flex h-10 w-full items-center rounded-md p-1 font-medium text-primary duration-300 hover:bg-white-dark/10 ltr:hover:pl-3 rtl:hover:pr-3 dark:hover:bg-[#181F32]"
+                                    [ngClass]="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'low' }"
+                                    (click)="tabChanged('low')">
+                                    <icon-square-rotated class="shrink-0 fill-primary" />
+                                    <div class="ltr:ml-3 rtl:mr-3">Low</div>
+                                </button>
+                            </div>
+                        </ng-scrollbar>
+                    </div>
+                </div>
+
+                <!-- 右侧内容区域 -->
+                <div class="panel h-full flex-1 overflow-auto">
+                    <div class="pb-5">
+                        <button type="button" class="hover:text-primary xl:hidden"
+                            (click)="isShowNoteMenu = !isShowNoteMenu">
+                            <icon-menu />
+                        </button>
+                    </div>
+
+                    <ng-container *ngIf="!filterdAlarmList.length">
+                        <div class="flex h-full min-h-[400px] items-center justify-center text-lg font-semibold sm:min-h-[300px]">
+                            No alarms available
+                        </div>
+                    </ng-container>
+
+                    <ng-container *ngIf="filterdAlarmList.length">
+                        <div class="min-h-[400px] sm:min-h-[300px]">
+                            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                                <ng-container *ngFor="let alarm of filterdAlarmList">
+                                    <div class="panel pb-12" [ngClass]="{
+                                        'bg-danger-light shadow-danger': alarm.priority === 'high',
+                                        'bg-warning-light shadow-warning': alarm.priority === 'medium',
+                                        'bg-primary-light shadow-primary': alarm.priority === 'low'
+                                    }">
+                                        <div class="min-h-[142px] mb-5">
+                                            <div class="flex justify-between">
+                                                <div class="flex w-max items-center">
+                                                    <div class="flex-none">
+                                                        <icon-bell class="h-8 w-8" />
+                                                    </div>
+                                                    <div class="ltr:ml-2 rtl:mr-2">
+                                                        <div class="font-semibold">{{ alarm.name }}</div>
+                                                        <div class="text-sx text-white-dark">{{ alarm.type }}</div>
+                                                    </div>
+                                                </div>
+                                                <div hlMenu class="dropdown">
+                                                    <button hlMenuButton type="button" class="text-primary">
+                                                        <icon-horizontal-dots class="rotate-90 opacity-70 hover:opacity-100" />
+                                                    </button>
+                                                    <ul *hlMenuItems @toggleAnimation class="text-sm font-medium ltr:right-0 rtl:left-0">
+                                                        <li>
+                                                            <a href="javascript:;" *hlMenuItem="let menuItem" (click)="editAlarm(alarm)">
+                                                                <icon-pencil class="h-4 w-4 shrink-0 ltr:mr-3 rtl:ml-3" />
+                                                                Edit
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:;" *hlMenuItem="let menuItem" (click)="viewAlarm(alarm)">
+                                                                <icon-eye class="h-4.5 w-4.5 shrink-0 ltr:mr-3 rtl:ml-3" />
+                                                                View
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 class="mt-4 font-semibold">{{ alarm.description }}</h4>
+                                                <p class="mt-2 text-white-dark">Threshold: {{ alarm.threshold }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="absolute bottom-5 left-0 w-full px-5">
+                                            <div class="mt-2 flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <icon-square-rotated [class]="{'fill-danger': alarm.priority === 'high',
+                                                        'fill-warning': alarm.priority === 'medium',
+                                                        'fill-primary': alarm.priority === 'low'}" />
+                                                    <span class="ltr:ml-2 rtl:mr-2">{{ alarm.priority | titlecase }}</span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <label class="w-12 h-6 relative">
+                                                        <input type="checkbox" class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" 
+                                                            [(ngModel)]="alarm.enabled" 
+                                                            (change)="toggleAlarm(alarm)"/>
+                                                        <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </ng-container>
+                            </div>
+                        </div>
+                    </ng-container>
+
+                    <!-- 添加/编辑告警的模态框 -->
+                    <ngx-custom-modal #alarmModal class="no-footer">
+                        <ng-template #modalHeader>
+                            <div class="!font-medium">{{ selectedAlarm?.id ? 'Edit Alarm' : 'Add Alarm' }}</div>
+                        </ng-template>
+                        <ng-template #modalBody>
+                            <form [formGroup]="alarmForm" (submit)="saveAlarm()" class="text-sm">
+                                <div class="mb-5">
+                                    <label for="name">Name</label>
+                                    <input id="name" type="text" placeholder="Enter Alarm Name" class="form-input"
+                                        formControlName="name" />
+                                </div>
+                                <div class="mb-5">
+                                    <label for="type">Type</label>
+                                    <select id="type" class="form-select" formControlName="type">
+                                        <option value="threshold">Threshold</option>
+                                        <option value="pattern">Pattern</option>
+                                        <option value="anomaly">Anomaly</option>
+                                    </select>
+                                </div>
+                                <div class="mb-5">
+                                    <label for="priority">Priority</label>
+                                    <select id="priority" class="form-select" formControlName="priority">
+                                        <option value="high">High</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="low">Low</option>
+                                    </select>
+                                </div>
+                                <div class="mb-5">
+                                    <label for="threshold">Threshold</label>
+                                    <input id="threshold" type="number" placeholder="Enter Threshold" class="form-input"
+                                        formControlName="threshold" />
+                                </div>
+                                <div class="mb-5">
+                                    <label for="description">Description</label>
+                                    <textarea id="description" rows="3" class="form-textarea min-h-[130px] resize-none"
+                                        placeholder="Enter Description" formControlName="description"></textarea>
+                                </div>
+                                <div class="mt-8 flex items-center justify-end">
+                                    <button type="button" class="btn btn-outline-danger gap-2"
+                                        (click)="alarmModal.close()">Cancel</button>
+                                    <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
+                                        {{ selectedAlarm?.id ? 'Update' : 'Add' }}
+                                    </button>
+                                </div>
+                            </form>
+                        </ng-template>
+                    </ngx-custom-modal>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

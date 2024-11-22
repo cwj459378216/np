@@ -111,8 +111,8 @@
                                 <button
                                     type="button"
                                     class="nav-link group w-full"
-                                    [ngClass]="{ active: activeDropdown.includes('authentication') }"
-                                    (click)="toggleAccordion('authentication')"
+                                    [ngClass]="{ active: activeDropdown.includes('eventAlarm') }"
+                                    (click)="toggleAccordion('eventAlarm')"
                                 >
                                     <div class="flex items-center">
                                         <icon-info-circle [fill]="true" class="shrink-0 group-hover:!text-primary" />
@@ -121,35 +121,86 @@
                                             >{{ 'Event Alarm' | translate }}</span
                                         >
                                     </div>
-                                    <div [ngClass]="{ 'rtl:rotate-90 -rotate-90': !activeDropdown.includes('authentication') }">
+                                    <div [ngClass]="{ 'rtl:rotate-90 -rotate-90': !activeDropdown.includes('eventAlarm') }">
                                         <icon-caret-down />
                                     </div>
                                 </button>
-                                <div [@slideDownUp]="!activeDropdown.includes('authentication')" class="accordion-content">
+                                <div [@slideDownUp]="!activeDropdown.includes('eventAlarm')" class="accordion-content">
                                     <ul class="sub-menu text-gray-500">
-                                        <li routerLinkActive="active" (click)="toggleMobileMenu()">
-                                            <a routerLink="/auth/boxed-signin" target="_blank">{{ 'Event' | translate }}</a>
+                                        <li>
+                                            <a routerLink="/alarm/event" routerLinkActive="active" (click)="toggleMobileMenu()">{{ 'Event' | translate }}</a>
                                         </li>
-                                        <li routerLinkActive="active" (click)="toggleMobileMenu()">
-                                            <a routerLink="/auth/boxed-signup" target="_blank">{{ 'Alarm Settings' | translate }}</a>
+                                        <li>
+                                            <a routerLink="/alarm/settings" routerLinkActive="active" (click)="toggleMobileMenu()">{{ 'Alarm Settings' | translate }}</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </li>
+
+                            <li class="accordion menu nav-item">
+                                <button
+                                    type="button"
+                                    class="nav-link group w-full"
+                                    [ngClass]="{ active: activeDropdown.includes('protocolAnalysis') }"
+                                    (click)="toggleAccordion('protocolAnalysis')"
+                                >
+                                    <div class="flex items-center">
+                                        <icon-menu-charts class="shrink-0 group-hover:!text-primary" />
+                                        <span class="text-black dark:text-[#506690] dark:group-hover:text-white-dark ltr:pl-3 rtl:pr-3"
+                                            >{{ 'Protocol Analysis' | translate }}</span
+                                        >
+                                    </div>
+                                    <div [ngClass]="{ 'rtl:rotate-90 -rotate-90': !activeDropdown.includes('protocolAnalysis') }">
+                                        <icon-caret-down />
+                                    </div>
+                                </button>
+                                <div [@slideDownUp]="!activeDropdown.includes('protocolAnalysis')" class="accordion-content">
+                                    <ul class="sub-menu text-gray-500">
+                                        <li >
+                                            <a routerLink="/protocol-analysis/session-info" routerLinkActive="active"  (click)="toggleMobileMenu()">{{ 'Session Info' | translate }}</a>
+                                        </li>
+                                        <!-- <li  >
+                                            <a routerLink="/protocol-analysis/application-protocols" routerLinkActive="active" (click)="toggleMobileMenu()">{{ 'Application Protocols' | translate }}</a>
+                                        </li> -->
+                                        
+
+                                        <li class="accordion menu nav-item">
+                                            <button
+                                                type="button"
+                                                class="w-full before:h-[5px] before:w-[5px] before:rounded before:bg-gray-300 hover:bg-gray-100 dark:text-[#888ea8] dark:hover:bg-gray-900 ltr:before:mr-2 rtl:before:ml-2"
+                                                (click)="toggleAccordion('Application Protocols', 'pages')"
+                                            >
+                                                {{ 'Application Protocols' | translate }}
+                                                <div class="ltr:ml-auto rtl:mr-auto" [ngClass]="{ 'rtl:rotate-90 -rotate-90': !activeDropdown.includes('Application Protocols') }">
+                                                    <icon-carets-down [fill]="true" class="h-4 w-4" />
+                                                </div>
+                                            </button>
+        
+                                            <div [@slideDownUp]="!activeDropdown.includes('Application Protocols')" class="accordion-content">
+                                                <ul class="sub-menu text-gray-500">
+                                                    <li >
+                                                        <a routerLink="/protocol-analysis/application-protocols/http" routerLinkActive="active" (click)="toggleMobileMenu()" >{{ 'HTTP' | translate }}</a>
+                                                    </li>
+                                                    <li >
+                                                        <a routerLink="/protocol-analysis/application-protocols/smtp" routerLinkActive="active" (click)="toggleMobileMenu()" >{{ 'SMTP' | translate }}</a>
+                                                    </li>
+                                                    <li >
+                                                        <a routerLink="/protocol-analysis/application-protocols/ftp" routerLinkActive="active" (click)="toggleMobileMenu()" >{{ 'FTP' | translate }}</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </li>
+
+
+                                        <li >
+                                            <a routerLink="/protocol-analysis/settings"  routerLinkActive="active"  (click)="toggleMobileMenu()">{{ 'Settings' | translate }}</a>
                                         </li>
                                         
                                     </ul>
                                 </div>
                             </li>
                             
-                            <li class="nav-item">
-                                <a routerLink="/apps/todolist" class="group" routerLinkActive="active" (click)="toggleMobileMenu()">
-                                    <div class="flex items-center">
-                                        <!-- <icon-menu-todo class="shrink-0 group-hover:!text-primary" /> -->
-                                        <icon-menu-charts class="shrink-0 group-hover:!text-primary" />
-                                        
-                                        <span class="text-black dark:text-[#506690] dark:group-hover:text-white-dark ltr:pl-3 rtl:pr-3"
-                                            >{{ 'Protocol Analysis' | translate }}</span
-                                        >
-                                    </div>
-                                </a>
-                            </li>
+                   
                             <li class="nav-item">
                                 <a routerLink="/apps/scrumboard" class="group" routerLinkActive="active" (click)="toggleMobileMenu()">
                                     <div class="flex items-center">
@@ -161,17 +212,6 @@
                                     </div>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a routerLink="/apps/contacts" class="group" routerLinkActive="active" (click)="toggleMobileMenu()">
-                                    <div class="flex items-center">
-                                        <icon-layout [fill]="true" class="shrink-0 group-hover:!text-primary" />
-                                        <span class="text-black dark:text-[#506690] dark:group-hover:text-white-dark ltr:pl-3 rtl:pr-3"
-                                            >{{ 'System Settings' | translate }}</span
-                                        >
-                                    </div>
-                                </a>
-                            </li>
-                            
                             <li class="accordion menu nav-item">
                                 <button
                                     type="button"
@@ -200,6 +240,16 @@
                                         <li>
                                             <a routerLink="/role-management" routerLinkActive="active" (click)="toggleMobileMenu()"
                                                 >{{ 'Role Management' | translate }}</a
+                                            >
+                                        </li>
+                                        <li>
+                                            <a routerLink="/system-time" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                >{{ 'System Time' | translate }}</a
+                                            >
+                                        </li>
+                                         <li>
+                                            <a routerLink="/interface-management" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                >{{ 'Interface Management' | translate }}</a
                                             >
                                         </li>
                                     </ul>

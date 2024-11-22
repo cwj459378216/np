@@ -11,48 +11,38 @@
 
         <div>
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <h2 class="text-xl">Role Management</h2>
+                <h2 class="text-xl"></h2>
                 <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
                     <div class="flex gap-3">
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editUser()">
                                 <icon-user-plus class="ltr:mr-2 rtl:ml-2" />
-        
+
                                 Add
                             </button>
                         </div>
                         <div>
-                            <button
-                                type="button"
-                                class="btn btn-outline-primary p-2"
+                            <button type="button" class="btn btn-outline-primary p-2"
                                 [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
-                                (click)="displayType = 'list'"
-                            >
+                                (click)="displayType = 'list'">
                                 <icon-list-check />
                             </button>
                         </div>
                         <div>
-                            <button
-                                type="button"
-                                class="btn btn-outline-primary p-2"
+                            <button type="button" class="btn btn-outline-primary p-2"
                                 [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
-                                (click)="displayType = 'grid'"
-                            >
+                                (click)="displayType = 'grid'">
                                 <icon-layout-grid />
                             </button>
                         </div>
                     </div>
-        
+
                     <div class="relative">
-                        <input
-                            type="text"
-                            placeholder="Search Contacts"
-                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11"
-                            [(ngModel)]="searchUser"
-                            name="searchUser"
-                            (ngModelChange)="searchContacts()"
-                        />
-                        <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                        <input type="text" placeholder="Search Contacts"
+                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchUser" name="searchUser"
+                            (ngModelChange)="searchContacts()" />
+                        <div
+                            class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
                             <icon-search class="mx-auto" />
                         </div>
                     </div>
@@ -92,8 +82,10 @@
                                         </td>
                                         <td>
                                             <div class="flex items-center justify-center gap-4">
-                                                <button type="button" class="btn btn-sm btn-outline-primary" (click)="editUser(contact)">Edit</button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteUser(contact)">Delete</button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                    (click)="editUser(contact)">Edit</button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    (click)="deleteUser(contact)">Delete</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -107,9 +99,11 @@
                 <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                     <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
                         <div class="relative overflow-hidden rounded-md bg-white text-center shadow dark:bg-[#1c232f]">
-                            <div class="rounded-t-md bg-white/40 bg-[url('/assets/images/notification-bg.png')] bg-cover bg-center p-6 pb-0">
+                            <div
+                                class="rounded-t-md bg-white/40 bg-[url('/assets/images/notification-bg.png')] bg-cover bg-center p-6 pb-0">
                                 <ng-container *ngIf="contact.path">
-                                    <img class="mx-auto max-h-40 w-4/5 object-contain" [src]="'/assets/images/' + contact.path" />
+                                    <img class="mx-auto max-h-40 w-4/5 object-contain"
+                                        [src]="'/assets/images/' + contact.path" />
                                 </ng-container>
                             </div>
                             <div class="relative -mt-10 px-6 pb-24">
@@ -133,22 +127,26 @@
                                     <div class="mt-4">
                                         <ul class="flex items-center justify-center space-x-4 rtl:space-x-reverse">
                                             <li>
-                                                <a href="javascript:;" class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                <a href="javascript:;"
+                                                    class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
                                                     <icon-facebook />
                                                 </a>
                                             </li>
                                             <li>
-                                                <a href="javascript:;" class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                <a href="javascript:;"
+                                                    class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
                                                     <icon-instagram />
                                                 </a>
                                             </li>
                                             <li>
-                                                <a href="javascript:;" class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                <a href="javascript:;"
+                                                    class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
                                                     <icon-linkedin />
                                                 </a>
                                             </li>
                                             <li>
-                                                <a href="javascript:;" class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
+                                                <a href="javascript:;"
+                                                    class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
                                                     <icon-twitter />
                                                 </a>
                                             </li>
@@ -171,16 +169,18 @@
                                 </div>
                             </div>
                             <div class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
-                                <button type="button" class="btn btn-outline-primary w-1/2" (click)="editUser(contact)">Edit</button>
-                                <button type="button" class="btn btn-outline-danger w-1/2" (click)="deleteUser(contact)">Delete</button>
+                                <button type="button" class="btn btn-outline-primary w-1/2"
+                                    (click)="editUser(contact)">Edit</button>
+                                <button type="button" class="btn btn-outline-danger w-1/2"
+                                    (click)="deleteUser(contact)">Delete</button>
                             </div>
                         </div>
                     </ng-container>
                 </div>
             </ng-container>
-        
+
             <!-- add contact modal -->
-            <ngx-custom-modal #addContactModal class="no-footer">
+            <ngx-custom-modal #addContactModal class="no-footer extra-large-modal">
                 <ng-template #modalHeader>
                     <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Contact' : 'Add Role' }}</div>
                 </ng-template>
@@ -188,225 +188,86 @@
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>
                         <div class="mb-5">
                             <label for="name">Name</label>
-                            <input id="name" type="text" placeholder="Enter Name" class="form-input" formControlName="name" />
+                            <input id="name" type="text" placeholder="Enter Name" class="form-input"
+                                formControlName="name" />
                         </div>
                         <div class="mb-5">
                             <label for="email">Description</label>
-                            <input id="email" type="email" placeholder="Enter Email" class="form-input" formControlName="email" />
+                            <input id="email" type="email" placeholder="Enter Description" class="form-input"
+                                formControlName="email" />
                         </div>
-                        <div class="mb-5 flex">
-                            <button type="button" class="btn btn-outline-primary mr-5">菜单权限</button>
-                            <button type="button" class="btn btn-outline-primary">按钮权限</button>
-                        </div>
+
                         <div class="md-5">
-                            <ul class="font-semibold">
-                                <li class="py-[5px]">
-                                    <label>
-                                        <input type="checkbox" (change)="toggleTreeview1('css')" />
-                                        CSS
-                                    </label>
-                                    <div [@slideDownUp]="!treeview1.includes('css')" class="accordion-content">
-                                        <ul class="ltr:pl-14 rtl:pr-14">
-                                            <li class="py-[5px]">
-                                                <label>
-                                                    <input type="checkbox" />
-                                                    style.css
-                                                </label>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </li>
-                                <li class="py-[5px]">
-                                    <label>
-                                        <input type="checkbox" (change)="toggleTreeview1('images')" />
-                                        Images
-                                    </label>
-                                    <div [@slideDownUp]="!treeview1.includes('images')" class="accordion-content">
-                                        <ul class="ltr:pl-14 rtl:pr-14">
-                                            <li class="py-[5px]">
-                                                <label>
-                                                    <input type="checkbox" />
-                                                    profile-16.jpeg
-                                                </label>
-                                            </li>
-                                            <li class="py-[5px]">
-                                                <label>
-                                                    <input type="checkbox" />
-                                                    background.png
-                                                </label>
-                                            </li>
-                                            <li class="py-[5px]">
-                                                <label>
-                                                    <input type="checkbox" />
-                                                    gallery.jpg
-                                                </label>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </li>
-                                <li class="py-[5px]">
-                                    <label>
-                                        <input type="checkbox" (change)="toggleTreeview1('html')" />
-                                        HTML
-                                    </label>
-                                    <div [@slideDownUp]="!treeview1.includes('html')" class="accordion-content">
-                                        <ul class="ltr:pl-14 rtl:pr-14">
-                                            <li class="py-[5px]">
-                                                <label>
-                                                    <input type="checkbox" (change)="toggleTreeview1('pages')" />
-                                                    PAGES
-                                                </label>
-                                                <div [@slideDownUp]="!treeview1.includes('pages')" class="accordion-content">
-                                                    <ul class="ltr:pl-14 rtl:pr-14">
-                                                        <li class="py-[5px]">
-                                                            <label>
-                                                                <input type="checkbox" />
-                                                                file name
-                                                            </label>
-                                                        </li>
-                                                        <li class="py-[5px]">
-                                                            <label>
-                                                                <input type="checkbox" />
-                                                                file name
-                                                            </label>
-                                                        </li>
-                                                        <li class="py-[5px]">
-                                                            <label>
-                                                                <input type="checkbox" />
-                                                                file name
-                                                            </label>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </li>
-                                            <li class="py-[5px] ltr:pl-8 rtl:pr-8">
-                                                <label>
-                                                    <input type="checkbox" />
-                                                    file name
-                                                </label>
-                                            </li>
-                                            <li class="py-[5px] ltr:pl-8 rtl:pr-8">
-                                                <label>
-                                                    <input type="checkbox" />
-                                                    file name
-                                                </label>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </li>
-                                <li class="py-[5px] ltr:pl-7 rtl:pr-7">
-                                    <label>
-                                        <input type="checkbox" />
-                                        index.html
-                                    </label>
-                                </li>
-                                <li class="py-[5px] ltr:pl-7 rtl:pr-7">
-                                    <label>
-                                        <input type="checkbox" />
-                                        components.html
-                                    </label>
-                                </li>
-                            </ul>
-                            
-                            <!-- <ul class="font-semibold">
-                                <li class="py-[5px]">
-                                    <button type="button" (click)="toggleTreeview1('css')">
-                                        
-                                        
-                                        CSS
-                                    </button>
-                                    <div [@slideDownUp]="!treeview1.includes('css')" class="accordion-content">
-                                        <ul class="ltr:pl-14 rtl:pr-14">
-                                            <li class="py-[5px]">
-                                                
-                                                style.css
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </li>
-                                <li class="py-[5px]">
-                                    <button type="button" (click)="toggleTreeview1('images')" class="active">
-                                        
-                                        
-                                        Images
-                                    </button>
-                                    <div [@slideDownUp]="!treeview1.includes('images')" class="accordion-content">
-                                        <ul class="ltr:pl-14 rtl:pr-14">
-                                            <li class="py-[5px]">
-                                                
-                                                profile-16.jpeg
-                                            </li>
-                                            <li class="py-[5px]">
-                                                
-                                                background.png
-                                            </li>
-                                            <li class="py-[5px]">
-                                                
-                                                gallery.jpg
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </li>
-                                <li class="py-[5px]">
-                                    <button type="button" (click)="toggleTreeview1('html')">
-                                        
-                                        
-                                        HTML
-                                    </button>
-                                    <div [@slideDownUp]="!treeview1.includes('html')" class="accordion-content">
-                                        <ul class="ltr:pl-14 rtl:pr-14">
-                                            <li class="py-[5px]">
-                                                <button type="button" (click)="toggleTreeview1('pages')">
-                                                    
-                                                    
-                                                    PAGES
-                                                </button>
-                                                <div [@slideDownUp]="!treeview1.includes('pages')" class="accordion-content">
-                                                    <ul class="ltr:pl-14 rtl:pr-14">
-                                                        <li class="py-[5px]">
-                                                            
-                                                            file name
-                                                        </li>
-                                                        <li class="py-[5px]">
-                                                            
-                                                            file name
-                                                        </li>
-                                                        <li class="py-[5px]">
-                                                            
-                                                            file name
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </li>
-                                            <li class="py-[5px] ltr:pl-8 rtl:pr-8">
-                                                
-                                                file name
-                                            </li>
-                                            <li class="py-[5px] ltr:pl-8 rtl:pr-8">
-                                                
-                                                file name
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </li>
-                                <li class="py-[5px] ltr:pl-7 rtl:pr-7">
-                                    
-                                    index.html
-                                </li>
-                                <li class="py-[5px] ltr:pl-7 rtl:pr-7">
-                                    
-                                    components.html
-                                </li>
-                            </ul> -->
+                            <div class="mb-5">
+                                <ul class="font-semibold">
+                                    <ng-container *ngFor="let node of tableData">
+                                        <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: node }">
+                                        </ng-container>
+                                    </ng-container>
+                                </ul>
+                            </div>
                         </div>
                         <div class="mt-8 flex items-center justify-end">
-                            <button type="button" class="btn btn-outline-danger" (click)="addContactModal.close()">Cancel</button>
-                            <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">{{ params.controls['id'].value ? 'Update' : 'Add' }}</button>
+                            <button type="button" class="btn btn-outline-danger"
+                                (click)="addContactModal.close()">Cancel</button>
+                            <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">{{
+                                params.controls['id'].value ? 'Update' : 'Add' }}</button>
                         </div>
                     </form>
                 </ng-template>
             </ngx-custom-modal>
         </div>
-        
+
     </div>
 </div>
+
+<!-- 创建一个新的 ng-template 来处理递归 -->
+<ng-template #treeNode let-node>
+    <li class="py-[5px]">
+        <div class="flex items-center">
+            <button type="button" (click)="toggleTreeview1(node.page)" *ngIf="node.showIcon">
+                <icon-caret-down
+                    [class]="'w-5 h-5 text-primary inline relative -top-1 ltr:mr-2 rtl:ml-2 ' + [treeview1.includes(node.page) ? 'rotate-180': '' ]"
+                />
+                <icon-folder class="relative -top-1 inline text-primary ltr:mr-2 rtl:ml-2" />
+                {{node.page}}
+            </button>
+            <ng-container *ngIf="!node.showIcon">
+                <div class="flex items-center justify-between w-full">
+                    <div class="flex items-center min-w-[200px]">
+                        <icon-txt-file class="inline h-4.5 w-4.5 text-primary ltr:mr-2 rtl:ml-2" />
+                        <span>{{node.page}}</span>
+                    </div>
+                    <div class="flex items-center gap-8">
+                        <div class="flex items-center gap-2 min-w-[120px]">
+                            <span class="text-sm">Read/Write</span>
+                            <div class="w-12 h-6 relative">
+                                <input type="checkbox" [checked]="node.readWrite"
+                                    class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
+                                    (change)="updatePermission(node, 'readWrite', $event)"/>
+                                <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 min-w-[120px]">
+                            <span class="text-sm">Read Only</span>
+                            <div class="w-12 h-6 relative">
+                                <input type="checkbox" [checked]="node.readOnly"
+                                    class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
+                                    (change)="updatePermission(node, 'readOnly', $event)"/>
+                                <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+        </div>
+        <div [@slideDownUp]="!treeview1.includes(node.page)" class="accordion-content" *ngIf="node.children">
+            <ul class="ltr:pl-14 rtl:pr-14">
+                <ng-container *ngFor="let childNode of node.children">
+                    <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: childNode }">
+                    </ng-container>
+                </ng-container>
+            </ul>
+        </div>
+    </li>
+</ng-template>

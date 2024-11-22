@@ -1229,15 +1229,20 @@
   dependencies:
     tslib "^2.3.0"
 
-"@esbuild/darwin-arm64@0.21.5":
-  version "0.21.5"
-  resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.21.5.tgz"
-  integrity sha512-DwqXqZyuk5AiWWf3UfLiRDJ5EDd49zg6O9wclZ7kUMv2WRFr4HKjXp/5t8JZ11QbQfUS6/cRCKGwYhtNAY88kQ==
-
-"@esbuild/darwin-arm64@0.23.0":
+"@esbuild/darwin-arm64@0.21.5", "@esbuild/darwin-arm64@0.23.0":
   version "0.23.0"
   resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.23.0.tgz"
   integrity sha512-YLntie/IdS31H54Ogdn+v50NuoWF5BDkEUFpiOChVa9UnKpftgwzZRrI4J132ETIi+D8n6xh9IviFV3eXdxfow==
+
+"@esbuild/win32-x64@0.21.5":
+  version "0.21.5"
+  resolved "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.21.5.tgz"
+  integrity sha512-tQd/1efJuzPC6rCFwEvLtci/xNFcTZknmXs98FYDfGE4wP9ClFV98nyKrzJKVPMhdDnjzLhdUyMX4PsQAPjwIw==
+
+"@esbuild/win32-x64@0.23.0":
+  version "0.23.0"
+  resolved "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.23.0.tgz"
+  integrity sha512-Arm+WgUFLUATuoxCJcahGuk6Yj9Pzxd6l11Zb/2aAuv5kWWvvfhLFo2fni4uSK5vzlUdCGZ/BdV5tH8klj8p8g==
 
 "@fullcalendar/angular@^6.1.8":
   version "6.1.15"
@@ -1503,6 +1508,11 @@
   resolved "https://registry.npmjs.org/@lmdb/lmdb-darwin-arm64/-/lmdb-darwin-arm64-3.0.13.tgz"
   integrity sha512-uiKPB0Fv6WEEOZjruu9a6wnW/8jrjzlZbxXscMB8kuCJ1k6kHpcBnuvaAWcqhbI7rqX5GKziwWEdD+wi2gNLfA==
 
+"@lmdb/lmdb-win32-x64@3.0.13":
+  version "3.0.13"
+  resolved "https://registry.npmjs.org/@lmdb/lmdb-win32-x64/-/lmdb-win32-x64-3.0.13.tgz"
+  integrity sha512-UCrMJQY/gJnOl3XgbWRZZUvGGBuKy6i0YNSptgMzHBjs+QYDYR1Mt/RLTOPy4fzzves65O1EDmlL//OzEqoLlA==
+
 "@matheo/text-mask@^17.0.0":
   version "17.0.0"
   resolved "https://registry.npmjs.org/@matheo/text-mask/-/text-mask-17.0.0.tgz"
@@ -1514,6 +1524,11 @@
   version "3.0.3"
   resolved "https://registry.npmjs.org/@msgpackr-extract/msgpackr-extract-darwin-arm64/-/msgpackr-extract-darwin-arm64-3.0.3.tgz"
   integrity sha512-QZHtlVgbAdy2zAqNA9Gu1UpIuI8Xvsd1v8ic6B2pZmeFnFcMWiPLfWXh7TVw4eGEZ/C9TH281KwhVoeQUKbyjw==
+
+"@msgpackr-extract/msgpackr-extract-win32-x64@3.0.3":
+  version "3.0.3"
+  resolved "https://registry.npmjs.org/@msgpackr-extract/msgpackr-extract-win32-x64/-/msgpackr-extract-win32-x64-3.0.3.tgz"
+  integrity sha512-x0fWaQtYp4E6sktbsdAqnehxDgEc/VwM7uLsRCYWaiGu0ykYdZPiS8zCWdnjHwyiumousxfBm4SO31eXqwEZhQ==
 
 "@ng-select/ng-select@^13.7.0":
   version "13.7.0"
@@ -1662,6 +1677,11 @@
   version "4.20.0"
   resolved "https://registry.npmjs.org/@rollup/rollup-darwin-arm64/-/rollup-darwin-arm64-4.20.0.tgz"
   integrity sha512-uFVfvzvsdGtlSLuL0ZlvPJvl6ZmrH4CBwLGEFPe7hUmf7htGAN+aXo43R/V6LATyxlKVC/m6UsLb7jbG+LG39Q==
+
+"@rollup/rollup-win32-x64-msvc@4.20.0":
+  version "4.20.0"
+  resolved "https://registry.npmjs.org/@rollup/rollup-win32-x64-msvc/-/rollup-win32-x64-msvc-4.20.0.tgz"
+  integrity sha512-aJ1EJSuTdGnM6qbVC4B5DSmozPTqIag9fSzXRNNo+humQLG89XpPgdt16Ia56ORD7s+H8Pmyx44uczDQ0yDzpg==
 
 "@schematics/angular@18.2.0":
   version "18.2.0"

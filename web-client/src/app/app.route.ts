@@ -34,6 +34,15 @@ import { CollectorComponent } from './collector/collector.component';
 import { authGuard } from 'src/share/auth/auth.guard';
 import { UserManagementComponent } from './system-settings/user-management/user-management.component';
 import { RoleManagementComponent } from './system-settings/role-management/role-management.component';
+import { SystemTimeComponent } from './system-settings/system-time/system-time.component';
+import { InterfaceManagementComponent } from './system-settings/interface-management/interface-management.component';
+import { SessionInfoComponent } from './protocol-analysis/session-info/session-info.component';
+import { SettingsComponent } from './protocol-analysis/settings/settings.component';
+import { ApplicationHttpComponent } from './protocol-analysis/application-protocols/application-http/application-http.component';
+import { ApplicationSmtpComponent } from './protocol-analysis/application-protocols/application-smtp/application-smtp.component';
+import { ApplicationFtpComponent } from './protocol-analysis/application-protocols/application-ftp/application-ftp.component';
+import { EventComponent } from './alarm/event/event.component';
+import { AlarmSettingsComponent } from './alarm/alarm-settings/alarm-settings.component';
 
 export const routes: Routes = [
     {
@@ -54,6 +63,16 @@ export const routes: Routes = [
             { path: 'collector', component: CollectorComponent, data: { title: 'Collector' }, canActivate: [authGuard] },
             { path: 'user-management', component: UserManagementComponent, data: { title: 'User Management' }, canActivate: [authGuard] },
             { path: 'role-management', component: RoleManagementComponent, data: { title: 'Role Management' }, canActivate: [authGuard] },
+            { path: 'system-time', component: SystemTimeComponent, data: { title: 'System Time' }, canActivate: [authGuard] },
+            { path: 'interface-management', component: InterfaceManagementComponent, data: { title: 'Interface Management' }, canActivate: [authGuard] },
+
+            { path: 'protocol-analysis/session-info', component: SessionInfoComponent, data: { title: 'Session Info' }, canActivate: [authGuard] },
+            // { path: 'protocol-analysis/application-protocols', component: ApplicationProtocolsComponent, data: { title: 'Application Protocols' }, canActivate: [authGuard] },
+            { path: 'protocol-analysis/application-protocols/http', component: ApplicationHttpComponent, data: { title: 'HTTP' }, canActivate: [authGuard] },
+            { path: 'protocol-analysis/application-protocols/smtp', component: ApplicationSmtpComponent, data: { title: 'SMTP' }, canActivate: [authGuard] },
+            { path: 'protocol-analysis/application-protocols/ftp', component: ApplicationFtpComponent, data: { title: 'FTP' }, canActivate: [authGuard] },
+            { path: 'protocol-analysis/settings', component: SettingsComponent, data: { title: 'Settings' }, canActivate: [authGuard] },
+
             // { path: 'finance', component: FinanceComponent, data: { title: 'Finance Admin' } },
             // { path: 'crypto', component: CryptoComponent, data: { title: 'Crypto Admin' } },
 
@@ -91,6 +110,20 @@ export const routes: Routes = [
             // // tables
             // { path: 'tables', component: TablesComponent, data: { title: 'Tables' } },
             // { path: '', loadChildren: () => import('./datatables/datatables.module').then((d) => d.DatatablesModule) },
+
+            // Event Alarm routes
+            { 
+                path: 'alarm/event', 
+                component: EventComponent, 
+                data: { title: 'Event' },
+                canActivate: [authGuard] 
+            },
+            { 
+                path: 'alarm/settings', 
+                component: AlarmSettingsComponent, 
+                data: { title: 'Alarm Settings' },
+                canActivate: [authGuard] 
+            },
         ],
     },
 
@@ -105,4 +138,17 @@ export const routes: Routes = [
             { path: '', loadChildren: () => import('./auth/auth.module').then((d) => d.AuthModule) },
         ],
     },
+    {
+        path: 'alarm',
+        children: [
+            {
+                path: 'event',
+                component: EventComponent
+            },
+            {
+                path: 'settings',
+                component: AlarmSettingsComponent
+            }
+        ]
+    }
 ];

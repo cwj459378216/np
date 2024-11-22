@@ -63,6 +63,17 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { CollectorComponent } from './collector/collector.component';
 import { AnalyzeAnimationComponent } from "./collector/analyze-animation/analyze-animation.component";
 import { RoleManagementComponent } from './system-settings/role-management/role-management.component';
+import { UserManagementComponent } from './system-settings/user-management/user-management.component';
+import { SystemTimeComponent } from './system-settings/system-time/system-time.component';
+import { InterfaceManagementComponent } from './system-settings/interface-management/interface-management.component';
+import { SettingsComponent } from './protocol-analysis/settings/settings.component';
+import { SessionInfoComponent } from './protocol-analysis/session-info/session-info.component';
+import { ApplicationHttpComponent } from './protocol-analysis/application-protocols/application-http/application-http.component';
+import { ApplicationFtpComponent } from './protocol-analysis/application-protocols/application-ftp/application-ftp.component';
+import { ApplicationSmtpComponent } from './protocol-analysis/application-protocols/application-smtp/application-smtp.component';
+import { EventComponent } from './alarm/event/event.component';
+import { AlarmSettingsComponent } from './alarm/alarm-settings/alarm-settings.component';
+
 @NgModule({
     imports: [
     RouterModule.forRoot(routes, { scrollPositionRestoration: 'enabled' }),
@@ -104,7 +115,17 @@ import { RoleManagementComponent } from './system-settings/role-management/role-
         FaqComponent,
       DashboardComponent,
       CollectorComponent,
-      RoleManagementComponent
+      RoleManagementComponent,
+      UserManagementComponent,
+      SystemTimeComponent,
+      InterfaceManagementComponent,
+      SettingsComponent,
+      SessionInfoComponent,
+      ApplicationFtpComponent,
+      ApplicationHttpComponent,
+      ApplicationSmtpComponent,
+      EventComponent,
+      AlarmSettingsComponent
    ],
 
     providers: [Title],

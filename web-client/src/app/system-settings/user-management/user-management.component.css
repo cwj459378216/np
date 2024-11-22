@@ -1,9 +1,7 @@
-/* permissions.component.css */
-ng-datatable ng-dt-row ng-dt-cell {
-    padding: 8px;
-  }
-  
-  ng-datatable .child-row {
-    padding-left: 20px;
-  }
-  
+.position-relative {
+  position: relative;
+}
+.position-absolute {
+  position: absolute;
+  left: -10px;
+}

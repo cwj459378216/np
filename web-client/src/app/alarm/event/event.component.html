@@ -1,0 +1,124 @@
+<div>
+    <!-- 面包屑 -->
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">Event Alarm</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>Event</span>
+        </li>
+    </ul>
+
+    <!-- 图表面板 -->
+    <div class="panel h-full mt-6">
+        <div class="mb-5 flex items-center justify-between dark:text-white-light">
+            <h5 class="text-lg font-semibold">Event Trending</h5>
+            <div class="dropdown ltr:ml-auto rtl:mr-auto">
+                <div hlMenu>
+                    <a hlMenuButton href="javascript:;" class="align-middle">
+                        <icon-horizontal-dots class="text-black/70 hover:!text-primary dark:text-white/70" />
+                    </a>
+                    <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
+                        <li>
+                            <a href="javascript:;" *hlMenuItem="let menuItem">Weekly</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" *hlMenuItem="let menuItem">Monthly</a>
+                        </li>
+                        <li>
+                            <a href="javascript:;" *hlMenuItem="let menuItem">Yearly</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="relative overflow-hidden">
+            <apx-chart 
+                [series]="revenueChart.series" 
+                [chart]="revenueChart.chart" 
+                [dataLabels]="revenueChart.dataLabels"
+                [stroke]="revenueChart.stroke" 
+                [colors]="revenueChart.colors" 
+                [markers]="revenueChart.markers"
+                [labels]="revenueChart.labels" 
+                [xaxis]="revenueChart.xaxis" 
+                [yaxis]="revenueChart.yaxis"
+                [grid]="revenueChart.grid" 
+                [legend]="revenueChart.legend" 
+                [tooltip]="revenueChart.tooltip"
+                [fill]="revenueChart.fill" 
+                class="rounded-lg bg-white dark:bg-black">
+            </apx-chart>
+        </div>
+    </div>
+
+    <!-- 表格面板 -->
+    <div class="panel mt-6">
+        <div class="mb-4.5 flex flex-col justify-between gap-5 md:flex-row md:items-center">
+            <div class="flex flex-wrap items-center">
+                <button type="button" class="btn btn-primary btn-sm m-1" (click)="exportTable('csv')">
+                    <icon-file class="h-5 w-5 ltr:mr-2 rtl:ml-2" />
+                    CSV
+                </button>
+                <button type="button" class="btn btn-primary btn-sm m-1" (click)="exportTable('txt')">
+                    <icon-txt-file class="h-5 w-5 ltr:mr-2 rtl:ml-2" />
+                    TXT
+                </button>
+                <button type="button" class="btn btn-primary btn-sm m-1" (click)="exportTable('print')">
+                    <icon-printer class="ltr:mr-2 rtl:ml-2" />
+                    PRINT
+                </button>
+            </div>
+
+            <div class="flex items-center gap-5 ltr:ml-auto rtl:mr-auto">
+                <div hlMenu class="dropdown">
+                    <button
+                        hlMenuButton
+                        type="button"
+                        class="flex items-center rounded-md border border-[#e0e6ed] px-4 py-2 text-sm font-semibold dark:border-[#253b5c] dark:bg-[#1b2e4b] dark:text-white-dark"
+                    >
+                        <span class="ltr:mr-1 rtl:ml-1">Columns</span>
+                        <icon-caret-down class="h-5 w-5" />
+                    </button>
+                    <ul *hlMenuItems @toggleAnimation class="w-max ltr:left-0 rtl:right-0">
+                        <ng-container *ngFor="let col of cols;index as i;">
+                            <li>
+                                <div class="flex items-center px-4 py-1">
+                                    <label [for]="'chk-' + i" class="mb-0 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            [id]="'chk-' + i"
+                                            class="form-checkbox"
+                                            [ngModel]="!col.hide"
+                                            (ngModelChange)="col.hide = !$event"
+                                            (change)="updateColumn(col)"
+                                        />
+                                        <span class="ltr:ml-2 rtl:mr-2">{{ col.title }}</span>
+                                    </label>
+                                </div>
+                            </li>
+                        </ng-container>
+                    </ul>
+                </div>
+                <div>
+                    <input [(ngModel)]="search" type="text" class="form-input" placeholder="Search..." />
+                </div>
+            </div>
+        </div>
+
+        <div class="datatable">
+            <ng-datatable
+                [rows]="rows"
+                [columns]="visibleColumns"
+                [sortable]="true"
+                [search]="search"
+                skin="whitespace-nowrap table-hover"
+                firstArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M13 19L7 12L13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M16.9998 19L10.9998 12L16.9998 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+                lastArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M11 19L17 12L11 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M6.99976 19L12.9998 12L6.99976 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg> '
+                previousArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+                nextArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+            >
+            </ng-datatable>
+        </div>
+    </div>
+</div> 

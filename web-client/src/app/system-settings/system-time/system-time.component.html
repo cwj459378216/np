@@ -1,0 +1,78 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>System Time</span>
+        </li>
+    </ul>
+    <div class="pt-5">
+        <div class="grid grid-cols-1 gap-6 pt-5 lg:grid-cols-2">
+
+            <div class="panel">
+                <div class="mb-5 flex items-center justify-between">
+                    <h5 class="text-lg font-semibold dark:text-white-light">System Time</h5>
+                </div>
+                <div class="mb-5">
+                    <form class="space-y-5">
+
+                        <div class="flex flex-col sm:flex-row a-l-b">
+                            <label class="sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">Time Setting Method</label>
+                            <div class="flex">
+                              <div class="mb-2 mr-5">
+                                <label class="mt-1 inline-flex cursor-pointer">
+                                  <input type="radio" name="segments" class="form-radio" value="manual" [(ngModel)]="timeSettingMethod" (change)="onAdapterChange($event)" />
+                                  <span class="text-white-dark">Manual Time</span>
+                                </label>
+                              </div>
+                              <div class="mb-2">
+                                <label class="mt-1 inline-flex cursor-pointer">
+                                  <input type="radio" name="segments" class="form-radio" value="ntp" [(ngModel)]="timeSettingMethod" (change)="onAdapterChange($event)" />
+                                  <span class="text-white-dark">NTP</span>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <!-- 根据选择的时间设置方式动态显示输入框 -->
+                          <div *ngIf="timeSettingMethod === 'manual'" class="flex flex-col sm:flex-row a-l-b">
+                            <label for="horizontalEmail" [formGroup]="form2" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">Time</label>
+                            <form [formGroup]="form2" class="flex-1">
+                              <input type="text" mwlFlatpickr formControlName="date2" [options]="dateTime" class="form-input " />
+                            </form>
+                          </div>
+                          
+                     
+                        
+                        <div *ngIf="timeSettingMethod === 'ntp'" class="flex sm:flex-row flex-col a-l-b">
+                            <label for="horizontalEmail" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">NTP Server</label>
+                            <input id="horizontalEmail" type="text" placeholder="Enter NTP Server" class="form-input flex-1" />
+                        </div>
+
+                        <div *ngIf="timeSettingMethod === 'ntp'" class="flex sm:flex-row flex-col a-l-b">
+                            <label for="horizontalEmail" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">Synchronization Frequency</label>
+                            <ng-select [items]="optionsFrequency" [(ngModel)]="input4" name="input4" [clearable]="false" placeholder="Select an option" class="custom-multiselect flex-1">
+                            </ng-select>
+                        </div>
+
+                        <div  class="flex flex-col sm:flex-row a-l-b">
+                            <label for="horizontalPassword" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">Time Zone</label>
+                            <ng-select [items]="optionsTimeZone" [(ngModel)]="input5" name="input5" [clearable]="false" placeholder="Select an option" class="custom-multiselect flex-1">
+                            </ng-select>
+                          </div>
+                        <div class="flex flex-col sm:flex-row">
+                            <label class="font-semibold sm:w-1/4 sm:ltr:mr-2 rtl:ml-2"></label>
+                            <label class="mb-0 inline-flex cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
+                                    <span>Automatic Time Zone Detection</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary !mt-6">Apply</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+       
+    </div>
+</div>

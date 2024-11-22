@@ -588,6 +588,12 @@
                                             placeholder="Select an option" class="custom-multiselect">
                                         </ng-select>
                                     </div>
+
+                                    <div class="mb-5" *ngIf="showAlarm">
+                                        <label for="occupation">Duration</label>
+                                        <input id="name" type="number" placeholder="Enter Name" class="form-input"
+                                        formControlName="Duration" />
+                                    </div>
                                   
                                     <div class="mt-8 flex items-center justify-end">
                                         <button type="button" class="btn btn-outline-danger"

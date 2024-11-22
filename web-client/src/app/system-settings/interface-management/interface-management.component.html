@@ -4,7 +4,7 @@
             <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>user Management</span>
+            <span>Interface Management</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -16,7 +16,6 @@
                     <div class="flex gap-3">
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editUser()">
-                                <icon-user-plus class="ltr:mr-2 rtl:ml-2" />
 
                                 Add 
                             </button>
@@ -54,10 +53,11 @@
                         <table class="table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Description</th>
+                                    <th>Interface Name</th>
+                                    <th>Method</th>
+                                    <th>IP Address</th>
+                                    <th>Netmask</th>
+                                    <th>Default Gateway</th>
                                     <th class="!text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -65,27 +65,12 @@
                                 <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
                                     <tr>
                                         <td>
-                                            <div class="flex w-max items-center">
-                                                <div *ngIf="contact.path" class="w-max">
-                                                    <img [src]="'/assets/images/' + contact.path"
-                                                        class="h-8 w-8 rounded-full object-cover ltr:mr-2 rtl:ml-2"
-                                                        alt="avatar" />
-                                                </div>
-                                                <div *ngIf="!contact.path && contact.name"
-                                                    class="grid h-8 w-8 place-content-center rounded-full bg-primary text-sm font-semibold text-white ltr:mr-2 rtl:ml-2">
-                                                    {{ contact.name.charAt(0) + '' +
-                                                    contact.name.charAt(contact.name.indexOf(' ') + 1) }}
-                                                </div>
-                                                <div *ngIf="!contact.path && !contact.name"
-                                                    class="grid h-8 w-8 place-content-center rounded-full border border-gray-300 dark:border-gray-800 ltr:mr-2 rtl:ml-2">
-                                                    <icon-user class="h-4.5 w-4.5" />
-                                                </div>
-                                                <div>{{ contact.name }}</div>
-                                            </div>
+                                            <div>eno1</div>
                                         </td>
-                                        <td>{{ contact.email }}</td>
-                                        <td class="whitespace-nowrap">Admin</td>
-                                        <td class="whitespace-nowrap">asdasdas</td>
+                                        <td>Static</td>
+                                        <td class="whitespace-nowrap">192.168.0.58</td>
+                                        <td class="whitespace-nowrap">255.255.255.255</td>
+                                        <td class="whitespace-nowrap">192.168.0.99</td>
                                         <td>
                                             <div class="flex items-center justify-center gap-4">
                                                 <button type="button" class="btn btn-sm btn-outline-primary"
@@ -188,47 +173,43 @@
             <!-- add contact modal -->
             <ngx-custom-modal #addContactModal class="no-footer">
                 <ng-template #modalHeader>
-                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit' : 'Add' }}</div>
+                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Contact' : 'Add Contact' }}</div>
                 </ng-template>
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>
                         <div class="mb-5">
-                            <label for="name">Name</label>
-                            <input id="name" type="text" placeholder="Enter Name" class="form-input"
-                                formControlName="name" />
-                        </div>
-                        <div class="mb-5">
-                            <label for="actionEmail">Email:</label>
-                            <div class="flex flex-1">
-                                <div
-                                    class="flex items-center justify-center border border-[#e0e6ed] bg-[#eee] px-3 font-semibold dark:border-[#17263c] dark:bg-[#1b2e4b] ltr:rounded-l-md ltr:border-r-0 rtl:rounded-r-md rtl:border-l-0"
-                                >
-                                    {{"@"}}
-                                </div>
-                                <input id="actionEmail" type="email" placeholder="" class="form-input ltr:rounded-l-none rtl:rounded-r-none" />
-                            </div>
-                        </div>
-                        <div class="mb-5">
-                            <label for="actionPassword">Password:</label>
-                            <input id="actionPassword" type="password" placeholder="Enter Password" class="form-input" />
-                        </div>
-                        <div class="mb-5">
-                            <label for="actionCpass">Confirm Password:</label>
-                            <input id="actionCpass" type="password" placeholder="Enter Confirm Password" class="form-input" />
-                        </div>
-                        <div class="mb-5">
-                            <label for="email">Role</label>
-                            <ng-select [items]="optionsRole" formControlName="interfaceName"  [clearable]="false"
-                                placeholder="Select an option" class="custom-multiselect">
+                            <label for="Method" >Method</label>
+                            <ng-select id="Method" [items]="optionsMethod"  [clearable]="false" placeholder="Select an option" class="custom-multiselect flex-1" (change)="onAdapterChange($event)">
                             </ng-select>
-                            
                         </div>
-                        <div class="mb-5">
-                            <label for="address">Description</label>
-                            <textarea id="address" rows="3" placeholder="Enter Address"
-                                class="form-textarea min-h-[130px] resize-none" formControlName="location"></textarea>
+                        <div class="mb-5" *ngIf="!showDHCP">
+                            <label for="email">IP Address</label>
+                            <form>
+                                <fieldset>
+                                    <!-- <label for="ipMask" class="text-white-dark">textMask="'###.###.###.###'" (192.198.1.1)</label> -->
+                                    <input id="ipMask" type="text" placeholder="___.___.___.___" class="form-input" [textMask]="{mask: mask11}" />
+                                </fieldset>
+                            </form>
                         </div>
-                        
+                        <div class="mb-5" *ngIf="!showDHCP">
+                            <label for="number">Netmask</label>
+                            <form>
+                                <fieldset>
+                                    <!-- <label for="ipMask" class="text-white-dark">textMask="'###.###.###.###'" (192.198.1.1)</label> -->
+                                    <input id="ipMask" type="text" placeholder="___.___.___.___" class="form-input" [textMask]="{mask: mask11}" />
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div class="mb-5" *ngIf="!showDHCP">
+                            <label for="occupation">Default Gateway</label>
+                            <form>
+                                <fieldset>
+                                    <!-- <label for="ipMask" class="text-white-dark">textMask="'###.###.###.###'" (192.198.1.1)</label> -->
+                                    <input id="ipMask" type="text" placeholder="___.___.___.___" class="form-input" [textMask]="{mask: mask11}" />
+                                </fieldset>
+                            </form>
+                        </div>
+                      
                         <div class="mt-8 flex items-center justify-end">
                             <button type="button" class="btn btn-outline-danger"
                                 (click)="addContactModal.close()">Cancel</button>
@@ -239,6 +220,5 @@
                 </ng-template>
             </ngx-custom-modal>
         </div>
-
     </div>
 </div>
