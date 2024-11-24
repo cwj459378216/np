@@ -217,4 +217,57 @@ export class ApplicationSmtpComponent {
     // col.hide = !col.hide;
     this.cols = [...this.cols]; // Create a new reference of the array
   }
+
+  revenueChart: any = {
+    series: [
+        {
+            name: 'SMTP Traffic',
+            data: [40, 50, 60, 70, 80, 90]
+        }
+    ],
+    chart: {
+        height: 300,
+        type: 'line',
+        toolbar: {
+            show: true,
+            tools: {
+                download: true,
+                selection: true,
+                zoom: true,
+                zoomin: true,
+                zoomout: true,
+                pan: true,
+                reset: true
+            },
+            autoSelected: 'zoom'
+        },
+        zoom: {
+            enabled: true,
+            type: 'x',
+            autoScaleYaxis: true
+        }
+    },
+    dataLabels: {
+        enabled: false
+    },
+    stroke: {
+        curve: 'smooth',
+        width: 2
+    },
+    colors: ['#4361ee'],
+    xaxis: {
+        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+    },
+    yaxis: {
+        title: {
+            text: 'Traffic'
+        }
+    },
+    grid: {
+        borderColor: '#e0e6ed'
+    },
+    tooltip: {
+        theme: 'dark'
+    }
+};
 }

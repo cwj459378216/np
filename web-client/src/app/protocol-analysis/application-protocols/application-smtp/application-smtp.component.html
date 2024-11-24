@@ -10,6 +10,41 @@
             <span>HTTP</span>
         </li>
     </ul>
+    <div class="panel h-full mt-6">
+        <div class="mb-5 flex items-center justify-between dark:text-white-light">
+            <h5 class="text-lg font-semibold">SMTP Traffic Trending</h5>
+            <div class="dropdown ltr:ml-auto rtl:mr-auto">
+                <div hlMenu>
+                    <a hlMenuButton href="javascript:;" class="align-middle">
+                        <icon-horizontal-dots class="text-black/70 hover:!text-primary dark:text-white/70" />
+                    </a>
+                    <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
+                        <li><a href="javascript:;" *hlMenuItem="let menuItem">Weekly</a></li>
+                        <li><a href="javascript:;" *hlMenuItem="let menuItem">Monthly</a></li>
+                        <li><a href="javascript:;" *hlMenuItem="let menuItem">Yearly</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="relative overflow-hidden">
+            <apx-chart 
+                [series]="revenueChart.series" 
+                [chart]="revenueChart.chart"
+                [dataLabels]="revenueChart.dataLabels"
+                [stroke]="revenueChart.stroke"
+                [colors]="revenueChart.colors"
+                [markers]="revenueChart.markers"
+                [labels]="revenueChart.labels"
+                [xaxis]="revenueChart.xaxis"
+                [yaxis]="revenueChart.yaxis"
+                [grid]="revenueChart.grid"
+                [legend]="revenueChart.legend"
+                [tooltip]="revenueChart.tooltip"
+                [fill]="revenueChart.fill"
+                class="rounded-lg bg-white dark:bg-black">
+            </apx-chart>
+        </div>
+    </div>
     <div class="pt-5 panel mt-6 pb-0">
         <div class="mb-4.5 flex flex-col justify-between gap-5 md:flex-row md:items-center">
             <div class="flex flex-wrap items-center">

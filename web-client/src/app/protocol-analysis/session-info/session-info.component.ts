@@ -106,6 +106,59 @@ export class SessionInfoComponent {
 
     jsonData = this.rows;
 
+    revenueChart: any = {
+        series: [
+            {
+                name: 'Sessions',
+                data: [50, 60, 70, 80, 90, 100]
+            }
+        ],
+        chart: {
+            height: 300,
+            type: 'line',
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: true,
+                    zoom: true,
+                    zoomin: true,
+                    zoomout: true,
+                    pan: true,
+                    reset: true
+                },
+                autoSelected: 'zoom'
+            },
+            zoom: {
+                enabled: true,
+                type: 'x',
+                autoScaleYaxis: true
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 2
+        },
+        colors: ['#4361ee'],
+        xaxis: {
+            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+        },
+        yaxis: {
+            title: {
+                text: 'Sessions'
+            }
+        },
+        grid: {
+            borderColor: '#e0e6ed'
+        },
+        tooltip: {
+            theme: 'dark'
+        }
+    };
+
     ngOnInit() {
         this.jsonData = this.rows.map((obj: any) => {
             const newObj: any = {};
