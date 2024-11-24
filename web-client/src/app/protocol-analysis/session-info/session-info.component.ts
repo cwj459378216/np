@@ -1,110 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { toggleAnimation } from 'src/app/shared/animations';
+import { SessionInfoService, SessionInfo } from '../services/session-info.service';
 
 @Component({
   selector: 'app-session-info',
   templateUrl: './session-info.component.html',
-  styleUrl: './session-info.component.css'
+  styleUrl: './session-info.component.css',
+  animations: [toggleAnimation]
 })
-export class SessionInfoComponent {
-
-    constructor() {}
+export class SessionInfoComponent implements OnInit {
     search = '';
-    cols = [
-        { field: 'srcIP', title: 'Src.IP:Port' },
-        { field: 'dstIP', title: 'Dst.IP:Port' },
-        { field: 'service', title: 'Service' },
-        { field: 'bytyes', title: 'Bytyes' },
-        { field: 'packets', title: 'Packets' },
-        { field: 'age', title: 'AART(ms)' },
-        { field: 'age', title: 'NRT(ms)' },
-        { field: 'age', title: 'SRT(ms)' },
-        { field: 'age', title: 'ART(ms)' },
-        { field: 'age', title: 'PTT(ms)' },
-        { field: 'age', title: 'CRT(ms)' },
-        { field: 'age', title: 'Latency(ms)' },
-        { field: 'age', title: 'Rety' },
-        { field: 'dob', title: 'Last Updated Time' },
-    ];
-
-    rows = [
-        {
-            id: 1,
-            firstName: 'Caroline',
-            lastName: 'Jensen',
-            email: 'carolinejensen@zidant.com',
-            dob: '2004-05-28',
-            address: {
-                street: '529 Scholes Street',
-                city: 'Temperanceville',
-                zipcode: 5235,
-                geo: {
-                    lat: 23.806115,
-                    lng: 164.677197,
-                },
-            },
-            phone: '+1 (821) 447-3782',
-            isActive: true,
-            age: 39,
-            company: 'POLARAX',
-            packets: "20",
-            bytyes: "26kb",
-            service: "QQ",
-            srcIP: "192.168.1.1:80",
-            dstIP: "192.168.1.2:1110"
-        },
-        {
-          id: 1,
-          firstName: 'Caroline',
-          lastName: 'Jensen',
-          email: 'carolinejensen@zidant.com',
-          dob: '2004-05-28',
-          address: {
-              street: '529 Scholes Street',
-              city: 'Temperanceville',
-              zipcode: 5235,
-              geo: {
-                  lat: 23.806115,
-                  lng: 164.677197,
-              },
-          },
-          phone: '+1 (821) 447-3782',
-          isActive: true,
-          age: 39,
-          company: 'POLARAX',
-          packets: "20",
-          bytyes: "26kb",
-          service: "QQ",
-          srcIP: "192.168.1.1:80",
-          dstIP: "192.168.1.2:1110"
-      },
-      {
-        id: 1,
-        firstName: 'Caroline',
-        lastName: 'Jensen',
-        email: 'carolinejensen@zidant.com',
-        dob: '2004-05-28',
-        address: {
-            street: '529 Scholes Street',
-            city: 'Temperanceville',
-            zipcode: 5235,
-            geo: {
-                lat: 23.806115,
-                lng: 164.677197,
-            },
-        },
-        phone: '+1 (821) 447-3782',
-        isActive: true,
-        age: 39,
-        company: 'POLARAX',
-        packets: "20",
-        bytyes: "26kb",
-        service: "QQ",
-        srcIP: "192.168.1.1:80",
-        dstIP: "192.168.1.2:1110"
-    }
-    ];
-
-    jsonData = this.rows;
+    loading = false;
+    currentPage = 1;
+    pageSize = 10;
+    total = 0;
+    sortField?: string;
+    sortOrder?: 'asc' | 'desc';
 
     revenueChart: any = {
         series: [
@@ -156,156 +67,259 @@ export class SessionInfoComponent {
         },
         tooltip: {
             theme: 'dark'
+        },
+        markers: {
+            size: 4
+        },
+        labels: [],
+        legend: {
+            show: true
+        },
+        fill: {
+            type: 'solid'
         }
     };
 
+    cols = [
+        { field: 'srcIP', title: 'Src.IP:Port', hide: false },
+        { field: 'dstIP', title: 'Dst.IP:Port', hide: false },
+        { field: 'service', title: 'Service', hide: false },
+        { field: 'bytyes', title: 'Bytyes', hide: false },
+        { field: 'packets', title: 'Packets', hide: false },
+        { field: 'aart', title: 'AART(ms)', hide: false },
+        { field: 'nrt', title: 'NRT(ms)', hide: true },
+        { field: 'srt', title: 'SRT(ms)', hide: true },
+        { field: 'art', title: 'ART(ms)', hide: true },
+        { field: 'ptt', title: 'PTT(ms)', hide: true },
+        { field: 'crt', title: 'CRT(ms)', hide: true },
+        { field: 'latency', title: 'Latency(ms)', hide: true },
+        { field: 'rety', title: 'Rety', hide: true },
+        { field: 'lastUpdateTime', title: 'Last Updated Time', hide: false },
+    ];
+
+    rows: SessionInfo[] = [];
+
+    constructor(
+        private sessionInfoService: SessionInfoService,
+        private cdr: ChangeDetectorRef
+    ) {}
+
     ngOnInit() {
-        this.jsonData = this.rows.map((obj: any) => {
-            const newObj: any = {};
-            this.cols.forEach((col) => {
-                newObj[col.field] = obj[col.field];
-            });
-            return newObj;
+        this.loadData();
+    }
+
+    loadData() {
+        console.log('Loading data with params:', {
+            page: this.currentPage,
+            pageSize: this.pageSize,
+            sortField: this.sortField,
+            sortOrder: this.sortOrder,
+            search: this.search,
+            currentRows: this.rows.length
+        });
+        
+        this.loading = true;
+        this.cdr.detectChanges();
+        
+        this.sessionInfoService.getSessionInfo({
+            page: this.currentPage - 1,
+            pageSize: this.pageSize,
+            sortField: this.sortField,
+            sortOrder: this.sortOrder,
+            search: this.search
+        }).subscribe({
+            next: (response) => {
+                console.log('Data loaded:', {
+                    dataLength: response.data.length,
+                    total: response.total,
+                    currentPage: this.currentPage,
+                    sortField: this.sortField,
+                    sortOrder: this.sortOrder
+                });
+                
+                this.rows = [...response.data];
+                this.total = response.total;
+                this.loading = false;
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                console.error('Error loading data:', error);
+                this.loading = false;
+                this.cdr.detectChanges();
+            }
         });
     }
 
-    exportTable(type: string) {
-        let columns: any = this.cols.map((d: { field: any }) => {
-            return d.field;
+    onServerChange(event: any) {
+        console.log('Server change:', event);
+        
+        if (event.current_page !== undefined) {
+            this.currentPage = event.current_page;
+        }
+        
+        if (event.sort_column !== undefined) {
+            this.sortField = event.sort_column;
+            this.sortOrder = event.sort_direction;
+        }
+        
+        if (event.page_size !== undefined) {
+            this.pageSize = event.page_size;
+        }
+        
+        if (event.search !== undefined) {
+            this.search = event.search;
+        }
+        
+        this.loadData();
+    }
+
+    onPageChange(event: any) {
+        console.log('Page changed:', {
+            fromPage: this.currentPage,
+            toPage: event,
+            eventType: typeof event
         });
-
-        let records = this.rows;
-        let filename = 'table';
-
-        let newVariable: any;
-        newVariable = window.navigator;
-
-        if (type == 'csv') {
-            let coldelimiter = ';';
-            let linedelimiter = '\n';
-            let result = columns
-                .map((d: any) => {
-                    return this.capitalize(d);
-                })
-                .join(coldelimiter);
-            result += linedelimiter;
-            records.map((item: { [x: string]: any }) => {
-                columns.map((d: any, index: number) => {
-                    if (index > 0) {
-                        result += coldelimiter;
-                    }
-                    let val = item[d] ? item[d] : '';
-                    result += val;
-                });
-                result += linedelimiter;
-            });
-
-            if (result == null) return;
-            if (!result.match(/^data:text\/csv/i) && !newVariable.msSaveOrOpenBlob) {
-                var data = 'data:application/csv;charset=utf-8,' + encodeURIComponent(result);
-                var link = document.createElement('a');
-                link.setAttribute('href', data);
-                link.setAttribute('download', filename + '.csv');
-                link.click();
-            } else {
-                var blob = new Blob([result]);
-                if (newVariable.msSaveOrOpenBlob) {
-                    newVariable.msSaveBlob(blob, filename + '.csv');
-                }
-            }
-        } else if (type == 'print') {
-            var rowhtml = '<p>' + filename + '</p>';
-            rowhtml +=
-                '<table style="width: 100%; " cellpadding="0" cellcpacing="0"><thead><tr style="color: #515365; background: #eff5ff; -webkit-print-color-adjust: exact; print-color-adjust: exact; "> ';
-            columns.map((d: any) => {
-                rowhtml += '<th>' + this.capitalize(d) + '</th>';
-            });
-            rowhtml += '</tr></thead>';
-            rowhtml += '<tbody>';
-
-            records.map((item: { [x: string]: any }) => {
-                rowhtml += '<tr>';
-                columns.map((d: any) => {
-                    let val = item[d] ? item[d] : '';
-                    rowhtml += '<td>' + val + '</td>';
-                });
-                rowhtml += '</tr>';
-            });
-            rowhtml +=
-                '<style>body {font-family:Arial; color:#495057;}p{text-align:center;font-size:18px;font-weight:bold;margin:15px;}table{ border-collapse: collapse; border-spacing: 0; }th,td{font-size:12px;text-align:left;padding: 4px;}th{padding:8px 4px;}tr:nth-child(2n-1){background:#f7f7f7; }</style>';
-            rowhtml += '</tbody></table>';
-            var winPrint: any = window.open('', '', 'left=0,top=0,width=1000,height=600,toolbar=0,scrollbars=0,status=0');
-            winPrint.document.write('<title>' + filename + '</title>' + rowhtml);
-            winPrint.document.close();
-            winPrint.focus();
-            winPrint.onafterprint = () => {
-                winPrint.close();
-            };
-            winPrint.print();
-        } else if (type == 'txt') {
-            let coldelimiter = ',';
-            let linedelimiter = '\n';
-            let result = columns
-                .map((d: any) => {
-                    return this.capitalize(d);
-                })
-                .join(coldelimiter);
-            result += linedelimiter;
-            records.map((item: { [x: string]: any }) => {
-                columns.map((d: any, index: number) => {
-                    if (index > 0) {
-                        result += coldelimiter;
-                    }
-                    let val = item[d] ? item[d] : '';
-                    result += val;
-                });
-                result += linedelimiter;
-            });
-
-            if (result == null) return;
-            if (!result.match(/^data:text\/txt/i) && !newVariable.msSaveOrOpenBlob) {
-                var data = 'data:application/txt;charset=utf-8,' + encodeURIComponent(result);
-                var link = document.createElement('a');
-                link.setAttribute('href', data);
-                link.setAttribute('download', filename + '.txt');
-                link.click();
-            } else {
-                var blob = new Blob([result]);
-                if (newVariable.msSaveOrOpenBlob) {
-                    newVariable.msSaveBlob(blob, filename + '.txt');
-                }
-            }
+        
+        if (this.currentPage !== event) {
+            this.currentPage = event;
         }
     }
 
-    excelColumns() {
-        return {
-            Id: 'id',
-            FirstName: 'firstName',
-            LastName: 'lastName',
-            Company: 'company',
-            Age: 'age',
-            'Start Date': 'dob',
-            Email: 'email',
-            'Phone No.': 'phone',
-        };
+    onPageSizeChange(event: any) {
+        console.log('Page size changed:', event);
+        if (this.pageSize !== event) {
+            this.pageSize = event;
+            this.currentPage = 1;
+        }
     }
 
-    excelItems() {
-        return this.rows;
+    onSortChange(event: any) {
+        console.log('Sort changed:', {
+            column: event.column,
+            direction: event.direction,
+            event: event
+        });
+        
+        this.sortField = event.column;
+        this.sortOrder = event.direction;
+        
+        this.currentPage = 1;
+    }
+
+    onSearchChange(event: any) {
+        console.log('Search changed:', event);
+        if (this.search !== event) {
+            this.search = event;
+            this.currentPage = 1;
+        }
+    }
+
+    updateColumn(col: any) {
+        this.cols = [...this.cols];
+    }
+
+    async exportTable(type: string) {
+        this.loading = true;
+        this.cdr.detectChanges();
+
+        try {
+            const data = await this.sessionInfoService.exportData(type, this.search).toPromise();
+            if (!data) return;
+
+            const columns = this.cols.filter(col => !col.hide).map(col => col.field);
+            
+            if (type === 'csv') {
+                this.exportToCsv(columns, data);
+            } else if (type === 'txt') {
+                this.exportToTxt(columns, data);
+            } else if (type === 'print') {
+                this.printData(columns, data);
+            }
+        } finally {
+            this.loading = false;
+            this.cdr.detectChanges();
+        }
+    }
+
+    private exportToCsv(columns: string[], data: SessionInfo[]) {
+        const coldelimiter = ';';
+        const linedelimiter = '\n';
+        
+        let result = columns.map(col => this.capitalize(col)).join(coldelimiter);
+        result += linedelimiter;
+        
+        data.forEach(item => {
+            result += columns.map(col => item[col as keyof SessionInfo]).join(coldelimiter);
+            result += linedelimiter;
+        });
+
+        const blob = new Blob([result], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'session_info.csv';
+        link.click();
+    }
+
+    private exportToTxt(columns: string[], data: SessionInfo[]) {
+        const coldelimiter = '\t';
+        const linedelimiter = '\n';
+        
+        let result = columns.map(col => this.capitalize(col)).join(coldelimiter);
+        result += linedelimiter;
+        
+        data.forEach(item => {
+            result += columns.map(col => item[col as keyof SessionInfo]).join(coldelimiter);
+            result += linedelimiter;
+        });
+
+        const blob = new Blob([result], { type: 'text/plain;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'session_info.txt';
+        link.click();
+    }
+
+    private printData(columns: string[], data: SessionInfo[]) {
+        let printContent = '<div style="padding: 20px;">';
+        printContent += '<h2 style="text-align: center;">Session Information</h2>';
+        printContent += '<table style="width: 100%; border-collapse: collapse;">';
+        
+        // Header
+        printContent += '<tr>';
+        columns.forEach(col => {
+            printContent += `<th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">${this.capitalize(col)}</th>`;
+        });
+        printContent += '</tr>';
+        
+        // Data
+        data.forEach(item => {
+            printContent += '<tr>';
+            columns.forEach(col => {
+                printContent += `<td style="border: 1px solid #ddd; padding: 8px;">${item[col as keyof SessionInfo]}</td>`;
+            });
+            printContent += '</tr>';
+        });
+        
+        printContent += '</table></div>';
+        
+        const printWindow = window.open('', '', 'height=600,width=800');
+        if (printWindow) {
+            printWindow.document.write('<html><head><title>Session Information</title></head><body>');
+            printWindow.document.write(printContent);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
     }
 
     capitalize(text: string) {
         return text
-            .replace('_', ' ')
-            .replace('-', ' ')
-            .toLowerCase()
-            .split(' ')
-            .map((s: string) => s.charAt(0).toUpperCase() + s.substring(1))
-            .join(' ');
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
     }
 
-    formatDate(date: any) {
+    formatDate(date: string) {
         if (date) {
             const dt = new Date(date);
             const month = dt.getMonth() + 1 < 10 ? '0' + (dt.getMonth() + 1) : dt.getMonth() + 1;
