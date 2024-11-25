@@ -45,7 +45,36 @@
                             <tr>
                                 <td>Default Policy</td>
                                 <td>Default security policy configuration</td>
-                                <td>SQL Injection, XSS Attack, CSRF</td>
+                                <td>
+                                    <span ngxTippy [tippyProps]="{
+                                        allowHTML: true,
+                                        interactive: true,
+                                        content: getRuleTooltipContent(policyRules),
+                                        maxWidth: 'none',
+                                        theme: 'light',
+                                        offset: [10, 600],
+                                        zIndex: 99999,
+                                        placement: 'auto',
+                                        appendTo: documentBody,
+                                        animation: 'shift-away',
+                                        duration: [300, 200],
+                                        arrow: true,
+                                        popperOptions: {
+                                            strategy: 'fixed',
+                                            modifiers: [
+                                                {
+                                                    name: 'preventOverflow',
+                                                    options: {
+                                                        boundary: 'viewport',
+                                                        padding: 20
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }" class="text-primary hover:text-blue-600 cursor-pointer">
+                                        SQL Injection, XSS Attack, CSRF
+                                    </span>
+                                </td>
                                 <td>
                                     <label class="w-12 h-6 relative">
                                         <input type="checkbox" class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
