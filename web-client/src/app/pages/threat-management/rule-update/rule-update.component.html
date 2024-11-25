@@ -1,0 +1,143 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">Threat Management</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>Rule Update</span>
+        </li>
+    </ul>
+    <div class="pt-5">
+        <div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-xl"></h2>
+                <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                    <div class="flex gap-3">
+                        <div>
+                            <button type="button" class="btn btn-primary" (click)="updateRules()">
+                                Update Rules
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input type="text" placeholder="Search Updates"
+                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchTerm"
+                            (ngModelChange)="searchUpdates()" />
+                        <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                            <icon-search class="mx-auto" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel mt-5 overflow-hidden border-0 p-0">
+                <div class="table-responsive">
+                    <table class="table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Last Update Time</th>
+                                <th>Total Rules</th>
+                                <th class="!text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2023-12-15 14:30:00</td>
+                                <td>1,234</td>
+                                <td>
+                                    <div class="flex items-center justify-center gap-4">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            (click)="updateRules()">Update Now</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                            (click)="viewDetails()">Details</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <ngx-custom-modal #updateModal class="no-footer">
+        <ng-template #modalHeader>
+            <div class="!font-medium">Update Rules Configuration</div>
+        </ng-template>
+        <ng-template #modalBody>
+            <form [formGroup]="updateForm" class="text-sm" (ngSubmit)="saveUpdateConfig()" ngNativeValidate>
+                <div class="mb-5">
+                    <label for="updateMode">Update Mode</label>
+                    <ng-select 
+                        id="updateMode" 
+                        [items]="updateModes"
+                        [clearable]="false" 
+                        bindLabel="name"
+                        bindValue="value"
+                        placeholder="Select update mode" 
+                        class="custom-multiselect flex-1"
+                        formControlName="updateMode"
+                        (change)="onUpdateModeChange($event)">
+                    </ng-select>
+                </div>
+
+                <!-- Automatic模式的字段 -->
+                <div *ngIf="isAutomaticMode">
+                    <div class="mb-5">
+                        <label for="updateUrl">Update URL</label>
+                        <input 
+                            id="updateUrl" 
+                            type="text" 
+                            class="form-input" 
+                            placeholder="Enter update URL"
+                            formControlName="updateUrl" 
+                        />
+                    </div>
+                    <div class="mb-5">
+                        <label for="updateInterval">Update Interval (hours)</label>
+                        <input 
+                            id="updateInterval" 
+                            type="number" 
+                            class="form-input" 
+                            placeholder="Enter interval in hours"
+                            formControlName="updateInterval" 
+                        />
+                    </div>
+                    <div class="mb-5">
+                        <label for="username">Username</label>
+                        <input 
+                            id="username" 
+                            type="text" 
+                            class="form-input" 
+                            placeholder="Enter username"
+                            formControlName="username" 
+                        />
+                    </div>
+                    <div class="mb-5">
+                        <label for="password">Password</label>
+                        <input 
+                            id="password" 
+                            type="password" 
+                            class="form-input" 
+                            placeholder="Enter password"
+                            formControlName="password" 
+                        />
+                    </div>
+                </div>
+
+                <!-- Manual模式的字段 -->
+                <div *ngIf="!isAutomaticMode" class="mb-5">
+                    <!-- <label for="ruleFile">Upload Rule File</label> -->
+                    <div class="custom-file-container" data-upload-id="ruleFileUpload"></div>
+                </div>
+
+                <div class="mt-8 flex items-center justify-end">
+                    <button type="button" class="btn btn-outline-danger" (click)="updateModal.close()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </ng-template>
+    </ngx-custom-modal>
+</div> 

@@ -73,6 +73,10 @@ import { ApplicationFtpComponent } from './protocol-analysis/application-protoco
 import { ApplicationSmtpComponent } from './protocol-analysis/application-protocols/application-smtp/application-smtp.component';
 import { EventComponent } from './alarm/event/event.component';
 import { AlarmSettingsComponent } from './alarm/alarm-settings/alarm-settings.component';
+import { BasicConfigurationComponent } from './pages/threat-management/basic-configuration/basic-configuration.component';
+import { RulesPolicyComponent } from './pages/threat-management/rules-policy/rules-policy.component';
+import { RuleUpdateComponent } from './pages/threat-management/rule-update/rule-update.component';
+import { LocalRulesComponent } from './pages/threat-management/local-rules/local-rules.component';
 
 @NgModule({
     imports: [
@@ -125,7 +129,11 @@ import { AlarmSettingsComponent } from './alarm/alarm-settings/alarm-settings.co
       ApplicationHttpComponent,
       ApplicationSmtpComponent,
       EventComponent,
-      AlarmSettingsComponent
+      AlarmSettingsComponent,
+      BasicConfigurationComponent,
+      RulesPolicyComponent,
+      RuleUpdateComponent,
+      LocalRulesComponent
    ],
 
     providers: [Title],

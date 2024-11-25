@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { AppLayout } from './layouts/app-layout';
 
 // dashboard
 import { IndexComponent } from './index';
@@ -22,7 +23,6 @@ import { ChartsComponent } from './charts';
 import { DragndropComponent } from './dragndrop';
 
 // layouts
-import { AppLayout } from './layouts/app-layout';
 import { AuthLayout } from './layouts/auth-layout';
 
 // pages
@@ -43,6 +43,10 @@ import { ApplicationSmtpComponent } from './protocol-analysis/application-protoc
 import { ApplicationFtpComponent } from './protocol-analysis/application-protocols/application-ftp/application-ftp.component';
 import { EventComponent } from './alarm/event/event.component';
 import { AlarmSettingsComponent } from './alarm/alarm-settings/alarm-settings.component';
+import { BasicConfigurationComponent } from './pages/threat-management/basic-configuration/basic-configuration.component';
+import { RulesPolicyComponent } from './pages/threat-management/rules-policy/rules-policy.component';
+import { RuleUpdateComponent } from './pages/threat-management/rule-update/rule-update.component';
+import { LocalRulesComponent } from './pages/threat-management/local-rules/local-rules.component';
 
 export const routes: Routes = [
     {
@@ -124,6 +128,27 @@ export const routes: Routes = [
                 data: { title: 'Alarm Settings' },
                 canActivate: [authGuard] 
             },
+            {
+                path: 'threat-management',
+                children: [
+                    {
+                        path: 'basic-configuration',
+                        component: BasicConfigurationComponent
+                    },
+                    {
+                        path: 'rules-policy',
+                        component: RulesPolicyComponent
+                    },
+                    {
+                        path: 'rule-update',
+                        component: RuleUpdateComponent
+                    },
+                    {
+                        path: 'local-rules',
+                        component: LocalRulesComponent
+                    }
+                ]
+            }
         ],
     },
 

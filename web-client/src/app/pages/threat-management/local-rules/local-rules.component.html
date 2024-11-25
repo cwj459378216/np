@@ -1,0 +1,69 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">Threat Management</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>Local Rules</span>
+        </li>
+    </ul>
+    <div class="pt-5">
+        <div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-xl"></h2>
+                <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                    <div class="flex gap-3">
+                        <div>
+                            <button type="button" class="btn btn-primary" (click)="addLocalRule()">
+                                Add Local Rule
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input type="text" placeholder="Search Local Rules"
+                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchTerm"
+                            (ngModelChange)="searchLocalRules()" />
+                        <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                            <icon-search class="mx-auto" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel mt-5 overflow-hidden border-0 p-0">
+                <div class="table-responsive">
+                    <table class="table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rule ID</th>
+                                <th>Rule Content</th>
+                                <th>Created Date</th>
+                                <th>Status</th>
+                                <th>Category</th>
+                                <th class="!text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>L001</td>
+                                <td>alert tcp any any -> any any (msg:"Custom Local Rule"; sid:1000001;)</td>
+                                <td>2023-12-15</td>
+                                <td>
+                                    <span class="badge bg-success">Enabled</span>
+                                </td>
+                                <td>Custom</td>
+                                <td>
+                                    <div class="flex items-center justify-center gap-4">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            (click)="editLocalRule()">Edit</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            (click)="deleteLocalRule()">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
