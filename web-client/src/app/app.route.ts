@@ -47,6 +47,7 @@ import { BasicConfigurationComponent } from './pages/threat-management/basic-con
 import { RulesPolicyComponent } from './pages/threat-management/rules-policy/rules-policy.component';
 import { RuleUpdateComponent } from './pages/threat-management/rule-update/rule-update.component';
 import { LocalRulesComponent } from './pages/threat-management/local-rules/local-rules.component';
+import { LogComponent } from './log/log.component';
 
 export const routes: Routes = [
     {
@@ -148,6 +149,10 @@ export const routes: Routes = [
                         component: LocalRulesComponent
                     }
                 ]
+            },
+            {
+                path: 'log',
+                component: LogComponent
             }
         ],
     },

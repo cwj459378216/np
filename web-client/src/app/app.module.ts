@@ -77,6 +77,7 @@ import { BasicConfigurationComponent } from './pages/threat-management/basic-con
 import { RulesPolicyComponent } from './pages/threat-management/rules-policy/rules-policy.component';
 import { RuleUpdateComponent } from './pages/threat-management/rule-update/rule-update.component';
 import { LocalRulesComponent } from './pages/threat-management/local-rules/local-rules.component';
+import { LogComponent } from './log/log.component';
 
 @NgModule({
     imports: [
@@ -133,7 +134,8 @@ import { LocalRulesComponent } from './pages/threat-management/local-rules/local
       BasicConfigurationComponent,
       RulesPolicyComponent,
       RuleUpdateComponent,
-      LocalRulesComponent
+      LocalRulesComponent,
+      LogComponent
    ],
 
     providers: [Title],
