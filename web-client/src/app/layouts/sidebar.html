@@ -219,25 +219,42 @@
                                 </button>
                                 <div [@slideDownUp]="!activeDropdown.includes('threatManagement')" class="accordion-content">
                                     <ul class="sub-menu text-gray-500">
-                                        <li>
-                                            <a routerLink="/threat-management/basic-configuration" routerLinkActive="active" (click)="toggleMobileMenu()"
-                                                >{{ 'Basic Configuration' | translate }}</a
+                                        <li class="accordion menu nav-item">
+                                            <button
+                                                type="button"
+                                                class="w-full before:h-[5px] before:w-[5px] before:rounded before:bg-gray-300 hover:bg-gray-100 dark:text-[#888ea8] dark:hover:bg-gray-900 ltr:before:mr-2 rtl:before:ml-2"
+                                                (click)="toggleAccordion('ids', 'threatManagement')"
                                             >
-                                        </li>
-                                        <li>
-                                            <a routerLink="/threat-management/rules-policy" routerLinkActive="active" (click)="toggleMobileMenu()"
-                                                >{{ 'Rules Policy' | translate }}</a
-                                            >
-                                        </li>
-                                        <li>
-                                            <a routerLink="/threat-management/rule-update" routerLinkActive="active" (click)="toggleMobileMenu()"
-                                                >{{ 'Rule Update' | translate }}</a
-                                            >
-                                        </li>
-                                        <li>
-                                            <a routerLink="/threat-management/local-rules" routerLinkActive="active" (click)="toggleMobileMenu()"
-                                                >{{ 'Local Rules' | translate }}</a
-                                            >
+                                                {{ 'IDS' | translate }}
+                                                <div class="ltr:ml-auto rtl:mr-auto" [ngClass]="{ 'rtl:rotate-90 -rotate-90': !activeDropdown.includes('ids') }">
+                                                    <icon-carets-down [fill]="true" class="h-4 w-4" />
+                                                </div>
+                                            </button>
+
+                                            <div [@slideDownUp]="!activeDropdown.includes('ids')" class="accordion-content">
+                                                <ul class="sub-menu text-gray-500">
+                                                    <li>
+                                                        <a routerLink="/threat-management/basic-configuration" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                            >{{ 'Basic Configuration' | translate }}</a
+                                                        >
+                                                    </li>
+                                                    <li>
+                                                        <a routerLink="/threat-management/rules-policy" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                            >{{ 'Rules Policy' | translate }}</a
+                                                        >
+                                                    </li>
+                                                    <li>
+                                                        <a routerLink="/threat-management/rule-update" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                            >{{ 'Rule Update' | translate }}</a
+                                                        >
+                                                    </li>
+                                                    <li>
+                                                        <a routerLink="/threat-management/local-rules" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                            >{{ 'Local Rules' | translate }}</a
+                                                        >
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </li>
                                     </ul>
                                 </div>
@@ -293,6 +310,11 @@
                                          <li>
                                             <a routerLink="/interface-management" routerLinkActive="active" (click)="toggleMobileMenu()"
                                                 >{{ 'Interface Management' | translate }}</a
+                                            >
+                                        </li>
+                                        <li>
+                                            <a routerLink="/asset-book" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                >{{ 'Asset Book' | translate }}</a
                                             >
                                         </li>
                                     </ul>

@@ -78,6 +78,7 @@ import { RulesPolicyComponent } from './pages/threat-management/rules-policy/rul
 import { RuleUpdateComponent } from './pages/threat-management/rule-update/rule-update.component';
 import { LocalRulesComponent } from './pages/threat-management/local-rules/local-rules.component';
 import { LogComponent } from './log/log.component';
+import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 
 @NgModule({
     imports: [
@@ -135,7 +136,8 @@ import { LogComponent } from './log/log.component';
       RulesPolicyComponent,
       RuleUpdateComponent,
       LocalRulesComponent,
-      LogComponent
+      LogComponent,
+      AssetBookComponent
    ],
 
     providers: [Title],

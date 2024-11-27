@@ -5,6 +5,7 @@ import { BasicConfigurationComponent } from './pages/threat-management/basic-con
 import { RulesPolicyComponent } from './pages/threat-management/rules-policy/rules-policy.component';
 import { RuleUpdateComponent } from './pages/threat-management/rule-update/rule-update.component';
 import { LocalRulesComponent } from './pages/threat-management/local-rules/local-rules.component';
+import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 
 const routes: Routes = [
   // ... other routes
@@ -41,5 +42,9 @@ const routes: Routes = [
         component: LocalRulesComponent
       }
     ]
+  },
+  {
+    path: 'asset-book',
+    component: AssetBookComponent
   }
 ]; 

@@ -1,0 +1,130 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>Asset Book</span>
+        </li>
+    </ul>
+    <div class="pt-5">
+        <div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-xl"></h2>
+                <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                    <div class="flex gap-3">
+                        <div>
+                            <button type="button" class="btn btn-primary" (click)="editUser()">
+                                Add 
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary p-2"
+                                [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
+                                (click)="displayType = 'list'">
+                                <icon-list-check />
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary p-2"
+                                [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
+                                (click)="displayType = 'grid'">
+                                <icon-layout-grid />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <input type="text" placeholder="Search Assets"
+                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchUser" name="searchUser"
+                            (ngModelChange)="searchAssets()" />
+                        <div
+                            class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                            <icon-search class="mx-auto" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel mt-5 overflow-hidden border-0 p-0">
+                <ng-container *ngIf="displayType === 'list'">
+                    <div class="table-responsive">
+                        <table class="table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Asset Name</th>
+                                    <th>IP Address</th>
+                                    <th>MAC Address</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Last Updated</th>
+                                    <th class="!text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let asset of filterdContactsList">
+                                    <td>{{ asset.asset_name }}</td>
+                                    <td>{{ asset.ip_address }}</td>
+                                    <td>{{ asset.mac_address }}</td>
+                                    <td>{{ asset.type }}</td>
+                                    <td>
+                                        <span [ngClass]="{
+                                            'badge badge-outline-success': asset.status === 'Active',
+                                            'badge badge-outline-danger': asset.status === 'Inactive'
+                                        }">{{ asset.status }}</span>
+                                    </td>
+                                    <td>{{ asset.last_updated }}</td>
+                                    <td>
+                                        <div class="flex items-center justify-center gap-4">
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                (click)="editUser(asset)">Edit</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                (click)="deleteUser(asset)">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </ng-container>
+            </div>
+
+            <!-- add asset modal -->
+            <ngx-custom-modal #addContactModal class="no-footer">
+                <ng-template #modalHeader>
+                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Asset' : 'Add Asset' }}</div>
+                </ng-template>
+                <ng-template #modalBody>
+                    <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>
+                        <div class="mb-5">
+                            <label for="asset_name">Asset Name</label>
+                            <input id="asset_name" type="text" formControlName="asset_name" class="form-input" required />
+                        </div>
+                        <div class="mb-5">
+                            <label for="type">Type</label>
+                            <ng-select id="type" [items]="optionsType" formControlName="type" [clearable]="false" 
+                                placeholder="Select an option" class="custom-multiselect flex-1">
+                            </ng-select>
+                        </div>
+                        <div class="mb-5">
+                            <label for="ip_address">IP Address</label>
+                            <input id="ip_address" type="text" formControlName="ip_address" class="form-input" 
+                                [textMask]="{mask: mask11}" placeholder="___.___.___.___" required />
+                        </div>
+                        <div class="mb-5">
+                            <label for="mac_address">MAC Address</label>
+                            <input id="mac_address" type="text" formControlName="mac_address" class="form-input" 
+                                [textMask]="{mask: maskMAC}" placeholder="XX:XX:XX:XX:XX:XX" required />
+                        </div>
+                        <div class="mt-8 flex items-center justify-end">
+                            <button type="button" class="btn btn-outline-danger"
+                                (click)="addContactModal.close()">Cancel</button>
+                            <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
+                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                            </button>
+                        </div>
+                    </form>
+                </ng-template>
+            </ngx-custom-modal>
+        </div>
+    </div>
+</div> 

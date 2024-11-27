@@ -550,4 +550,14 @@ export class RulesPolicyComponent {
       </div>
     `;
   }
+
+  // 添加 onFilterChange 方法
+  onFilterChange(event: any) {
+    // 实现过滤逻辑
+    console.log('Filter changed:', event);
+    // 这里可以根据过滤条件更新表格数据
+    // 例如：
+    const filterValue = event.target.value.toLowerCase();
+    // 根据需要实现具体的过滤逻辑
+  }
 } 

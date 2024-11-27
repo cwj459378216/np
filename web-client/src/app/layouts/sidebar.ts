@@ -77,12 +77,29 @@ export class SidebarComponent implements OnInit {
         if (currentPath.includes('/user-management') || 
             currentPath.includes('/role-management') || 
             currentPath.includes('/system-time') || 
+            currentPath.includes('/asset-book') || 
             currentPath.includes('/interface-management')) {
             if (!this.activeDropdown.includes('systemSettings')) {
                 this.activeDropdown.push('systemSettings');
             }
         }
-
+        
+        // 检查是否是 threat management 相关路径
+        if (currentPath.includes('/threat-management')) {
+            if (!this.activeDropdown.includes('threatManagement')) {
+                this.activeDropdown.push('threatManagement');
+            }
+            // 检查是否是 IDS 相关路径
+            if (currentPath.includes('/basic-configuration') || 
+                currentPath.includes('/rules-policy') || 
+                currentPath.includes('/rule-update') || 
+                currentPath.includes('/local-rules')) {
+                if (!this.activeDropdown.includes('ids')) {
+                    this.activeDropdown.push('ids');
+                }
+            }
+        }
+        
         // 设置当前路径的 active 状态
         setTimeout(() => {
             const selector = document.querySelector('.sidebar ul a[routerLink="' + currentPath + '"]');
