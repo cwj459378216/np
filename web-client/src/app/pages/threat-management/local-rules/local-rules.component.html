@@ -14,15 +14,15 @@
                 <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
                     <div class="flex gap-3">
                         <div>
-                            <button type="button" class="btn btn-primary" (click)="addLocalRule()">
+                            <button type="button" class="btn btn-primary" (click)="editRule()">
                                 Add Local Rule
                             </button>
                         </div>
                     </div>
                     <div class="relative">
-                        <input type="text" placeholder="Search Local Rules"
+                        <input type="text" placeholder="Search Rules"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchTerm"
-                            (ngModelChange)="searchLocalRules()" />
+                            (ngModelChange)="searchRules()" />
                         <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
                             <icon-search class="mx-auto" />
                         </div>
@@ -39,24 +39,29 @@
                                 <th>Created Date</th>
                                 <th>Status</th>
                                 <th>Category</th>
+                                <th>Last Updated</th>
                                 <th class="!text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>L001</td>
-                                <td>alert tcp any any -> any any (msg:"Custom Local Rule"; sid:1000001;)</td>
-                                <td>2023-12-15</td>
+                            <tr *ngFor="let rule of filteredRulesList">
+                                <td>{{rule.id}}</td>
+                                <td>{{rule.rule_content}}</td>
+                                <td>{{rule.created_date}}</td>
                                 <td>
-                                    <span class="badge bg-success">Enabled</span>
+                                    <span [ngClass]="{
+                                        'badge badge-outline-success': rule.status === 'Enabled',
+                                        'badge badge-outline-danger': rule.status === 'Disabled'
+                                    }">{{rule.status}}</span>
                                 </td>
-                                <td>Custom</td>
+                                <td>{{rule.category}}</td>
+                                <td>{{rule.last_updated}}</td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="editLocalRule()">Edit</button>
+                                            (click)="editRule(rule)">Edit</button>
                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                            (click)="deleteLocalRule()">Delete</button>
+                                            (click)="deleteRule(rule)">Delete</button>
                                     </div>
                                 </td>
                             </tr>
@@ -64,6 +69,44 @@
                     </table>
                 </div>
             </div>
+
+            <!-- add/edit rule modal -->
+            <ngx-custom-modal #addRuleModal class="no-footer">
+                <ng-template #modalHeader>
+                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Rule' : 'Add Rule' }}</div>
+                </ng-template>
+                <ng-template #modalBody>
+                    <form [formGroup]="params" class="text-sm" (ngSubmit)="saveRule()" ngNativeValidate>
+                        <div class="mb-5">
+                            <label for="rule_content">Rule Content</label>
+                            <textarea id="rule_content" formControlName="rule_content" class="form-textarea" rows="4" required></textarea>
+                        </div>
+                        <div class="mb-5">
+                            <label for="category">Category</label>
+                            <ng-select id="category" [items]="categories" formControlName="category" [clearable]="false" 
+                                placeholder="Select a category" class="custom-multiselect flex-1">
+                            </ng-select>
+                        </div>
+                        <div class="mb-5">
+                            <label for="status">Status</label>
+                            <select id="status" formControlName="status" class="form-select">
+                                <option value="Enabled">Enabled</option>
+                                <option value="Disabled">Disabled</option>
+                            </select>
+                        </div>
+                        <div class="mt-8 flex items-center justify-end gap-4">
+                            <button type="button" class="btn btn-outline-danger" (click)="addRuleModal.close()">Cancel</button>
+                            <button type="button" class="btn btn-outline-info" (click)="testRule()">
+                                <icon-play-circle class="ltr:mr-2 rtl:ml-2 shrink-0" />
+                                Test Rule
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                            </button>
+                        </div>
+                    </form>
+                </ng-template>
+            </ngx-custom-modal>
         </div>
     </div>
 </div> 
