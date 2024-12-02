@@ -261,16 +261,34 @@
                             </li>
                             
                    
-                            <li class="nav-item">
-                                <a routerLink="/apps/scrumboard" class="group" routerLinkActive="active" (click)="toggleMobileMenu()">
+                            <li class="accordion menu nav-item">
+                                <button
+                                    type="button"
+                                    class="nav-link group w-full"
+                                    [ngClass]="{ active: activeDropdown.includes('report') }"
+                                    (click)="toggleAccordion('report')"
+                                >
                                     <div class="flex items-center">
                                         <icon-menu-notes class="shrink-0 group-hover:!text-primary" />
-
                                         <span class="text-black dark:text-[#506690] dark:group-hover:text-white-dark ltr:pl-3 rtl:pr-3"
-                                            >{{ 'Report' | translate }}</span
-                                        >
+                                            >{{ 'Report' | translate }}</span>
                                     </div>
-                                </a>
+                                    <div [ngClass]="{ 'rtl:rotate-90 -rotate-90': !activeDropdown.includes('report') }">
+                                        <icon-caret-down />
+                                    </div>
+                                </button>
+                                <div [@slideDownUp]="!activeDropdown.includes('report')" class="accordion-content">
+                                    <ul class="sub-menu text-gray-500">
+                                        <li>
+                                            <a routerLink="/report/template/list" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                >{{ 'Template' | translate }}</a>
+                                        </li>
+                                        <li>
+                                            <a routerLink="/report/preview" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                >{{ 'Preview' | translate }}</a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </li>
                             <li class="accordion menu nav-item">
                                 <button

@@ -1,0 +1,38 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">Report</a>
+        </li>
+        <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
+            <span>Preview Template</span>
+        </li>
+    </ul>
+
+    <div class="panel mt-6">
+        <div class="mb-5 flex flex-col gap-5 md:flex-row md:items-center">
+            <h5 class="text-lg font-semibold dark:text-white-light">Report Preview</h5>
+            <div class="ltr:ml-auto rtl:mr-auto">
+                <button type="button" class="btn btn-primary" (click)="printReport()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ltr:mr-2 rtl:ml-2">
+                        <path d="M6 17.9827C4.44655 17.9359 3.51998 17.7626 2.87868 17.1213C2 16.2426 2 14.8284 2 12C2 9.17157 2 7.75736 2.87868 6.87868C3.75736 6 5.17157 6 8 6H16C18.8284 6 20.2426 6 21.1213 6.87868C22 7.75736 22 9.17157 22 12C22 14.8284 22 16.2426 21.1213 17.1213C20.48 17.7626 19.5535 17.9359 18 17.9827" stroke="currentColor" stroke-width="1.5" />
+                        <path opacity="0.5" d="M9 10H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M19 14L5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M18 14V16C18 18.8284 18 20.2426 17.1213 21.1213C16.2426 22 14.8284 22 12 22C9.17157 22 7.75736 22 6.87868 21.1213C6 20.2426 6 18.8284 6 16V14" stroke="currentColor" stroke-width="1.5" />
+                        <path opacity="0.5" d="M17.9827 6C17.9359 4.44655 17.7626 3.51998 17.1213 2.87868C16.2427 2 14.8284 2 12 2C9.17158 2 7.75737 2 6.87869 2.87868C6.23739 3.51998 6.06414 4.44655 6.01733 6" stroke="currentColor" stroke-width="1.5" />
+                    </svg>
+                    Print
+                </button>
+            </div>
+        </div>
+
+        <div class="report-content">
+            <!-- 报告预览内容 -->
+            <div *ngIf="reportData">
+                <h2>{{reportData.template}}</h2>
+                <p>Client: {{reportData.client}}</p>
+                <p>Date: {{reportData.createDate}}</p>
+                <!-- 添加更多报告内容 -->
+            </div>
+        </div>
+    </div>
+</div> 

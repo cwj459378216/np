@@ -1,0 +1,293 @@
+<div>
+    <div class="flex flex-col gap-2.5 xl:flex-row">
+        <div class="panel flex-1 px-0 py-6 ltr:xl:mr-6 rtl:xl:ml-6">
+            <!-- 基本信息部分 -->
+            <div class="flex flex-wrap justify-between px-4">
+                <div class="mb-6 w-full lg:w-1/2">
+                    <div class="flex shrink-0 items-center text-black dark:text-white">
+                        <img src="/assets/images/logo.svg" alt="" class="w-14" />
+                    </div>
+                    <div class="mt-6 space-y-1 text-gray-500 dark:text-gray-400">
+                        <div>13 Tetrick Road, Cypress Gardens, Florida, 33884, US</div>
+                        <div>vristo&#64;gmail.com</div>
+                        <div>+1 (070) 123-4567</div>
+                    </div>
+                </div>
+                <div class="w-full lg:w-1/2 lg:max-w-fit">
+                    <div class="flex items-center">
+                        <label for="number" class="mb-0 flex-1 ltr:mr-2 rtl:ml-2">Template Number</label>
+                        <input
+                            id="number"
+                            type="text"
+                            class="form-input w-2/3 lg:w-[250px]"
+                            placeholder="#T001"
+                            [(ngModel)]="params.templateNo"
+                            readonly
+                        />
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <label for="templateLabel" class="mb-0 flex-1 ltr:mr-2 rtl:ml-2">Template Label</label>
+                        <input
+                            id="templateLabel"
+                            type="text"
+                            class="form-input w-2/3 lg:w-[250px]"
+                            placeholder="Enter Template Label"
+                            [(ngModel)]="params.title"
+                        />
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <label for="createDate" class="mb-0 flex-1 ltr:mr-2 rtl:ml-2">Create Date</label>
+                        <input
+                            id="createDate"
+                            type="date"
+                            class="form-input w-2/3 lg:w-[250px]"
+                            [(ngModel)]="params.createDate"
+                        />
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <label for="dueDate" class="mb-0 flex-1 ltr:mr-2 rtl:ml-2">Due Date</label>
+                        <input 
+                            id="dueDate" 
+                            type="date" 
+                            class="form-input w-2/3 lg:w-[250px]" 
+                            [(ngModel)]="params.dueDate"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- 客户信息部分 -->
+            <hr class="my-6 border-[#e0e6ed] dark:border-[#1b2e4b]" />
+            <div class="mt-8 px-4">
+                <div class="flex flex-col justify-between lg:flex-row">
+                    <div class="mb-6 w-full lg:w-1/2 ltr:lg:mr-6 rtl:lg:ml-6">
+                        <div class="text-lg">Client Details :-</div>
+                        <div class="mt-4 flex items-center">
+                            <label for="client-name" class="mb-0 w-1/3 ltr:mr-2 rtl:ml-2">Name</label>
+                            <input
+                                id="client-name"
+                                type="text"
+                                class="form-input flex-1"
+                                [(ngModel)]="params.to.name"
+                                placeholder="Enter Name"
+                            />
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <label for="client-email" class="mb-0 w-1/3 ltr:mr-2 rtl:ml-2">Email</label>
+                            <input
+                                id="client-email"
+                                type="email"
+                                class="form-input flex-1"
+                                [(ngModel)]="params.to.email"
+                                placeholder="Enter Email"
+                            />
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <label for="client-address" class="mb-0 w-1/3 ltr:mr-2 rtl:ml-2">Address</label>
+                            <input
+                                id="client-address"
+                                type="text"
+                                class="form-input flex-1"
+                                [(ngModel)]="params.to.address"
+                                placeholder="Enter Address"
+                            />
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <label for="client-phone" class="mb-0 w-1/3 ltr:mr-2 rtl:ml-2">Phone Number</label>
+                            <input
+                                id="client-phone"
+                                type="text"
+                                class="form-input flex-1"
+                                [(ngModel)]="params.to.phone"
+                                placeholder="Enter Phone Number"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 项目列表部分 -->
+            <div class="mt-8">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th class="w-1">Quantity</th>
+                                <th class="w-1">Price</th>
+                                <th>Total</th>
+                                <th class="w-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <ng-container *ngIf="items.length <= 0">
+                                <tr>
+                                    <td colspan="5" class="!text-center font-semibold">No Item Available</td>
+                                </tr>
+                            </ng-container>
+                            <ng-container *ngFor="let item of items">
+                                <tr class="align-top">
+                                    <td>
+                                        <input
+                                            type="text"
+                                            class="form-input min-w-[200px]"
+                                            placeholder="Enter Item Name"
+                                            [(ngModel)]="item.title"
+                                        />
+                                        <textarea
+                                            class="form-textarea mt-4"
+                                            placeholder="Enter Description"
+                                            [(ngModel)]="item.description"
+                                        ></textarea>
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            class="form-input w-32"
+                                            placeholder="Quantity"
+                                            [(ngModel)]="item.quantity"
+                                            min="0"
+                                        />
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="number" 
+                                            class="form-input w-32" 
+                                            placeholder="Price" 
+                                            [(ngModel)]="item.amount" 
+                                            min="0" 
+                                        />
+                                    </td>
+                                    <td>${{ item.amount * item.quantity }}</td>
+                                    <td>
+                                        <button type="button" (click)="removeItem(item)">
+                                            <icon-x class="h-5 w-5" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            </ng-container>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-6 flex flex-col justify-between px-4 sm:flex-row">
+                    <div class="mb-6 sm:mb-0">
+                        <button type="button" class="btn btn-primary" (click)="addItem()">Add Item</button>
+                    </div>
+                    <div class="sm:w-2/5">
+                        <div class="flex items-center justify-between">
+                            <div>Subtotal</div>
+                            <div>$0.00</div>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between">
+                            <div>Tax(%)</div>
+                            <div>{{ tax || 0 }}%</div>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between">
+                            <div>Shipping Rate($)</div>
+                            <div>${{ shippingCharge || 0 }}</div>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between">
+                            <div>Discount(%)</div>
+                            <div>{{ discount || 0 }}%</div>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between font-semibold">
+                            <div>Total</div>
+                            <div>$0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 备注部分 -->
+            <div class="mt-8 px-4">
+                <div>
+                    <label for="notes">Notes</label>
+                    <textarea
+                        id="notes"
+                        class="form-textarea min-h-[130px]"
+                        placeholder="Notes...."
+                        [(ngModel)]="params.notes"
+                    ></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧设置面板 -->
+        <div class="mt-6 w-full xl:mt-0 xl:w-96">
+            <div class="panel mb-5">
+                <div>
+                    <label for="currency">Currency</label>
+                    <select id="currency" class="form-select" [(ngModel)]="selectedCurrency">
+                        <ng-container *ngFor="let currency of currencyList">
+                            <option [value]="currency">{{ currency }}</option>
+                        </ng-container>
+                    </select>
+                </div>
+                <div class="mt-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="tax">Tax(%) </label>
+                            <input id="tax" type="number" class="form-input" placeholder="Tax" [(ngModel)]="tax" />
+                        </div>
+                        <div>
+                            <label for="discount">Discount(%) </label>
+                            <input
+                                id="discount"
+                                type="number"
+                                class="form-input"
+                                placeholder="Discount"
+                                [(ngModel)]="discount"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div>
+                        <label for="shipping-charge">Shipping Charge($) </label>
+                        <input
+                            id="shipping-charge"
+                            type="number"
+                            class="form-input"
+                            placeholder="Shipping Charge"
+                            [(ngModel)]="shippingCharge"
+                        />
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label for="payment-method">Payment Method</label>
+                    <select id="payment-method" class="form-select" [(ngModel)]="paymentMethod">
+                        <option value="">Select Payment</option>
+                        <option value="bank">Bank Account</option>
+                        <option value="paypal">Paypal</option>
+                        <option value="upi">UPI Transfer</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="panel">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-1">
+                    <button type="button" class="btn btn-success w-full gap-2">
+                        <icon-save class="shrink-0 ltr:mr-2 rtl:ml-2" />
+                        Update
+                    </button>
+
+                    <button type="button" class="btn btn-info w-full gap-2">
+                        <icon-send class="shrink-0 ltr:mr-2 rtl:ml-2" />
+                        Send Template
+                    </button>
+
+                    <a [routerLink]="['/report/template/preview']" [queryParams]="{id: params.templateNo}" class="btn btn-primary w-full gap-2">
+                        <icon-eye class="shrink-0 ltr:mr-2 rtl:ml-2" />
+                        Preview
+                    </a>
+
+                    <button type="button" class="btn btn-secondary w-full gap-2">
+                        <icon-download class="shrink-0 ltr:mr-2 rtl:ml-2" />
+                        Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
