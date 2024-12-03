@@ -2,6 +2,9 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { GridsterModule } from 'angular-gridster2';
+import { NgApexchartsModule } from 'ng-apexcharts';
+import { NgxEchartsModule } from 'ngx-echarts';
 
 // 导入共享模块
 import { SharedModule } from 'src/shared.module';
@@ -48,7 +51,12 @@ const routes: Routes = [
         RouterModule.forChild(routes),
         FormsModule,
         ReactiveFormsModule,
-        SharedModule
+        SharedModule,
+        GridsterModule,
+        NgApexchartsModule,
+        NgxEchartsModule.forRoot({
+            echarts: () => import('echarts')
+        })
     ]
 })
 export class ReportModule { } 

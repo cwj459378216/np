@@ -1229,7 +1229,12 @@
   dependencies:
     tslib "^2.3.0"
 
-"@esbuild/darwin-arm64@0.21.5", "@esbuild/darwin-arm64@0.23.0":
+"@esbuild/darwin-arm64@0.21.5":
+  version "0.21.5"
+  resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.21.5.tgz"
+  integrity sha512-DwqXqZyuk5AiWWf3UfLiRDJ5EDd49zg6O9wclZ7kUMv2WRFr4HKjXp/5t8JZ11QbQfUS6/cRCKGwYhtNAY88kQ==
+
+"@esbuild/darwin-arm64@0.23.0":
   version "0.23.0"
   resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.23.0.tgz"
   integrity sha512-YLntie/IdS31H54Ogdn+v50NuoWF5BDkEUFpiOChVa9UnKpftgwzZRrI4J132ETIi+D8n6xh9IviFV3eXdxfow==
@@ -2215,6 +2220,13 @@ ajv@^8.0.0, ajv@^8.8.2, ajv@^8.9.0, ajv@8.17.1:
     json-schema-traverse "^1.0.0"
     require-from-string "^2.0.2"
 
+angular-gridster2@^18.0.0:
+  version "18.0.0"
+  resolved "https://registry.npmmirror.com/angular-gridster2/-/angular-gridster2-18.0.0.tgz"
+  integrity sha512-PFbwOoUHBIK0UQEiun6IKbIzcnvo2/+dcrBpSS3RsQp7tTU6sXcuSTx/lMB/gYed9hc8YNf052I8R9ZCWLY7Nw==
+  dependencies:
+    tslib "^2.4.0"
+
 angularx-flatpickr@^7.3.0:
   version "7.3.0"
   resolved "https://registry.npmjs.org/angularx-flatpickr/-/angularx-flatpickr-7.3.0.tgz"
@@ -3057,6 +3069,14 @@ eastasianwidth@^0.2.0:
   version "0.2.0"
   resolved "https://registry.npmjs.org/eastasianwidth/-/eastasianwidth-0.2.0.tgz"
   integrity sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==
+
+echarts@^5.4.3, echarts@>=5.0.0:
+  version "5.5.1"
+  resolved "https://registry.npmmirror.com/echarts/-/echarts-5.5.1.tgz"
+  integrity sha512-Fce8upazaAXUVUVsjgV6mBnGuqgO+JNDlcgF79Dksy4+wgGpQB2lmYoO4TSweFg/mZITdpGHomw/cNBJZj1icA==
+  dependencies:
+    tslib "2.3.0"
+    zrender "5.6.0"
 
 ee-first@1.1.1:
   version "1.1.1"
@@ -4930,6 +4950,13 @@ ngx-custom-modal@^18.0.2:
   dependencies:
     tslib "^2.6.3"
 
+ngx-echarts@^17.1.0:
+  version "17.2.0"
+  resolved "https://registry.npmmirror.com/ngx-echarts/-/ngx-echarts-17.2.0.tgz"
+  integrity sha512-i3XDE9d53zmJH4bp8RQ/271oPlhBkczO1M3VtWk8nCXdxQq9qx8UckjWEQ7oV1AbSDLGK5sRiFu5EaY5hvdWPA==
+  dependencies:
+    tslib "^2.3.0"
+
 ngx-filesaver@14.0.0:
   version "14.0.0"
   resolved "https://registry.npmjs.org/ngx-filesaver/-/ngx-filesaver-14.0.0.tgz"
@@ -6696,6 +6723,11 @@ tslib@^2, tslib@^2.0.0, tslib@^2.1.0, tslib@^2.3.0, tslib@^2.3.1, tslib@^2.4.0, 
   resolved "https://registry.npmjs.org/tslib/-/tslib-2.6.3.tgz"
   integrity sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==
 
+tslib@2.3.0:
+  version "2.3.0"
+  resolved "https://registry.npmmirror.com/tslib/-/tslib-2.3.0.tgz"
+  integrity sha512-N82ooyxVNm6h1riLCoyS9e3fuJ3AMG2zIZs2Gd1ATcSFjSA23Q0fzjjZeh0jbJvWVDZ0cJT8yaNNaaXHzueNjg==
+
 tuf-js@^2.2.1:
   version "2.2.1"
   resolved "https://registry.npmjs.org/tuf-js/-/tuf-js-2.2.1.tgz"
@@ -7145,3 +7177,10 @@ zone.js@~0.14.10, zone.js@~0.14.4:
   version "0.14.10"
   resolved "https://registry.npmjs.org/zone.js/-/zone.js-0.14.10.tgz"
   integrity sha512-YGAhaO7J5ywOXW6InXNlLmfU194F8lVgu7bRntUF3TiG8Y3nBK0x1UJJuHUP/e8IyihkjCYqhCScpSwnlaSRkQ==
+
+zrender@5.6.0:
+  version "5.6.0"
+  resolved "https://registry.npmmirror.com/zrender/-/zrender-5.6.0.tgz"
+  integrity sha512-uzgraf4njmmHAbEUxMJ8Oxg+P3fT04O+9p7gY+wJRVxo8Ge+KmYv0WJev945EH4wFuc4OY2NLXz46FZrWS9xJg==
+  dependencies:
+    tslib "2.3.0"

@@ -31,8 +31,10 @@
         "@ngrx/store": "^18.0.2",
         "@ngx-translate/core": "^15.0.0",
         "@ngx-translate/http-loader": "^8.0.0",
+        "angular-gridster2": "^18.0.0",
         "angularx-flatpickr": "^7.3.0",
         "apexcharts": "^3.49.2",
+        "echarts": "^5.4.3",
         "file-saver": "^2.0.5",
         "file-upload-with-preview": "^6.0.2",
         "flatpickr": "^4.6.13",
@@ -54,7 +56,8 @@
         "sweetalert2": "^11.7.3",
         "swiper": "^11.1.9",
         "tslib": "^2.5.2",
-        "zone.js": "~0.14.4"
+        "zone.js": "~0.14.4",
+        "ngx-echarts": "^17.1.0"
     },
     "devDependencies": {
         "@angular-devkit/build-angular": "^18.2.0",
