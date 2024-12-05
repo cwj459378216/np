@@ -151,24 +151,6 @@
                 </select>
             </div>
 
-            <!-- Table Titles -->
-            <div *ngIf="formData.type === 'table'">
-                <label for="tableTitles">Table Titles</label>
-                <ng-select
-                    id="tableTitles"
-                    [items]="titleOptions"
-                    [(ngModel)]="selectedTitles"
-                    [multiple]="true"
-                    [clearable]="false"
-                    placeholder="Select table titles"
-                    name="tableTitles"
-                    bindLabel="label"
-                    bindValue="value"
-                    class="custom-multiselect"
-                >
-                </ng-select>
-            </div>
-
             <!-- Index -->
             <div>
                 <label for="index">Data Source</label>
@@ -231,8 +213,27 @@
                 </div>
             </div>
 
-            <!-- Aggregation -->
-            <div>
+            <!-- Table Titles (仅在选择 table 时显示) -->
+            <div *ngIf="formData.type === 'table'">
+                <label for="tableTitles">Table Titles</label>
+                <ng-select
+                    id="tableTitles"
+                    [items]="titleOptions"
+                    [(ngModel)]="selectedTitles"
+                    [multiple]="true"
+                    [clearable]="false"
+                    [dropdownPosition]="'top'"
+                    placeholder="Select table titles"
+                    name="tableTitles"
+                    bindLabel="label"
+                    bindValue="value"
+                    class="custom-multiselect"
+                >
+                </ng-select>
+            </div>
+
+            <!-- Aggregation (仅在不选择 table 时显示) -->
+            <div *ngIf="formData.type && formData.type !== 'table'">
                 <label>Aggregation</label>
                 <div class="flex gap-2">
                     <select 
