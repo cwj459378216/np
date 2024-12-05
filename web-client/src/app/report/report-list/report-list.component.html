@@ -4,11 +4,11 @@
             <a href="javascript:;" class="text-primary hover:underline">Report</a>
         </li>
         <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-            <span>Templates</span>
+            <span>Reports</span>
         </li>
     </ul>
 
-    <div class="panel border-[#e0e6ed] px-0 pb-1.5 dark:border-[#1b2e4b]">
+    <div class="panel border-[#e0e6ed] px-0 dark:border-[#1b2e4b]">
         <div class="datatable invoice-table">
             <div class="mb-4.5 flex flex-col gap-5 px-5 md:flex-row md:items-center">
                 <div class="flex items-center gap-2">
@@ -16,10 +16,6 @@
                         <icon-trash-lines />
                         Delete
                     </button>
-                    <a routerLink="/report/template/add" class="btn btn-primary gap-2">
-                        <icon-plus />
-                        Add New
-                    </a>
                 </div>
                 <div class="ltr:ml-auto rtl:mr-auto">
                     <input [(ngModel)]="search" type="text" class="form-input" placeholder="Search..." />
@@ -40,9 +36,7 @@
                 nextArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
             >
                 <ng-template slot="name" let-value="data">
-                    <a routerLink="/report/template/preview" [queryParams]="{id: value.id}" class="font-semibold text-primary underline hover:no-underline">
-                        {{ value.name }}
-                    </a>
+                    <div class="font-semibold">{{ value.name }}</div>
                 </ng-template>
                 <ng-template slot="description" let-value="data">
                     <div class="text-gray-600 dark:text-gray-400">{{ value.description }}</div>
@@ -60,13 +54,7 @@
                 </ng-template>
                 <ng-template slot="actions" let-value="data">
                     <div class="flex items-center justify-center gap-4">
-                        <a [routerLink]="['/report/template/edit']" [queryParams]="{id: value.id}" class="hover:text-info">
-                            <icon-edit class="h-4.5 w-4.5" />
-                        </a>
-                        <a [routerLink]="['/report/template/preview']" [queryParams]="{id: value.id}" class="hover:text-primary">
-                            <icon-eye />
-                        </a>
-                        <button type="button" class="hover:text-secondary" (click)="downloadTemplate(value.id)">
+                        <button type="button" class="hover:text-secondary" (click)="downloadReport(value.id)">
                             <icon-download class="h-4.5 w-4.5" />
                         </button>
                         <button type="button" class="hover:text-danger" (click)="deleteRow(value.id)">

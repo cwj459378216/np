@@ -1,6 +1,26 @@
 <div>
     <div class="flex flex-col gap-2.5 xl:flex-row">
         <div class="panel flex-1 px-0 py-6 ltr:xl:mr-6 rtl:xl:ml-6">
+            <!-- 标题和添加按钮 -->
+            <div class="px-6 mb-6 flex justify-between items-center">
+                <button type="button" 
+                        class="btn btn-outline-primary p-2"
+                        routerLink="/report/template/list">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+                        <path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button type="button" 
+                        class="btn btn-primary p-2 flex items-center gap-2"
+                        (click)="openAddChartModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                         class="w-5 h-5">
+                        <path d="M12 5v14m-7-7h14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Add Widget
+                </button>
+            </div>
+
             <!-- Gridster布局 -->
             <gridster [options]="options" class="h-[800px]">
                 <gridster-item 
@@ -8,7 +28,8 @@
                     [item]="item"
                 >
                     <div class="flex flex-col h-full w-full bg-white p-4 dark:bg-[#1b2e4b]">
-                        <div class="flex justify-end mb-2">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-base font-medium">{{ item.type === 'table' ? 'Table' : (item.chartType | titlecase) + ' Chart' }}</span>
                             <button class="hover:text-danger" (click)="removeWidget(item)">
                                 <icon-x class="h-5 w-5" />
                             </button>
@@ -22,6 +43,26 @@
                                      class="w-full h-full">
                                 </div>
                             </div>
+                            <div *ngIf="item['type'] === 'table'" class="w-full h-full overflow-auto">
+                                <table class="w-full table-auto">
+                                    <thead>
+                                        <tr>
+                                            <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">#</th>
+                                            <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">First Name</th>
+                                            <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">Last Name</th>
+                                            <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">Email</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let row of tableData">
+                                            <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.id}}</td>
+                                            <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.firstName}}</td>
+                                            <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.lastName}}</td>
+                                            <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.email}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </gridster-item>
@@ -32,51 +73,24 @@
         <div class="mt-6 w-full xl:mt-0 xl:w-96">
             <div class="panel mb-5">
                 <div>
-                    <label for="currency">Currency</label>
-                    <select id="currency" class="form-select" [(ngModel)]="selectedCurrency">
-                        <ng-container *ngFor="let currency of currencyList">
-                            <option [value]="currency">{{ currency }}</option>
-                        </ng-container>
-                    </select>
+                    <label for="name">Name</label>
+                    <input
+                        id="name"
+                        type="text"
+                        class="form-input"
+                        placeholder="Enter name"
+                        [(ngModel)]="name"
+                    />
                 </div>
                 <div class="mt-4">
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                            <label for="tax">Tax(%) </label>
-                            <input id="tax" type="number" class="form-input" placeholder="Tax" [(ngModel)]="tax" />
-                        </div>
-                        <div>
-                            <label for="discount">Discount(%) </label>
-                            <input
-                                id="discount"
-                                type="number"
-                                class="form-input"
-                                placeholder="Discount"
-                                [(ngModel)]="discount"
-                            />
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div>
-                        <label for="shipping-charge">Shipping Charge($) </label>
-                        <input
-                            id="shipping-charge"
-                            type="number"
-                            class="form-input"
-                            placeholder="Shipping Charge"
-                            [(ngModel)]="shippingCharge"
-                        />
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <label for="payment-method">Payment Method</label>
-                    <select id="payment-method" class="form-select" [(ngModel)]="paymentMethod">
-                        <option value="">Select Payment</option>
-                        <option value="bank">Bank Account</option>
-                        <option value="paypal">Paypal</option>
-                        <option value="upi">UPI Transfer</option>
-                    </select>
+                    <label for="description">Description</label>
+                    <textarea
+                        id="description"
+                        class="form-input"
+                        rows="3"
+                        placeholder="Enter description"
+                        [(ngModel)]="description"
+                    ></textarea>
                 </div>
             </div>
 
@@ -88,22 +102,182 @@
                         Save
                     </button>
 
-                    <button type="button" class="btn btn-info w-full gap-2">
-                        <icon-send class="shrink-0 ltr:mr-2 rtl:ml-2" />
-                        Send Template
-                    </button>
-
                     <a routerLink="/report/template/preview" class="btn btn-primary w-full gap-2">
                         <icon-eye class="shrink-0 ltr:mr-2 rtl:ml-2" />
                         Preview
                     </a>
-
-                    <button type="button" class="btn btn-secondary w-full gap-2">
-                        <icon-download class="shrink-0 ltr:mr-2 rtl:ml-2" />
-                        Download
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div> 
+
+<!-- 添加图表的弹出框 -->
+<ngx-custom-modal #addChartModal customClass="modal-top">
+    <ng-template #modalHeader>
+        <div>Add Widget</div>
+    </ng-template>
+    <ng-template #modalBody>
+        <form class="space-y-5" (ngSubmit)="addWidget()" #widgetFormRef="ngForm">
+            <!-- Widget Name -->
+            <div>
+                <label for="widgetName">Widget Name</label>
+                <input
+                    id="widgetName"
+                    type="text"
+                    name="name"
+                    class="form-input"
+                    placeholder="Enter widget name"
+                    [(ngModel)]="formData.name"
+                    required
+                />
+            </div>
+
+            <!-- Widget Type -->
+            <div>
+                <label for="widgetType">Widget Type</label>
+                <select 
+                    id="widgetType" 
+                    name="type"
+                    class="form-select" 
+                    [(ngModel)]="formData.type"
+                    required
+                >
+                    <option value="">Select Type</option>
+                    <option value="line">Line Chart</option>
+                    <option value="bar">Bar Chart</option>
+                    <option value="pie">Pie Chart</option>
+                    <option value="table">Table</option>
+                </select>
+            </div>
+
+            <!-- Index -->
+            <div>
+                <label for="index">Data Source</label>
+                <select 
+                    id="index" 
+                    name="index"
+                    class="form-select" 
+                    [(ngModel)]="formData.index"
+                    required
+                >
+                    <option value="">Select Index</option>
+                    <option *ngFor="let idx of indexList" [value]="idx.value">
+                        {{idx.label}}
+                    </option>
+                </select>
+            </div>
+
+            <!-- Filter -->
+            <div>
+                <label>Filter</label>
+                <div class="space-y-3">
+                    <div *ngFor="let filter of filters; let i = index" class="flex gap-2">
+                        <select 
+                            class="form-select flex-1" 
+                            [(ngModel)]="filter.field"
+                            [name]="'filterField' + i"
+                        >
+                            <option value="">Select Field</option>
+                            <option *ngFor="let field of filterFields" [value]="field.value">
+                                {{field.label}}
+                            </option>
+                        </select>
+                        
+                        <input
+                            type="text"
+                            class="form-input flex-1"
+                            placeholder="Enter filter value"
+                            [(ngModel)]="filter.value"
+                            [name]="'filterValue' + i"
+                        />
+                        
+                        <button 
+                            type="button" 
+                            class="btn btn-danger p-2"
+                            *ngIf="i > 0"
+                            (click)="removeFilter(i)"
+                        >
+                            <icon-x class="w-4 h-4"/>
+                        </button>
+                        
+                        <button 
+                            type="button" 
+                            class="btn btn-primary p-2"
+                            *ngIf="i === filters.length - 1"
+                            (click)="addFilter()"
+                        >
+                            <icon-plus class="w-4 h-4"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Titles (仅在选择 table 时显示) -->
+            <div *ngIf="formData.type === 'table'">
+                <label for="tableTitles">Table Titles</label>
+                <ng-select
+                    id="tableTitles"
+                    [items]="titleOptions"
+                    [(ngModel)]="selectedTitles"
+                    [multiple]="true"
+                    [clearable]="false"
+                    placeholder="Select table titles"
+                    name="tableTitles"
+                    bindLabel="label"
+                    bindValue="value"
+                    class="custom-multiselect"
+                >
+                </ng-select>
+            </div>
+
+            <!-- Aggregation (仅在不选择 table 时显示) -->
+            <div *ngIf="formData.type && formData.type !== 'table'">
+                <label>Aggregation</label>
+                <div class="flex gap-2">
+                    <select 
+                        class="form-select flex-1" 
+                        name="aggregationField"
+                        [(ngModel)]="formData.aggregationField"
+                        required
+                    >
+                        <option value="">Select Field</option>
+                        <option *ngFor="let field of aggregationFields" [value]="field.value">
+                            {{field.label}}
+                        </option>
+                    </select>
+                    
+                    <select 
+                        class="form-select flex-1" 
+                        name="aggregationType"
+                        [(ngModel)]="formData.aggregationType"
+                        required
+                    >
+                        <option value="">Select Type</option>
+                        <option *ngFor="let type of aggregationTypes" [value]="type.value">
+                            {{type.label}}
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end">
+                <button 
+                    type="button" 
+                    class="btn btn-outline-danger ltr:mr-2 rtl:ml-2"
+                    (click)="addChartModal.close()"
+                >
+                    Cancel
+                </button>
+                <button 
+                    type="submit" 
+                    class="btn btn-primary" 
+                    [disabled]="!widgetFormRef.valid"
+                >
+                    Add Widget
+                </button>
+            </div>
+        </form>
+    </ng-template>
+</ngx-custom-modal> 

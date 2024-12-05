@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, ViewChild } from '@angular/core';
 import { GridsterConfig, GridsterItem, GridsterItemComponentInterface } from 'angular-gridster2';
 
 // 首先定义 GridsterItem 接口
@@ -39,6 +39,187 @@ export class AddComponent implements OnInit {
     discount: number = 0;
     shippingCharge: number = 0;
     paymentMethod: string = '';
+
+    // 添加新的属性
+    public name: string = '';
+    public description: string = '';
+
+    @ViewChild('addChartModal') addChartModal: any;
+    @ViewChild('widgetFormRef') widgetFormRef: any;
+
+    // 添加表格数据
+    tableData = [
+        { id: 1, firstName: 'John', lastName: 'Doe', email: 'johndoe@yahoo.com' },
+        { id: 2, firstName: 'Andy', lastName: 'King', email: 'andyking@gmail.com' },
+        { id: 3, firstName: 'Lisa', lastName: 'Doe', email: 'lisadoe@yahoo.com' },
+        { id: 4, firstName: 'Vincent', lastName: 'Carpenter', email: 'vinnyc@yahoo.com' },
+    ];
+
+    // 表单数据
+    formData = {
+        name: '',
+        type: '',
+        index: '',
+        filter: '',
+        aggregationField: '',
+        aggregationType: ''
+    };
+
+    // 下拉选项数据
+    indexList = [
+        { value: 'index1', label: 'Index 1' },
+        { value: 'index2', label: 'Index 2' },
+        { value: 'index3', label: 'Index 3' }
+    ];
+
+    // 添加聚合字段选项
+    aggregationFields = [
+        { value: 'value', label: 'Value' },
+        { value: 'count', label: 'Count' },
+        { value: 'price', label: 'Price' },
+        { value: 'quantity', label: 'Quantity' }
+    ];
+
+    // 添加聚合类型选项
+    aggregationTypes = [
+        { value: 'sum', label: 'Sum' },
+        { value: 'avg', label: 'Average' },
+        { value: 'min', label: 'Minimum' },
+        { value: 'max', label: 'Maximum' },
+        { value: 'count', label: 'Count' }
+    ];
+
+    // 修改 filter 相关的数据结构
+    filters: Array<{field: string, value: string}> = [
+        { field: '', value: '' }
+    ];
+
+    // 添加可选的字段列表
+    filterFields = [
+        { value: 'field1', label: 'Field 1' },
+        { value: 'field2', label: 'Field 2' },
+        { value: 'field3', label: 'Field 3' },
+        { value: 'field4', label: 'Field 4' }
+    ];
+
+    // 添加标题选项
+    titleOptions = [
+        { value: 'title1', label: 'Title 1' },
+        { value: 'title2', label: 'Title 2' },
+        { value: 'title3', label: 'Title 3' },
+        { value: 'title4', label: 'Title 4' },
+        { value: 'title5', label: 'Title 5' }
+    ];
+
+    // 选中的标题
+    selectedTitles: string[] = [];
+
+    // 添加新的 filter 行
+    addFilter() {
+        this.filters.push({ field: '', value: '' });
+    }
+
+    // 删除指定的 filter 行
+    removeFilter(index: number) {
+        this.filters.splice(index, 1);
+    }
+
+    // 修改 addWidget 方法中处理 filter 的部分
+    addWidget() {
+        const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // 将多个 filter 组合成一个字符串或对象
+        const filterData = this.filters
+            .filter(f => f.field && f.value)
+            .reduce((acc, curr) => {
+                acc[curr.field] = curr.value;
+                return acc;
+            }, {} as {[key: string]: string});
+
+        if (this.formData.type === 'table') {
+            const newItem: CustomGridsterItem = {
+                uniqueId,
+                id: `table_${uniqueId}`,
+                cols: 3,
+                rows: 2,
+                y: 0,
+                x: 0,
+                type: 'table',
+                name: this.formData.name,
+                index: this.formData.index,
+                filter: filterData,  // 使用新的 filter 数据
+                aggregation: {
+                    field: this.formData.aggregationField,
+                    type: this.formData.aggregationType
+                },
+                titles: this.selectedTitles  // 添加选中的标题
+            };
+            this.dashboard = [...this.dashboard, newItem];
+        } else {
+            let chartConfig;
+            switch(this.formData.type) {
+                case 'line':
+                    chartConfig = {...this.lineChart};
+                    break;
+                case 'bar':
+                    chartConfig = {...this.barChart};
+                    break;
+                case 'pie':
+                    chartConfig = {...this.pieChart};
+                    break;
+                default:
+                    return;
+            }
+
+            const newItem: CustomGridsterItem = {
+                uniqueId,
+                id: `chart_${uniqueId}`,
+                cols: 2,
+                rows: 2,
+                y: 0,
+                x: 0,
+                type: 'chart',
+                chartType: this.formData.type,
+                chartConfig: chartConfig,
+                name: this.formData.name,
+                index: this.formData.index,
+                filter: filterData,
+                aggregation: {
+                    field: this.formData.aggregationField,
+                    type: this.formData.aggregationType
+                }
+            };
+
+            this.dashboard = [...this.dashboard, newItem];
+        }
+
+        // 重置表单时也要重置 filters 和标题选择
+        this.formData = {
+            name: '',
+            type: '',
+            index: '',
+            filter: '',
+            aggregationField: '',
+            aggregationType: ''
+        };
+        this.filters = [{ field: '', value: '' }];
+        this.selectedTitles = [];  // 重置选中的标题
+        this.addChartModal.close();
+    }
+
+    // 修改 trackBy 函数
+    trackByFn(index: number, item: CustomGridsterItem): string {
+        // 确保返回一个真正唯一的标识符
+        if (!item.uniqueId) {
+            console.warn('Item without uniqueId found:', item);
+            item.uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${index}`;
+        }
+        return `${item.uniqueId}_${item.type}_${item.chartType}`;
+    }
+
+    openAddChartModal() {
+        this.addChartModal.open();
+    }
 
     constructor() {
         this.initCharts();
@@ -86,15 +267,21 @@ export class AddComponent implements OnInit {
     }
 
     initCharts() {
-        // ECharts配置
+        // 折线图配置
         this.lineChart = {
             tooltip: {
                 trigger: 'axis'
             },
+            legend: {
+                data: ['Sales'],
+                bottom: '0',
+                left: 'center'
+            },
             grid: {
+                top: '5%',
                 left: '3%',
                 right: '4%',
-                bottom: '3%',
+                bottom: '10%',
                 containLabel: true
             },
             xAxis: {
@@ -116,6 +303,18 @@ export class AddComponent implements OnInit {
         this.barChart = {
             tooltip: {
                 trigger: 'axis'
+            },
+            legend: {
+                data: ['Sales'],
+                bottom: '0',
+                left: 'center'
+            },
+            grid: {
+                top: '5%',
+                left: '3%',
+                right: '4%',
+                bottom: '10%',
+                containLabel: true
             },
             xAxis: {
                 type: 'category',
@@ -204,6 +403,24 @@ export class AddComponent implements OnInit {
                 type: 'chart',
                 chartType: 'pie',
                 chartConfig: {...this.pieChart}
+            },
+            // 添加默认的表格
+            {
+                uniqueId: generateUniqueId(),
+                id: 'table_1',
+                cols: 3,
+                rows: 2,
+                y: 2,  // 放在第二行
+                x: 0,
+                type: 'table',
+                name: 'Default Table',
+                index: 'index1',
+                filter: {},
+                aggregation: {
+                    field: 'value',
+                    type: 'sum'
+                },
+                titles: ['title1', 'title2', 'title3']  // 默认显示的列
             }
         ];
     }
@@ -248,48 +465,5 @@ export class AddComponent implements OnInit {
         if (item) {
             this.items = this.items.filter((d: any) => d.id != item.id);
         }
-    }
-
-    // 修改添加widget方法，添加唯一id
-    addWidget(type: string) {
-        let chartConfig;
-        switch(type) {
-            case 'line':
-                chartConfig = {...this.lineChart};
-                break;
-            case 'bar':
-                chartConfig = {...this.barChart};
-                break;
-            case 'pie':
-                chartConfig = {...this.pieChart};
-                break;
-            default:
-                return;
-        }
-
-        const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const newItem: CustomGridsterItem = {
-            uniqueId,
-            id: `chart_${uniqueId}`,
-            cols: 2,
-            rows: 2,
-            y: 0,
-            x: 0,
-            type: 'chart',
-            chartType: type,
-            chartConfig: chartConfig
-        };
-
-        this.dashboard = [...this.dashboard, newItem];
-    }
-
-    // 修改 trackBy 函数
-    trackByFn(index: number, item: CustomGridsterItem): string {
-        // 确保返回一个真正唯一的标识符
-        if (!item.uniqueId) {
-            console.warn('Item without uniqueId found:', item);
-            item.uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${index}`;
-        }
-        return `${item.uniqueId}_${item.type}_${item.chartType}`;
     }
 } 

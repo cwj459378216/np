@@ -47,6 +47,22 @@ export class SidebarComponent implements OnInit {
     setActiveDropdown() {
         const currentPath = this.router.url;
         
+        // 检查是否是 report/template 相关路径
+        if (currentPath.includes('/report/template')) {
+            // 确保 report 菜单展开
+            if (!this.activeDropdown.includes('report')) {
+                this.activeDropdown = [...this.activeDropdown, 'report'];
+            }
+
+            // 设置当前路径的 active 状态
+            setTimeout(() => {
+                const selector = document.querySelector('.sidebar ul a[routerLink="/report/template/list"]');
+                if (selector) {
+                    selector.classList.add('active');
+                }
+            });
+        }
+        
         // 检查是否是 alarm 相关路径
         if (currentPath.includes('/alarm/')) {
             if (!this.activeDropdown.includes('eventAlarm')) {

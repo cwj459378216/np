@@ -1,11 +1,10 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { Router } from '@angular/router';
 
 @Component({
-    selector: 'app-list',
-    templateUrl: './list.component.html'
+    selector: 'app-report-list',
+    templateUrl: './report-list.component.html'
 })
-export class ListComponent implements OnInit {
+export class ReportListComponent implements OnInit {
     @ViewChild('datatable') datatable: any;
     
     items: any = [];
@@ -19,26 +18,25 @@ export class ListComponent implements OnInit {
         { field: 'actions', title: 'Actions', sort: false, headerClass: 'justify-center' },
     ];
 
-    constructor(private router: Router) {}
+    constructor() {}
 
     ngOnInit() {
         // 模拟数据
         this.items = [
             {
                 id: 1,
-                name: 'Sales Dashboard',
-                description: 'Monthly sales performance dashboard',
+                name: 'Monthly Report',
+                description: 'Monthly security analysis report',
                 createTime: '2024-01-15 10:30',
                 creator: 'John Doe'
             },
             {
                 id: 2,
-                name: 'Marketing Analytics',
-                description: 'Marketing campaign analysis dashboard',
+                name: 'Weekly Report',
+                description: 'Weekly security status report',
                 createTime: '2024-01-16 14:20',
                 creator: 'Jane Smith'
-            },
-            // 可以添加更多数据...
+            }
         ];
     }
 
@@ -58,8 +56,7 @@ export class ListComponent implements OnInit {
         }
     }
 
-    downloadTemplate(id: number) {
-        // TODO: 实现下载逻辑
-        console.log('Downloading template:', id);
+    downloadReport(id: number) {
+        console.log('Downloading report:', id);
     }
 } 

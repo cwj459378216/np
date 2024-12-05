@@ -1,0 +1,24 @@
+@import "~@ng-select/ng-select/themes/default.theme.css";
+
+// 自定义样式
+.custom-multiselect {
+    .ng-select-container {
+        @apply bg-white border-[#e0e6ed] dark:bg-[#1b2e4b] dark:border-[#253b5c];
+    }
+    
+    .ng-dropdown-panel {
+        @apply bg-white border-[#e0e6ed] dark:bg-[#1b2e4b] dark:border-[#253b5c];
+        
+        .ng-option {
+            @apply text-black dark:text-white-dark;
+            
+            &.ng-option-selected {
+                @apply bg-primary/20;
+            }
+            
+            &.ng-option-marked {
+                @apply bg-primary/10;
+            }
+        }
+    }
+} 

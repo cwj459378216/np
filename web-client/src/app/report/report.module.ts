@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { GridsterModule } from 'angular-gridster2';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { NgxEchartsModule } from 'ngx-echarts';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 // 导入共享模块
 import { SharedModule } from 'src/shared.module';
@@ -14,6 +15,7 @@ import { ListComponent } from './template/list/list.component';
 import { PreviewComponent } from './template/preview/preview.component';
 import { AddComponent } from './template/add/add.component';
 import { EditComponent } from './template/edit/edit.component';
+import { ReportListComponent } from './report-list/report-list.component';
 
 const routes: Routes = [
     {
@@ -36,6 +38,10 @@ const routes: Routes = [
                 component: PreviewComponent
             }
         ]
+    },
+    {
+        path: 'list',
+        component: ReportListComponent
     }
 ];
 
@@ -44,7 +50,8 @@ const routes: Routes = [
         ListComponent,
         AddComponent,
         EditComponent,
-        PreviewComponent
+        PreviewComponent,
+        ReportListComponent
     ],
     imports: [
         CommonModule,
@@ -56,7 +63,8 @@ const routes: Routes = [
         NgApexchartsModule,
         NgxEchartsModule.forRoot({
             echarts: () => import('echarts')
-        })
+        }),
+        NgSelectModule,
     ]
 })
 export class ReportModule { } 
