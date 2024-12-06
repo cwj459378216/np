@@ -1,0 +1,195 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">Report</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>Notification Rules</span>
+        </li>
+    </ul>
+    
+    <div class="pt-5">
+        <div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-xl"></h2>
+                <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                    <div class="flex gap-3">
+                        <div>
+                            <button type="button" class="btn btn-primary" (click)="editRule()">
+                                Add Rule
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary p-2"
+                                [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
+                                (click)="displayType = 'list'">
+                                <icon-list-check />
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary p-2"
+                                [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
+                                (click)="displayType = 'grid'">
+                                <icon-layout-grid />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <input type="text" placeholder="Search Rules"
+                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchText"
+                            (ngModelChange)="searchRules()" />
+                        <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                            <icon-search class="mx-auto" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel mt-5 overflow-hidden border-0 p-0">
+                <div class="table-responsive">
+                    <table class="table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rule Name</th>
+                                <th>Time Window</th>
+                                <th>Trigger Condition</th>
+                                <th>Notification Method</th>
+                                <th>Status</th>
+                                <th class="!text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let rule of filteredRules">
+                                <td>{{ rule.ruleName }}</td>
+                                <td>{{ rule.timeWindow }}</td>
+                                <td>
+                                    <ng-container *ngIf="rule.triggerCondition === 'new_event'">
+                                        On New Event
+                                    </ng-container>
+                                    <ng-container *ngIf="rule.triggerCondition === 'condition'">
+                                        <div *ngFor="let filter of rule.filters">
+                                            {{filter.field | titlecase}}: {{filter.value}}
+                                        </div>
+                                    </ng-container>
+                                </td>
+                                <td>{{ rule.notificationMethod.charAt(0).toUpperCase() + rule.notificationMethod.slice(1) }}</td>
+                                <td>
+                                    <span [ngClass]="{
+                                        'badge badge-outline-success': rule.status === 'Active',
+                                        'badge badge-outline-danger': rule.status === 'Inactive'
+                                    }">{{ rule.status }}</span>
+                                </td>
+                                <td>
+                                    <div class="flex items-center justify-center gap-4">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            (click)="editRule(rule)">Edit</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            (click)="deleteRule(rule)">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- add/edit rule modal -->
+            <ngx-custom-modal #addRuleModal class="no-footer">
+                <ng-template #modalHeader>
+                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Rule' : 'Add Rule' }}</div>
+                </ng-template>
+                <ng-template #modalBody>
+                    <form [formGroup]="params" class="text-sm" (ngSubmit)="saveRule()" ngNativeValidate>
+                        <div class="mb-5">
+                            <label for="ruleName">Rule Name</label>
+                            <input id="ruleName" type="text" formControlName="ruleName" class="form-input" required />
+                        </div>
+                        <div class="mb-5">
+                            <label for="timeWindow">Time Window</label>
+                            <select id="timeWindow" formControlName="timeWindow" class="form-select" required>
+                                <option *ngFor="let option of timeWindowOptions" [value]="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-5">
+                            <label for="triggerCondition">Trigger Condition</label>
+                            <select id="triggerCondition" formControlName="triggerCondition" class="form-select" required>
+                                <option *ngFor="let option of triggerConditionOptions" [value]="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-5" *ngIf="params.get('triggerCondition')?.value === 'condition'">
+                            <label>Filter</label>
+                            <div class="space-y-3">
+                                <div *ngFor="let filter of filters; let i = index" class="flex gap-2">
+                                    <select 
+                                        class="form-select flex-1" 
+                                        [(ngModel)]="filter.field"
+                                        [name]="'filterField' + i"
+                                        [ngModelOptions]="{standalone: true}"
+                                    >
+                                        <option value="">Select Field</option>
+                                        <option *ngFor="let field of filterFields" [value]="field.value">
+                                            {{field.label}}
+                                        </option>
+                                    </select>
+                                    
+                                    <input
+                                        type="text"
+                                        class="form-input flex-1"
+                                        placeholder="Enter filter value"
+                                        [(ngModel)]="filter.value"
+                                        [name]="'filterValue' + i"
+                                        [ngModelOptions]="{standalone: true}"
+                                    />
+                                    
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-danger p-2"
+                                        *ngIf="i > 0"
+                                        (click)="removeFilter(i)"
+                                    >
+                                        <icon-x class="w-4 h-4"/>
+                                    </button>
+                                    
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-primary p-2"
+                                        *ngIf="i === filters.length - 1"
+                                        (click)="addFilter()"
+                                    >
+                                        <icon-plus class="w-4 h-4"/>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-5">
+                            <label for="notificationMethod">Notification Method</label>
+                            <select id="notificationMethod" formControlName="notificationMethod" class="form-select" required>
+                                <option *ngFor="let option of notificationMethodOptions" [value]="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-5">
+                            <label for="status">Status</label>
+                            <select id="status" formControlName="status" class="form-select" required>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="mt-8 flex items-center justify-end">
+                            <button type="button" class="btn btn-outline-danger" (click)="addRuleModal.close()">Cancel</button>
+                            <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
+                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                            </button>
+                        </div>
+                    </form>
+                </ng-template>
+            </ngx-custom-modal>
+        </div>
+    </div>
+</div> 
