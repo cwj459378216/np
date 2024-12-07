@@ -308,6 +308,15 @@
                                                 {{ 'Notification Rule' | translate }}
                                             </a>
                                         </li>
+                                        <li>
+                                            <a 
+                                                routerLink="/report/scheduler" 
+                                                routerLinkActive="active" 
+                                                (click)="toggleMobileMenu()"
+                                            >
+                                                {{ 'Report Scheduler' | translate }}
+                                            </a>
+                                        </li>
                                     </ul>
                                 </div>
                             </li>
@@ -342,11 +351,16 @@
                                             >
                                         </li>
                                         <li>
+                                            <a routerLink="/notification-settings" routerLinkActive="active" (click)="toggleMobileMenu()"
+                                                >{{ 'Notification Settings' | translate }}</a
+                                            >
+                                        </li>
+                                        <li>
                                             <a routerLink="/system-time" routerLinkActive="active" (click)="toggleMobileMenu()"
                                                 >{{ 'System Time' | translate }}</a
                                             >
                                         </li>
-                                         <li>
+                                        <li>
                                             <a routerLink="/interface-management" routerLinkActive="active" (click)="toggleMobileMenu()"
                                                 >{{ 'Interface Management' | translate }}</a
                                             >

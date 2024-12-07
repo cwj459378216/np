@@ -73,7 +73,14 @@
                                         </div>
                                     </ng-container>
                                 </td>
-                                <td>{{ rule.notificationMethod.charAt(0).toUpperCase() + rule.notificationMethod.slice(1) }}</td>
+                                <td>
+                                    <ng-container *ngIf="rule.notificationMethod === 'syslog'">
+                                        Syslog ({{ rule.endpoint }})
+                                    </ng-container>
+                                    <ng-container *ngIf="rule.notificationMethod === 'email'">
+                                        Email
+                                    </ng-container>
+                                </td>
                                 <td>
                                     <span [ngClass]="{
                                         'badge badge-outline-success': rule.status === 'Active',
@@ -173,6 +180,30 @@
                                     {{ option.label }}
                                 </option>
                             </select>
+                        </div>
+                        <div *ngIf="params.get('notificationMethod')?.value === 'syslog'" class="space-y-3">
+                            <div class="mb-5">
+                                <label for="host">Host to Send</label>
+                                <input 
+                                    id="host" 
+                                    type="text" 
+                                    formControlName="host" 
+                                    class="form-input" 
+                                    placeholder="192.168.1.100"
+                                    required 
+                                />
+                            </div>
+                            <div class="mb-5">
+                                <label for="port">Port</label>
+                                <input 
+                                    id="port" 
+                                    type="text" 
+                                    formControlName="port" 
+                                    class="form-input" 
+                                    placeholder="514"
+                                    required 
+                                />
+                            </div>
                         </div>
                         <div class="mb-5">
                             <label for="status">Status</label>

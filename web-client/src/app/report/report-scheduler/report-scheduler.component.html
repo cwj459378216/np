@@ -1,0 +1,162 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">Report</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>Report Scheduler</span>
+        </li>
+    </ul>
+    
+    <div class="pt-5">
+        <div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-xl"></h2>
+                <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                    <div class="flex gap-3">
+                        <div>
+                            <button type="button" class="btn btn-primary" (click)="editScheduler()">
+                                Add Schedule
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary p-2"
+                                [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
+                                (click)="displayType = 'list'">
+                                <icon-list-check />
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary p-2"
+                                [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
+                                (click)="displayType = 'grid'">
+                                <icon-layout-grid />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <input type="text" placeholder="Search Schedules"
+                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchText"
+                            (ngModelChange)="searchSchedulers()" />
+                        <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                            <icon-search class="mx-auto" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel mt-5 overflow-hidden border-0 p-0">
+                <div class="table-responsive">
+                    <table class="table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Template</th>
+                                <th>Frequency</th>
+                                <th>Time</th>
+                                <th>Where to Send</th>
+                                <th>Status</th>
+                                <th>Creation Time</th>
+                                <th class="!text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let scheduler of filteredSchedulers">
+                                <td>{{ scheduler.name }}</td>
+                                <td>{{ scheduler.description }}</td>
+                                <td>{{ scheduler.template }}</td>
+                                <td>{{ scheduler.frequency }}</td>
+                                <td>{{ scheduler.time }}</td>
+                                <td>{{ getWhereToSendLabel(scheduler.whereToSend) }}</td>
+                                <td>
+                                    <span [ngClass]="{
+                                        'badge badge-outline-success': scheduler.status === 'Active',
+                                        'badge badge-outline-danger': scheduler.status === 'Inactive'
+                                    }">{{ scheduler.status }}</span>
+                                </td>
+                                <td>{{ scheduler.creationTime }}</td>
+                                <td>
+                                    <div class="flex items-center justify-center gap-4">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            (click)="editScheduler(scheduler)">Edit</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            (click)="deleteScheduler(scheduler)">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ngx-custom-modal #addSchedulerModal class="no-footer">
+        <ng-template #modalHeader>
+            <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Schedule' : 'Add Schedule' }}</div>
+        </ng-template>
+        <ng-template #modalBody>
+            <form [formGroup]="params" class="text-sm" (ngSubmit)="saveScheduler()" ngNativeValidate>
+                <div class="mb-5">
+                    <label for="name">Name</label>
+                    <input id="name" type="text" formControlName="name" class="form-input" required />
+                </div>
+                <div class="mb-5">
+                    <label for="description">Description</label>
+                    <textarea id="description" formControlName="description" class="form-input" rows="3" required></textarea>
+                </div>
+                <div class="mb-5">
+                    <label for="template">Template</label>
+                    <select id="template" formControlName="template" class="form-select" required>
+                        <option value="">Select Template</option>
+                        <option *ngFor="let option of templateOptions" [value]="option.value">
+                            {{ option.label }}
+                        </option>
+                    </select>
+                </div>
+                <div class="mb-5">
+                    <label for="frequency">Frequency</label>
+                    <select id="frequency" formControlName="frequency" class="form-select" required>
+                        <option value="">Select Frequency</option>
+                        <option value="Daily">Daily</option>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Monthly">Monthly</option>
+                    </select>
+                </div>
+                <div class="mb-5">
+                    <label for="time">Time</label>
+                    <input id="time" type="time" formControlName="time" class="form-input" required />
+                </div>
+                <div class="mb-5">
+                    <label for="whereToSend">Where to Send</label>
+                    <select 
+                        id="whereToSend" 
+                        formControlName="whereToSend" 
+                        class="form-select" 
+                        required
+                    >
+                        <option value="">Select Destination</option>
+                        <option *ngFor="let option of whereToSendOptions" [value]="option.value">
+                            {{ option.label }}
+                        </option>
+                    </select>
+                </div>
+                <div class="mb-5">
+                    <label for="status">Status</label>
+                    <select id="status" formControlName="status" class="form-select" required>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="mt-8 flex items-center justify-end">
+                    <button type="button" class="btn btn-outline-danger" (click)="addSchedulerModal.close()">Cancel</button>
+                    <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
+                        {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                    </button>
+                </div>
+            </form>
+        </ng-template>
+    </ngx-custom-modal>
+</div> 

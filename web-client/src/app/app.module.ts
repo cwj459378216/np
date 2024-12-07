@@ -79,6 +79,7 @@ import { RuleUpdateComponent } from './pages/threat-management/rule-update/rule-
 import { LocalRulesComponent } from './pages/threat-management/local-rules/local-rules.component';
 import { LogComponent } from './log/log.component';
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
+import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 
 const appRoutes: Routes = [
     {
@@ -115,6 +116,7 @@ const appRoutes: Routes = [
             { path: 'system-time', component: SystemTimeComponent },
             { path: 'interface-management', component: InterfaceManagementComponent },
             { path: 'asset-book', component: AssetBookComponent },
+            { path: 'notification-settings', component: NotificationSettingsComponent },
             
             // Log路由
             { path: 'log', component: LogComponent },
@@ -185,7 +187,8 @@ const appRoutes: Routes = [
       RuleUpdateComponent,
       LocalRulesComponent,
       LogComponent,
-      AssetBookComponent
+      AssetBookComponent,
+      NotificationSettingsComponent
    ],
 
     providers: [Title],

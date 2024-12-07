@@ -17,6 +17,7 @@ import { AddComponent } from './template/add/add.component';
 import { EditComponent } from './template/edit/edit.component';
 import { ReportListComponent } from './report-list/report-list.component';
 import { NotificationRuleComponent } from './notification-rule/notification-rule.component';
+import { ReportSchedulerComponent } from './report-scheduler/report-scheduler.component';
 
 const routes: Routes = [
     {
@@ -47,6 +48,10 @@ const routes: Routes = [
     {
         path: 'notification-rule',
         component: NotificationRuleComponent
+    },
+    {
+        path: 'scheduler',
+        component: ReportSchedulerComponent
     }
 ];
 
@@ -57,7 +62,8 @@ const routes: Routes = [
         EditComponent,
         PreviewComponent,
         ReportListComponent,
-        NotificationRuleComponent
+        NotificationRuleComponent,
+        ReportSchedulerComponent
     ],
     imports: [
         CommonModule,

@@ -65,7 +65,18 @@ export class NotificationRuleComponent implements OnInit {
             triggerCondition: [''],
             notificationMethod: [''],
             status: ['Active'],
-            filters: [[]]
+            filters: [[]],
+            host: [''],
+            port: ['']
+        });
+
+        this.params.get('notificationMethod')?.valueChanges.subscribe(value => {
+            if (value === 'syslog') {
+                this.params.patchValue({
+                    host: '',
+                    port: ''
+                });
+            }
         });
     }
 
@@ -83,14 +94,30 @@ export class NotificationRuleComponent implements OnInit {
 
     editRule(rule: any = null) {
         if (rule) {
-            this.params.patchValue({
-                id: rule.id,
-                ruleName: rule.ruleName,
-                timeWindow: rule.timeWindow,
-                triggerCondition: rule.triggerCondition,
-                notificationMethod: rule.notificationMethod,
-                status: rule.status
-            });
+            if (rule.notificationMethod === 'syslog') {
+                const [host, port] = rule.endpoint?.split(':') || ['', ''];
+                this.params.patchValue({
+                    id: rule.id,
+                    ruleName: rule.ruleName,
+                    timeWindow: rule.timeWindow,
+                    triggerCondition: rule.triggerCondition,
+                    notificationMethod: rule.notificationMethod,
+                    status: rule.status,
+                    host: host,
+                    port: port
+                });
+            } else {
+                this.params.patchValue({
+                    id: rule.id,
+                    ruleName: rule.ruleName,
+                    timeWindow: rule.timeWindow,
+                    triggerCondition: rule.triggerCondition,
+                    notificationMethod: rule.notificationMethod,
+                    status: rule.status,
+                    host: '',
+                    port: ''
+                });
+            }
             this.filters = rule.filters || [{ field: '', value: '' }];
         } else {
             this.params.reset();
@@ -108,8 +135,13 @@ export class NotificationRuleComponent implements OnInit {
 
     saveRule() {
         const formValue = this.params.value;
+        const endpoint = formValue.notificationMethod === 'syslog' 
+            ? `${formValue.host}:${formValue.port}`
+            : '';
+            
         const ruleData = {
             ...formValue,
+            endpoint: endpoint,
             filters: this.filters
         };
 

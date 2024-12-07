@@ -1,0 +1,235 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>Notification Settings</span>
+        </li>
+    </ul>
+    <div class="pt-5">
+        <div>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-xl"></h2>
+                <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+                    <div class="flex gap-3">
+                        <div>
+                            <button type="button" class="btn btn-primary" (click)="editSetting()">
+                                Add Setting
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary p-2"
+                                [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
+                                (click)="displayType = 'list'">
+                                <icon-list-check />
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary p-2"
+                                [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
+                                (click)="displayType = 'grid'">
+                                <icon-layout-grid />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <input type="text" placeholder="Search Settings"
+                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchText"
+                            (ngModelChange)="searchSettings()" />
+                        <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                            <icon-search class="mx-auto" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel mt-5 overflow-hidden border-0 p-0">
+                <div class="table-responsive">
+                    <table class="table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Service</th>
+                                <th>Endpoint</th>
+                                <th>Creation Time</th>
+                                <th class="!text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let setting of filteredSettings">
+                                <td>{{ setting.name }}</td>
+                                <td>{{ setting.description }}</td>
+                                <td>{{ setting.service }}</td>
+                                <td>{{ setting.endpoint }}</td>
+                                <td>{{ setting.creationTime }}</td>
+                                <td>
+                                    <div class="flex items-center justify-center gap-4">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            (click)="editSetting(setting)">Edit</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            (click)="deleteSetting(setting)">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- add/edit setting modal -->
+            <ngx-custom-modal #addSettingModal class="no-footer">
+                <ng-template #modalHeader>
+                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Setting' : 'Add Setting' }}</div>
+                </ng-template>
+                <ng-template #modalBody>
+                    <form [formGroup]="params" class="text-sm" (ngSubmit)="saveSetting()" ngNativeValidate>
+                        <div class="mb-5">
+                            <label for="name">Name</label>
+                            <input id="name" type="text" formControlName="name" class="form-input" required />
+                        </div>
+                        <div class="mb-5">
+                            <label for="description">Description</label>
+                            <textarea id="description" formControlName="description" class="form-input" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-5">
+                            <label for="service">Service</label>
+                            <select id="service" formControlName="service" class="form-select" required>
+                                <option value="">Select Service</option>
+                                <option *ngFor="let option of serviceOptions" [value]="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                        </div>
+                        <div *ngIf="params.get('service')?.value === 'email'" class="space-y-3">
+                            <div class="mb-5">
+                                <label for="mailServer">Mail Server</label>
+                                <input 
+                                    id="mailServer" 
+                                    type="text" 
+                                    formControlName="mailServer" 
+                                    class="form-input" 
+                                    placeholder="smtp.example.com"
+                                    required 
+                                />
+                            </div>
+                            
+                            <div class="mb-5">
+                                <label for="security">Security</label>
+                                <select id="security" formControlName="security" class="form-select" required>
+                                    <option value="">Select Security Type</option>
+                                    <option *ngFor="let option of securityOptions" [value]="option.value">
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-5">
+                                <label for="emailPort">Port</label>
+                                <input 
+                                    id="emailPort" 
+                                    type="text" 
+                                    formControlName="emailPort" 
+                                    class="form-input" 
+                                    placeholder="587"
+                                    required 
+                                />
+                            </div>
+                            
+                            <div class="mb-5">
+                                <label for="accountName">Account Name</label>
+                                <input 
+                                    id="accountName" 
+                                    type="text" 
+                                    formControlName="accountName" 
+                                    class="form-input" 
+                                    placeholder="admin@example.com"
+                                    required 
+                                />
+                            </div>
+                            
+                            <div class="mb-5">
+                                <label for="password">Password</label>
+                                <input 
+                                    id="password" 
+                                    type="password" 
+                                    formControlName="password" 
+                                    class="form-input" 
+                                    required 
+                                />
+                            </div>
+                            
+                            <div class="mb-5">
+                                <label for="sender">Sender</label>
+                                <input 
+                                    id="sender" 
+                                    type="email" 
+                                    formControlName="sender" 
+                                    class="form-input" 
+                                    placeholder="noreply@example.com"
+                                    required 
+                                />
+                            </div>
+                            
+                            <div class="mb-5">
+                                <label for="receiver">Receiver</label>
+                                <input 
+                                    id="receiver" 
+                                    type="email" 
+                                    formControlName="receiver" 
+                                    class="form-input" 
+                                    placeholder="admin@company.com"
+                                    required 
+                                />
+                            </div>
+                            
+                            <div class="mb-5">
+                                <label for="subject">Subject</label>
+                                <input 
+                                    id="subject" 
+                                    type="text" 
+                                    formControlName="subject" 
+                                    class="form-input" 
+                                    placeholder="System Notification"
+                                    required 
+                                />
+                            </div>
+                        </div>
+                        <div *ngIf="params.get('service')?.value === 'syslog'" class="space-y-3">
+                            <div class="mb-5">
+                                <label for="host">Host to Send</label>
+                                <input 
+                                    id="host" 
+                                    type="text" 
+                                    formControlName="host" 
+                                    class="form-input" 
+                                    placeholder="192.168.1.100"
+                                    required 
+                                />
+                            </div>
+                            <div class="mb-5">
+                                <label for="syslogPort">Port</label>
+                                <input 
+                                    id="syslogPort" 
+                                    type="text" 
+                                    formControlName="syslogPort" 
+                                    class="form-input" 
+                                    placeholder="514"
+                                    required 
+                                />
+                            </div>
+                        </div>
+                        <div class="mt-8 flex items-center justify-end">
+                            <button type="button" class="btn btn-outline-danger" (click)="addSettingModal.close()">Cancel</button>
+                            <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
+                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                            </button>
+                        </div>
+                    </form>
+                </ng-template>
+            </ngx-custom-modal>
+        </div>
+    </div>
+</div> 

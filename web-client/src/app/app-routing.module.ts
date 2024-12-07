@@ -6,6 +6,7 @@ import { RulesPolicyComponent } from './pages/threat-management/rules-policy/rul
 import { RuleUpdateComponent } from './pages/threat-management/rule-update/rule-update.component';
 import { LocalRulesComponent } from './pages/threat-management/local-rules/local-rules.component';
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
+import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 
 const routes: Routes = [
   // ... other routes
