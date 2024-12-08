@@ -181,30 +181,6 @@
                                 </option>
                             </select>
                         </div>
-                        <div *ngIf="params.get('notificationMethod')?.value === 'syslog'" class="space-y-3">
-                            <div class="mb-5">
-                                <label for="host">Host to Send</label>
-                                <input 
-                                    id="host" 
-                                    type="text" 
-                                    formControlName="host" 
-                                    class="form-input" 
-                                    placeholder="192.168.1.100"
-                                    required 
-                                />
-                            </div>
-                            <div class="mb-5">
-                                <label for="port">Port</label>
-                                <input 
-                                    id="port" 
-                                    type="text" 
-                                    formControlName="port" 
-                                    class="form-input" 
-                                    placeholder="514"
-                                    required 
-                                />
-                            </div>
-                        </div>
                         <div class="mb-5">
                             <label for="status">Status</label>
                             <select id="status" formControlName="status" class="form-select" required>

@@ -48,6 +48,12 @@ import { RulesPolicyComponent } from './pages/threat-management/rules-policy/rul
 import { RuleUpdateComponent } from './pages/threat-management/rule-update/rule-update.component';
 import { LocalRulesComponent } from './pages/threat-management/local-rules/local-rules.component';
 import { LogComponent } from './log/log.component';
+import { ListComponent } from './report/template/list/list.component';
+import { ReportListComponent } from './report/report-list/report-list.component';
+import { NotificationRuleComponent } from './report/notification-rule/notification-rule.component';
+import { ReportSchedulerComponent } from './report/report-scheduler/report-scheduler.component';
+import { AssetBookComponent } from './pages/asset-book/asset-book.component';
+import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 
 export const routes: Routes = [
     {
@@ -119,6 +125,20 @@ export const routes: Routes = [
             {
                 path: 'log',
                 component: LogComponent
+            },
+            {
+                path: 'report',
+                loadChildren: () => import('./report/report.module').then(m => m.ReportModule)
+            },
+            { 
+                path: 'asset-book', 
+                component: AssetBookComponent,
+                data: { title: 'Asset Book' }
+            },
+            { 
+                path: 'notification-settings', 
+                component: NotificationSettingsComponent,
+                data: { title: 'Notification Settings' }
             }
         ],
     }

@@ -52,6 +52,9 @@
                         {{ value.creator }}
                     </div>
                 </ng-template>
+                <ng-template slot="triggerMode" let-value="data">
+                    <div class="text-gray-600 dark:text-gray-400">{{ value.triggerMode }}</div>
+                </ng-template>
                 <ng-template slot="actions" let-value="data">
                     <div class="flex items-center justify-center gap-4">
                         <button type="button" class="hover:text-secondary" (click)="downloadReport(value.id)">
