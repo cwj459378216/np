@@ -52,82 +52,48 @@ import { LogComponent } from './log/log.component';
 export const routes: Routes = [
     {
         path: '',
-        redirectTo: 'auth/boxed-signin',  // 默认跳转到登录页面
+        redirectTo: 'auth/boxed-signin',
         pathMatch: 'full',
-      },
+    },
+    {
+        path: 'auth',
+        component: AuthLayout,
+        children: [
+            {
+                path: '',
+                loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule)
+            }
+        ]
+    },
     {
         path: '',
         component: AppLayout,
+        canActivate: [authGuard],
         children: [
-            // dashboard
-            // { path: '', redirectTo: 'auth/boxed-signin', pathMatch: 'full' }, // 默认重定向到 
-            // { path: 'auth/boxed-signin', component: BoxedSigninComponent, data: { title: 'Boxed Signin' } },
-
-            // { path: '', component: IndexComponent, data: { title: 'Sales Admin' } },
-            { path: 'dashboard', component: DashboardComponent, data: { title: 'Dashboard' }, canActivate: [authGuard] },
-            { path: 'collector', component: CollectorComponent, data: { title: 'Collector' }, canActivate: [authGuard] },
-            { path: 'user-management', component: UserManagementComponent, data: { title: 'User Management' }, canActivate: [authGuard] },
-            { path: 'role-management', component: RoleManagementComponent, data: { title: 'Role Management' }, canActivate: [authGuard] },
-            { path: 'system-time', component: SystemTimeComponent, data: { title: 'System Time' }, canActivate: [authGuard] },
-            { path: 'interface-management', component: InterfaceManagementComponent, data: { title: 'Interface Management' }, canActivate: [authGuard] },
-
-            { path: 'protocol-analysis/session-info', component: SessionInfoComponent, data: { title: 'Session Info' }, canActivate: [authGuard] },
-            // { path: 'protocol-analysis/application-protocols', component: ApplicationProtocolsComponent, data: { title: 'Application Protocols' }, canActivate: [authGuard] },
-            { path: 'protocol-analysis/application-protocols/http', component: ApplicationHttpComponent, data: { title: 'HTTP' }, canActivate: [authGuard] },
-            { path: 'protocol-analysis/application-protocols/smtp', component: ApplicationSmtpComponent, data: { title: 'SMTP' }, canActivate: [authGuard] },
-            { path: 'protocol-analysis/application-protocols/ftp', component: ApplicationFtpComponent, data: { title: 'FTP' }, canActivate: [authGuard] },
-            { path: 'protocol-analysis/settings', component: SettingsComponent, data: { title: 'Settings' }, canActivate: [authGuard] },
-
-            // { path: 'finance', component: FinanceComponent, data: { title: 'Finance Admin' } },
-            // { path: 'crypto', component: CryptoComponent, data: { title: 'Crypto Admin' } },
-
-            // widgets
-            // { path: 'widgets', component: WidgetsComponent, data: { title: 'Widgets' } },
-
-            // // font-icons
-            // { path: 'font-icons', component: FontIconsComponent, data: { title: 'Font Icons' } },
-
-            // // charts
-            // { path: 'charts', component: ChartsComponent, data: { title: 'Charts' } },
-
-            // // dragndrop
-            // { path: 'dragndrop', component: DragndropComponent, data: { title: 'Dragndrop' } },
-
-            // // pages
-            // { path: 'pages/knowledge-base', component: KnowledgeBaseComponent, data: { title: 'Knowledge Base' } },
-            // { path: 'pages/faq', component: FaqComponent, data: { title: 'FAQ' } },
-
-            //apps
-            // { path: '', loadChildren: () => import('./apps/apps.module').then((d) => d.AppsModule) },
-
-            // // components
-            // { path: '', loadChildren: () => import('./components/components.module').then((d) => d.ComponentsModule) },
-
-            // // elements
-            // { path: '', loadChildren: () => import('./elements/elements.module').then((d) => d.ElementsModule) },
-
-            // // forms
-            // { path: '', loadChildren: () => import('./forms/form.module').then((d) => d.FormModule) },
-
-            // // users
-            // { path: '', loadChildren: () => import('./users/user.module').then((d) => d.UsersModule) },
-
-            // // tables
-            // { path: 'tables', component: TablesComponent, data: { title: 'Tables' } },
-            // { path: '', loadChildren: () => import('./datatables/datatables.module').then((d) => d.DatatablesModule) },
-
-            // Event Alarm routes
+            { 
+                path: 'dashboard', 
+                component: DashboardComponent, 
+                data: { title: 'Dashboard' }
+            },
+            { path: 'collector', component: CollectorComponent, data: { title: 'Collector' } },
+            { path: 'user-management', component: UserManagementComponent, data: { title: 'User Management' } },
+            { path: 'role-management', component: RoleManagementComponent, data: { title: 'Role Management' } },
+            { path: 'system-time', component: SystemTimeComponent, data: { title: 'System Time' } },
+            { path: 'interface-management', component: InterfaceManagementComponent, data: { title: 'Interface Management' } },
+            { path: 'protocol-analysis/session-info', component: SessionInfoComponent, data: { title: 'Session Info' } },
+            { path: 'protocol-analysis/application-protocols/http', component: ApplicationHttpComponent, data: { title: 'HTTP' } },
+            { path: 'protocol-analysis/application-protocols/smtp', component: ApplicationSmtpComponent, data: { title: 'SMTP' } },
+            { path: 'protocol-analysis/application-protocols/ftp', component: ApplicationFtpComponent, data: { title: 'FTP' } },
+            { path: 'protocol-analysis/settings', component: SettingsComponent, data: { title: 'Settings' } },
             { 
                 path: 'alarm/event', 
                 component: EventComponent, 
-                data: { title: 'Event' },
-                canActivate: [authGuard] 
+                data: { title: 'Event' }
             },
             { 
                 path: 'alarm/settings', 
                 component: AlarmSettingsComponent, 
-                data: { title: 'Alarm Settings' },
-                canActivate: [authGuard] 
+                data: { title: 'Alarm Settings' }
             },
             {
                 path: 'threat-management',
@@ -155,30 +121,5 @@ export const routes: Routes = [
                 component: LogComponent
             }
         ],
-    },
-
-    {
-        path: '',
-        component: AuthLayout,
-        children: [
-            // pages
-            { path: '', loadChildren: () => import('./pages/pages.module').then((d) => d.PagesModule) },
-
-            // auth
-            { path: '', loadChildren: () => import('./auth/auth.module').then((d) => d.AuthModule) },
-        ],
-    },
-    {
-        path: 'alarm',
-        children: [
-            {
-                path: 'event',
-                component: EventComponent
-            },
-            {
-                path: 'settings',
-                component: AlarmSettingsComponent
-            }
-        ]
     }
 ];

@@ -81,58 +81,9 @@ import { LogComponent } from './log/log.component';
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 
-const appRoutes: Routes = [
-    {
-        path: '',
-        component: AppLayout,
-        children: [
-            // 默认路由
-            { path: '', component: IndexComponent },
-            { path: 'dashboard', component: DashboardComponent },
-            
-            // Collector相关路由
-            { path: 'collector', component: CollectorComponent },
-            
-            // Protocol Analysis相关路由
-            { path: 'protocol-analysis/session-info', component: SessionInfoComponent },
-            { path: 'protocol-analysis/application-protocols/http', component: ApplicationHttpComponent },
-            { path: 'protocol-analysis/application-protocols/smtp', component: ApplicationSmtpComponent },
-            { path: 'protocol-analysis/application-protocols/ftp', component: ApplicationFtpComponent },
-            { path: 'protocol-analysis/settings', component: SettingsComponent },
-            
-            // Event Alarm相关路由
-            { path: 'alarm/event', component: EventComponent },
-            { path: 'alarm/settings', component: AlarmSettingsComponent },
-            
-            // Threat Management相关路由
-            { path: 'threat-management/basic-configuration', component: BasicConfigurationComponent },
-            { path: 'threat-management/rules-policy', component: RulesPolicyComponent },
-            { path: 'threat-management/rule-update', component: RuleUpdateComponent },
-            { path: 'threat-management/local-rules', component: LocalRulesComponent },
-            
-            // System Settings相关路由
-            { path: 'user-management', component: UserManagementComponent },
-            { path: 'role-management', component: RoleManagementComponent },
-            { path: 'system-time', component: SystemTimeComponent },
-            { path: 'interface-management', component: InterfaceManagementComponent },
-            { path: 'asset-book', component: AssetBookComponent },
-            { path: 'notification-settings', component: NotificationSettingsComponent },
-            
-            // Log路由
-            { path: 'log', component: LogComponent },
-            
-            // Report模块的懒加载路由
-            {
-                path: 'report',
-                loadChildren: () => import('./report/report.module').then(m => m.ReportModule)
-            }
-        ]
-    }
-];
-
 @NgModule({
     imports: [
-        RouterModule.forRoot(appRoutes, { scrollPositionRestoration: 'enabled' }),
+        RouterModule.forRoot(routes, { scrollPositionRestoration: 'enabled' }),
         BrowserModule,
         BrowserAnimationsModule,
         CommonModule,

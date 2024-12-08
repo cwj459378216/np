@@ -6,6 +6,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { AppService } from 'src/app/service/app.service';
 
 @Component({
+    selector: 'app-boxed-signin',
     templateUrl: './boxed-signin.html',
     animations: [toggleAnimation],
 })
@@ -41,11 +42,12 @@ export class BoxedSigninComponent {
     }
 
     submit() {
-         if (this.inputEmail == "admin" && this.inputPassword == "admin123") {
+        if (this.inputEmail === "admin" && this.inputPassword === "admin123") {
+            // 登录成功后
+            localStorage.setItem('auth_token', 'your_token_here');
             this.router.navigate(['/dashboard']);
-            localStorage.setItem('auth_token', 'admin')
         } else {
-            alert("Invalid Credentials")
+            alert("Invalid Credentials");
         }
     }
 }
