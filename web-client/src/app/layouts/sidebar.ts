@@ -47,17 +47,32 @@ export class SidebarComponent implements OnInit {
     setActiveDropdown() {
         const currentPath = this.router.url;
         
-        // 检查是否是 report/template 相关路径
-        if (currentPath.includes('/report/template')) {
+        // 检查是否是 report 相关路径
+        if (currentPath.includes('/report')) {
             // 确保 report 菜单展开
             if (!this.activeDropdown.includes('report')) {
                 this.activeDropdown = [...this.activeDropdown, 'report'];
             }
 
-            // 设置当前路径的 active 状态
+            // 根据不同的子路径设置对应的 active 状态
             setTimeout(() => {
-                const selector = document.querySelector('.sidebar ul a[routerLink="/report/template/list"]');
+                let selector;
+                if (currentPath.includes('/report/template')) {
+                    selector = document.querySelector('.sidebar ul a[routerLink="/report/template/list"]');
+                } else if (currentPath.includes('/report/list')) {
+                    selector = document.querySelector('.sidebar ul a[routerLink="/report/list"]');
+                } else if (currentPath.includes('/report/notification-rule')) {
+                    selector = document.querySelector('.sidebar ul a[routerLink="/report/notification-rule"]');
+                } else if (currentPath.includes('/report/scheduler')) {
+                    selector = document.querySelector('.sidebar ul a[routerLink="/report/scheduler"]');
+                }
+
                 if (selector) {
+                    // 移除其他 active 类
+                    document.querySelectorAll('.sidebar ul a').forEach(el => {
+                        el.classList.remove('active');
+                    });
+                    // 添加 active 类到当前元素
                     selector.classList.add('active');
                 }
             });
