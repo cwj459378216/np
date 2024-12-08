@@ -8,7 +8,7 @@
         </li>
     </ul>
 
-    <div class="panel">
+    <div class="">
         <div class="mb-5 flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <button type="button" 
@@ -29,12 +29,12 @@
         </div>
 
         <!-- Gridster布局 -->
-        <gridster [options]="options" class="h-[800px]">
+        <gridster [options]="options" class="h-[800px] !bg-transparent">
             <gridster-item 
                 *ngFor="let item of dashboard"
                 [item]="item"
             >
-                <div class="flex flex-col h-full w-full bg-white p-4 dark:bg-[#1b2e4b]">
+                <div class="panel flex flex-col h-full w-full">
                     <div class="flex justify-between mb-2">
                         <span class="text-base font-medium">{{ item.type === 'table' ? 'Table' : (item.chartType | titlecase) + ' Chart' }}</span>
                     </div>
