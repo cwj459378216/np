@@ -3,6 +3,18 @@ import { toggleAnimation } from 'src/app/shared/animations';
 import Swal from 'sweetalert2';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+
+interface Asset {
+    id: number;
+    asset_name: string;
+    ip_address: string;
+    mac_address: string;
+    type: string;
+    status: string;
+    last_updated: string;
+}
 
 @Component({
     selector: 'app-asset-book',
@@ -27,36 +39,20 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
     `]
 })
 export class AssetBookComponent {
-    constructor(public fb: FormBuilder) {}
+    constructor(
+        public fb: FormBuilder,
+        private http: HttpClient
+    ) {}
     
     displayType = 'list';
     optionsType = ['Server', 'Workstation', 'Network Device', 'Security Device'];
     
     @ViewChild('addContactModal') addContactModal!: NgxCustomModalComponent;
     params!: FormGroup;
-    filterdContactsList: any = [];
+    filterdContactsList: Asset[] = [];
     searchUser = '';
     
-    assetList = [
-        {
-            id: 1,
-            asset_name: 'Server-01',
-            ip_address: '192.168.1.100',
-            mac_address: '00:1B:44:11:3A:B7',
-            type: 'Server',
-            status: 'Active',
-            last_updated: '2024-03-21 10:30:45'
-        },
-        {
-            id: 2,
-            asset_name: 'Workstation-02',
-            ip_address: '192.168.1.101',
-            mac_address: '00:1B:44:11:3A:B8',
-            type: 'Workstation',
-            status: 'Active',
-            last_updated: '2024-03-21 10:30:45'
-        }
-    ];
+    assetList: Asset[] = [];
 
     mask11 = [/\d/, /\d/, /\d/, '.', /\d/, /\d/, /\d/, '.', /\d/, /\d/, /\d/, '.', /\d/, /\d/, /\d/];
     maskMAC = [/[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/];
@@ -74,87 +70,94 @@ export class AssetBookComponent {
     }
 
     ngOnInit() {
-        this.searchAssets();
+        this.loadAssets();
+        this.initForm();
+    }
+
+    loadAssets() {
+        this.http.get(`${environment.apiUrl}/api/assets`).subscribe(
+            (data: any) => {
+                this.assetList = data;
+                console.log('Loaded assets:', this.assetList);
+                this.searchAssets();
+            },
+            error => {
+                console.error('Error loading assets:', error);
+                this.showMessage('Error loading assets', 'error');
+            }
+        );
     }
 
     searchAssets() {
-        this.filterdContactsList = this.assetList.filter((d) => 
-            d.asset_name.toLowerCase().includes(this.searchUser.toLowerCase()) ||
-            d.ip_address.toLowerCase().includes(this.searchUser.toLowerCase()) ||
-            d.mac_address.toLowerCase().includes(this.searchUser.toLowerCase())
-        );
+        this.filterdContactsList = this.assetList.filter((d) => {
+            if (!d || !d.asset_name || !d.ip_address || !d.mac_address) {
+                return false;
+            }
+            return d.asset_name.toLowerCase().includes(this.searchUser.toLowerCase()) ||
+                d.ip_address.toLowerCase().includes(this.searchUser.toLowerCase()) ||
+                d.mac_address.toLowerCase().includes(this.searchUser.toLowerCase());
+        });
     }
 
     editUser(asset: any = null) {
         this.addContactModal.open();
         this.initForm();
         if (asset) {
-            this.params.setValue({
-                id: asset.id,
-                asset_name: asset.asset_name,
-                ip_address: asset.ip_address,
-                mac_address: asset.mac_address,
-                type: asset.type,
-                status: asset.status,
-                last_updated: asset.last_updated
+            this.params.patchValue({
+                id: asset.id || 0,
+                asset_name: asset.asset_name || '',
+                ip_address: asset.ip_address || '',
+                mac_address: asset.mac_address || '',
+                type: asset.type || '',
+                status: asset.status || 'Active',
+                last_updated: asset.last_updated || new Date().toISOString().slice(0, 19).replace('T', ' ')
             });
         }
     }
 
     saveUser() {
-        if (this.params.controls['asset_name'].errors) {
-            this.showMessage('Asset name is required.', 'error');
-            return;
-        }
-        if (this.params.controls['ip_address'].errors) {
-            this.showMessage('IP address is required.', 'error');
-            return;
-        }
-        if (this.params.controls['mac_address'].errors) {
-            this.showMessage('MAC address is required.', 'error');
-            return;
-        }
-        if (this.params.controls['type'].errors) {
-            this.showMessage('Asset type is required.', 'error');
+        if (!this.params.valid) {
+            this.showMessage('Please fill all required fields.', 'error');
             return;
         }
 
-        if (this.params.value.id) {
-            // update asset
-            let asset: any = this.assetList.find((d) => d.id === this.params.value.id);
-            asset.asset_name = this.params.value.asset_name;
-            asset.ip_address = this.params.value.ip_address;
-            asset.mac_address = this.params.value.mac_address;
-            asset.type = this.params.value.type;
-            asset.status = this.params.value.status;
-            asset.last_updated = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        } else {
-            // add asset
-            let maxId = this.assetList.length
-                ? this.assetList.reduce((max, asset) => (asset.id > max ? asset.id : max), this.assetList[0].id)
-                : 0;
+        const asset = this.params.value;
+        const url = `${environment.apiUrl}/api/assets${asset.id ? `/${asset.id}` : ''}`;
+        const method = asset.id ? 'put' : 'post';
 
-            let asset = {
-                id: maxId + 1,
-                asset_name: this.params.value.asset_name,
-                ip_address: this.params.value.ip_address,
-                mac_address: this.params.value.mac_address,
-                type: this.params.value.type,
-                status: 'Active',
-                last_updated: new Date().toISOString().slice(0, 19).replace('T', ' ')
-            };
-            this.assetList.splice(0, 0, asset);
-            this.searchAssets();
-        }
-
-        this.showMessage('Asset has been saved successfully.');
-        this.addContactModal.close();
+        this.http[method](url, asset).subscribe(
+            (response: any) => {
+                this.loadAssets();
+                this.showMessage('Asset has been saved successfully.');
+                this.addContactModal.close();
+            },
+            error => {
+                this.showMessage('Error saving asset', 'error');
+            }
+        );
     }
 
-    deleteUser(asset: any = null) {
-        this.assetList = this.assetList.filter((d) => d.id != asset.id);
-        this.searchAssets();
-        this.showMessage('Asset has been deleted successfully.');
+    deleteUser(asset: any) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            padding: '2em'
+        }).then((result) => {
+            if (result.value) {
+                this.http.delete(`${environment.apiUrl}/api/assets/${asset.id}`).subscribe(
+                    () => {
+                        this.loadAssets();
+                        this.showMessage('Asset has been deleted successfully.');
+                    },
+                    error => {
+                        this.showMessage('Error deleting asset', 'error');
+                    }
+                );
+            }
+        });
     }
 
     showMessage(msg = '', type = 'success') {
