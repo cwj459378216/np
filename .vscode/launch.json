@@ -8,7 +8,7 @@
             "type": "java",
             "name": "Debug Spring Boot",
             "request": "launch",
-            "cwd": "${workspaceFolder}/web-service/web-service",
+            "cwd": "${workspaceFolder}/web-service",
             "mainClass": "com.example.web_service.WebServiceApplication",
             "projectName": "web-service",
             "env": {
