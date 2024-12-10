@@ -3,6 +3,19 @@ import { toggleAnimation } from 'src/app/shared/animations';
 import Swal from 'sweetalert2';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+
+interface NetworkInterface {
+    id: number;
+    interface_name: string;
+    method: string;
+    ip_address: string | null;
+    netmask: string | null;
+    gateway: string | null;
+    created_at: string;
+}
+
 @Component({
   selector: 'app-interface-management',
   animations: [toggleAnimation],
@@ -10,270 +23,178 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
   styleUrl: './interface-management.component.css'
 })
 export class InterfaceManagementComponent {
-  constructor(public fb: FormBuilder) {}
-  displayType = 'list';
-  input4: any;
-  optionsMethod = ['Static', 'DHCP']
-  showDHCP = false;
-  mask11 = [/\d/, /\d/, /\d/, '.', /\d/, /\d/, /\d/, '.', /\d/, /\d/, /\d/, '.', /\d/, /\d/, /\d/];
+  constructor(
+    public fb: FormBuilder,
+    private http: HttpClient
+  ) {}
 
+  displayType = 'list';
+  optionsMethod = ['Static', 'DHCP'];
+  showDHCP = false;
+
+  interfaces: NetworkInterface[] = [];
+  filteredInterfaces: NetworkInterface[] = [];
+  searchText = '';
 
   @ViewChild('addContactModal') addContactModal!: NgxCustomModalComponent;
   params!: FormGroup;
-  filterdContactsList: any = [];
-  searchUser = '';
-  contactList = [
-      {
-          id: 1,
-          path: 'profile-35.png',
-          name: 'Alan Green',
-          role: 'Web Developer',
-          email: 'alan@mail.com',
-          location: 'Boston, USA',
-          phone: '+1 202 555 0197',
-          posts: 25,
-          followers: '5K',
-          following: 500,
-      },
-      {
-          id: 2,
-          path: 'profile-35.png',
-          name: 'Linda Nelson',
-          role: 'Web Designer',
-          email: 'linda@mail.com',
-          location: 'Sydney, Australia',
-          phone: '+1 202 555 0170',
-          posts: 25,
-          followers: '21.5K',
-          following: 350,
-      },
-      {
-          id: 3,
-          path: 'profile-35.png',
-          name: 'Lila Perry',
-          role: 'UX/UI Designer',
-          email: 'lila@mail.com',
-          location: 'Miami, USA',
-          phone: '+1 202 555 0105',
-          posts: 20,
-          followers: '21.5K',
-          following: 350,
-      },
-      {
-          id: 4,
-          path: 'profile-35.png',
-          name: 'Andy King',
-          role: 'Project Lead',
-          email: 'andy@mail.com',
-          location: 'Tokyo, Japan',
-          phone: '+1 202 555 0194',
-          posts: 25,
-          followers: '21.5K',
-          following: 300,
-      },
-      {
-          id: 5,
-          path: 'profile-35.png',
-          name: 'Jesse Cory',
-          role: 'Web Developer',
-          email: 'jesse@mail.com',
-          location: 'Edinburgh, UK',
-          phone: '+1 202 555 0161',
-          posts: 30,
-          followers: '20K',
-          following: 350,
-      },
-      {
-          id: 6,
-          path: 'profile-35.png',
-          name: 'Xavier',
-          role: 'UX/UI Designer',
-          email: 'xavier@mail.com',
-          location: 'New York, USA',
-          phone: '+1 202 555 0155',
-          posts: 25,
-          followers: '21.5K',
-          following: 350,
-      },
-      {
-          id: 7,
-          path: 'profile-35.png',
-          name: 'Susan',
-          role: 'Project Manager',
-          email: 'susan@mail.com',
-          location: 'Miami, USA',
-          phone: '+1 202 555 0118',
-          posts: 40,
-          followers: '21.5K',
-          following: 350,
-      },
-      {
-          id: 8,
-          path: 'profile-35.png',
-          name: 'Raci Lopez',
-          role: 'Web Developer',
-          email: 'traci@mail.com',
-          location: 'Edinburgh, UK',
-          phone: '+1 202 555 0135',
-          posts: 25,
-          followers: '21.5K',
-          following: 350,
-      },
-      {
-          id: 9,
-          path: 'profile-35.png',
-          name: 'Steven Mendoza',
-          role: 'HR',
-          email: 'sokol@verizon.net',
-          location: 'Monrovia, US',
-          phone: '+1 202 555 0100',
-          posts: 40,
-          followers: '21.8K',
-          following: 300,
-      },
-      {
-          id: 10,
-          path: 'profile-35.png',
-          name: 'James Cantrell',
-          role: 'Web Developer',
-          email: 'sravani@comcast.net',
-          location: 'Michigan, US',
-          phone: '+1 202 555 0134',
-          posts: 100,
-          followers: '28K',
-          following: 520,
-      },
-      {
-          id: 11,
-          path: 'profile-35.png',
-          name: 'Reginald Brown',
-          role: 'Web Designer',
-          email: 'drhyde@gmail.com',
-          location: 'Entrimo, Spain',
-          phone: '+1 202 555 0153',
-          posts: 35,
-          followers: '25K',
-          following: 500,
-      },
-      {
-          id: 12,
-          path: 'profile-35.png',
-          name: 'Stacey Smith',
-          role: 'Chief technology officer',
-          email: 'maikelnai@optonline.net',
-          location: 'Lublin, Poland',
-          phone: '+1 202 555 0115',
-          posts: 21,
-          followers: '5K',
-          following: 200,
-      },
-  ];
-
-  initForm() {
-      this.params = this.fb.group({
-          id: [0],
-          name: ['', Validators.required],
-          email: ['', Validators.compose([Validators.required, Validators.email])],
-          role: ['', Validators.required],
-          phone: ['', Validators.required],
-          location: [''],
-      });
-  }
 
   ngOnInit() {
-      this.searchContacts();
+    this.loadInterfaces();
+    this.initForm();
   }
 
-  searchContacts() {
-      this.filterdContactsList = this.contactList.filter((d) => d.name.toLowerCase().includes(this.searchUser.toLowerCase()));
+  loadInterfaces() {
+    this.http.get(`${environment.apiUrl}/api/interfaces`).subscribe(
+      (data: any) => {
+        this.interfaces = data;
+        this.searchInterfaces();
+      },
+      error => {
+        this.showMessage('Error loading interfaces', 'error');
+      }
+    );
   }
 
-  editUser(user: any = null) {
-      this.addContactModal.open();
-      this.initForm();
-      if (user) {
-          this.params.setValue({
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
-              phone: user.phone,
-              location: user.location,
-          });
-      }
+  initForm() {
+    this.params = this.fb.group({
+      id: [0],
+      interface_name: ['', Validators.required],
+      method: ['Static', Validators.required],
+      ip_address: ['', [Validators.pattern('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')]],
+      netmask: ['', [Validators.pattern('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')]],
+      gateway: ['', [Validators.pattern('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')]]
+    });
   }
 
-  saveUser() {
-      if (this.params.controls['name'].errors) {
-          this.showMessage('Name is required.', 'error');
-          return;
-      }
-      if (this.params.controls['email'].errors) {
-          this.showMessage('Email is required.', 'error');
-          return;
-      }
-      if (this.params.controls['phone'].errors) {
-          this.showMessage('Phone is required.', 'error');
-          return;
-      }
-      if (this.params.controls['role'].errors) {
-          this.showMessage('Occupation is required.', 'error');
-          return;
-      }
-
-      if (this.params.value.id) {
-          //update user
-          let user: any = this.contactList.find((d) => d.id === this.params.value.id);
-          user.name = this.params.value.name;
-          user.email = this.params.value.email;
-          user.role = this.params.value.role;
-          user.phone = this.params.value.phone;
-          user.location = this.params.value.location;
-      } else {
-          //add user
-          let maxUserId = this.contactList.length
-              ? this.contactList.reduce((max, character) => (character.id > max ? character.id : max), this.contactList[0].id)
-              : 0;
-
-          let user = {
-              id: maxUserId + 1,
-              path: 'profile-35.png',
-              name: this.params.value.name,
-              email: this.params.value.email,
-              role: this.params.value.role,
-              phone: this.params.value.phone,
-              location: this.params.value.location,
-              posts: 20,
-              followers: '5K',
-              following: 500,
-          };
-          this.contactList.splice(0, 0, user);
-          this.searchContacts();
-      }
-
-      this.showMessage('User has been saved successfully.');
-      this.addContactModal.close();
+  searchInterfaces() {
+    if (!this.searchText.trim()) {
+      this.filteredInterfaces = this.interfaces;
+    } else {
+      const search = this.searchText.toLowerCase();
+      this.filteredInterfaces = this.interfaces.filter(iface => 
+        iface.interface_name.toLowerCase().includes(search) ||
+        (iface.ip_address && iface.ip_address.toLowerCase().includes(search))
+      );
+    }
   }
 
-  deleteUser(user: any = null) {
-      this.contactList = this.contactList.filter((d) => d.id != user.id);
-      this.searchContacts();
-      this.showMessage('User has been deleted successfully.');
+  formatIpAddress(ip: string | null): string {
+    if (!ip) return '';
+    return ip.split('.')
+      .map(part => {
+        const num = parseInt(part, 10);
+        return !isNaN(num) && num >= 0 && num <= 255 ? num.toString() : '';
+      })
+      .filter(part => part !== '')
+      .join('.');
+  }
+
+  editInterface(iface: NetworkInterface) {
+    this.addContactModal.open();
+    this.initForm();
+
+    const formValue = {
+      id: iface.id,
+      interface_name: iface.interface_name || '',
+      method: iface.method || 'Static',
+      ip_address: this.formatIpAddress(iface.ip_address),
+      netmask: this.formatIpAddress(iface.netmask),
+      gateway: this.formatIpAddress(iface.gateway)
+    };
+
+    requestAnimationFrame(() => {
+      this.params.patchValue(formValue);
+      this.showDHCP = iface.method === 'DHCP';
+    });
+  }
+
+  saveInterface() {
+    if (!this.params.valid) {
+        this.showMessage('Please fill all required fields.', 'error');
+        return;
+    }
+
+    const iface = this.params.value;
+    console.log('Saving interface:', iface);
+
+    if (iface.method === 'DHCP') {
+        iface.ip_address = null;
+        iface.netmask = null;
+        iface.gateway = null;
+    } else {
+        if (!this.isValidIpFormat(iface.ip_address) || 
+            !this.isValidIpFormat(iface.netmask) || 
+            !this.isValidIpFormat(iface.gateway)) {
+            this.showMessage('Please enter valid IP addresses', 'error');
+            return;
+        }
+    }
+
+    const url = `${environment.apiUrl}/api/interfaces${iface.id ? `/${iface.id}` : ''}`;
+    const method = iface.id ? 'put' : 'post';
+
+    this.http[method](url, iface).subscribe(
+        (response: any) => {
+            this.loadInterfaces();
+            this.showMessage('Interface has been saved successfully.');
+            this.addContactModal.close();
+        },
+        error => {
+            console.error('Error saving interface:', error);
+            this.showMessage('Error saving interface', 'error');
+        }
+    );
+  }
+
+  isValidIpFormat(ip: string): boolean {
+    if (!ip) return false;
+    const parts = ip.split('.');
+    if (parts.length !== 4) return false;
+    
+    return parts.every(part => {
+      const num = parseInt(part, 10);
+      return !isNaN(num) && num >= 0 && num <= 255 && 
+             (part === '0' || !part.startsWith('0'));
+    });
+  }
+
+  deleteInterface(iface: NetworkInterface) {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      padding: '2em'
+    }).then((result) => {
+      if (result.value) {
+        this.http.delete(`${environment.apiUrl}/api/interfaces/${iface.id}`).subscribe(
+          () => {
+            this.loadInterfaces();
+            this.showMessage('Interface has been deleted successfully.');
+          },
+          error => {
+            this.showMessage('Error deleting interface', 'error');
+          }
+        );
+      }
+    });
   }
 
   showMessage(msg = '', type = 'success') {
-      const toast: any = Swal.mixin({
-          toast: true,
-          position: 'top',
-          showConfirmButton: false,
-          timer: 3000,
-          customClass: { container: 'toast' },
-      });
-      toast.fire({
-          icon: type,
-          title: msg,
-          padding: '10px 20px',
-      });
+    const toast: any = Swal.mixin({
+      toast: true,
+      position: 'top',
+      showConfirmButton: false,
+      timer: 3000,
+      customClass: { container: 'toast' },
+    });
+    toast.fire({
+      icon: type,
+      title: msg,
+      padding: '10px 20px',
+    });
   }
   
   onAdapterChange(event: any) {
@@ -284,5 +205,4 @@ export class InterfaceManagementComponent {
       this.showDHCP = false;
     }
   }
-
 }
