@@ -1,6 +1,8 @@
-import { Component, LOCALE_ID } from '@angular/core';
+import { Component, LOCALE_ID, OnInit } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeEn from '@angular/common/locales/en';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 registerLocaleData(localeEn);
 
@@ -11,7 +13,7 @@ registerLocaleData(localeEn);
         { provide: LOCALE_ID, useValue: 'en-US' }
     ]
 })
-export class LogComponent {
+export class LogComponent implements OnInit {
     search = '';
     cols = [
         { 
@@ -31,43 +33,35 @@ export class LogComponent {
         { field: 'content', title: 'Log Content' }
     ];
 
-    rows = [
-        {
-            date: '2024-11-25',
-            level: 'INFO',
-            user: 'admin',
-            module: 'Auth',
-            content: 'User login successful'
-        },
-        {
-            date: '2024-11-24',
-            level: 'INFO', 
-            user: 'admin',
-            module: 'Database',
-            content: 'Database backup completed'
-        },
-        {
-            date: '2024-11-23',
-            level: 'WARNING',
-            user: 'system',
-            module: 'Network',
-            content: 'Network connection anomaly'
-        },
-        {
-            date: '2024-11-22',
-            level: 'ERROR',
-            user: 'admin',
-            module: 'Security',
-            content: 'Unauthorized access detected'
-        }
-    ];
+    rows = [];
+
+    constructor(private http: HttpClient) {}
+
+    ngOnInit() {
+        this.loadLogs();
+    }
+
+    loadLogs() {
+        this.http.get(`${environment.apiUrl}/api/logs`).subscribe(
+            (data: any) => {
+                this.rows = data;
+            },
+            error => {
+                console.error('Error loading logs:', error);
+            }
+        );
+    }
 
     formatDate(date: any) {
         if (date) {
             const dt = new Date(date);
-            const month = dt.getMonth() + 1 < 10 ? '0' + (dt.getMonth() + 1) : dt.getMonth() + 1;
-            const day = dt.getDate() < 10 ? '0' + dt.getDate() : dt.getDate();
-            return month + '/' + day + '/' + dt.getFullYear();
+            const year = dt.getFullYear();
+            const month = (dt.getMonth() + 1).toString().padStart(2, '0');
+            const day = dt.getDate().toString().padStart(2, '0');
+            const hours = dt.getHours().toString().padStart(2, '0');
+            const minutes = dt.getMinutes().toString().padStart(2, '0');
+            const seconds = dt.getSeconds().toString().padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
         }
         return '';
     }
