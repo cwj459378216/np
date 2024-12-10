@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Debug Spring Boot",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/web-service/web-service",
+            "mainClass": "com.example.web_service.WebServiceApplication",
+            "projectName": "web-service",
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "local"
+            }
+        },
+        {
+            "type": "chrome",
+            "name": "Debug Angular",
+            "request": "launch",
+            "url": "http://localhost:4200",
+            "webRoot": "${workspaceFolder}/web-client",
+            "preLaunchTask": "启动 Angular",
+            "sourceMaps": true
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Full Stack",
+            "configurations": ["Debug Spring Boot", "Debug Angular"]
+        }
+    ]
+}
