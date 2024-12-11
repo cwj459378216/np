@@ -53,7 +53,7 @@
                                 <th>Name</th>
                                 <th>Description</th>
                                 <th>Service</th>
-                                <th>Endpoint</th>
+                                <th>Configuration</th>
                                 <th>Creation Time</th>
                                 <th class="!text-center">Actions</th>
                             </tr>
@@ -63,8 +63,15 @@
                                 <td>{{ setting.name }}</td>
                                 <td>{{ setting.description }}</td>
                                 <td>{{ setting.service }}</td>
-                                <td>{{ setting.endpoint }}</td>
-                                <td>{{ setting.creationTime }}</td>
+                                <td>
+                                    <ng-container *ngIf="setting.service === 'email'">
+                                        {{ setting.mailServer }}
+                                    </ng-container>
+                                    <ng-container *ngIf="setting.service === 'syslog'">
+                                        {{ setting.host }}:{{ setting.syslogPort }}
+                                    </ng-container>
+                                </td>
+                                <td>{{ setting.createdAt }}</td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"

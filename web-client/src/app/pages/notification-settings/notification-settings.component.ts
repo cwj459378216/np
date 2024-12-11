@@ -1,16 +1,38 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { NgxCustomModalComponent } from 'ngx-custom-modal';
+import Swal from 'sweetalert2';
+
+interface NotificationSetting {
+    id: number;
+    name: string;
+    description: string;
+    service: string;
+    mailServer?: string;
+    security?: string;
+    emailPort?: string;
+    accountName?: string;
+    password?: string;
+    sender?: string;
+    receiver?: string;
+    subject?: string;
+    host?: string;
+    syslogPort?: string;
+    createdAt: string;
+}
 
 @Component({
     selector: 'app-notification-settings',
     templateUrl: './notification-settings.component.html'
 })
 export class NotificationSettingsComponent implements OnInit {
-    @ViewChild('addSettingModal') addSettingModal: any;
+    @ViewChild('addSettingModal') addSettingModal!: NgxCustomModalComponent;
     
     displayType: string = 'list';
     searchText: string = '';
-    params: FormGroup;
+    params!: FormGroup;
 
     serviceOptions = [
         { value: 'email', label: 'Email' },
@@ -23,40 +45,26 @@ export class NotificationSettingsComponent implements OnInit {
         { value: 'tls', label: 'TLS' }
     ];
 
-    settings = [
-        {
-            id: 1,
-            name: 'Email Server',
-            description: 'SMTP server configuration for email notifications',
-            service: 'email',
-            mailServer: 'smtp.example.com',
-            security: 'ssl',
-            port: '587',
-            accountName: 'admin@example.com',
-            password: '******',
-            sender: 'noreply@example.com',
-            receiver: 'admin@company.com',
-            subject: 'System Notification',
-            creationTime: '2024-01-15 10:30:00'
-        },
-        {
-            id: 2,
-            name: 'Syslog Server',
-            description: 'Syslog server for system notifications',
-            service: 'syslog',
-            endpoint: '192.168.1.100:514',
-            creationTime: '2024-01-16 14:20:00'
-        }
-    ];
+    settings: NotificationSetting[] = [];
+    filteredSettings: NotificationSetting[] = [];
 
-    filteredSettings: any[] = [];
+    constructor(
+        private fb: FormBuilder,
+        private http: HttpClient
+    ) {
+        this.initForm();
+    }
 
-    constructor(private fb: FormBuilder) {
+    ngOnInit(): void {
+        this.loadSettings();
+    }
+
+    initForm() {
         this.params = this.fb.group({
-            id: [''],
-            name: [''],
-            description: [''],
-            service: [''],
+            id: [null],
+            name: ['', Validators.required],
+            description: ['', Validators.required],
+            service: ['', Validators.required],
             mailServer: [''],
             security: [''],
             emailPort: [''],
@@ -69,6 +77,7 @@ export class NotificationSettingsComponent implements OnInit {
             syslogPort: ['']
         });
 
+        // 监听服务类型变化
         this.params.get('service')?.valueChanges.subscribe(value => {
             if (value === 'syslog') {
                 this.params.patchValue({
@@ -79,9 +88,7 @@ export class NotificationSettingsComponent implements OnInit {
                     password: '',
                     sender: '',
                     receiver: '',
-                    subject: '',
-                    host: '',
-                    syslogPort: ''
+                    subject: ''
                 });
             } else {
                 this.params.patchValue({
@@ -92,97 +99,116 @@ export class NotificationSettingsComponent implements OnInit {
         });
     }
 
-    ngOnInit(): void {
-        this.filteredSettings = [...this.settings];
-    }
-
-    editSetting(setting: any = null) {
-        if (setting) {
-            if (setting.service === 'syslog') {
-                const [host, port] = setting.endpoint?.split(':') || ['', ''];
-                this.params.patchValue({
-                    id: setting.id,
-                    name: setting.name,
-                    description: setting.description,
-                    service: setting.service,
-                    host: host,
-                    syslogPort: port
-                });
-            } else {
-                this.params.patchValue({
-                    id: setting.id,
-                    name: setting.name,
-                    description: setting.description,
-                    service: setting.service,
-                    mailServer: setting.mailServer,
-                    security: setting.security,
-                    emailPort: setting.port,
-                    accountName: setting.accountName,
-                    password: setting.password,
-                    sender: setting.sender,
-                    receiver: setting.receiver,
-                    subject: setting.subject
-                });
+    loadSettings() {
+        this.http.get<NotificationSetting[]>(`${environment.apiUrl}/api/notifications`).subscribe(
+            (data) => {
+                this.settings = data;
+                this.searchSettings();
+            },
+            error => {
+                console.error('Error loading settings:', error);
+                this.showMessage('Error loading settings', 'error');
             }
-        } else {
-            this.params.reset();
-        }
-        this.addSettingModal.open();
-    }
-
-    deleteSetting(setting: any) {
-        this.settings = this.settings.filter(item => item.id !== setting.id);
-        this.searchSettings();
-    }
-
-    saveSetting() {
-        const formValue = this.params.value;
-        let settingData: any = {
-            id: formValue.id,
-            name: formValue.name,
-            description: formValue.description,
-            service: formValue.service,
-            creationTime: formValue.id ? 
-                this.settings.find(s => s.id === formValue.id)?.creationTime : 
-                new Date().toLocaleString()
-        };
-
-        if (formValue.service === 'syslog') {
-            settingData.endpoint = `${formValue.host}:${formValue.syslogPort}`;
-        } else {
-            settingData = {
-                ...settingData,
-                mailServer: formValue.mailServer,
-                security: formValue.security,
-                port: formValue.emailPort,
-                accountName: formValue.accountName,
-                password: formValue.password,
-                sender: formValue.sender,
-                receiver: formValue.receiver,
-                subject: formValue.subject
-            };
-        }
-
-        if (formValue.id) {
-            const index = this.settings.findIndex(d => d.id === formValue.id);
-            this.settings[index] = settingData;
-        } else {
-            const maxId = Math.max(...this.settings.map(d => d.id), 0);
-            this.settings.push({ ...settingData, id: maxId + 1 });
-        }
-        this.searchSettings();
-        this.addSettingModal.close();
+        );
     }
 
     searchSettings() {
-        this.filteredSettings = this.settings.filter(item => {
-            const searchStr = this.searchText.toLowerCase();
-            return (
-                item.name.toLowerCase().includes(searchStr) ||
-                item.description.toLowerCase().includes(searchStr) ||
-                item.service.toLowerCase().includes(searchStr) ||
-                (item.endpoint?.toLowerCase().includes(searchStr) || false)
-            );
+        if (!this.searchText.trim()) {
+            this.filteredSettings = [...this.settings];
+            return;
+        }
+
+        const searchStr = this.searchText.toLowerCase();
+        this.filteredSettings = this.settings.filter(item => 
+            item.name.toLowerCase().includes(searchStr) ||
+            item.description.toLowerCase().includes(searchStr) ||
+            item.service.toLowerCase().includes(searchStr)
+        );
+    }
+
+    editSetting(setting: NotificationSetting | null = null) {
+        this.addSettingModal.open();
+        this.initForm();
+
+        if (setting) {
+            this.params.patchValue({
+                id: setting.id,
+                name: setting.name,
+                description: setting.description,
+                service: setting.service,
+                mailServer: setting.mailServer,
+                security: setting.security,
+                emailPort: setting.emailPort,
+                accountName: setting.accountName,
+                password: setting.password,
+                sender: setting.sender,
+                receiver: setting.receiver,
+                subject: setting.subject,
+                host: setting.host,
+                syslogPort: setting.syslogPort
+            });
+        }
+    }
+
+    saveSetting() {
+        if (!this.params.valid) {
+            this.showMessage('Please fill all required fields.', 'error');
+            return;
+        }
+
+        const setting = this.params.value;
+        const url = `${environment.apiUrl}/api/notifications${setting.id ? `/${setting.id}` : ''}`;
+        const method = setting.id ? 'put' : 'post';
+
+        this.http[method](url, setting).subscribe(
+            () => {
+                this.loadSettings();
+                this.showMessage('Setting has been saved successfully.');
+                this.addSettingModal.close();
+            },
+            error => {
+                console.error('Error saving setting:', error);
+                this.showMessage('Error saving setting', 'error');
+            }
+        );
+    }
+
+    deleteSetting(setting: NotificationSetting) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            padding: '2em'
+        }).then((result) => {
+            if (result.value) {
+                this.http.delete(`${environment.apiUrl}/api/notifications/${setting.id}`).subscribe(
+                    () => {
+                        this.loadSettings();
+                        this.showMessage('Setting has been deleted successfully.');
+                    },
+                    error => {
+                        console.error('Error deleting setting:', error);
+                        this.showMessage('Error deleting setting', 'error');
+                    }
+                );
+            }
+        });
+    }
+
+    showMessage(msg = '', type = 'success') {
+        const toast: any = Swal.mixin({
+            toast: true,
+            position: 'top',
+            showConfirmButton: false,
+            timer: 3000,
+            customClass: { container: 'toast' },
+        });
+        toast.fire({
+            icon: type,
+            title: msg,
+            padding: '10px 20px',
         });
     }
 } 
