@@ -33,7 +33,7 @@ CREATE TABLE assets (
     last_updated TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测试数据
+-- 插入一些测��数据
 INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_updated) VALUES
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
@@ -80,4 +80,54 @@ INSERT INTO notification_settings (name, description, service, mail_server, secu
 VALUES ('Email Server', 'SMTP server configuration for email notifications', 'email', 'smtp.example.com', 'ssl', '587', 'admin@example.com', '******', 'noreply@example.com', 'admin@company.com', 'System Notification');
 
 INSERT INTO notification_settings (name, description, service, host, syslog_port) 
-VALUES ('Syslog Server', 'Syslog server for system notifications', 'syslog', '192.168.1.100', '514'); 
+VALUES ('Syslog Server', 'Syslog server for system notifications', 'syslog', '192.168.1.100', '514');
+
+-- 创建角色表
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    permissions JSONB NOT NULL,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入一些测试数据
+INSERT INTO roles (name, description, permissions) VALUES
+(
+    'Administrator', 
+    'Full system access', 
+    '{
+        "dashboard": {"readWrite": true, "readOnly": false},
+        "collector": {
+            "readWrite": true,
+            "readOnly": false,
+            "children": {
+                "collectorAnalyzer": {"readWrite": true, "readOnly": false},
+                "filter": {"readWrite": true, "readOnly": false}
+            }
+        },
+        "eventAlarm": {
+            "readWrite": true,
+            "readOnly": false,
+            "children": {
+                "event": {"readWrite": true, "readOnly": false},
+                "alarmSettings": {"readWrite": true, "readOnly": false}
+            }
+        }
+    }'
+),
+(
+    'Operator',
+    'Basic operation permissions',
+    '{
+        "dashboard": {"readWrite": false, "readOnly": true},
+        "collector": {
+            "readWrite": false,
+            "readOnly": true,
+            "children": {
+                "collectorAnalyzer": {"readWrite": false, "readOnly": true},
+                "filter": {"readWrite": false, "readOnly": true}
+            }
+        }
+    }'
+); 

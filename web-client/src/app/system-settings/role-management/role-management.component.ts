@@ -1,9 +1,10 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { slideDownUp, toggleAnimation } from 'src/app/shared/animations';
 import Swal from 'sweetalert2';
-import { IconModule } from "../../shared/icon/icon.module";
 import { animate, style, transition, trigger } from '@angular/animations';
 
 interface TreeViewItem {
@@ -15,6 +16,14 @@ interface TreeViewItem {
     showIcon: boolean;
     expanded?: boolean;
     children?: TreeViewItem[];
+}
+
+interface Role {
+    id: number;
+    name: string;
+    description: string;
+    permissions: any;
+    createdAt: string;
 }
 
 @Component({
@@ -35,27 +44,14 @@ interface TreeViewItem {
     styleUrl: './role-management.component.css'
 })
 export class RoleManagementComponent implements OnInit {
-    constructor(public fb: FormBuilder) { }
-    displayType = 'list';
     @ViewChild('addContactModal') addContactModal!: NgxCustomModalComponent;
+    
+    displayType = 'list';
+    searchText = '';
     params!: FormGroup;
-    filterdContactsList: any = [];
-    searchUser = '';
-    contactList = [
-        {
-            id: 1,
-            path: 'profile-35.png',
-            name: 'Alan Green',
-            role: 'Web Developer',
-            email: 'alan@mail.com',
-            location: 'Boston, USA',
-            phone: '+1 202 555 0197',
-            posts: 25,
-            followers: '5K',
-            following: 500,
-        }
-    ];
-    treeview1: any = ['images', 'html'];
+    roles: Role[] = [];
+    filteredRoles: Role[] = [];
+
     tableData: TreeViewItem[] = [
         {
             id: 1,
@@ -236,96 +232,203 @@ export class RoleManagementComponent implements OnInit {
             level: 0
         }
     ];
-    initForm() {
-        this.params = this.fb.group({
-            id: [0],
-            name: ['', Validators.required],
-            email: ['', Validators.compose([Validators.required, Validators.email])],
-            role: ['', Validators.required],
-            phone: ['', Validators.required],
-            location: [''],
-        });
+
+    constructor(
+        private fb: FormBuilder,
+        private http: HttpClient
+    ) {
+        this.initForm();
     }
 
     ngOnInit() {
-        this.searchContacts();
+        this.loadRoles();
     }
 
-    searchContacts() {
-        this.filterdContactsList = this.contactList.filter((d) => d.name.toLowerCase().includes(this.searchUser.toLowerCase()));
+    initForm() {
+        this.params = this.fb.group({
+            id: [null],
+            name: ['', Validators.required],
+            description: ['', Validators.required],
+            permissions: ['{}']
+        });
     }
 
-    editUser(user: any = null) {
+    loadRoles() {
+        this.http.get<Role[]>(`${environment.apiUrl}/api/roles`).subscribe(
+            (data) => {
+                this.roles = data;
+                this.searchRoles();
+            },
+            error => {
+                console.error('Error loading roles:', error);
+                this.showMessage('Error loading roles', 'error');
+            }
+        );
+    }
+
+    searchRoles() {
+        if (!this.searchText.trim()) {
+            this.filteredRoles = [...this.roles];
+            return;
+        }
+
+        const searchStr = this.searchText.toLowerCase();
+        this.filteredRoles = this.roles.filter(role => 
+            role.name.toLowerCase().includes(searchStr) ||
+            role.description.toLowerCase().includes(searchStr)
+        );
+    }
+
+    editRole(role: Role | null = null) {
         this.addContactModal.open();
         this.initForm();
-        if (user) {
-            this.params.setValue({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone,
-                location: user.location,
+
+        if (role) {
+            this.params.patchValue({
+                id: role.id,
+                name: role.name,
+                description: role.description,
+                permissions: role.permissions
             });
-        }
-    }
 
-    saveUser() {
-        if (this.params.controls['name'].errors) {
-            this.showMessage('Name is required.', 'error');
-            return;
-        }
-        if (this.params.controls['email'].errors) {
-            this.showMessage('Email is required.', 'error');
-            return;
-        }
-        if (this.params.controls['phone'].errors) {
-            this.showMessage('Phone is required.', 'error');
-            return;
-        }
-        if (this.params.controls['role'].errors) {
-            this.showMessage('Occupation is required.', 'error');
-            return;
-        }
-
-        if (this.params.value.id) {
-            //update user
-            let user: any = this.contactList.find((d) => d.id === this.params.value.id);
-            user.name = this.params.value.name;
-            user.email = this.params.value.email;
-            user.role = this.params.value.role;
-            user.phone = this.params.value.phone;
-            user.location = this.params.value.location;
+            // 根据权限设置树形结构的选中状态
+            const permissions = typeof role.permissions === 'string' 
+                ? JSON.parse(role.permissions) 
+                : role.permissions;
+            
+            this.setPermissions(this.tableData, permissions);
         } else {
-            //add user
-            let maxUserId = this.contactList.length
-                ? this.contactList.reduce((max, character) => (character.id > max ? character.id : max), this.contactList[0].id)
-                : 0;
-
-            let user = {
-                id: maxUserId + 1,
-                path: 'profile-35.png',
-                name: this.params.value.name,
-                email: this.params.value.email,
-                role: this.params.value.role,
-                phone: this.params.value.phone,
-                location: this.params.value.location,
-                posts: 20,
-                followers: '5K',
-                following: 500,
-            };
-            this.contactList.splice(0, 0, user);
-            this.searchContacts();
+            // 重置树形结构的选中状态
+            this.resetPermissions(this.tableData);
         }
-
-        this.showMessage('User has been saved successfully.');
-        this.addContactModal.close();
     }
 
-    deleteUser(user: any = null) {
-        this.contactList = this.contactList.filter((d) => d.id != user.id);
-        this.searchContacts();
-        this.showMessage('User has been deleted successfully.');
+    setPermissions(items: TreeViewItem[], permissions: any) {
+        items.forEach(item => {
+            const permission = permissions[item.page.toLowerCase().replace(/\s+/g, '')];
+            if (permission) {
+                item.readWrite = permission.readWrite;
+                item.readOnly = permission.readOnly;
+            }
+
+            if (item.children) {
+                this.setPermissions(item.children, permissions);
+            }
+        });
+    }
+
+    resetPermissions(items: TreeViewItem[]) {
+        items.forEach(item => {
+            item.readWrite = false;
+            item.readOnly = false;
+
+            if (item.children) {
+                this.resetPermissions(item.children);
+            }
+        });
+    }
+
+    saveRole() {
+        if (!this.params.valid) {
+            this.showMessage('Please fill all required fields.', 'error');
+            return;
+        }
+
+        // 收集权限数据
+        const permissions = this.collectPermissions(this.tableData);
+        const role = {
+            ...this.params.value,
+            permissions: permissions
+        };
+
+        const url = `${environment.apiUrl}/api/roles${role.id ? `/${role.id}` : ''}`;
+        const method = role.id ? 'put' : 'post';
+
+        this.http[method](url, role).subscribe(
+            () => {
+                this.loadRoles();
+                this.showMessage('Role has been saved successfully.');
+                this.addContactModal.close();
+            },
+            error => {
+                console.error('Error saving role:', error);
+                this.showMessage('Error saving role', 'error');
+            }
+        );
+    }
+
+    collectPermissions(items: TreeViewItem[]): any {
+        const permissions: any = {};
+        items.forEach(item => {
+            const key = item.page.toLowerCase().replace(/\s+/g, '');
+            permissions[key] = {
+                readWrite: item.readWrite,
+                readOnly: item.readOnly
+            };
+
+            if (item.children) {
+                permissions[key].children = this.collectPermissions(item.children);
+            }
+        });
+        return permissions;
+    }
+
+    deleteRole(role: Role) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            padding: '2em'
+        }).then((result) => {
+            if (result.value) {
+                this.http.delete(`${environment.apiUrl}/api/roles/${role.id}`).subscribe(
+                    () => {
+                        this.loadRoles();
+                        this.showMessage('Role has been deleted successfully.');
+                    },
+                    error => {
+                        console.error('Error deleting role:', error);
+                        this.showMessage('Error deleting role', 'error');
+                    }
+                );
+            }
+        });
+    }
+
+    updatePermission(node: TreeViewItem, type: 'readWrite' | 'readOnly', event: any) {
+        node[type] = event.target.checked;
+        
+        // 如果选中了读写权限，自动取消只读权限
+        if (type === 'readWrite' && event.target.checked) {
+            node.readOnly = false;
+        }
+        
+        // 如果选中了只读权限，自动取消读写权限
+        if (type === 'readOnly' && event.target.checked) {
+            node.readWrite = false;
+        }
+
+        // 如果有子节点，同步更新子节点的权限
+        if (node.children) {
+            this.updateChildrenPermissions(node.children, type, event.target.checked);
+        }
+    }
+
+    updateChildrenPermissions(children: TreeViewItem[], type: 'readWrite' | 'readOnly', checked: boolean) {
+        children.forEach(child => {
+            child[type] = checked;
+            if (type === 'readWrite' && checked) {
+                child.readOnly = false;
+            }
+            if (type === 'readOnly' && checked) {
+                child.readWrite = false;
+            }
+            if (child.children) {
+                this.updateChildrenPermissions(child.children, type, checked);
+            }
+        });
     }
 
     showMessage(msg = '', type = 'success') {
@@ -341,26 +444,5 @@ export class RoleManagementComponent implements OnInit {
             title: msg,
             padding: '10px 20px',
         });
-    }
-    toggleTreeview1(name: string) {
-        if (this.treeview1.includes(name)) {
-            this.treeview1 = this.treeview1.filter((d: string) => d !== name);
-        } else {
-            this.treeview1.push(name);
-        }
-    }
-
-    updatePermission(node: any, type: 'readWrite' | 'readOnly', event: any) {
-        node[type] = event.target.checked;
-        
-        // If readWrite is checked, automatically uncheck readOnly
-        if (type === 'readWrite' && event.target.checked) {
-            node.readOnly = false;
-        }
-        
-        // If readOnly is checked, automatically uncheck readWrite
-        if (type === 'readOnly' && event.target.checked) {
-            node.readWrite = false;
-        }
     }
 }
