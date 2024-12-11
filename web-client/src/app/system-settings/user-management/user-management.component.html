@@ -4,11 +4,10 @@
             <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>user Management</span>
+            <span>User Management</span>
         </li>
     </ul>
     <div class="pt-5">
-
         <div>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <h2 class="text-xl"></h2>
@@ -17,8 +16,7 @@
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editUser()">
                                 <icon-user-plus class="ltr:mr-2 rtl:ml-2" />
-
-                                Add 
+                                Add User
                             </button>
                         </div>
                         <div>
@@ -38,11 +36,10 @@
                     </div>
 
                     <div class="relative">
-                        <input type="text" placeholder="Search Contacts"
-                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchUser" name="searchUser"
-                            (ngModelChange)="searchContacts()" />
-                        <div
-                            class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                        <input type="text" placeholder="Search Users"
+                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchText"
+                            (ngModelChange)="searchUsers()" />
+                        <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
                             <icon-search class="mx-auto" />
                         </div>
                     </div>
@@ -54,191 +51,93 @@
                         <table class="table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
+                                    <th>Username</th>
                                     <th>Email</th>
                                     <th>Role</th>
                                     <th>Description</th>
+                                    <th>Status</th>
                                     <th class="!text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
-                                    <tr>
-                                        <td>
-                                            <div class="flex w-max items-center">
-                                                <div *ngIf="contact.path" class="w-max">
-                                                    <img [src]="'/assets/images/' + contact.path"
-                                                        class="h-8 w-8 rounded-full object-cover ltr:mr-2 rtl:ml-2"
-                                                        alt="avatar" />
-                                                </div>
-                                                <div *ngIf="!contact.path && contact.name"
-                                                    class="grid h-8 w-8 place-content-center rounded-full bg-primary text-sm font-semibold text-white ltr:mr-2 rtl:ml-2">
-                                                    {{ contact.name.charAt(0) + '' +
-                                                    contact.name.charAt(contact.name.indexOf(' ') + 1) }}
-                                                </div>
-                                                <div *ngIf="!contact.path && !contact.name"
-                                                    class="grid h-8 w-8 place-content-center rounded-full border border-gray-300 dark:border-gray-800 ltr:mr-2 rtl:ml-2">
-                                                    <icon-user class="h-4.5 w-4.5" />
-                                                </div>
-                                                <div>{{ contact.name }}</div>
-                                            </div>
-                                        </td>
-                                        <td>{{ contact.email }}</td>
-                                        <td class="whitespace-nowrap">Admin</td>
-                                        <td class="whitespace-nowrap">asdasdas</td>
-                                        <td>
-                                            <div class="flex items-center justify-center gap-4">
-                                                <button type="button" class="btn btn-sm btn-outline-primary"
-                                                    (click)="editUser(contact)">Edit</button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    (click)="deleteUser(contact)">Delete</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </ng-container>
+                                <tr *ngFor="let user of filteredUsers">
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.role.name }}</td>
+                                    <td>{{ user.description }}</td>
+                                    <td>
+                                        <span [class]="user.status ? 'badge badge-outline-success' : 'badge badge-outline-danger'">
+                                            {{ user.status ? 'Active' : 'Inactive' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="flex items-center justify-center gap-4">
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                (click)="editUser(user)">Edit</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                (click)="deleteUser(user)">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </ng-container>
             </div>
-            <ng-container *ngIf="displayType === 'grid'">
-                <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                    <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
-                        <div class="relative overflow-hidden rounded-md bg-white text-center shadow dark:bg-[#1c232f]">
-                            <div
-                                class="rounded-t-md bg-white/40 bg-[url('/assets/images/notification-bg.png')] bg-cover bg-center p-6 pb-0">
-                                <ng-container *ngIf="contact.path">
-                                    <img class="mx-auto max-h-40 w-4/5 object-contain"
-                                        [src]="'/assets/images/' + contact.path" />
-                                </ng-container>
-                            </div>
-                            <div class="relative -mt-10 px-6 pb-24">
-                                <div class="rounded-md bg-white px-2 py-4 shadow-md dark:bg-gray-900">
-                                    <div class="text-xl">{{ contact.name }}</div>
-                                    <div class="text-white-dark">{{ contact.role }}</div>
-                                    <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-                                        <div class="flex-auto">
-                                            <div class="text-info">{{ contact.posts }}</div>
-                                            <div>Posts</div>
-                                        </div>
-                                        <div class="flex-auto">
-                                            <div class="text-info">{{ contact.following }}</div>
-                                            <div>Following</div>
-                                        </div>
-                                        <div class="flex-auto">
-                                            <div class="text-info">{{ contact.followers }}</div>
-                                            <div>Followers</div>
-                                        </div>
-                                    </div>
-                                    <div class="mt-4">
-                                        <ul class="flex items-center justify-center space-x-4 rtl:space-x-reverse">
-                                            <li>
-                                                <a href="javascript:;"
-                                                    class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
-                                                    <icon-facebook />
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:;"
-                                                    class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
-                                                    <icon-instagram />
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:;"
-                                                    class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
-                                                    <icon-linkedin />
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:;"
-                                                    class="btn btn-outline-primary h-7 w-7 rounded-full p-0">
-                                                    <icon-twitter />
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="mt-6 grid grid-cols-1 gap-4 ltr:text-left rtl:text-right">
-                                    <div class="flex items-center">
-                                        <div class="flex-none ltr:mr-2 rtl:ml-2">Email :</div>
-                                        <div class="truncate text-white-dark">{{ contact.email }}</div>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <div class="flex-none ltr:mr-2 rtl:ml-2">Phone :</div>
-                                        <div class="text-white-dark">{{ contact.phone }}</div>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <div class="flex-none ltr:mr-2 rtl:ml-2">Address :</div>
-                                        <div class="text-white-dark">{{ contact.location }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
-                                <button type="button" class="btn btn-outline-primary w-1/2"
-                                    (click)="editUser(contact)">Edit</button>
-                                <button type="button" class="btn btn-outline-danger w-1/2"
-                                    (click)="deleteUser(contact)">Delete</button>
-                            </div>
-                        </div>
-                    </ng-container>
-                </div>
-            </ng-container>
 
-            <!-- add contact modal -->
+            <!-- add/edit user modal -->
             <ngx-custom-modal #addContactModal class="no-footer">
                 <ng-template #modalHeader>
-                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit' : 'Add' }}</div>
+                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit User' : 'Add User' }}</div>
                 </ng-template>
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>
                         <div class="mb-5">
-                            <label for="name">Name</label>
-                            <input id="name" type="text" placeholder="Enter Name" class="form-input"
-                                formControlName="name" />
+                            <label for="username">Username</label>
+                            <input id="username" type="text" placeholder="Enter Username" class="form-input"
+                                formControlName="username" />
                         </div>
                         <div class="mb-5">
-                            <label for="actionEmail">Email:</label>
-                            <div class="flex flex-1">
-                                <div
-                                    class="flex items-center justify-center border border-[#e0e6ed] bg-[#eee] px-3 font-semibold dark:border-[#17263c] dark:bg-[#1b2e4b] ltr:rounded-l-md ltr:border-r-0 rtl:rounded-r-md rtl:border-l-0"
-                                >
-                                    {{"@"}}
-                                </div>
-                                <input id="actionEmail" type="email" placeholder="" class="form-input ltr:rounded-l-none rtl:rounded-r-none" />
+                            <label for="email">Email</label>
+                            <input id="email" type="email" placeholder="Enter Email" class="form-input"
+                                formControlName="email" />
+                        </div>
+                        <div class="mb-5">
+                            <label for="password">Password</label>
+                            <input id="password" type="password" placeholder="Enter Password" class="form-input"
+                                formControlName="password" />
+                            <div class="text-xs text-gray-400 mt-1" *ngIf="params.controls['id'].value">
+                                Leave blank to keep current password
                             </div>
                         </div>
                         <div class="mb-5">
-                            <label for="actionPassword">Password:</label>
-                            <input id="actionPassword" type="password" placeholder="Enter Password" class="form-input" />
+                            <label for="roleId">Role</label>
+                            <select id="roleId" class="form-select" formControlName="roleId">
+                                <option value="">Select Role</option>
+                                <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
+                            </select>
                         </div>
                         <div class="mb-5">
-                            <label for="actionCpass">Confirm Password:</label>
-                            <input id="actionCpass" type="password" placeholder="Enter Confirm Password" class="form-input" />
+                            <label for="description">Description</label>
+                            <textarea id="description" rows="3" placeholder="Enter Description"
+                                class="form-textarea min-h-[130px] resize-none" formControlName="description"></textarea>
                         </div>
                         <div class="mb-5">
-                            <label for="email">Role</label>
-                            <ng-select [items]="optionsRole" formControlName="interfaceName"  [clearable]="false"
-                                placeholder="Select an option" class="custom-multiselect">
-                            </ng-select>
-                            
+                            <label class="inline-flex">
+                                <input type="checkbox" class="form-checkbox" formControlName="status" />
+                                <span>Active</span>
+                            </label>
                         </div>
-                        <div class="mb-5">
-                            <label for="address">Description</label>
-                            <textarea id="address" rows="3" placeholder="Enter Address"
-                                class="form-textarea min-h-[130px] resize-none" formControlName="location"></textarea>
-                        </div>
-                        
                         <div class="mt-8 flex items-center justify-end">
                             <button type="button" class="btn btn-outline-danger"
                                 (click)="addContactModal.close()">Cancel</button>
-                            <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">{{
-                                params.controls['id'].value ? 'Update' : 'Add' }}</button>
+                            <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
+                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                            </button>
                         </div>
                     </form>
                 </ng-template>
             </ngx-custom-modal>
         </div>
-
     </div>
 </div>

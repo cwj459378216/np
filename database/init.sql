@@ -130,4 +130,23 @@ INSERT INTO roles (name, description, permissions) VALUES
             }
         }
     }'
-); 
+);
+
+-- 创建用户表
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    role_id INTEGER REFERENCES roles(id),
+    description TEXT,
+    status BOOLEAN DEFAULT true,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入一些测试数据
+INSERT INTO users (username, password, email, role_id, description, status) VALUES
+('admin', '$2a$10$BqWZyqrZ0Kg3pxqL0q.RXOyYzXbWFM3U8AFZZ6mJywX5/pXNL4rMi', 'admin@example.com', 
+ (SELECT id FROM roles WHERE name = 'Administrator'), 'System administrator', true),
+('operator', '$2a$10$BqWZyqrZ0Kg3pxqL0q.RXOyYzXbWFM3U8AFZZ6mJywX5/pXNL4rMi', 'operator@example.com', 
+ (SELECT id FROM roles WHERE name = 'Operator'), 'System operator', true); 
