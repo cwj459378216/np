@@ -151,24 +151,22 @@ INSERT INTO users (username, password, email, role_id, description, status) VALU
 ('operator', '$2a$10$BqWZyqrZ0Kg3pxqL0q.RXOyYzXbWFM3U8AFZZ6mJywX5/pXNL4rMi', 'operator@example.com', 
  (SELECT id FROM roles WHERE name = 'Operator'), 'System operator', true); 
 
-
-
- 
 -- 创建模板表
-CREATE TABLE templates (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+CREATE TABLE IF NOT EXISTS templates (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
     description TEXT,
-    content JSONB NOT NULL,  -- 存储仪表板配置
-    creator VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
-);
+    content JSON,
+    creator VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 插入一些测试数据
 INSERT INTO templates (name, description, content, creator) VALUES
 (
     'Sales Dashboard',
-    'Monthly sales performance dashboard',
+    'Sales performance analysis dashboard',
     '{
         "widgets": [
             {
@@ -205,4 +203,59 @@ INSERT INTO templates (name, description, content, creator) VALUES
         ]
     }',
     'Jane Smith'
-); 
+);
+
+-- 添加报告表的创建语句
+CREATE TABLE IF NOT EXISTS reports (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    create_time TIMESTAMP(0) NOT NULL,
+    creator VARCHAR(100) NOT NULL,
+    trigger_mode VARCHAR(50) NOT NULL,
+    file_path VARCHAR(255),
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+) ;
+
+-- 为reports表创建索引
+CREATE INDEX idx_create_time ON reports(create_time);
+CREATE INDEX idx_creator ON reports(creator);
+
+-- 插入报告示例数据
+INSERT INTO reports (name, description, create_time, creator, trigger_mode, file_path) VALUES
+(
+    'Monthly Report',
+    'Monthly security analysis report',
+    '2024-01-15 10:30:00',
+    'John Doe',
+    'Manual',
+    '/reports/monthly/2024-01-security-analysis.pdf'
+),
+(
+    'Weekly Report',
+    'Weekly security status report',
+    '2024-01-16 14:20:00',
+    'Jane Smith',
+    'Scheduled',
+    '/reports/weekly/2024-w3-security-status.pdf'
+),
+(
+    'Daily Report',
+    'Daily system health check report',
+    '2024-01-17 09:00:00',
+    'Mike Johnson',
+    'Scheduled',
+    '/reports/daily/2024-01-17-health-check.pdf'
+),
+(
+    'Incident Report',
+    'Security incident investigation report',
+    '2024-01-17 15:45:00',
+    'Sarah Wilson',
+    'Manual',
+    '/reports/incident/2024-01-17-investigation.pdf'
+);
+
+
+

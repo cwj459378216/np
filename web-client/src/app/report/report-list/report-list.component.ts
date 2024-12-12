@@ -1,4 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
+import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-report-list',
@@ -16,50 +19,83 @@ export class ReportListComponent implements OnInit {
         { field: 'createTime', title: 'Creation Time' },
         { field: 'creator', title: 'Creator' },
         { field: 'triggerMode', title: 'Trigger Mode' },
-        { field: 'actions', title: 'Actions', sort: false, headerClass: 'justify-center' },
+        { field: 'actions', title: 'Actions', sort: false, headerClass: 'justify-center' }
     ];
 
-    constructor() {}
+    constructor(private http: HttpClient) {}
 
     ngOnInit() {
-        // 模拟数据
-        this.items = [
-            {
-                id: 1,
-                name: 'Monthly Report',
-                description: 'Monthly security analysis report',
-                createTime: '2024-01-15 10:30',
-                creator: 'John Doe',
-                triggerMode: 'Manual'
-            },
-            {
-                id: 2,
-                name: 'Weekly Report',
-                description: 'Weekly security status report',
-                createTime: '2024-01-16 14:20',
-                creator: 'Jane Smith',
-                triggerMode: 'Scheduled'
-            }
-        ];
+        this.loadReports();
     }
 
-    deleteRow(item: any = null) {
-        if (confirm('Are you sure want to delete selected row ?')) {
-            if (item) {
-                this.items = this.items.filter((d: any) => d.id != item);
-                this.datatable.clearSelectedRows();
-            } else {
-                let selectedRows = this.datatable.getSelectedRows();
-                const ids = selectedRows.map((d: any) => {
-                    return d.id;
-                });
-                this.items = this.items.filter((d: any) => !ids.includes(d.id as never));
-                this.datatable.clearSelectedRows();
+    loadReports() {
+        this.http.get(`${environment.apiUrl}/api/reports`).subscribe(
+            (data: any) => {
+                this.items = data;
+            },
+            error => {
+                console.error('Error loading reports:', error);
             }
-        }
+        );
+    }
+
+    deleteRow(item?: any) {
+        Swal.fire({
+            title: 'Delete Report',
+            text: 'Are you sure you want to delete this report?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            padding: '2em'
+        }).then((result) => {
+            if (result.value) {
+                if (item) {
+                    this.http.delete(`${environment.apiUrl}/api/reports/${item}`).subscribe(
+                        () => {
+                            this.loadReports();
+                            this.showMessage('Report has been deleted successfully.');
+                        },
+                        error => {
+                            console.error('Error deleting report:', error);
+                            this.showMessage('Error deleting report', 'error');
+                        }
+                    );
+                } else {
+                    let selectedRows = this.datatable.getSelectedRows();
+                    const ids = selectedRows.map((d: any) => d.id);
+                    
+                    this.http.delete(`${environment.apiUrl}/api/reports`, { body: ids }).subscribe(
+                        () => {
+                            this.loadReports();
+                            this.showMessage('Reports have been deleted successfully.');
+                        },
+                        error => {
+                            console.error('Error deleting reports:', error);
+                            this.showMessage('Error deleting reports', 'error');
+                        }
+                    );
+                }
+            }
+        });
+    }
+
+    showMessage(msg = '', type = 'success') {
+        const toast: any = Swal.mixin({
+            toast: true,
+            position: 'top',
+            showConfirmButton: false,
+            timer: 3000,
+            customClass: { container: 'toast' },
+        });
+        toast.fire({
+            icon: type,
+            title: msg,
+            padding: '10px 20px',
+        });
     }
 
     downloadReport(id: number) {
-        console.log('Downloading report:', id);
+        window.location.href = `${environment.apiUrl}/api/reports/download/${id}`;
     }
 } 
