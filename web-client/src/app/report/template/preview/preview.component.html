@@ -39,6 +39,7 @@
                         <span class="text-base font-medium">{{ item.type === 'table' ? 'Table' : (item.chartType | titlecase) + ' Chart' }}</span>
                     </div>
                     <div class="flex-1 gridster-item-content">
+                        <!-- 图表内容 -->
                         <div *ngIf="item['type'] === 'chart'" class="w-full h-full">
                             <div [id]="'chart_' + item.uniqueId" 
                                  echarts 
@@ -47,22 +48,23 @@
                                  class="w-full h-full">
                             </div>
                         </div>
-                        <div *ngIf="item['type'] === 'table'" class="w-full h-full overflow-auto">
+                        <!-- 表格内容 -->
+                        <div *ngIf="item['type'] === 'table'" class="overflow-x-auto">
                             <table class="w-full table-auto">
                                 <thead>
                                     <tr>
-                                        <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">#</th>
-                                        <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">First Name</th>
-                                        <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">Last Name</th>
-                                        <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">Email</th>
+                                        <th *ngFor="let header of getTableHeaders(item)" 
+                                            class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a] text-left">
+                                            {{header.charAt(0).toUpperCase() + header.slice(1)}}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr *ngFor="let row of tableData">
-                                        <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.id}}</td>
-                                        <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.firstName}}</td>
-                                        <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.lastName}}</td>
-                                        <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.email}}</td>
+                                    <tr *ngFor="let row of item['tableData']">
+                                        <td *ngFor="let header of getTableHeaders(item)" 
+                                            class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">
+                                            {{row[header]}}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>

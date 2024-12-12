@@ -150,3 +150,59 @@ INSERT INTO users (username, password, email, role_id, description, status) VALU
  (SELECT id FROM roles WHERE name = 'Administrator'), 'System administrator', true),
 ('operator', '$2a$10$BqWZyqrZ0Kg3pxqL0q.RXOyYzXbWFM3U8AFZZ6mJywX5/pXNL4rMi', 'operator@example.com', 
  (SELECT id FROM roles WHERE name = 'Operator'), 'System operator', true); 
+
+
+
+ 
+-- 创建模板表
+CREATE TABLE templates (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    content JSONB NOT NULL,  -- 存储仪表板配置
+    creator VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入一些测试数据
+INSERT INTO templates (name, description, content, creator) VALUES
+(
+    'Sales Dashboard',
+    'Monthly sales performance dashboard',
+    '{
+        "widgets": [
+            {
+                "id": "chart_1",
+                "type": "chart",
+                "chartType": "line",
+                "position": {"x": 0, "y": 0, "cols": 2, "rows": 2},
+                "config": {
+                    "title": "Sales Trend",
+                    "dataSource": "sales_data",
+                    "aggregation": {"field": "amount", "type": "sum"}
+                }
+            }
+        ]
+    }',
+    'John Doe'
+),
+(
+    'Marketing Analytics',
+    'Marketing campaign analysis dashboard',
+    '{
+        "widgets": [
+            {
+                "id": "chart_2",
+                "type": "chart",
+                "chartType": "pie",
+                "position": {"x": 2, "y": 0, "cols": 2, "rows": 2},
+                "config": {
+                    "title": "Channel Distribution",
+                    "dataSource": "marketing_data",
+                    "aggregation": {"field": "visits", "type": "count"}
+                }
+            }
+        ]
+    }',
+    'Jane Smith'
+); 

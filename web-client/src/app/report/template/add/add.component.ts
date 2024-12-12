@@ -1,5 +1,9 @@
 import { Component, OnInit, ViewEncapsulation, ViewChild } from '@angular/core';
 import { GridsterConfig, GridsterItem, GridsterItemComponentInterface } from 'angular-gridster2';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import { Router } from '@angular/router';
+import Swal from 'sweetalert2';
 
 // 首先定义 GridsterItem 接口
 interface CustomGridsterItem extends GridsterItem {
@@ -8,6 +12,34 @@ interface CustomGridsterItem extends GridsterItem {
     type: string;
     chartType?: string;
     chartConfig?: any;
+    titles?: string[];
+    aggregation?: {
+        field: string;
+        type: string;
+    };
+    tableData?: any[];  // 添加表格数据字段
+}
+
+// 添加 ECharts 实例接口
+interface EChartsInstance {
+    getOption: () => any;
+    setOption: (option: any) => void;
+    resize: () => void;
+    dispose: () => void;
+}
+
+interface EChartsInstances {
+    [key: string]: EChartsInstance;
+}
+
+interface FormData {
+    name: string;
+    type: 'line' | 'bar' | 'pie' | 'table' | '';  // 限制类型选项
+    chartType?: string;
+    index: string;
+    filter: string;
+    aggregationField: string;
+    aggregationType: string;
 }
 
 @Component({
@@ -18,53 +50,18 @@ interface CustomGridsterItem extends GridsterItem {
 export class AddComponent implements OnInit {
     dashboard: Array<CustomGridsterItem> = [];
     options: GridsterConfig = {};
-    lineChart: any;
-    barChart: any;
-    pieChart: any;
-    echartsInstances: {[key: string]: any} = {};
+    echartsInstances: EChartsInstances = {};
 
     // 表单相关
-    items: any[] = [];
-    selectedCurrency = 'USD - US Dollar';
-    currencyList = [
-        'USD - US Dollar',
-        'GBP - British Pound',
-        'IDR - Indonesian Rupiah',
-        'INR - Indian Rupee',
-        'BRL - Brazilian Real',
-        'EUR - Germany (Euro)',
-        'TRY - Turkish Lira',
-    ];
-    tax: number = 0;
-    discount: number = 0;
-    shippingCharge: number = 0;
-    paymentMethod: string = '';
-
-    // 添加新的属性
-    public name: string = '';
-    public description: string = '';
-
-    @ViewChild('addChartModal') addChartModal: any;
-    @ViewChild('widgetFormRef') widgetFormRef: any;
-
-    // 添加表格数据
+    name: string = '';
+    description: string = '';
     tableData = [
         { id: 1, firstName: 'John', lastName: 'Doe', email: 'johndoe@yahoo.com' },
         { id: 2, firstName: 'Andy', lastName: 'King', email: 'andyking@gmail.com' },
         { id: 3, firstName: 'Lisa', lastName: 'Doe', email: 'lisadoe@yahoo.com' },
         { id: 4, firstName: 'Vincent', lastName: 'Carpenter', email: 'vinnyc@yahoo.com' },
     ];
-
-    // 表单数据
-    formData = {
-        name: '',
-        type: '',
-        index: '',
-        filter: '',
-        aggregationField: '',
-        aggregationType: ''
-    };
-
+    
     // 下拉选项数据
     indexList = [
         { value: 'index1', label: 'Index 1' },
@@ -72,357 +69,148 @@ export class AddComponent implements OnInit {
         { value: 'index3', label: 'Index 3' }
     ];
 
-    // 添加聚合字段选项
-    aggregationFields = [
-        { value: 'value', label: 'Value' },
-        { value: 'count', label: 'Count' },
-        { value: 'price', label: 'Price' },
-        { value: 'quantity', label: 'Quantity' }
-    ];
-
-    // 添加聚合类型选项
-    aggregationTypes = [
-        { value: 'sum', label: 'Sum' },
-        { value: 'avg', label: 'Average' },
-        { value: 'min', label: 'Minimum' },
-        { value: 'max', label: 'Maximum' },
-        { value: 'count', label: 'Count' }
-    ];
-
-    // 修改 filter 相关的数据结构
-    filters: Array<{field: string, value: string}> = [
-        { field: '', value: '' }
-    ];
-
-    // 添加可选的字段列表
     filterFields = [
         { value: 'field1', label: 'Field 1' },
         { value: 'field2', label: 'Field 2' },
-        { value: 'field3', label: 'Field 3' },
-        { value: 'field4', label: 'Field 4' }
+        { value: 'field3', label: 'Field 3' }
     ];
 
-    // 添加标题选项
     titleOptions = [
-        { value: 'title1', label: 'Title 1' },
-        { value: 'title2', label: 'Title 2' },
-        { value: 'title3', label: 'Title 3' },
-        { value: 'title4', label: 'Title 4' },
-        { value: 'title5', label: 'Title 5' }
+        { value: 'id', label: 'Id' },
+        { value: 'email', label: 'Email' },
+        { value: 'lastName', label: 'LastName' },
+        { value: 'firstName', label: 'FirstName' }
     ];
 
-    // 选中的标题
+    aggregationFields = [
+        { value: 'field1', label: 'Field 1' },
+        { value: 'field2', label: 'Field 2' },
+        { value: 'field3', label: 'Field 3' }
+    ];
+
+    aggregationTypes = [
+        { value: 'sum', label: 'Sum' },
+        { value: 'avg', label: 'Average' },
+        { value: 'count', label: 'Count' }
+    ];
+
+    @ViewChild('addChartModal') addChartModal: any;
+    @ViewChild('widgetFormRef') widgetFormRef: any;
+
+    // 表单数据
+    formData: FormData = {
+        name: '',
+        type: '',
+        chartType: '',
+        index: '',
+        filter: '',
+        aggregationField: '',
+        aggregationType: ''
+    };
+
+    filters: Array<{field: string, value: string}> = [];
     selectedTitles: string[] = [];
 
-    // 添加新的 filter 行
-    addFilter() {
-        this.filters.push({ field: '', value: '' });
+    constructor(
+        private http: HttpClient,
+        private router: Router
+    ) {}
+
+    ngOnInit() {
+        this.dashboard = [];
+        this.initializeGridsterOptions();
     }
 
-    // 删除指定的 filter 行
-    removeFilter(index: number) {
-        this.filters.splice(index, 1);
-    }
-
-    // 修改 addWidget 方法中处理 filter 的部分
-    addWidget() {
-        const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        // 将多个 filter 组合成一个字符串或对象
-        const filterData = this.filters
-            .filter(f => f.field && f.value)
-            .reduce((acc, curr) => {
-                acc[curr.field] = curr.value;
-                return acc;
-            }, {} as {[key: string]: string});
-
-        if (this.formData.type === 'table') {
-            const newItem: CustomGridsterItem = {
-                uniqueId,
-                id: `table_${uniqueId}`,
-                cols: 3,
-                rows: 2,
-                y: 0,
-                x: 0,
-                type: 'table',
-                name: this.formData.name,
-                index: this.formData.index,
-                filter: filterData,  // 使用新的 filter 数据
-                aggregation: {
-                    field: this.formData.aggregationField,
-                    type: this.formData.aggregationType
-                },
-                titles: this.selectedTitles  // 添加选中的标题
-            };
-            this.dashboard = [...this.dashboard, newItem];
-        } else {
-            let chartConfig;
-            switch(this.formData.type) {
-                case 'line':
-                    chartConfig = {...this.lineChart};
-                    break;
-                case 'bar':
-                    chartConfig = {...this.barChart};
-                    break;
-                case 'pie':
-                    chartConfig = {...this.pieChart};
-                    break;
-                default:
-                    return;
-            }
-
-            const newItem: CustomGridsterItem = {
-                uniqueId,
-                id: `chart_${uniqueId}`,
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 0,
-                type: 'chart',
-                chartType: this.formData.type,
-                chartConfig: chartConfig,
-                name: this.formData.name,
-                index: this.formData.index,
-                filter: filterData,
-                aggregation: {
-                    field: this.formData.aggregationField,
-                    type: this.formData.aggregationType
-                }
-            };
-
-            this.dashboard = [...this.dashboard, newItem];
-        }
-
-        // 重置表单时也要重置 filters 和标题选择
+    // 添加新的图表或表格
+    openAddChartModal() {
+        // 重置表单数据
         this.formData = {
             name: '',
             type: '',
+            chartType: '',
             index: '',
             filter: '',
             aggregationField: '',
             aggregationType: ''
         };
         this.filters = [{ field: '', value: '' }];
-        this.selectedTitles = [];  // 重置选中的标题
-        this.addChartModal.close();
-    }
-
-    // 修改 trackBy 函数
-    trackByFn(index: number, item: CustomGridsterItem): string {
-        // 确保返回一个真正唯一的标识符
-        if (!item.uniqueId) {
-            console.warn('Item without uniqueId found:', item);
-            item.uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${index}`;
-        }
-        return `${item.uniqueId}_${item.type}_${item.chartType}`;
-    }
-
-    openAddChartModal() {
+        this.selectedTitles = [];
         this.addChartModal.open();
     }
 
-    constructor() {
-        this.initCharts();
-        this.initDashboard();
-        this.initOptions();
+    // 处理添加图表的提交
+    addWidget() {
+        if (!this.formData.type) {
+            this.showMessage('Please select widget type', 'error');
+            return;
+        }
+
+        const uniqueId = `${this.formData.type}_${new Date().getTime()}`;
+        let newItem: CustomGridsterItem;
+
+        switch (this.formData.type) {
+            case 'line':
+            case 'bar':
+            case 'pie':
+                newItem = {
+                    cols: 3,
+                    rows: 3,
+                    y: 0,
+                    x: 0,
+                    type: 'chart',
+                    chartType: this.formData.type,
+                    uniqueId: uniqueId,
+                    id: uniqueId,
+                    chartConfig: this.generateChartConfig(this.formData.type)
+                };
+                break;
+
+            case 'table':
+                newItem = {
+                    cols: 6,
+                    rows: 3,
+                    y: 0,
+                    x: 0,
+                    type: 'table',
+                    uniqueId: uniqueId,
+                    id: uniqueId,
+                    titles: this.selectedTitles,
+                    aggregation: {
+                        field: this.formData.aggregationField,
+                        type: this.formData.aggregationType
+                    }
+                };
+                break;
+
+            default:
+                this.showMessage('Invalid widget type', 'error');
+                return;
+        }
+
+        this.dashboard.push(newItem);
+        this.addChartModal.close();
     }
 
-    initOptions() {
+    initializeGridsterOptions() {
         this.options = {
             gridType: 'fit',
+            displayGrid: 'always',
             margin: 10,
             outerMargin: true,
+            pushItems: true,
             draggable: {
                 enabled: true
             },
             resizable: {
                 enabled: true
             },
-            minCols: 6,
-            maxCols: 6,
-            minRows: 6,
-            maxRows: 6,
-            pushItems: true,
-            displayGrid: 'always',
-            itemChangeCallback: (item: GridsterItem, itemComponent: GridsterItemComponentInterface) => {
-                this.resizeChart(item);
-            },
-            itemResizeCallback: (item: GridsterItem, itemComponent: GridsterItemComponentInterface) => {
-                this.resizeChart(item);
-            }
+            minCols: 12,
+            maxCols: 12,
+            minRows: 12,
+            maxRows: 12,
+            fixedColWidth: 100,
+            fixedRowHeight: 100
         };
-    }
-
-    resizeChart(item: any) {
-        const chartElement = document.getElementById(`chart_${item.uniqueId}`);
-        if (chartElement && this.echartsInstances[item.uniqueId]) {
-            setTimeout(() => {
-                this.echartsInstances[item.uniqueId].resize();
-            });
-        }
-    }
-
-    onChartInit(ec: any, item: CustomGridsterItem) {
-        this.echartsInstances[item.uniqueId] = ec;
-    }
-
-    initCharts() {
-        // 折线图配置
-        this.lineChart = {
-            tooltip: {
-                trigger: 'axis'
-            },
-            legend: {
-                data: ['Sales'],
-                bottom: '0',
-                left: 'center'
-            },
-            grid: {
-                top: '5%',
-                left: '3%',
-                right: '4%',
-                bottom: '10%',
-                containLabel: true
-            },
-            xAxis: {
-                type: 'category',
-                data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-            },
-            yAxis: {
-                type: 'value'
-            },
-            series: [{
-                name: 'Sales',
-                type: 'line',
-                smooth: true,
-                data: [45, 55, 75, 25, 45, 110]
-            }]
-        };
-
-        // 柱状图配置
-        this.barChart = {
-            tooltip: {
-                trigger: 'axis'
-            },
-            legend: {
-                data: ['Sales'],
-                bottom: '0',
-                left: 'center'
-            },
-            grid: {
-                top: '5%',
-                left: '3%',
-                right: '4%',
-                bottom: '10%',
-                containLabel: true
-            },
-            xAxis: {
-                type: 'category',
-                data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']
-            },
-            yAxis: {
-                type: 'value'
-            },
-            series: [{
-                name: 'Sales',
-                type: 'bar',
-                data: [44, 55, 41, 67, 22, 43, 21, 70]
-            }]
-        };
-
-        // 饼图配置
-        this.pieChart = {
-            tooltip: {
-                trigger: 'item'
-            },
-            legend: {
-                bottom: '0',
-                left: 'center'
-            },
-            series: [{
-                name: 'Teams',
-                type: 'pie',
-                radius: ['40%', '70%'],
-                avoidLabelOverlap: false,
-                itemStyle: {
-                    borderRadius: 10,
-                    borderColor: '#fff',
-                    borderWidth: 2
-                },
-                label: {
-                    show: true,
-                    position: 'outside'
-                },
-                labelLine: {
-                    show: true
-                },
-                data: [
-                    { value: 44, name: 'Team A' },
-                    { value: 55, name: 'Team B' },
-                    { value: 13, name: 'Team C' },
-                    { value: 43, name: 'Team D' },
-                    { value: 22, name: 'Team E' }
-                ]
-            }]
-        };
-    }
-
-    initDashboard() {
-        const generateUniqueId = () => `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-        this.dashboard = [
-            {
-                uniqueId: generateUniqueId(),
-                id: 'chart_1',
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 0,
-                type: 'chart',
-                chartType: 'line',
-                chartConfig: {...this.lineChart}
-            },
-            {
-                uniqueId: generateUniqueId(),
-                id: 'chart_2',
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 2,
-                type: 'chart',
-                chartType: 'bar',
-                chartConfig: {...this.barChart}
-            },
-            {
-                uniqueId: generateUniqueId(),
-                id: 'chart_3',
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 4,
-                type: 'chart',
-                chartType: 'pie',
-                chartConfig: {...this.pieChart}
-            },
-            // 添加默认的表格
-            {
-                uniqueId: generateUniqueId(),
-                id: 'table_1',
-                cols: 3,
-                rows: 2,
-                y: 2,  // 放在第二行
-                x: 0,
-                type: 'table',
-                name: 'Default Table',
-                index: 'index1',
-                filter: {},
-                aggregation: {
-                    field: 'value',
-                    type: 'sum'
-                },
-                titles: ['title1', 'title2', 'title3']  // 默认显示的列
-            }
-        ];
     }
 
     removeWidget(item: CustomGridsterItem) {
@@ -433,37 +221,173 @@ export class AddComponent implements OnInit {
         this.dashboard = this.dashboard.filter(widget => widget.uniqueId !== item.uniqueId);
     }
 
-    ngOnInit() {
-        // 初始化默认项
-        this.items = [{
-            id: 1,
-            title: '',
-            description: '',
-            rate: 0,
-            quantity: 0,
-            amount: 0,
-        }];
+    onChartInit(ec: any, item: CustomGridsterItem) {
+        this.echartsInstances[item.uniqueId] = ec;
     }
 
-    addItem() {
-        let maxId = 0;
-        if (this.items && this.items.length) {
-            maxId = this.items.reduce((max: number, character: any) => 
-                (character.id > max ? character.id : max), this.items[0].id);
+    trackByFn(index: number, item: CustomGridsterItem): string {
+        return `${item.uniqueId}_${item.type}_${item.chartType}`;
+    }
+
+    addFilter() {
+        this.filters.push({ field: '', value: '' });
+    }
+
+    removeFilter(index: number) {
+        this.filters.splice(index, 1);
+    }
+
+    private generateChartConfig(chartType: string) {
+        const config: any = {
+            title: {
+                text: this.formData.name || 'Chart'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data: ['Data']
+            }
+        };
+
+        switch (chartType) {
+            case 'line':
+                config.xAxis = {
+                    type: 'category',
+                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                };
+                config.yAxis = {
+                    type: 'value'
+                };
+                config.series = [{
+                    name: 'Data',
+                    data: [120, 200, 150, 80, 70, 110, 130],
+                    type: 'line',
+                    smooth: true
+                }];
+                break;
+
+            case 'bar':
+                config.xAxis = {
+                    type: 'category',
+                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                };
+                config.yAxis = {
+                    type: 'value'
+                };
+                config.series = [{
+                    name: 'Data',
+                    data: [120, 200, 150, 80, 70, 110, 130],
+                    type: 'bar'
+                }];
+                break;
+
+            case 'pie':
+                config.series = [{
+                    name: 'Access From',
+                    type: 'pie',
+                    radius: '50%',
+                    data: [
+                        { value: 1048, name: 'Search Engine' },
+                        { value: 735, name: 'Direct' },
+                        { value: 580, name: 'Email' },
+                        { value: 484, name: 'Union Ads' },
+                        { value: 300, name: 'Video Ads' }
+                    ],
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }];
+                break;
         }
-        this.items.push({
-            id: maxId + 1,
-            title: '',
-            description: '',
-            rate: 0,
-            quantity: 0,
-            amount: 0,
+
+        return config;
+    }
+
+    saveTemplate() {
+        if (!this.name.trim()) {
+            this.showMessage('Please enter template name', 'error');
+            return;
+        }
+
+        // 处理表格数据
+        const dashboardWithData = this.dashboard.map(item => {
+            if (item.type === 'table') {
+                return {
+                    ...item,
+                    tableData: this.tableData
+                };
+            }
+            return item;
+        });
+
+        // 获取当前的 gridster 配置
+        const currentOptions = {
+            ...this.options,
+            minCols: this.options.minCols || 12,
+            maxCols: this.options.maxCols || 12,
+            minRows: this.options.minRows || 12,
+            maxRows: this.options.maxRows || 12,
+            gridType: this.options.gridType || 'fit',
+            fixedColWidth: this.options.fixedColWidth,
+            fixedRowHeight: this.options.fixedRowHeight,
+            margin: this.options.margin || 10,
+            outerMargin: this.options.outerMargin !== undefined ? this.options.outerMargin : true,
+            displayGrid: this.options.displayGrid || 'always',
+            pushItems: this.options.pushItems !== undefined ? this.options.pushItems : true
+        };
+
+        const template = {
+            name: this.name,
+            description: this.description,
+            content: {
+                dashboard: dashboardWithData,
+                options: currentOptions,  // 保存完整的 gridster 配置
+                echartsOptions: Object.keys(this.echartsInstances).reduce<{[key: string]: any}>((acc, key) => {
+                    acc[key] = this.echartsInstances[key].getOption();
+                    return acc;
+                }, {})
+            },
+            creator: 'Current User',
+            createdAt: new Date().toISOString()
+        };
+
+        this.http.post(`${environment.apiUrl}/api/templates`, template).subscribe(
+            () => {
+                this.showMessage('Template has been saved successfully');
+                this.router.navigate(['/report/template/list']);
+            },
+            error => {
+                console.error('Error saving template:', error);
+                this.showMessage('Error saving template', 'error');
+            }
+        );
+    }
+
+    showMessage(msg = '', type = 'success') {
+        const toast: any = Swal.mixin({
+            toast: true,
+            position: 'top',
+            showConfirmButton: false,
+            timer: 3000,
+            customClass: { container: 'toast' },
+        });
+        toast.fire({
+            icon: type,
+            title: msg,
+            padding: '10px 20px',
         });
     }
 
-    removeItem(item: any = null) {
-        if (item) {
-            this.items = this.items.filter((d: any) => d.id != item.id);
-        }
+    onTitlesChange(event: any) {
+        // 确保标题按照预定义的顺序排序
+        const orderedTitles = ['id', 'email', 'lastName', 'firstName'];
+        this.selectedTitles = this.selectedTitles.sort((a, b) => 
+            orderedTitles.indexOf(a.toLowerCase()) - orderedTitles.indexOf(b.toLowerCase())
+        );
     }
 } 

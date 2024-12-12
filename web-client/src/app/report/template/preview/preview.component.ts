@@ -1,6 +1,9 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { GridsterConfig, GridsterItem } from 'angular-gridster2';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import Swal from 'sweetalert2';
 
 interface CustomGridsterItem extends GridsterItem {
     uniqueId: string;
@@ -34,36 +37,39 @@ export class PreviewComponent implements OnInit {
         { id: 4, firstName: 'Vincent', lastName: 'Carpenter', email: 'vinnyc@yahoo.com' },
     ];
 
-    constructor(private route: ActivatedRoute) {
+    constructor(
+        private route: ActivatedRoute,
+        private http: HttpClient
+    ) {
         this.initOptions();
     }
 
     ngOnInit() {
         this.route.queryParams.subscribe(params => {
             this.id = params['id'];
-            // TODO: 根据 id 获取模板数据
-            // 这里暂时使用模拟数据
-            this.loadTemplateData();
+            if (this.id) {
+                this.loadTemplate();
+            }
         });
     }
 
     initOptions() {
         this.options = {
             gridType: 'fit',
+            displayGrid: 'always',
             margin: 10,
             outerMargin: true,
             draggable: {
-                enabled: false  // 禁用拖拽
+                enabled: false
             },
             resizable: {
-                enabled: false  // 禁用调整大小
+                enabled: false
             },
-            minCols: 6,
-            maxCols: 6,
-            minRows: 6,
-            maxRows: 6,
-            pushItems: false,
-            displayGrid: 'none',  // 隐藏网格
+            pushItems: true,
+            minCols: 12,
+            maxCols: 12,
+            minRows: 12,
+            maxRows: 12,
             itemChangeCallback: (item: GridsterItem) => {
                 this.resizeChart(item);
             },
@@ -82,157 +88,115 @@ export class PreviewComponent implements OnInit {
         }
     }
 
+    trackByFn(index: number, item: CustomGridsterItem): string {
+        return `${item.uniqueId}_${item.type}_${item.chartType}`;
+    }
+
     onChartInit(ec: any, item: CustomGridsterItem) {
         this.echartsInstances[item.uniqueId] = ec;
     }
 
-    // 模拟加载模板数据
-    private loadTemplateData() {
-        const generateUniqueId = () => `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    loadTemplate() {
+        this.http.get(`${environment.apiUrl}/api/templates/${this.id}`).subscribe(
+            (template: any) => {
+                const content = typeof template.content === 'string' 
+                    ? JSON.parse(template.content) 
+                    : template.content;
 
-        this.dashboard = [
-            {
-                uniqueId: generateUniqueId(),
-                id: 'chart_1',
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 0,
-                type: 'chart',
-                chartType: 'line',
-                chartConfig: {
-                    tooltip: {
-                        trigger: 'axis'
-                    },
-                    legend: {
-                        data: ['Sales'],
-                        bottom: '0',
-                        left: 'center'
-                    },
-                    grid: {
-                        top: '5%',
-                        left: '3%',
-                        right: '4%',
-                        bottom: '10%',
-                        containLabel: true
-                    },
-                    xAxis: {
-                        type: 'category',
-                        data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-                    },
-                    yAxis: {
-                        type: 'value'
-                    },
-                    series: [{
-                        name: 'Sales',
-                        type: 'line',
-                        smooth: true,
-                        data: [45, 55, 75, 25, 45, 110]
-                    }]
+                if (content.dashboard) {
+                    this.dashboard = content.dashboard.map((item: CustomGridsterItem) => ({
+                        ...item,
+                        x: item.x,
+                        y: item.y,
+                        cols: item.cols,
+                        rows: item.rows
+                    }));
+                }
+                
+                if (content.options) {
+                    this.options = {
+                        ...content.options,
+                        draggable: {
+                            enabled: false
+                        },
+                        resizable: {
+                            enabled: false
+                        }
+                    };
+                }
+
+                if (content.echartsOptions) {
+                    setTimeout(() => {
+                        Object.keys(content.echartsOptions).forEach(key => {
+                            if (this.echartsInstances[key]) {
+                                this.echartsInstances[key].setOption(content.echartsOptions[key]);
+                            }
+                        });
+                    });
                 }
             },
-            {
-                uniqueId: generateUniqueId(),
-                id: 'chart_2',
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 2,
-                type: 'chart',
-                chartType: 'bar',
-                chartConfig: {
-                    tooltip: {
-                        trigger: 'axis'
-                    },
-                    legend: {
-                        data: ['Revenue'],
-                        bottom: '0',
-                        left: 'center'
-                    },
-                    grid: {
-                        top: '5%',
-                        left: '3%',
-                        right: '4%',
-                        bottom: '10%',
-                        containLabel: true
-                    },
-                    xAxis: {
-                        type: 'category',
-                        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                    },
-                    yAxis: {
-                        type: 'value'
-                    },
-                    series: [{
-                        name: 'Revenue',
-                        type: 'bar',
-                        data: [120, 200, 150, 80, 70, 110, 130]
-                    }]
-                }
-            },
-            {
-                uniqueId: generateUniqueId(),
-                id: 'chart_3',
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 4,
-                type: 'chart',
-                chartType: 'pie',
-                chartConfig: {
-                    tooltip: {
-                        trigger: 'item'
-                    },
-                    legend: {
-                        bottom: '0',
-                        left: 'center'
-                    },
-                    series: [{
-                        name: 'Access From',
-                        type: 'pie',
-                        radius: ['40%', '70%'],
-                        avoidLabelOverlap: false,
-                        itemStyle: {
-                            borderRadius: 10,
-                            borderColor: '#fff',
-                            borderWidth: 2
-                        },
-                        label: {
-                            show: true,
-                            position: 'outside'
-                        },
-                        labelLine: {
-                            show: true
-                        },
-                        data: [
-                            { value: 1048, name: 'Search Engine' },
-                            { value: 735, name: 'Direct' },
-                            { value: 580, name: 'Email' },
-                            { value: 484, name: 'Union Ads' },
-                            { value: 300, name: 'Video Ads' }
-                        ]
-                    }]
-                }
-            },
-            {
-                uniqueId: generateUniqueId(),
-                id: 'table_1',
-                cols: 3,
-                rows: 2,
-                y: 2,
-                x: 0,
-                type: 'table',
-                name: 'User List',
-                index: 'users',
-                filter: {},
-                aggregation: 'count',
-                titles: ['id', 'firstName', 'lastName', 'email']
+            error => {
+                console.error('Error loading template:', error);
+                this.showMessage('Error loading template', 'error');
             }
-        ];
+        );
+    }
+
+    showMessage(msg = '', type = 'success') {
+        const toast: any = Swal.mixin({
+            toast: true,
+            position: 'top',
+            showConfirmButton: false,
+            timer: 3000,
+            customClass: { container: 'toast' },
+        });
+        toast.fire({
+            icon: type,
+            title: msg,
+            padding: '10px 20px',
+        });
     }
 
     // 添加打印方法
     printTemplate() {
         window.print();
+    }
+
+    // 获取表格的列标题
+    getTableHeaders(item: CustomGridsterItem): string[] {
+        // 如果有定义的标题，使用定义的标题
+        if (item.titles && item.titles.length > 0) {
+            return item.titles;
+        }
+        
+        // 默认列顺序
+        return ['id', 'email', 'lastName', 'firstName'];
+    }
+
+    // 获取数据属性名
+    getDataField(header: string): string {
+        // 直接使用标题作为属性名，因为它们已经是正确的格式了
+        return header;
+    }
+
+    // 计算需要的网格大小
+    private calculateGridSize(dashboard: CustomGridsterItem[]): { cols: number; rows: number } {
+        let maxCols = 0;
+        let maxRows = 0;
+
+        dashboard.forEach(item => {
+            // 计算每个项目占用的最大列数和行数
+            const itemEndCol = (item.x || 0) + (item.cols || 0);
+            const itemEndRow = (item.y || 0) + (item.rows || 0);
+
+            maxCols = Math.max(maxCols, itemEndCol);
+            maxRows = Math.max(maxRows, itemEndRow);
+        });
+
+        // 确保至少有最小的网格大小
+        return {
+            cols: Math.max(maxCols, 12),  // 最小 12 列
+            rows: Math.max(maxRows, 12)   // 最小 12 行
+        };
     }
 } 
