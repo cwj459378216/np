@@ -1,5 +1,10 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { ReportSchedulerService } from '../../services/report-scheduler.service';
+import { TemplateService } from '../../services/template.service';
+import { NotificationSettingService } from '../../services/notification-setting.service';
+import { environment } from '../../../environments/environment';
+import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-report-scheduler',
@@ -10,40 +15,60 @@ export class ReportSchedulerComponent implements OnInit {
     
     displayType: string = 'list';
     searchText: string = '';
-    params: FormGroup;
+    params!: FormGroup;
 
-    whereToSendOptions = [
-        { value: 'admin@example.com', label: 'Admin (admin@example.com)' },
-        { value: 'security@example.com', label: 'Security Team (security@example.com)' },
-        { value: 'syslog.server:514', label: 'Syslog Server (syslog.server:514)' },
-        { value: 'monitor@example.com', label: 'Monitor Team (monitor@example.com)' }
-    ];
-
-    schedulers = [
-        {
-            id: 1,
-            name: 'Daily System Report',
-            description: 'Generate system status report daily',
-            template: 'System Status Template',
-            frequency: 'Daily',
-            time: '00:00',
-            whereToSend: 'admin@example.com',
-            status: 'Active',
-            creationTime: '2024-01-15 10:30:00'
-        }
-    ];
-
-    templateOptions = [
-        { value: 'System Status Template', label: 'System Status Template' },
-        { value: 'Network Traffic Template', label: 'Network Traffic Template' },
-        { value: 'Security Alert Template', label: 'Security Alert Template' }
-    ];
-
+    whereToSendOptions: any[] = [];
+    templateOptions: any[] = [];
+    
+    schedulers: any[] = [];
     filteredSchedulers: any[] = [];
 
-    constructor(private fb: FormBuilder) {
+    constructor(
+        private fb: FormBuilder,
+        private reportSchedulerService: ReportSchedulerService,
+        private templateService: TemplateService,
+        private notificationSettingService: NotificationSettingService
+    ) {
+        this.initForm();
+    }
+
+    ngOnInit(): void {
+        this.loadSchedulers();
+        this.loadTemplates();
+        this.loadNotificationSettings();
+    }
+
+    loadTemplates() {
+        this.templateService.getTemplates().subscribe({
+            next: (data) => {
+                this.templateOptions = data.map(template => ({
+                    value: template.name,
+                    label: template.name
+                }));
+            },
+            error: (error) => {
+                console.error('Error loading templates:', error);
+            }
+        });
+    }
+
+    loadNotificationSettings() {
+        this.notificationSettingService.getSettings().subscribe({
+            next: (data) => {
+                this.whereToSendOptions = data.map(setting => ({
+                    value: setting.service === 'email' ? setting.receiver : `${setting.host}:${setting.syslogPort}`,
+                    label: `${setting.name} (${setting.service === 'email' ? setting.receiver : `${setting.host}:${setting.syslogPort}`})`
+                }));
+            },
+            error: (error) => {
+                console.error('Error loading notification settings:', error);
+            }
+        });
+    }
+
+    initForm() {
         this.params = this.fb.group({
-            id: [''],
+            id: [null],
             name: [''],
             description: [''],
             template: [''],
@@ -54,11 +79,18 @@ export class ReportSchedulerComponent implements OnInit {
         });
     }
 
-    ngOnInit(): void {
-        this.filteredSchedulers = [...this.schedulers];
+    loadSchedulers() {
+        this.reportSchedulerService.getSchedulers().subscribe({
+            next: (data) => {
+                this.schedulers = data;
+                this.searchSchedulers();
+            },
+            error: (error) => {
+                console.error('Error loading schedulers:', error);
+            }
+        });
     }
 
-    // 添加编辑方法
     editScheduler(scheduler: any = null) {
         if (scheduler) {
             this.params.patchValue({
@@ -78,35 +110,73 @@ export class ReportSchedulerComponent implements OnInit {
         this.addSchedulerModal.open();
     }
 
-    // 添加删除方法
     deleteScheduler(scheduler: any) {
-        this.schedulers = this.schedulers.filter(item => item.id !== scheduler.id);
-        this.searchSchedulers();
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            padding: '2em'
+        }).then((result) => {
+            if (result.value) {
+                this.reportSchedulerService.deleteScheduler(scheduler.id).subscribe({
+                    next: () => {
+                        this.loadSchedulers();
+                        this.showMessage('Scheduler has been deleted successfully');
+                    },
+                    error: (error) => {
+                        console.error('Error deleting scheduler:', error);
+                        this.showMessage('Error deleting scheduler', 'error');
+                    }
+                });
+            }
+        });
     }
 
-    // 添加保存方法
     saveScheduler() {
+        if (!this.params.valid) {
+            this.showMessage('Please fill all required fields.', 'error');
+            return;
+        }
+
         const formValue = this.params.value;
-        
+        const schedulerData = {
+            ...formValue,
+            time: formValue.time,
+            status: formValue.status || 'Active'
+        };
+
         if (formValue.id) {
-            const index = this.schedulers.findIndex(d => d.id === formValue.id);
-            this.schedulers[index] = {
-                ...formValue,
-                creationTime: this.schedulers[index].creationTime
-            };
+            this.reportSchedulerService.updateScheduler(formValue.id, schedulerData).subscribe({
+                next: () => {
+                    this.loadSchedulers();
+                    this.showMessage('Scheduler has been updated successfully');
+                    this.addSchedulerModal.close();
+                },
+                error: (error) => {
+                    console.error('Error updating scheduler:', error);
+                    this.showMessage('Error updating scheduler', 'error');
+                }
+            });
         } else {
-            const maxId = Math.max(...this.schedulers.map(d => d.id), 0);
-            this.schedulers.push({
-                ...formValue,
-                id: maxId + 1,
-                creationTime: new Date().toLocaleString()
+            this.reportSchedulerService.createScheduler(schedulerData).subscribe({
+                next: () => {
+                    this.loadSchedulers();
+                    this.showMessage('Scheduler has been created successfully');
+                    this.addSchedulerModal.close();
+                },
+                error: (error) => {
+                    console.error('Error creating scheduler:', error);
+                    if (error.error) {
+                        console.error('Error details:', error.error);
+                    }
+                    this.showMessage('Error creating scheduler', 'error');
+                }
             });
         }
-        this.searchSchedulers();
-        this.addSchedulerModal.close();
     }
 
-    // 添加搜索方法
     searchSchedulers() {
         this.filteredSchedulers = this.schedulers.filter(item => {
             const searchStr = this.searchText.toLowerCase();
@@ -120,9 +190,23 @@ export class ReportSchedulerComponent implements OnInit {
         });
     }
 
-    // 添加获取标签的方法
     getWhereToSendLabel(value: string): string {
         const option = this.whereToSendOptions.find(opt => opt.value === value);
         return option ? option.label : value;
+    }
+
+    showMessage(msg = '', type = 'success') {
+        const toast: any = Swal.mixin({
+            toast: true,
+            position: 'top',
+            showConfirmButton: false,
+            timer: 3000,
+            customClass: { container: 'toast' },
+        });
+        toast.fire({
+            icon: type,
+            title: msg,
+            padding: '10px 20px',
+        });
     }
 } 
