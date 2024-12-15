@@ -33,7 +33,7 @@ CREATE TABLE assets (
     last_updated TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测��数据
+-- 插入一些测试数据
 INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_updated) VALUES
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
@@ -255,6 +255,44 @@ INSERT INTO reports (name, description, create_time, creator, trigger_mode, file
     'Sarah Wilson',
     'Manual',
     '/reports/incident/2024-01-17-investigation.pdf'
+);
+
+-- 创建通知规则表
+CREATE TABLE IF NOT EXISTS notification_rules (
+    id SERIAL PRIMARY KEY,
+    rule_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    time_window VARCHAR(50) NOT NULL,
+    trigger_condition VARCHAR(50) NOT NULL,
+    filters JSONB,
+    notification_method VARCHAR(50) NOT NULL,
+    endpoint VARCHAR(255),
+    status VARCHAR(20) NOT NULL DEFAULT 'Active',
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入示例数据
+INSERT INTO notification_rules (rule_name, description, time_window, trigger_condition, filters, notification_method, endpoint, status) VALUES
+(
+    'High CPU Usage Alert',
+    'Alert when CPU usage is high',
+    '24 hours',
+    'condition',
+    '[{"field": "cpu_usage", "value": "90"}]',
+    'email',
+    'admin@example.com',
+    'Active'
+),
+(
+    'Memory Warning',
+    'Warning for high memory usage',
+    '7 days',
+    'new_event',
+    NULL,
+    'syslog',
+    '192.168.1.100:514',
+    'Active'
 );
 
 

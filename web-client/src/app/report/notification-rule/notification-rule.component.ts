@@ -1,5 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
+import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-notification-rule',
@@ -10,7 +13,7 @@ export class NotificationRuleComponent implements OnInit {
     
     displayType: string = 'list';
     searchText: string = '';
-    params: FormGroup;
+    params!: FormGroup;
     
     timeWindowOptions = [
         { value: '24 hours', label: '24 Hours' },
@@ -57,31 +60,32 @@ export class NotificationRuleComponent implements OnInit {
         { value: 'network_traffic', label: 'Network Traffic' }
     ];
     
-    constructor(private fb: FormBuilder) {
-        this.params = this.fb.group({
-            id: [''],
-            ruleName: [''],
-            timeWindow: [''],
-            triggerCondition: [''],
-            notificationMethod: [''],
-            status: ['Active'],
-            filters: [[]],
-            host: [''],
-            port: ['']
-        });
-
-        this.params.get('notificationMethod')?.valueChanges.subscribe(value => {
-            if (value === 'syslog') {
-                this.params.patchValue({
-                    host: '',
-                    port: ''
-                });
-            }
-        });
+    constructor(private fb: FormBuilder, private http: HttpClient) {
+        this.initForm();
     }
 
     ngOnInit(): void {
-        this.filteredRules = [...this.rules];
+        this.loadRules();
+    }
+
+    initForm() {
+        this.params = this.fb.group({
+            id: [null],
+            ruleName: ['', Validators.required],
+            description: [''],
+            timeWindow: ['', Validators.required],
+            triggerCondition: ['', Validators.required],
+            notificationMethod: ['', Validators.required],
+            status: ['Active']
+        });
+
+        this.params.get('triggerCondition')?.valueChanges.subscribe(value => {
+            if (value === 'condition') {
+                this.filters = [{ field: '', value: '' }];
+            } else {
+                this.filters = [];
+            }
+        });
     }
 
     addFilter() {
@@ -93,76 +97,129 @@ export class NotificationRuleComponent implements OnInit {
     }
 
     editRule(rule: any = null) {
-        if (rule) {
-            if (rule.notificationMethod === 'syslog') {
-                const [host, port] = rule.endpoint?.split(':') || ['', ''];
-                this.params.patchValue({
-                    id: rule.id,
-                    ruleName: rule.ruleName,
-                    timeWindow: rule.timeWindow,
-                    triggerCondition: rule.triggerCondition,
-                    notificationMethod: rule.notificationMethod,
-                    status: rule.status,
-                    host: host,
-                    port: port
-                });
-            } else {
-                this.params.patchValue({
-                    id: rule.id,
-                    ruleName: rule.ruleName,
-                    timeWindow: rule.timeWindow,
-                    triggerCondition: rule.triggerCondition,
-                    notificationMethod: rule.notificationMethod,
-                    status: rule.status,
-                    host: '',
-                    port: ''
-                });
-            }
-            this.filters = rule.filters || [{ field: '', value: '' }];
-        } else {
-            this.params.reset();
-            this.params.patchValue({ status: 'Active' });
-            this.filters = [{ field: '', value: '' }];
-        }
         this.addRuleModal.open();
+        this.initForm();
+
+        if (rule) {
+            const formValue = {
+                id: rule.id,
+                ruleName: rule.ruleName,
+                description: rule.description,
+                timeWindow: rule.timeWindow,
+                triggerCondition: rule.triggerCondition,
+                notificationMethod: rule.notificationMethod,
+                status: rule.status
+            };
+
+            this.params.patchValue(formValue);
+            this.filters = rule.filters || [];
+            
+            if (rule.triggerCondition === 'condition' && this.filters.length === 0) {
+                this.filters = [{ field: '', value: '' }];
+            }
+        } else {
+            this.filters = [];
+        }
     }
 
     deleteRule(rule: any) {
-        // 实现删除逻辑
-        this.rules = this.rules.filter(item => item.id !== rule.id);
-        this.searchRules();
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            padding: '2em'
+        }).then((result) => {
+            if (result.value) {
+                this.http.delete(`${environment.apiUrl}/api/notification-rules/${rule.id}`).subscribe(
+                    () => {
+                        this.loadRules();
+                        this.showMessage('Rule has been deleted successfully', 'success');
+                    },
+                    error => {
+                        console.error('Error deleting rule:', error);
+                        this.showMessage('Error deleting rule', 'error');
+                    }
+                );
+            }
+        });
     }
 
     saveRule() {
+        const requiredFields = ['ruleName', 'timeWindow', 'triggerCondition', 'notificationMethod'];
+        const invalidFields = requiredFields.filter(field => !this.params.get(field)?.valid);
+        
+        if (invalidFields.length > 0) {
+            this.showMessage(`Please fill the following fields: ${invalidFields.join(', ')}`, 'error');
+            return;
+        }
+
+        if (this.params.get('triggerCondition')?.value === 'condition') {
+            const validFilters = this.filters.filter(f => f.field && f.value);
+            if (validFilters.length === 0) {
+                this.showMessage('Please add at least one valid condition', 'error');
+                return;
+            }
+        }
+
         const formValue = this.params.value;
-        const endpoint = formValue.notificationMethod === 'syslog' 
-            ? `${formValue.host}:${formValue.port}`
-            : '';
-            
         const ruleData = {
             ...formValue,
-            endpoint: endpoint,
-            filters: this.filters
+            filters: this.params.get('triggerCondition')?.value === 'condition' 
+                ? this.filters.filter(f => f.field && f.value)
+                : []
         };
 
-        if (formValue.id) {
-            const index = this.rules.findIndex(d => d.id === formValue.id);
-            this.rules[index] = ruleData;
-        } else {
-            const maxId = Math.max(...this.rules.map(d => d.id), 0);
-            this.rules.push({ ...ruleData, id: maxId + 1 });
-        }
-        this.searchRules();
-        this.addRuleModal.close();
+        const url = `${environment.apiUrl}/api/notification-rules${ruleData.id ? `/${ruleData.id}` : ''}`;
+        const method = ruleData.id ? 'put' : 'post';
+
+        this.http[method](url, ruleData).subscribe(
+            () => {
+                this.loadRules();
+                this.showMessage('Rule has been saved successfully', 'success');
+                this.addRuleModal.close();
+            },
+            error => {
+                console.error('Error saving rule:', error);
+                this.showMessage('Error saving rule', 'error');
+            }
+        );
     }
 
     searchRules() {
-        this.filteredRules = this.rules.filter(item => {
-            return (
-                item.ruleName.toLowerCase().includes(this.searchText.toLowerCase()) ||
-                item.triggerCondition.toLowerCase().includes(this.searchText.toLowerCase()) ||
-                item.notificationMethod.toLowerCase().includes(this.searchText.toLowerCase())
-            );
+        if (!this.searchText.trim()) {
+            this.filteredRules = [...this.rules];
+            return;
+        }
+
+        const searchTerm = this.searchText.toLowerCase();
+        this.filteredRules = this.rules.filter(rule => 
+            rule.ruleName.toLowerCase().includes(searchTerm) ||
+            rule.triggerCondition.toLowerCase().includes(searchTerm) ||
+            rule.notificationMethod.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    loadRules() {
+        this.http.get(`${environment.apiUrl}/api/notification-rules`).subscribe(
+            (data: any) => {
+                this.rules = data;
+                this.searchRules();
+            },
+            error => {
+                console.error('Error loading rules:', error);
+                this.showMessage('Error loading rules', 'error');
+            }
+        );
+    }
+
+    showMessage(message: string, type: 'success' | 'error') {
+        Swal.fire({
+            title: type === 'success' ? 'Success' : 'Error',
+            text: message,
+            icon: type === 'success' ? 'success' : 'error',
+            padding: '2em'
         });
     }
 } 
