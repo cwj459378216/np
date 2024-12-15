@@ -80,6 +80,7 @@ import { LocalRulesComponent } from './pages/threat-management/local-rules/local
 import { LogComponent } from './log/log.component';
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
+import { RulesPolicyService } from './services/rules-policy.service';
 
 @NgModule({
     imports: [
@@ -142,7 +143,7 @@ import { NotificationSettingsComponent } from './pages/notification-settings/not
       NotificationSettingsComponent
    ],
 
-    providers: [Title],
+    providers: [Title, RulesPolicyService],
     bootstrap: [AppComponent],
 })
 export class AppModule {}

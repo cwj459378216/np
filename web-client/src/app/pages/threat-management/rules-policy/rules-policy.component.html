@@ -42,53 +42,55 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Default Policy</td>
-                                <td>Default security policy configuration</td>
+                            <tr *ngFor="let policy of policies">
+                                <td>{{policy.name}}</td>
+                                <td>{{policy.description}}</td>
                                 <td>
-                                    <span ngxTippy [tippyProps]="{
-                                        allowHTML: true,
-                                        interactive: true,
-                                        content: getRuleTooltipContent(policyRules),
-                                        maxWidth: 'none',
-                                        theme: 'light',
-                                        offset: [10, 600],
-                                        zIndex: 99999,
-                                        placement: 'auto',
-                                        appendTo: documentBody,
-                                        animation: 'shift-away',
-                                        duration: [300, 200],
-                                        arrow: true,
-                                        popperOptions: {
-                                            strategy: 'fixed',
-                                            modifiers: [
-                                                {
-                                                    name: 'preventOverflow',
-                                                    options: {
-                                                        boundary: 'viewport',
-                                                        padding: 20
+                                    <span ngxTippy 
+                                        [tippyProps]="{
+                                            allowHTML: true,
+                                            interactive: true,
+                                            content: getRuleTooltipContent(policy.rules),
+                                            maxWidth: 'none',
+                                            theme: 'light',
+                                            offset: [0, 5],
+                                            placement: 'bottom',
+                                            appendTo: documentBody,
+                                            animation: 'shift-away',
+                                            duration: [300, 200],
+                                            zIndex: 9999,
+                                            arrow: false,
+                                            popperOptions: {
+                                                strategy: 'fixed',
+                                                modifiers: [
+                                                    {
+                                                        name: 'preventOverflow',
+                                                        options: {
+                                                            boundary: 'viewport',
+                                                            padding: 20
+                                                        }
                                                     }
-                                                }
-                                            ]
-                                        }
-                                    }" class="text-primary hover:text-blue-600 cursor-pointer">
-                                        SQL Injection, XSS Attack, CSRF
+                                                ]
+                                            }
+                                        }" 
+                                        class="text-primary hover:text-blue-600 cursor-pointer">
+                                        {{(policy.rules || []).length}} Rules
                                     </span>
                                 </td>
                                 <td>
                                     <label class="w-12 h-6 relative">
                                         <input type="checkbox" class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
-                                            id="custom_switch_checkbox2" />
-                                        <span for="custom_switch_checkbox2"
-                                            class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                            [checked]="policy.enabled"
+                                            (change)="toggleStatus(policy.id!, $event)" />
+                                        <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="editRule()">Edit</button>
+                                            (click)="editRule(policy)">Edit</button>
                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                            (click)="deleteRule()">Delete</button>
+                                            (click)="deleteRule(policy.id!)">Delete</button>
                                     </div>
                                 </td>
                             </tr>
@@ -121,6 +123,7 @@
                 <label>Available Rules</label>
                 <div class="datatable">
                     <ng-datatable
+                        #datatable
                         [rows]="availableRules"
                         [columns]="ruleColumns"
                         [hasCheckbox]="true"
@@ -130,13 +133,10 @@
                         [showPageSize]="false"
                         [columnFilter]="true"
                         skin="whitespace-nowrap table-hover"
-                        firstArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"><path d="M13 19L7 12L13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.5" d="M16.9998 19L10.9998 12L16.9998 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-                        lastArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"><path d="M11 19L17 12L11 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.5" d="M6.99976 19L12.9998 12L6.99976 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-                        previousArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"><path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-                        nextArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"><path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-                        (selectedRows)="onSelectedRulesChange($event)"
-                        (filterChange)="onFilterChange($event)"
+                        (rowSelect)="onSelectedRulesChange($event)"
                     >
+                    <tr>
+                      </tr>
                     </ng-datatable>
                 </div>
             </div>

@@ -330,5 +330,60 @@ INSERT INTO report_schedulers (name, description, template, frequency, schedule_
     'Active'
 );
 
+-- 创建规则策略表
+CREATE TABLE rules_policy (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    enabled BOOLEAN DEFAULT true,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建规则表
+CREATE TABLE rules (
+    id SERIAL PRIMARY KEY,
+    sid VARCHAR(50) NOT NULL,
+    protocol VARCHAR(20),
+    source_address VARCHAR(100),
+    source_port VARCHAR(50),
+    destination_address VARCHAR(100),
+    destination_port VARCHAR(50),
+    class_type VARCHAR(100),
+    cve VARCHAR(50),
+    reference TEXT,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建策略规则关联表
+CREATE TABLE policy_rules (
+    policy_id INTEGER REFERENCES rules_policy(id),
+    rule_id INTEGER REFERENCES rules(id),
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (policy_id, rule_id)
+);
+
+-- 插入示例数据
+INSERT INTO rules_policy (name, description, enabled) VALUES
+('Default Policy', 'Default security policy configuration', true),
+('Web Security', 'Web application security policy', true);
+
+INSERT INTO rules (sid, protocol, source_address, source_port, destination_address, destination_port, class_type, cve, reference) VALUES
+('1000001', 'TCP', 'any', 'any', '192.168.1.0/24', '80', 'web-application-attack', 'CVE-2023-1234', 'bugtraq,1234'),
+('1000002', 'UDP', '10.0.0.0/8', '53', 'any', 'any', 'attempted-recon', 'CVE-2023-5678', 'url,example.com');
+
+-- 检查是否已存在规则
+INSERT INTO rules (sid, protocol, source_address, source_port, destination_address, destination_port, class_type, cve, reference) 
+SELECT '1000001', 'TCP', 'any', 'any', '192.168.1.0/24', '80', 'web-application-attack', 'CVE-2023-1234', 'bugtraq,1234'
+WHERE NOT EXISTS (
+    SELECT 1 FROM rules WHERE sid = '1000001'
+);
+
+INSERT INTO rules (sid, protocol, source_address, source_port, destination_address, destination_port, class_type, cve, reference)
+SELECT '1000002', 'UDP', '10.0.0.0/8', '53', 'any', 'any', 'attempted-recon', 'CVE-2023-5678', 'url,example.com'
+WHERE NOT EXISTS (
+    SELECT 1 FROM rules WHERE sid = '1000002'
+);
+
 
 
