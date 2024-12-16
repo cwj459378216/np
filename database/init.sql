@@ -33,7 +33,7 @@ CREATE TABLE assets (
     last_updated TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测��数据
+-- 插入一些测试数据
 INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_updated) VALUES
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
@@ -433,6 +433,32 @@ CREATE TABLE local_rules (
 -- 插入示例数据
 INSERT INTO local_rules (rule_content, created_date, status, category, last_updated) VALUES
 ('alert tcp any any -> any any (msg:"Custom Local Rule"; sid:1000001;)', '2024-03-21', 'Enabled', 'Custom', '2024-03-21 10:30:45');
+
+-- 在现有的表之后添加
+CREATE TABLE system_time_settings (
+    id SERIAL PRIMARY KEY,
+    time_setting_method VARCHAR(20) NOT NULL, -- 'manual' 或 'ntp'
+    manual_time TIMESTAMP(0),
+    ntp_server VARCHAR(255),
+    sync_frequency VARCHAR(50),
+    time_zone VARCHAR(50) NOT NULL,
+    auto_timezone_detection BOOLEAN DEFAULT false,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入默认数据
+INSERT INTO system_time_settings (
+    time_setting_method, 
+    manual_time, 
+    time_zone, 
+    auto_timezone_detection
+) VALUES (
+    'manual',
+    CURRENT_TIMESTAMP,
+    'GMT+8',
+    false
+);
 
 
 

@@ -1,35 +1,116 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
+import { SystemTimeService, SystemTime } from '../../services/system-time.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-system-time',
   templateUrl: './system-time.component.html',
   styleUrl: './system-time.component.css'
 })
-export class SystemTimeComponent {
-  timeSettingMethod: string = 'manual'; // 默认选 Manual Time
+export class SystemTimeComponent implements OnInit {
+  timeSettingMethod: string = 'manual';
   optionsTimeZone = ['UTC', 'GMT', 'GMT+1', 'GMT+2', 'GMT+3', 'GMT+4', 'GMT+5', 'GMT+6', 'GMT+7', 'GMT+8', 'GMT+9', 'GMT+10', 'GMT+11', 'GMT+12']
   optionsFrequency = ['1 Minute', '5 Minutes', '10 Minutes', '15 Minutes', '30 Minutes', '1 Hour', '2 Hours', '4 Hours', '6 Hours', '8 Hours', '12 Hours', '1 Day']
   dateTime: FlatpickrDefaultsInterface;
   input5: any;
   input4: any;
-
   form2!: FormGroup;
 
-  constructor(public storeData: Store<any>, public fb: FormBuilder) {
+  constructor(
+    public storeData: Store<any>, 
+    public fb: FormBuilder,
+    private systemTimeService: SystemTimeService
+  ) {
     this.initStore();
     this.form2 = this.fb.group({
-      date2: ['2022-07-05 12:00'],
+      date2: [''],
     });
     this.dateTime = {
       enableTime: true,
       dateFormat: 'Y-m-d H:i',
-      // position: this.store.rtlClass === 'rtl' ? 'auto right' : 'auto left',
       monthSelectorType: 'dropdown',
     };
   }
+
+  ngOnInit() {
+    this.loadSettings();
+  }
+
+  loadSettings() {
+    this.systemTimeService.getSettings().subscribe(settings => {
+      this.timeSettingMethod = settings.timeSettingMethod;
+      this.input5 = settings.timeZone;
+      this.input4 = settings.syncFrequency;
+      if (settings.manualTime) {
+        this.form2.patchValue({
+          date2: settings.manualTime
+        });
+      }
+    });
+  }
+
+  showMessage(msg = '', type = 'success') {
+    const toast: any = Swal.mixin({
+      toast: true,
+      position: 'top',
+      showConfirmButton: false,
+      timer: 3000,
+      customClass: { container: 'toast' },
+    });
+    toast.fire({
+      icon: type,
+      title: msg,
+      padding: '10px 20px',
+    });
+  }
+
+  confirmAction(action: () => void) {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "This action may affect system time settings!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, proceed!',
+      padding: '2em'
+    }).then((result) => {
+      if (result.value) {
+        action();
+      }
+    });
+  }
+
+  onSubmit() {
+    if (!this.input5) {
+      this.showMessage('Please select a time zone', 'error');
+      return;
+    }
+
+    const settings: SystemTime = {
+      timeSettingMethod: this.timeSettingMethod,
+      timeZone: this.input5,
+      autoTimezoneDetection: false,
+      manualTime: this.timeSettingMethod === 'manual' ? this.form2.get('date2')?.value : undefined,
+      ntpServer: this.timeSettingMethod === 'ntp' ? this.input4 : undefined,
+      syncFrequency: this.timeSettingMethod === 'ntp' ? this.input4 : undefined
+    };
+
+    this.confirmAction(() => {
+      this.systemTimeService.updateSettings(settings).subscribe({
+        next: (response) => {
+          console.log('Settings updated successfully', response);
+          this.showMessage('System time settings have been updated successfully');
+        },
+        error: (error) => {
+          console.error('Error updating settings:', error);
+          this.showMessage('Failed to update system time settings. Please try again.', 'error');
+        }
+      });
+    });
+  }
+
   store: any;
 
   async initStore() {

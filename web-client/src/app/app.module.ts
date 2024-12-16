@@ -83,6 +83,7 @@ import { NotificationSettingsComponent } from './pages/notification-settings/not
 import { RulesPolicyService } from './services/rules-policy.service';
 import { RuleUpdateService } from './services/rule-update.service';
 import { LocalRuleService } from './services/local-rule.service';
+import { SystemTimeService } from './services/system-time.service';
 
 @NgModule({
     imports: [
@@ -146,7 +147,7 @@ import { LocalRuleService } from './services/local-rule.service';
       NotificationSettingsComponent
    ],
 
-    providers: [Title, RulesPolicyService, RuleUpdateService, LocalRuleService],
+    providers: [Title, RulesPolicyService, RuleUpdateService, LocalRuleService, SystemTimeService],
     bootstrap: [AppComponent],
 })
 export class AppModule {}
