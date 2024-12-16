@@ -81,6 +81,7 @@ import { LogComponent } from './log/log.component';
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 import { RulesPolicyService } from './services/rules-policy.service';
+import { RuleUpdateService } from './services/rule-update.service';
 
 @NgModule({
     imports: [
@@ -143,7 +144,7 @@ import { RulesPolicyService } from './services/rules-policy.service';
       NotificationSettingsComponent
    ],
 
-    providers: [Title, RulesPolicyService],
+    providers: [Title, RulesPolicyService, RuleUpdateService],
     bootstrap: [AppComponent],
 })
 export class AppModule {}

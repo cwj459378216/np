@@ -40,13 +40,13 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>2023-12-15 14:30:00</td>
-                                <td>1,234</td>
+                            <tr *ngIf="currentConfig">
+                                <td>{{currentConfig.lastUpdateTime | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                                <td>{{currentConfig.totalRules | number}}</td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="updateRules()">Update Now</button>
+                                            (click)="executeUpdate()">Update Now</button>
                                         <button type="button" class="btn btn-sm btn-outline-secondary"
                                             (click)="viewDetails()">Details</button>
                                     </div>
@@ -58,6 +58,8 @@
             </div>
         </div>
     </div>
+
+    <!-- add rule modal -->
     <ngx-custom-modal #updateModal class="no-footer">
         <ng-template #modalHeader>
             <div class="!font-medium">Update Rules Configuration</div>
@@ -125,7 +127,7 @@
 
                 <!-- Manual模式的字段 -->
                 <div *ngIf="!isAutomaticMode" class="mb-5">
-                    <!-- <label for="ruleFile">Upload Rule File</label> -->
+                    <label for="ruleFile">Upload Rule File</label>
                     <div class="custom-file-container" data-upload-id="ruleFileUpload"></div>
                 </div>
 

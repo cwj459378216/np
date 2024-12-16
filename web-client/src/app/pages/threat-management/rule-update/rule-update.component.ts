@@ -1,6 +1,9 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FileUploadWithPreview } from 'file-upload-with-preview';
+import { RuleUpdateService } from '../../../services/rule-update.service';
+import { RuleUpdateConfig } from '../../../models/rule-update.model';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-rule-update',
@@ -10,26 +13,54 @@ export class RuleUpdateComponent implements OnInit {
   @ViewChild('updateModal') updateModal: any;
   
   searchTerm: string = '';
-  updateForm: FormGroup;
+  updateForm!: FormGroup;
   isAutomaticMode: boolean = true;
+  currentConfig: RuleUpdateConfig | null = null;
   
   updateModes = [
     { name: 'Automatic', value: 'automatic' },
     { name: 'Manual', value: 'manual' }
   ];
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private ruleUpdateService: RuleUpdateService
+  ) {
+    this.initForm();
+  }
+
+  ngOnInit() {
+    this.loadCurrentConfig();
+  }
+
+  initForm() {
     this.updateForm = this.fb.group({
       updateMode: ['automatic'],
       updateUrl: [''],
       updateInterval: [''],
       username: [''],
-      password: [''],
+      password: ['']
     });
   }
 
-  ngOnInit() {
-    // 不需要在这里初始化
+  loadCurrentConfig() {
+    this.ruleUpdateService.getCurrentConfig().subscribe({
+      next: (config: RuleUpdateConfig) => {
+        this.currentConfig = config;
+        this.updateForm.patchValue({
+          updateMode: config.updateMode,
+          updateUrl: config.updateUrl,
+          updateInterval: config.updateInterval,
+          username: config.username,
+          password: config.password
+        });
+        this.isAutomaticMode = config.updateMode === 'automatic';
+      },
+      error: (error: any) => {
+        console.error('Failed to load config:', error);
+        this.showMessage('Failed to load configuration', 'error');
+      }
+    });
   }
 
   updateRules() {
@@ -40,7 +71,6 @@ export class RuleUpdateComponent implements OnInit {
     this.isAutomaticMode = event.value === 'automatic';
     if (!this.isAutomaticMode) {
       setTimeout(() => {
-        // 初始化文件上传组件
         new FileUploadWithPreview('ruleFileUpload', {
           images: {
             baseImage: '',
@@ -53,7 +83,6 @@ export class RuleUpdateComponent implements OnInit {
             selectedCount: 'files selected',
           },
         });
-        // 移除预览容器
         let previewContainer = document.querySelector('.image-preview') as HTMLElement;
         if (previewContainer) {
           previewContainer.remove();
@@ -64,9 +93,37 @@ export class RuleUpdateComponent implements OnInit {
 
   saveUpdateConfig() {
     if (this.updateForm.valid) {
-      // 处理保存配置的逻辑
-      console.log(this.updateForm.value);
-      this.updateModal.close();
+      const configData: RuleUpdateConfig = {
+        ...this.updateForm.value,
+        id: this.currentConfig?.id
+      };
+
+      this.ruleUpdateService.saveConfig(configData).subscribe({
+        next: () => {
+          this.updateModal.close();
+          this.loadCurrentConfig();
+          this.showMessage('Configuration saved successfully');
+        },
+        error: (error: any) => {
+          console.error('Failed to save config:', error);
+          this.showMessage('Failed to save configuration', 'error');
+        }
+      });
+    }
+  }
+
+  executeUpdate() {
+    if (this.currentConfig?.id) {
+      this.ruleUpdateService.updateRules(this.currentConfig.id, 0).subscribe({
+        next: () => {
+          this.loadCurrentConfig();
+          this.showMessage('Rules updated successfully');
+        },
+        error: (error: any) => {
+          console.error('Failed to execute update:', error);
+          this.showMessage('Failed to update rules', 'error');
+        }
+      });
     }
   }
 
@@ -76,5 +133,20 @@ export class RuleUpdateComponent implements OnInit {
 
   searchUpdates() {
     // 实现搜索更新的逻辑
+  }
+
+  showMessage(message: string, type: 'success' | 'error' = 'success'): void {
+    const toast: any = Swal.mixin({
+      toast: true,
+      position: 'top',
+      showConfirmButton: false,
+      timer: 3000,
+      customClass: { container: 'toast' }
+    });
+    toast.fire({
+      icon: type,
+      title: message,
+      padding: '10px 20px'
+    });
   }
 } 

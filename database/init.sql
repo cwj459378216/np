@@ -33,7 +33,7 @@ CREATE TABLE assets (
     last_updated TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测��数据
+-- 插入一些测试数据
 INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_updated) VALUES
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
@@ -384,6 +384,41 @@ SELECT '1000002', 'UDP', '10.0.0.0/8', '53', 'any', 'any', 'attempted-recon', 'C
 WHERE NOT EXISTS (
     SELECT 1 FROM rules WHERE sid = '1000002'
 );
+
+-- 创建规则更新配置表
+CREATE TABLE rule_update_config (
+    id SERIAL PRIMARY KEY,
+    update_mode VARCHAR(20) NOT NULL,  -- 'automatic' 或 'manual'
+    update_url VARCHAR(255),
+    update_interval INTEGER,  -- 小时为单位
+    username VARCHAR(100),
+    password VARCHAR(100),
+    last_update_time TIMESTAMP(0),
+    total_rules INTEGER,
+    status VARCHAR(20),
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建规则更新历史表
+CREATE TABLE rule_update_history (
+    id SERIAL PRIMARY KEY,
+    update_time TIMESTAMP(0) NOT NULL,
+    update_mode VARCHAR(20) NOT NULL,
+    total_rules INTEGER,
+    status VARCHAR(20),
+    message TEXT,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入一些测试数据
+INSERT INTO rule_update_config (update_mode, update_url, update_interval, username, password, last_update_time, total_rules, status) 
+VALUES ('automatic', 'https://rules.example.com/update', 24, 'admin', 'encrypted_password', '2024-03-21 14:30:00', 1234, 'active');
+
+INSERT INTO rule_update_history (update_time, update_mode, total_rules, status, message)
+VALUES 
+('2024-03-21 14:30:00', 'automatic', 1234, 'success', 'Rules updated successfully'),
+('2024-03-20 14:30:00', 'manual', 1200, 'success', 'Manual update completed');
 
 
 
