@@ -37,20 +37,18 @@
                                 </button>
                                 <button type="button"
                                     class="flex h-10 w-full items-center justify-between rounded-md p-2 font-medium hover:bg-white-dark/10 hover:text-primary dark:hover:bg-[#181F32] dark:hover:text-primary"
-                                    [ngClass]="{'bg-gray-100 dark:text-primary text-primary dark:bg-[#181F32]': selectedTab === 'fav' }"
-                                    (click)="tabChanged('fav')">
+                                    [ngClass]="{'bg-gray-100 dark:text-primary text-primary dark:bg-[#181F32]': selectedTab === 'enabled' }"
+                                    (click)="tabChanged('enabled')">
                                     <div class="flex items-center">
-                                        <!-- <icon-star class="shrink-0" /> -->
                                         <icon-circle-check class="shrink-0" />
                                         <div class="ltr:ml-3 rtl:mr-3">Enable Protocol</div>
                                     </div>
                                 </button>
                                 <button type="button"
                                     class="flex h-10 w-full items-center justify-between rounded-md p-2 font-medium hover:bg-white-dark/10 hover:text-primary dark:hover:bg-[#181F32] dark:hover:text-primary"
-                                    [ngClass]="{'bg-gray-100 dark:text-primary text-primary dark:bg-[#181F32]': selectedTab === 'fav' }"
-                                    (click)="tabChanged('fav')">
+                                    [ngClass]="{'bg-gray-100 dark:text-primary text-primary dark:bg-[#181F32]': selectedTab === 'disabled' }"
+                                    (click)="tabChanged('disabled')">
                                     <div class="flex items-center">
-                                        <!-- <icon-sun class="shrink-0" /> -->
                                         <icon-x-circle class="shrink-0" />
                                         <div class="ltr:ml-3 rtl:mr-3">Disable Protocol</div>
                                     </div>
@@ -234,8 +232,14 @@
                                                 </div>
                                                 <div class="flex items-center">
                                                     <label class="w-12 h-6 relative">
-                                                        <input type="checkbox" class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" id="custom_switch_checkbox2" [checked]="note.isFav" />
-                                                        <span for="custom_switch_checkbox2" class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                                        <input type="checkbox" 
+                                                               class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" 
+                                                               id="custom_switch_checkbox2" 
+                                                               [checked]="note.isFav"
+                                                               (change)="toggleEnabled(note)" />
+                                                        <span for="custom_switch_checkbox2" 
+                                                              class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
+                                                        </span>
                                                     </label>
                                                   
                                                 </div>
@@ -302,14 +306,14 @@
 
                     <ngx-custom-modal #isDeleteNoteModal class="no-footer">
                         <ng-template #modalHeader>
-                            <div class="!font-medium">Delete </div>
+                            <div class="!font-medium">Delete Protocol</div>
                         </ng-template>
                         <ng-template #modalBody>
                             <div class="text-center text-sm">
                                 <div class="mx-auto w-fit rounded-full bg-danger p-4 text-white ring-4 ring-danger/30">
                                     <icon-trash-lines class="mx-auto h-7 w-7" />
                                 </div>
-                                <div class="mx-auto mt-5 sm:w-3/4">Are you sure you want to delete Notes?</div>
+                                <div class="mx-auto mt-5 sm:w-3/4">Are you sure you want to delete this protocol?</div>
 
                                 <div class="mt-8 flex items-center justify-center">
                                     <button type="button" class="btn btn-outline-danger"

@@ -1,8 +1,20 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, OnInit } from '@angular/core';
 import Swal from 'sweetalert2';
 import { toggleAnimation } from 'src/app/shared/animations';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ProtocolSettingsService, ProtocolSetting } from '../../services/protocol-settings.service';
+
+interface Note {
+  id: number;
+  user: string;
+  thumb: string;
+  title: string;
+  description: string;
+  date: string;
+  isFav: boolean;
+  tag: string;
+}
 
 @Component({
   selector: 'app-settings',
@@ -11,8 +23,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
   animations: [toggleAnimation],
 
 })
-export class SettingsComponent {
-  constructor(public fb: FormBuilder) {}
+export class SettingsComponent implements OnInit {
+  constructor(
+    public fb: FormBuilder,
+    private protocolSettingsService: ProtocolSettingsService
+  ) {}
   defaultParams = {
       id: null,
       title: '',
@@ -22,11 +37,11 @@ export class SettingsComponent {
       thumb: '',
   };
   @ViewChild('isAddNoteModal') isAddNoteModal!: NgxCustomModalComponent;
-  @ViewChild('isDeleteNoteModal') isDeleteNoteModal!: NgxCustomModalComponent;
   @ViewChild('isViewNoteModal') isViewNoteModal!: NgxCustomModalComponent;
+  @ViewChild('isDeleteNoteModal') isDeleteNoteModal!: NgxCustomModalComponent;
   params!: FormGroup;
   isShowNoteMenu = false;
-  notesList = [
+  notesList: Note[] = [
     {
       id: 7,
       user: 'HTTP',
@@ -90,7 +105,46 @@ export class SettingsComponent {
   };
 
   ngOnInit() {
-      this.searchNotes();
+    this.loadProtocolSettings();
+  }
+
+  loadProtocolSettings() {
+    this.protocolSettingsService.getAllSettings().subscribe({
+      next: (settings) => {
+        this.notesList = settings.map(setting => ({
+          id: setting.id || 0,
+          user: setting.protocolName,
+          thumb: '',
+          title: setting.port.toString(),
+          description: setting.description,
+          date: new Date().toLocaleDateString(),
+          isFav: setting.isEnabled,
+          tag: this.getTagFromImportanceLevel(setting.importanceLevel)
+        }));
+        this.searchNotes();
+      },
+      error: (error) => {
+        this.showMessage('Failed to load protocol settings', 'error');
+      }
+    });
+  }
+
+  getTagFromImportanceLevel(level: string): string {
+    switch (level) {
+      case 'important': return 'important';
+      case 'normal': return 'personal';
+      case 'negligible': return 'work';
+      default: return '';
+    }
+  }
+
+  getImportanceLevelFromTag(tag: string): string {
+    switch (tag) {
+      case 'important': return 'important';
+      case 'personal': return 'normal';
+      case 'work': return 'negligible';
+      default: return 'normal';
+    }
   }
 
   initForm() {
@@ -105,52 +159,54 @@ export class SettingsComponent {
   }
 
   searchNotes() {
-      if (this.selectedTab != 'fav') {
-          if (this.selectedTab != 'all' || this.selectedTab === 'delete') {
-              this.filterdNotesList = this.notesList.filter((d: { tag: any }) => d.tag === this.selectedTab);
-          } else {
-              this.filterdNotesList = this.notesList;
-          }
-      } else {
-          this.filterdNotesList = this.notesList.filter((d: { isFav: any }) => d.isFav);
-      }
+    if (this.selectedTab === 'enabled') {
+        this.filterdNotesList = this.notesList.filter((d: { isFav: boolean }) => d.isFav);
+    } else if (this.selectedTab === 'disabled') {
+        this.filterdNotesList = this.notesList.filter((d: { isFav: boolean }) => !d.isFav);
+    } else if (this.selectedTab !== 'all') {
+        this.filterdNotesList = this.notesList.filter((d: { tag: any }) => d.tag === this.selectedTab);
+    } else {
+        this.filterdNotesList = this.notesList;
+    }
   }
 
   saveNote() {
-      if (this.params.controls['title'].errors) {
-          this.showMessage('Title is required.', 'error');
-          return;
-      }
-      if (this.params.value.id) {
-          //update task
-          let note: any = this.notesList.find((d: { id: any }) => d.id === this.params.value.id);
-          note.title = this.params.value.title;
-          note.user = this.params.value.user;
-          note.description = this.params.value.description;
-          note.tag = this.params.value.tag;
-      } else {
-          //add note
-          let maxNoteId = this.notesList.length
-              ? this.notesList.reduce((max: number, character: { id: number }) => (character.id > max ? character.id : max), this.notesList[0].id)
-              : 0;
-          let dt = new Date();
-          let note = {
-              id: maxNoteId + 1,
-              title: this.params.value.title,
-              user: this.params.value.user,
-              thumb: 'profile-21.jpeg',
-              description: this.params.value.description,
-              date: dt.getDate() + '/' + Number(dt.getMonth()) + 1 + '/' + dt.getFullYear(),
-              isFav: false,
-              tag: this.params.value.tag,
-          };
-          this.notesList.splice(0, 0, note);
-          this.searchNotes();
-      }
+    if (this.params.controls['title'].errors) {
+      this.showMessage('Title is required.', 'error');
+      return;
+    }
 
-      this.showMessage('Note has been saved successfully.');
-      this.isAddNoteModal.close();
-      this.searchNotes();
+    const setting: ProtocolSetting = {
+      protocolName: this.params.value.user,
+      port: parseInt(this.params.value.title),
+      description: this.params.value.description,
+      isEnabled: false,
+      importanceLevel: this.getImportanceLevelFromTag(this.params.value.tag)
+    };
+
+    if (this.params.value.id) {
+      this.protocolSettingsService.updateSetting(this.params.value.id, setting).subscribe({
+        next: () => {
+          this.showMessage('Protocol setting updated successfully.');
+          this.loadProtocolSettings();
+          this.isAddNoteModal.close();
+        },
+        error: () => {
+          this.showMessage('Failed to update protocol setting', 'error');
+        }
+      });
+    } else {
+      this.protocolSettingsService.createSetting(setting).subscribe({
+        next: () => {
+          this.showMessage('Protocol setting created successfully.');
+          this.loadProtocolSettings();
+          this.isAddNoteModal.close();
+        },
+        error: () => {
+          this.showMessage('Failed to create protocol setting', 'error');
+        }
+      });
+    }
   }
 
   tabChanged(type: string) {
@@ -159,23 +215,74 @@ export class SettingsComponent {
       this.isShowNoteMenu = false;
   }
 
-  setFav(note: any) {
-      let item = this.filterdNotesList.find((d: { id: any }) => d.id === note.id);
-      item.isFav = !item.isFav;
-      this.searchNotes();
+  toggleEnabled(note: any) {
+    const setting: ProtocolSetting = {
+        protocolName: note.user,
+        port: parseInt(note.title),
+        description: note.description,
+        isEnabled: !note.isFav,
+        importanceLevel: this.getImportanceLevelFromTag(note.tag)
+    };
+
+    this.protocolSettingsService.updateSetting(note.id, setting).subscribe({
+        next: () => {
+            let item = this.filterdNotesList.find((d: { id: any }) => d.id === note.id);
+            if (item) {
+                item.isFav = !item.isFav;
+                this.showMessage(`Protocol has been ${item.isFav ? 'enabled' : 'disabled'} successfully.`);
+            }
+            this.searchNotes();
+        },
+        error: () => {
+            this.showMessage('Failed to update protocol status', 'error');
+        }
+    });
   }
 
   setTag(note: any, name: string = '') {
-      let item = this.filterdNotesList.find((d: { id: any }) => d.id === note.id);
-      item.tag = name;
-      this.searchNotes();
+    const setting: ProtocolSetting = {
+        protocolName: note.user,
+        port: parseInt(note.title),
+        description: note.description,
+        isEnabled: note.isFav,
+        importanceLevel: this.getImportanceLevelFromTag(name)
+    };
+
+    this.protocolSettingsService.updateSetting(note.id, setting).subscribe({
+        next: () => {
+            let item = this.filterdNotesList.find((d: { id: any }) => d.id === note.id);
+            if (item) {
+                item.tag = name;
+                this.showMessage(`Protocol importance level has been changed to ${name} successfully.`);
+            }
+            this.searchNotes();
+        },
+        error: () => {
+            this.showMessage('Failed to update protocol importance level', 'error');
+        }
+    });
   }
 
   deleteNoteConfirm(note: any) {
-      setTimeout(() => {
-          this.deletedNote = note;
-          this.isDeleteNoteModal.open();
-      });
+    setTimeout(() => {
+        this.deletedNote = note;
+        this.isDeleteNoteModal.open();
+    });
+  }
+
+  deleteNote() {
+    this.protocolSettingsService.deleteSetting(this.deletedNote.id).subscribe({
+        next: () => {
+            this.notesList = this.notesList.filter((d: { id: any }) => d.id != this.deletedNote.id);
+            this.searchNotes();
+            this.showMessage('Protocol has been deleted successfully.');
+            this.isDeleteNoteModal.close();
+        },
+        error: () => {
+            this.showMessage('Failed to delete protocol', 'error');
+            this.isDeleteNoteModal.close();
+        }
+    });
   }
 
   viewNote(note: any) {
@@ -199,13 +306,6 @@ export class SettingsComponent {
               thumb: note.thumb,
           });
       }
-  }
-
-  deleteNote() {
-      this.notesList = this.notesList.filter((d: { id: any }) => d.id != this.deletedNote.id);
-      this.searchNotes();
-      this.showMessage('Note has been deleted successfully.');
-      this.isDeleteNoteModal.close();
   }
 
   showMessage(msg = '', type = 'success') {

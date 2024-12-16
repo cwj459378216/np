@@ -33,7 +33,7 @@ CREATE TABLE assets (
     last_updated TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测试数据
+-- 插入一些测��数据
 INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_updated) VALUES
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
@@ -459,6 +459,26 @@ INSERT INTO system_time_settings (
     'GMT+8',
     false
 );
+
+-- 在现有表之后添加
+CREATE TABLE protocol_settings (
+    id SERIAL PRIMARY KEY,
+    protocol_name VARCHAR(50) NOT NULL,
+    port INTEGER NOT NULL,
+    description TEXT,
+    is_enabled BOOLEAN DEFAULT true,
+    importance_level VARCHAR(20) DEFAULT 'normal', -- 'important', 'normal', 'negligible'
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入一些初始数据
+INSERT INTO protocol_settings (protocol_name, port, description, is_enabled, importance_level) VALUES
+('HTTP', 80, 'HTTP stands for Hypertext Transfer Protocol, used for transferring web pages and data on the internet.', true, 'normal'),
+('DNS', 53, 'DNS stands for Domain Name System, translating domain names into IP addresses so that computers can locate each other.', true, 'important'),
+('SSL', 443, 'SSL (Secure Sockets Layer) is used for securing HTTP traffic, commonly referred to as HTTPS. It encrypts data to ensure security.', true, 'normal'),
+('SMB', 445, 'SMB stands for Server Message Block, used for file sharing, printer sharing, and other network services between computers.', false, 'negligible'),
+('FTP', 21, 'FTP stands for File Transfer Protocol, a standard network protocol for transferring files between a client and a server.', true, 'normal');
 
 
 
