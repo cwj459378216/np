@@ -89,77 +89,80 @@
                         </button>
                     </div>
 
-                    <ng-container *ngIf="!filterdAlarmList.length">
-                        <div class="flex h-full min-h-[400px] items-center justify-center text-lg font-semibold sm:min-h-[300px]">
-                            No alarms available
-                        </div>
-                    </ng-container>
-
                     <ng-container *ngIf="filterdAlarmList.length">
-                        <div class="min-h-[400px] sm:min-h-[300px]">
-                            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-                                <ng-container *ngFor="let alarm of filterdAlarmList">
-                                    <div class="panel pb-12" [ngClass]="{
-                                        'bg-danger-light shadow-danger': alarm.priority === 'high',
-                                        'bg-warning-light shadow-warning': alarm.priority === 'medium',
-                                        'bg-primary-light shadow-primary': alarm.priority === 'low'
-                                    }">
-                                        <div class="min-h-[142px] mb-5">
-                                            <div class="flex justify-between">
-                                                <div class="flex w-max items-center">
-                                                    <div class="flex-none">
-                                                        <icon-bell class="h-8 w-8" />
-                                                    </div>
-                                                    <div class="ltr:ml-2 rtl:mr-2">
-                                                        <div class="font-semibold">{{ alarm.name }}</div>
-                                                        <div class="text-sx text-white-dark">{{ alarm.type }}</div>
-                                                    </div>
-                                                </div>
-                                                <div hlMenu class="dropdown">
-                                                    <button hlMenuButton type="button" class="text-primary">
-                                                        <icon-horizontal-dots class="rotate-90 opacity-70 hover:opacity-100" />
-                                                    </button>
-                                                    <ul *hlMenuItems @toggleAnimation class="text-sm font-medium ltr:right-0 rtl:left-0">
-                                                        <li>
-                                                            <a href="javascript:;" *hlMenuItem="let menuItem" (click)="editAlarm(alarm)">
-                                                                <icon-pencil class="h-4 w-4 shrink-0 ltr:mr-3 rtl:ml-3" />
-                                                                Edit
-                                                            </a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="javascript:;" *hlMenuItem="let menuItem" (click)="viewAlarm(alarm)">
-                                                                <icon-eye class="h-4.5 w-4.5 shrink-0 ltr:mr-3 rtl:ml-3" />
-                                                                View
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <h4 class="mt-4 font-semibold">{{ alarm.description }}</h4>
-                                                <p class="mt-2 text-white-dark">Threshold: {{ alarm.threshold }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="absolute bottom-5 left-0 w-full px-5">
-                                            <div class="mt-2 flex items-center justify-between">
-                                                <div class="flex items-center">
-                                                    <icon-square-rotated [class]="{'fill-danger': alarm.priority === 'high',
-                                                        'fill-warning': alarm.priority === 'medium',
-                                                        'fill-primary': alarm.priority === 'low'}" />
-                                                    <span class="ltr:ml-2 rtl:mr-2">{{ alarm.priority | titlecase }}</span>
-                                                </div>
-                                                <div class="flex items-center">
-                                                    <label class="w-12 h-6 relative">
-                                                        <input type="checkbox" class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" 
-                                                            [(ngModel)]="alarm.enabled" 
-                                                            (change)="toggleAlarm(alarm)"/>
-                                                        <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
-                                                    </label>
-                                                </div>
-                                            </div>
+                        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                            <div class="panel transition-all duration-300 hover:shadow-[0_0_15px_1px_rgba(113,106,202,0.20)]" 
+                                [ngClass]="{'shadow-[0_0_15px_1px_rgba(113,106,202,0.40)] dark:shadow-[0_0_15px_1px_rgba(113,106,202,0.20)]': selectedAlarm.id === alarm.id}"
+                                (click)="selectAlarm(alarm)"
+                                *ngFor="let alarm of filterdAlarmList">
+                                <div class="mb-5 flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="flex-none">
+                                            <div class="text-xl font-semibold">{{ alarm.name }}</div>
                                         </div>
                                     </div>
-                                </ng-container>
+                                    <div hlMenu class="dropdown">
+                                        <button hlMenuButton type="button" class="hover:text-primary">
+                                            <icon-horizontal-dots class="rotate-90 opacity-70 hover:opacity-100" />
+                                        </button>
+                                        <ul *hlMenuItems @toggleAnimation class="text-sm font-medium ltr:right-0 rtl:left-0">
+                                            <li>
+                                                <a href="javascript:;" *hlMenuItem="let menuItem" (click)="editAlarm(alarm)">
+                                                    <icon-pencil class="h-4 w-4 shrink-0 ltr:mr-3 rtl:ml-3" />
+                                                    Edit
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="mb-4 font-semibold">{{ alarm.description }}</h4>
+                                    <p class="text-white-dark">Threshold: {{ alarm.threshold }}</p>
+                                </div>
+                                <div class="mt-6 flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div hlMenu class="dropdown">
+                                            <button hlMenuButton type="button" class="flex items-center" [ngClass]="{
+                                                'text-danger': alarm.priority === 'high',
+                                                'text-warning': alarm.priority === 'medium',
+                                                'text-primary': alarm.priority === 'low'
+                                            }">
+                                                <icon-square-rotated [class]="{'fill-danger': alarm.priority === 'high',
+                                                    'fill-warning': alarm.priority === 'medium',
+                                                    'fill-primary': alarm.priority === 'low'}" />
+                                                <span class="ltr:ml-2 rtl:mr-2">{{ alarm.priority | titlecase }}</span>
+                                            </button>
+                                            <ul *hlMenuItems @toggleAnimation class="text-sm font-medium">
+                                                <li>
+                                                    <a href="javascript:;" *hlMenuItem="let menuItem" (click)="setPriority(alarm, 'high')">
+                                                        <icon-square-rotated class="fill-danger text-danger ltr:mr-2 rtl:ml-2" />
+                                                        High
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="javascript:;" *hlMenuItem="let menuItem" (click)="setPriority(alarm, 'medium')">
+                                                        <icon-square-rotated class="fill-warning text-warning ltr:mr-2 rtl:ml-2" />
+                                                        Medium
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="javascript:;" *hlMenuItem="let menuItem" (click)="setPriority(alarm, 'low')">
+                                                        <icon-square-rotated class="fill-primary text-primary ltr:mr-2 rtl:ml-2" />
+                                                        Low
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <label class="w-12 h-6 relative">
+                                            <input type="checkbox" class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" 
+                                                [checked]="alarm.isEnabled"
+                                                (change)="toggleAlarm(alarm)"/>
+                                            <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </ng-container>
@@ -167,10 +170,10 @@
                     <!-- 添加/编辑告警的模态框 -->
                     <ngx-custom-modal #alarmModal class="no-footer">
                         <ng-template #modalHeader>
-                            <div class="!font-medium">{{ selectedAlarm?.id ? 'Edit Alarm' : 'Add Alarm' }}</div>
+                            <div class="!font-medium">{{ selectedAlarm.id ? 'Edit Alarm' : 'Add Alarm' }}</div>
                         </ng-template>
                         <ng-template #modalBody>
-                            <form [formGroup]="alarmForm" (submit)="saveAlarm()" class="text-sm">
+                            <form [formGroup]="params" (submit)="saveAlarm()" class="text-sm">
                                 <div class="mb-5">
                                     <label for="name">Name</label>
                                     <input id="name" type="text" placeholder="Enter Alarm Name" class="form-input"
@@ -206,7 +209,7 @@
                                     <button type="button" class="btn btn-outline-danger gap-2"
                                         (click)="alarmModal.close()">Cancel</button>
                                     <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                                        {{ selectedAlarm?.id ? 'Update' : 'Add' }}
+                                        {{ selectedAlarm.id ? 'Update' : 'Add' }}
                                     </button>
                                 </div>
                             </form>

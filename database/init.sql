@@ -33,7 +33,7 @@ CREATE TABLE assets (
     last_updated TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测��数据
+-- 插入一些测试数据
 INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_updated) VALUES
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
@@ -479,6 +479,28 @@ INSERT INTO protocol_settings (protocol_name, port, description, is_enabled, imp
 ('SSL', 443, 'SSL (Secure Sockets Layer) is used for securing HTTP traffic, commonly referred to as HTTPS. It encrypts data to ensure security.', true, 'normal'),
 ('SMB', 445, 'SMB stands for Server Message Block, used for file sharing, printer sharing, and other network services between computers.', false, 'negligible'),
 ('FTP', 21, 'FTP stands for File Transfer Protocol, a standard network protocol for transferring files between a client and a server.', true, 'normal');
+
+-- 创建告警设置表
+CREATE TABLE alarm_settings (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(20) NOT NULL,  -- 'threshold', 'pattern', 'anomaly'
+    priority VARCHAR(20) NOT NULL,  -- 'high', 'medium', 'low'
+    threshold INTEGER NOT NULL,
+    description TEXT,
+    is_enabled BOOLEAN DEFAULT true,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入一些初始数据
+INSERT INTO alarm_settings (name, type, priority, threshold, description, is_enabled) VALUES
+('CPU Usage Alert', 'threshold', 'high', 90, 'Alert when CPU usage exceeds 90%', true),
+('Memory Usage Warning', 'threshold', 'medium', 80, 'Warning when memory usage exceeds 80%', true),
+('Network Traffic Pattern', 'pattern', 'low', 1000, 'Monitor unusual network traffic patterns', false),
+('Disk Space Alert', 'threshold', 'high', 95, 'Critical alert when disk space usage exceeds 95%', true),
+('Login Anomaly Detection', 'anomaly', 'medium', 5, 'Detect unusual login patterns', true),
+('Database Connection Alert', 'pattern', 'high', 100, 'Monitor database connection failures', false);
 
 
 
