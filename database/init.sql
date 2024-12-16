@@ -33,7 +33,7 @@ CREATE TABLE assets (
     last_updated TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测试数据
+-- 插入一些测��数据
 INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_updated) VALUES
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
@@ -419,6 +419,20 @@ INSERT INTO rule_update_history (update_time, update_mode, total_rules, status, 
 VALUES 
 ('2024-03-21 14:30:00', 'automatic', 1234, 'success', 'Rules updated successfully'),
 ('2024-03-20 14:30:00', 'manual', 1200, 'success', 'Manual update completed');
+
+-- 创建本地规则表
+CREATE TABLE local_rules (
+    id SERIAL PRIMARY KEY,
+    rule_content TEXT NOT NULL,
+    created_date DATE NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    last_updated TIMESTAMP(0) NOT NULL
+);
+
+-- 插入示例数据
+INSERT INTO local_rules (rule_content, created_date, status, category, last_updated) VALUES
+('alert tcp any any -> any any (msg:"Custom Local Rule"; sid:1000001;)', '2024-03-21', 'Enabled', 'Custom', '2024-03-21 10:30:45');
 
 
 

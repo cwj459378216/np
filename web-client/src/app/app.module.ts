@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule, Title } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpBackend, HttpClient, HttpClientModule } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
 
@@ -82,6 +82,7 @@ import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 import { RulesPolicyService } from './services/rules-policy.service';
 import { RuleUpdateService } from './services/rule-update.service';
+import { LocalRuleService } from './services/local-rule.service';
 
 @NgModule({
     imports: [
@@ -90,6 +91,7 @@ import { RuleUpdateService } from './services/rule-update.service';
         BrowserAnimationsModule,
         CommonModule,
         FormsModule,
+        ReactiveFormsModule,
         HttpClientModule,
         TranslateModule.forRoot({
             loader: {
@@ -144,7 +146,7 @@ import { RuleUpdateService } from './services/rule-update.service';
       NotificationSettingsComponent
    ],
 
-    providers: [Title, RulesPolicyService, RuleUpdateService],
+    providers: [Title, RulesPolicyService, RuleUpdateService, LocalRuleService],
     bootstrap: [AppComponent],
 })
 export class AppModule {}
