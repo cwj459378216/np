@@ -38,21 +38,6 @@ INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_upda
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
 
--- 创建网络接口表
-CREATE TABLE network_interfaces (
-    id SERIAL PRIMARY KEY,
-    interface_name VARCHAR(50) NOT NULL,
-    method VARCHAR(20) NOT NULL,
-    ip_address VARCHAR(15),
-    netmask VARCHAR(15),
-    gateway VARCHAR(15),
-    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
-);
-
--- 插入一些测试数据
-INSERT INTO network_interfaces (interface_name, method, ip_address, netmask, gateway) VALUES
-    ('eno1', 'Static', '192.168.0.58', '255.255.255.0', '192.168.0.1'),
-    ('eno2', 'DHCP', NULL, NULL, NULL);
 
 -- 创建通知设置表
 CREATE TABLE notification_settings (

@@ -7,7 +7,6 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 interface NetworkInterface {
-    id: number;
     interface_name: string;
     method: string;
     ip_address: string | null;
@@ -36,7 +35,7 @@ export class InterfaceManagementComponent {
   filteredInterfaces: NetworkInterface[] = [];
   searchText = '';
 
-  @ViewChild('addContactModal') addContactModal!: NgxCustomModalComponent;
+  @ViewChild('editInterfaceModal') editInterfaceModal!: NgxCustomModalComponent;
   params!: FormGroup;
 
   ngOnInit() {
@@ -58,7 +57,6 @@ export class InterfaceManagementComponent {
 
   initForm() {
     this.params = this.fb.group({
-      id: [0],
       interface_name: ['', Validators.required],
       method: ['Static', Validators.required],
       ip_address: ['', [Validators.pattern('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')]],
@@ -91,11 +89,10 @@ export class InterfaceManagementComponent {
   }
 
   editInterface(iface: NetworkInterface) {
-    this.addContactModal.open();
+    this.editInterfaceModal.open();
     this.initForm();
 
     const formValue = {
-      id: iface.id,
       interface_name: iface.interface_name || '',
       method: iface.method || 'Static',
       ip_address: this.formatIpAddress(iface.ip_address),
@@ -131,14 +128,12 @@ export class InterfaceManagementComponent {
         }
     }
 
-    const url = `${environment.apiUrl}/api/interfaces${iface.id ? `/${iface.id}` : ''}`;
-    const method = iface.id ? 'put' : 'post';
-
-    this.http[method](url, iface).subscribe(
+    const url = `${environment.apiUrl}/api/interfaces/${iface.interface_name}`;
+    this.http.put(url, iface).subscribe(
         (response: any) => {
             this.loadInterfaces();
             this.showMessage('Interface has been saved successfully.');
-            this.addContactModal.close();
+            this.editInterfaceModal.close();
         },
         error => {
             console.error('Error saving interface:', error);
@@ -156,29 +151,6 @@ export class InterfaceManagementComponent {
       const num = parseInt(part, 10);
       return !isNaN(num) && num >= 0 && num <= 255 && 
              (part === '0' || !part.startsWith('0'));
-    });
-  }
-
-  deleteInterface(iface: NetworkInterface) {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, delete it!',
-      padding: '2em'
-    }).then((result) => {
-      if (result.value) {
-        this.http.delete(`${environment.apiUrl}/api/interfaces/${iface.id}`).subscribe(
-          () => {
-            this.loadInterfaces();
-            this.showMessage('Interface has been deleted successfully.');
-          },
-          error => {
-            this.showMessage('Error deleting interface', 'error');
-          }
-        );
-      }
     });
   }
 

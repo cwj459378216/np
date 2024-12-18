@@ -14,11 +14,6 @@
                 <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
                     <div class="flex gap-3">
                         <div>
-                            <button type="button" class="btn btn-primary" (click)="addContactModal.open(); initForm()">
-                                Add 
-                            </button>
-                        </div>
-                        <div>
                             <button type="button" class="btn btn-outline-primary p-2"
                                 [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
                                 (click)="displayType = 'list'">
@@ -74,8 +69,6 @@
                                                 (click)="editInterface(iface)">
                                                 Edit
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                                (click)="deleteInterface(iface)">Delete</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -85,16 +78,16 @@
                 </ng-container>
             </div>
 
-            <!-- add interface modal -->
-            <ngx-custom-modal #addContactModal class="no-footer">
+            <!-- edit interface modal -->
+            <ngx-custom-modal #editInterfaceModal class="no-footer">
                 <ng-template #modalHeader>
-                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Interface' : 'Add Interface' }}</div>
+                    <div class="!font-medium">Edit Interface</div>
                 </ng-template>
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveInterface()" ngNativeValidate>
                         <div class="mb-5">
                             <label for="interface_name">Interface Name</label>
-                            <input id="interface_name" type="text" formControlName="interface_name" class="form-input" required />
+                            <input id="interface_name" type="text" formControlName="interface_name" class="form-input" readonly />
                         </div>
                         <div class="mb-5">
                             <label for="Method">Method</label>
@@ -136,9 +129,9 @@
                       
                         <div class="mt-8 flex items-center justify-end">
                             <button type="button" class="btn btn-outline-danger"
-                                (click)="addContactModal.close()">Cancel</button>
+                                (click)="editInterfaceModal.close()">Cancel</button>
                             <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                                Update
                             </button>
                         </div>
                     </form>
