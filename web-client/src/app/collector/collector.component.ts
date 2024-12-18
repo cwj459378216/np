@@ -7,6 +7,20 @@ import Swal from 'sweetalert2';
 import { Store } from '@ngrx/store';
 import { FileUploadWithPreview } from 'file-upload-with-preview';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
+import { CollectorService } from 'src/app/services/collector.service';
+import { Collector, StorageStrategy } from '../services/collector.service';
+
+interface ContactList extends Collector {
+  role?: string;
+  email?: string;
+  location?: string;
+  phone?: string;
+  posts?: number;
+  followers?: string;
+  following?: number;
+  path?: string;
+  action?: string;
+}
 
 @Component({
   selector: 'app-collector',
@@ -29,10 +43,11 @@ export class CollectorComponent implements OnInit {
 
   displayType = 'list';
   @ViewChild('addContactModal') addContactModal!: NgxCustomModalComponent;
+  @ViewChild('storageStrategyModal') storageStrategyModal!: NgxCustomModalComponent;
   params!: FormGroup;
-  filterdContactsList: any = [];
+  filterdContactsList: ContactList[] = [];
   searchUser = '';
-  contactList = [
+  contactList: ContactList[] = [
     {
       id: 1,
       name: 'Alan Green',
@@ -44,15 +59,15 @@ export class CollectorComponent implements OnInit {
       followers: '5K',
       following: 500,
       path: 'profile-35.png',
-      "creationTime": "2024/01/01 12:00:00",
-      "interfaceName": "admin",
-      "storageStrategy": "B",
-      "filterStrategy": "CC",
-      "protocolAnalysisEnabled": true,
-      "idsEnabled": false,
-      "action": "",
+      creationTime: "2024/01/01 12:00:00",
+      interfaceName: "admin",
+      storageStrategy: "B",
+      filterStrategy: "CC",
+      protocolAnalysisEnabled: true,
+      idsEnabled: false,
+      status: "active",
+      action: "",
     },
-
   ];
   options = ['DPDK', 'File', 'Adapter 1'];
   optionsFileSize = ['64M', '128M', '256M'];
@@ -63,7 +78,14 @@ export class CollectorComponent implements OnInit {
   input4: string | undefined;
   rangeCalendar: FlatpickrDefaultsInterface;
   form3!: FormGroup;
-  constructor(private http: HttpClient, public fb: FormBuilder, public storeData: Store<any>) {
+  storageParams!: FormGroup;
+  storageStrategies: StorageStrategy[] = [];
+  constructor(
+    private http: HttpClient, 
+    public fb: FormBuilder, 
+    public storeData: Store<any>,
+    private collectorService: CollectorService
+  ) {
     this.initStore();
     this.isLoading = false;
     this.form3 = this.fb.group({
@@ -80,7 +102,8 @@ export class CollectorComponent implements OnInit {
     };
   }
   ngOnInit() {
-
+    this.loadCollectors();
+    this.loadStorageStrategies();
     this.http.get('assets/decode/index.html', { responseType: 'text' })
       .subscribe(data => {
         this.htmlContent = data;
@@ -148,7 +171,7 @@ export class CollectorComponent implements OnInit {
       markers: {
         show: false,
         size: 6,  // 设置标记的大小
-        colors: ['#1b55e2', '#e7515a'],  // 设置标记的颜色，可以设置为不同的颜色数组
+        colors: ['#1b55e2', '#e7515a'],  // 设置标记的颜色，可以设置为�������������的颜色数组
         strokeColor: '#fff',  // 设置标记的边框颜色
         strokeWidth: 2,  // 设置边框宽度
         shape: 'circle',  // 设置标记的形状为圆形
@@ -278,7 +301,7 @@ export class CollectorComponent implements OnInit {
         {
           name: 'Channel 1 Utilization',
           data: [
-            [1609459200000, 0.2], // 时间戳，支出
+            [1609459200000, 0.2], // 时间戳，收入
             [1612137600000, 0.3],
             [1614556800000, 0.1],
             [1617235200000, 0.5],
@@ -300,98 +323,128 @@ export class CollectorComponent implements OnInit {
     this.params = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      "interfaceName": ['', Validators.required],
-      "storageStrategy": ['', Validators.required],
-      "filterStrategy": ['', Validators.required],
+      interfaceName: ['', Validators.required],
+      storageStrategy: ['', Validators.required],
+      filterStrategy: ['', Validators.required],
+      protocolAnalysisEnabled: [false],
+      idsEnabled: [false],
+      status: ['stopped']
     });
   }
 
-
-  searchContacts() {
-    this.filterdContactsList = this.contactList.filter((d) => d.name.toLowerCase().includes(this.searchUser.toLowerCase()));
+  initStorageForm() {
+    this.storageParams = this.fb.group({
+      id: [0],
+      name: ['', Validators.required],
+      fileSize: ['64M', Validators.required],
+      fileCount: [1, [Validators.required, Validators.min(1)]],
+      outOfDiskAction: ['Wrap', Validators.required],
+      fileType: ['PCAP', Validators.required],
+      triggerType: ['Timer', Validators.required],
+      timeRange: [''],
+      alarmType: [''],
+      duration: [null]
+    });
   }
 
-  editUser(user: any = null) {
+  searchContacts() {
+    this.filterdContactsList = this.contactList.filter((d) => {
+        if (!d || !d.name || !d.interfaceName || !d.storageStrategy) {
+            return false;
+        }
+        return d.name.toLowerCase().includes(this.searchUser.toLowerCase()) ||
+            d.interfaceName.toLowerCase().includes(this.searchUser.toLowerCase()) ||
+            d.storageStrategy.toLowerCase().includes(this.searchUser.toLowerCase());
+    });
+  }
+
+  editUser(user: ContactList | null = null) {
     this.addContactModal.open();
     this.initForm();
+    
+    if (!this.storageStrategies.length) {
+      this.loadStorageStrategies();
+    }
+
     if (user) {
-      this.params.setValue({
+      this.params.patchValue({
         id: user.id,
         name: user.name,
-        // email: user.email,
-        // role: user.role,
-        // phone: user.phone,
-        // location: user.locati  on,
-        "interfaceName": "admin",
-        "storageStrategy": "B",
-        "filterStrategy": "CC",
+        interfaceName: user.interfaceName,
+        storageStrategy: user.storageStrategy,
+        filterStrategy: user.filterStrategy,
+        protocolAnalysisEnabled: user.protocolAnalysisEnabled,
+        idsEnabled: user.idsEnabled,
+        status: user.status
       });
     }
   }
 
   saveUser() {
-    // if (this.params.controls['name'].errors) {
-    //   this.showMessage('Name is required.', 'error');
-    //   return;
-    // }
-    // if (this.params.controls['email'].errors) {
-    //   this.showMessage('Email is required.', 'error');
-    //   return;
-    // }
-    // if (this.params.controls['phone'].errors) {
-    //   this.showMessage('Phone is required.', 'error');
-    //   return;
-    // }
-    // if (this.params.controls['role'].errors) {
-    //   this.showMessage('Occupation is required.', 'error');
-    //   return;
-    // }
-
-    if (this.params.value.id) {
-      //update user
-      let user: any = this.contactList.find((d) => d.id === this.params.value.id);
-      user.name = this.params.value.name;
-      user.email = this.params.value.email;
-      user.role = this.params.value.role;
-      user.phone = this.params.value.phone;
-      user.location = this.params.value.location;
-    } else {
-      //add user
-      let maxUserId = this.contactList.length
-        ? this.contactList.reduce((max, character) => (character.id > max ? character.id : max), this.contactList[0].id)
-        : 0;
-
-      let user = {
-        id: maxUserId + 1,
-        path: 'profile-35.png',
-        name: this.params.value.name,
-        email: this.params.value.email,
-        role: this.params.value.role,
-        phone: this.params.value.phone,
-        location: this.params.value.location,
-        posts: 20,
-        followers: '5K',
-        following: 500,
-        "creationTime": "2024/01/01 12:00:00",
-        "interfaceName": "admin",
-        "storageStrategy": "B",
-        "filterStrategy": "CC",
-        "protocolAnalysisEnabled": true,
-        "idsEnabled": false,
-        "action": "",
-      };
-      this.contactList.splice(0, 0, user);
-      this.searchContacts();
+    if (!this.params.valid) {
+        this.showMessage('Please fill all required fields.', 'error');
+        return;
     }
 
-    this.showMessage('User has been saved successfully.');
-    this.addContactModal.close();
+    const collectorData: Partial<Collector> = {
+        name: this.params.value.name,
+        interfaceName: this.params.value.interfaceName,
+        storageStrategy: this.params.value.storageStrategy,
+        filterStrategy: this.params.value.filterStrategy,
+        protocolAnalysisEnabled: this.params.value.protocolAnalysisEnabled,
+        idsEnabled: this.params.value.idsEnabled,
+        status: 'stopped',
+        creationTime: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    };
+
+    if (this.params.value.id) {
+        // 更新
+        this.collectorService.updateCollector(this.params.value.id, collectorData).subscribe(
+            response => {
+                this.showMessage('Collector has been updated successfully.');
+                this.loadCollectors();
+                this.addContactModal.close();
+            },
+            error => {
+                this.showMessage('Error updating collector.', 'error');
+            }
+        );
+    } else {
+        // 创建新的
+        this.collectorService.createCollector(collectorData).subscribe(
+            response => {
+                this.showMessage('Collector has been created successfully.');
+                this.loadCollectors();
+                this.addContactModal.close();
+            },
+            error => {
+                this.showMessage('Error creating collector.', 'error');
+            }
+        );
+    }
   }
 
-  deleteUser(user: any = null) {
-    this.contactList = this.contactList.filter((d) => d.id != user.id);
-    this.searchContacts();
-    this.showMessage('User has been deleted successfully.');
+  deleteUser(user: ContactList) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        padding: '2em'
+    }).then((result) => {
+        if (result.value) {
+            this.collectorService.deleteCollector(user.id).subscribe(
+                () => {
+                    this.loadCollectors();
+                    this.showMessage('Collector has been deleted successfully.');
+                },
+                error => {
+                    this.showMessage('Error deleting collector', 'error');
+                }
+            );
+        }
+    });
   }
 
   showMessage(msg = '', type = 'success') {
@@ -441,5 +494,186 @@ export class CollectorComponent implements OnInit {
       this.showTimeRange = false;
       this.showAlarm = true;
     }
+  }
+
+  loadCollectors() {
+    this.collectorService.getAllCollectors().subscribe(
+      data => {
+        // 将Collector数据转换为ContactList格式
+        this.contactList = data.map(collector => ({
+          ...collector,
+          role: 'Collector',
+          email: '-',
+          location: '-',
+          phone: '-',
+          posts: 0,
+          followers: '0',
+          following: 0,
+          path: 'profile-35.png',
+          action: '',
+          creationTime: this.formatDate(collector.creationTime)
+        }));
+        this.searchContacts();
+      },
+      error => {
+        console.error('Error loading collectors:', error);
+      }
+    );
+  }
+
+  loadStorageStrategies() {
+    this.collectorService.getAllStorageStrategies().subscribe(
+      data => {
+        this.storageStrategies = data;
+      },
+      error => {
+        console.error('Error loading storage strategies:', error);
+        this.showMessage('Error loading storage strategies', 'error');
+      }
+    );
+  }
+
+  editStorageStrategy(strategy: StorageStrategy | null = null) {
+    this.storageStrategyModal.open();
+    this.initStorageForm();
+    if (strategy) {
+      this.storageParams.patchValue({
+        id: strategy.id,
+        name: strategy.name,
+        fileSize: strategy.fileSize,
+        fileCount: strategy.fileCount,
+        outOfDiskAction: strategy.outOfDiskAction,
+        fileType: strategy.fileType,
+        triggerType: strategy.triggerType,
+        timeRange: strategy.timeRange,
+        alarmType: strategy.alarmType,
+        duration: strategy.duration
+      });
+    }
+  }
+
+  saveStorageStrategy() {
+    if (!this.storageParams.valid) {
+        this.showMessage('Please fill all required fields.', 'error');
+        return;
+    }
+
+    const strategyData: Partial<StorageStrategy> = {
+        name: this.storageParams.value.name,
+        fileSize: this.storageParams.value.fileSize,
+        fileCount: this.storageParams.value.fileCount,
+        outOfDiskAction: this.storageParams.value.outOfDiskAction,
+        fileType: this.storageParams.value.fileType,
+        triggerType: this.storageParams.value.triggerType,
+        timeRange: this.storageParams.value.timeRange,
+        alarmType: this.storageParams.value.alarmType,
+        duration: this.storageParams.value.duration,
+        creationTime: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    };
+
+    if (this.storageParams.value.id) {
+        // 更新
+        this.collectorService.updateStorageStrategy(this.storageParams.value.id, strategyData).subscribe(
+            response => {
+                this.showMessage('Storage strategy has been updated successfully.');
+                this.loadStorageStrategies();
+                this.storageStrategyModal.close();
+            },
+            error => {
+                this.showMessage('Error updating storage strategy.', 'error');
+            }
+        );
+    } else {
+        // 创建新的
+        this.collectorService.createStorageStrategy(strategyData).subscribe(
+            response => {
+                this.showMessage('Storage strategy has been created successfully.');
+                this.loadStorageStrategies();
+                this.storageStrategyModal.close();
+            },
+            error => {
+                this.showMessage('Error creating storage strategy.', 'error');
+            }
+        );
+    }
+  }
+
+  deleteStorageStrategy(strategy: StorageStrategy) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        padding: '2em'
+    }).then((result) => {
+        if (result.value) {
+            this.collectorService.deleteStorageStrategy(strategy.id).subscribe(
+                () => {
+                    this.loadStorageStrategies();
+                    this.showMessage('Storage strategy has been deleted successfully.');
+                },
+                error => {
+                    this.showMessage('Error deleting storage strategy', 'error');
+                }
+            );
+        }
+    });
+  }
+
+  // 添加 Storage Strategy 的搜索功能
+  searchStorageStrategies() {
+    return this.storageStrategies.filter((d) => {
+        if (!d || !d.name || !d.fileType || !d.triggerType) {
+            return false;
+        }
+        return d.name.toLowerCase().includes(this.searchUser.toLowerCase()) ||
+            d.fileType.toLowerCase().includes(this.searchUser.toLowerCase()) ||
+            d.triggerType.toLowerCase().includes(this.searchUser.toLowerCase());
+    });
+  }
+
+  formatDate(date: string | null): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    }).replace(/\//g, '-');
+  }
+
+  onProtocolAnalysisChange(collector: ContactList, event: any) {
+    const enabled = event.target.checked;
+    this.collectorService.updateCollectorEnabled(collector.id, 'protocol-analysis', enabled).subscribe(
+        () => {
+            collector.protocolAnalysisEnabled = enabled;
+            this.showMessage(`Protocol Analysis has been ${enabled ? 'enabled' : 'disabled'}.`);
+        },
+        error => {
+            // 恢复开关状态
+            event.target.checked = !enabled;
+            this.showMessage('Error updating Protocol Analysis status.', 'error');
+        }
+    );
+  }
+
+  onIdsChange(collector: ContactList, event: any) {
+    const enabled = event.target.checked;
+    this.collectorService.updateCollectorEnabled(collector.id, 'ids', enabled).subscribe(
+        () => {
+            collector.idsEnabled = enabled;
+            this.showMessage(`IDS has been ${enabled ? 'enabled' : 'disabled'}.`);
+        },
+        error => {
+            // 恢复开关状态
+            event.target.checked = !enabled;
+            this.showMessage('Error updating IDS status.', 'error');
+        }
+    );
   }
 }

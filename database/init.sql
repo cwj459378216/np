@@ -502,5 +502,46 @@ INSERT INTO alarm_settings (name, type, priority, threshold, description, is_ena
 ('Login Anomaly Detection', 'anomaly', 'medium', 5, 'Detect unusual login patterns', true),
 ('Database Connection Alert', 'pattern', 'high', 100, 'Monitor database connection failures', false);
 
+-- 创建collectors表
+CREATE TABLE collectors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    creation_time TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    interface_name VARCHAR(50) NOT NULL,
+    storage_strategy VARCHAR(50) NOT NULL,
+    filter_strategy VARCHAR(50),
+    protocol_analysis_enabled BOOLEAN DEFAULT false,
+    ids_enabled BOOLEAN DEFAULT false,
+    status VARCHAR(20) DEFAULT 'stopped'
+);
+
+-- 创建storage_strategies表
+CREATE TABLE storage_strategies (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    creation_time TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    file_size VARCHAR(20) NOT NULL,
+    file_count INTEGER NOT NULL,
+    out_of_disk_action VARCHAR(50) NOT NULL,
+    file_type VARCHAR(20) NOT NULL,
+    trigger_type VARCHAR(20) NOT NULL,
+    time_range VARCHAR(100),
+    alarm_type VARCHAR(50),
+    duration INTEGER,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入测试数据
+INSERT INTO collectors (name, interface_name, storage_strategy, filter_strategy, protocol_analysis_enabled, ids_enabled, status) 
+VALUES 
+('Collector-1', 'DPDK', 'Strategy-1', 'Filter-1', true, false, 'running'),
+('Collector-2', 'File', 'Strategy-2', 'Filter-2', false, true, 'stopped');
+
+INSERT INTO storage_strategies (name, file_size, file_count, out_of_disk_action, file_type, trigger_type, time_range) 
+VALUES 
+('Strategy-1', '64M', 10, 'Wrap', 'PCAP', 'Timer', '2024-01-01 00:00:00 to 2024-12-31 23:59:59'),
+('Strategy-2', '128M', 20, 'Stop', 'PCAPNG', 'Alarm', NULL);
+
 
 
