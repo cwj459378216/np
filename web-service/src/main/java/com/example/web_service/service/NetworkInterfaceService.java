@@ -21,7 +21,8 @@ public class NetworkInterfaceService {
         List<NetworkInterface> interfaces = new ArrayList<>();
         try {
             // 首先获取物理网卡列表
-            Process process = Runtime.getRuntime().exec("ls -l /sys/class/net/ | grep -v virtual");
+            ProcessBuilder pb = new ProcessBuilder("bash", "-c", "ls -l /sys/class/net/ | grep -v virtual");
+            Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             
             String line;
@@ -38,7 +39,8 @@ public class NetworkInterfaceService {
             process.waitFor();
 
             // 然后获取这些物理网卡的详细信息
-            process = Runtime.getRuntime().exec("ip addr");
+            pb = new ProcessBuilder("ip", "addr");
+            process = pb.start();
             reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             
             NetworkInterface currentInterface = null;
@@ -49,7 +51,6 @@ public class NetworkInterfaceService {
                 Matcher interfaceMatcher = interfacePattern.matcher(line);
                 if (interfaceMatcher.find()) {
                     String ifaceName = interfaceMatcher.group(1);
-                    // 只处理物理网卡
                     if (physicalInterfaces.contains(ifaceName)) {
                         if (currentInterface != null) {
                             interfaces.add(currentInterface);
@@ -96,7 +97,8 @@ public class NetworkInterfaceService {
     public NetworkInterface save(NetworkInterface networkInterface) {
         try {
             // 验证是否是物理网卡
-            Process process = Runtime.getRuntime().exec("ls -l /sys/class/net/" + networkInterface.getInterface_name());
+            ProcessBuilder pb = new ProcessBuilder("ls", "-l", "/sys/class/net/" + networkInterface.getInterface_name());
+            Process process = pb.start();
             if (process.waitFor() != 0) {
                 throw new RuntimeException("Invalid network interface: " + networkInterface.getInterface_name());
             }
@@ -117,11 +119,13 @@ public class NetworkInterfaceService {
                 );
             }
             
-            process = Runtime.getRuntime().exec(command);
+            pb = new ProcessBuilder("bash", "-c", command);
+            process = pb.start();
             process.waitFor();
             
             // 重启网络服务
-            process = Runtime.getRuntime().exec("sudo systemctl restart networking");
+            pb = new ProcessBuilder("sudo", "systemctl", "restart", "networking");
+            process = pb.start();
             process.waitFor();
             
             return findById(networkInterface.getInterface_name());
@@ -133,7 +137,8 @@ public class NetworkInterfaceService {
 
     private String getInterfaceMethod(String interfaceName) {
         try {
-            Process process = Runtime.getRuntime().exec("grep -A 5 " + interfaceName + " /etc/network/interfaces");
+            ProcessBuilder pb = new ProcessBuilder("bash", "-c", "grep -A 5 " + interfaceName + " /etc/network/interfaces");
+            Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
@@ -153,7 +158,8 @@ public class NetworkInterfaceService {
 
     private String getGateway(String interfaceName) {
         try {
-            Process process = Runtime.getRuntime().exec("ip route show dev " + interfaceName);
+            ProcessBuilder pb = new ProcessBuilder("ip", "route", "show", "dev", interfaceName);
+            Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             Pattern gatewayPattern = Pattern.compile("default via (\\d+\\.\\d+\\.\\d+\\.\\d+)");

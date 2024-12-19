@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/interfaces")
-@Tag(name = "网络接口管理", description = "网络接口的增删改查操作")
+@Tag(name = "网络接口管理", description = "网络接口的查询和修改操作")
 @CrossOrigin(origins = "*")
 public class NetworkInterfaceController {
 
@@ -23,29 +23,18 @@ public class NetworkInterfaceController {
         return networkInterfaceService.findAll();
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "获取单个接口", description = "根据ID获取特定的网络接口")
-    public NetworkInterface getInterfaceById(@PathVariable Long id) {
-        return networkInterfaceService.findById(id);
+    @GetMapping("/{interfaceName}")
+    @Operation(summary = "获取单个接口", description = "根据接口名称获取特定的网络接口")
+    public NetworkInterface getInterfaceByName(@PathVariable String interfaceName) {
+        return networkInterfaceService.findById(interfaceName);
     }
 
-    @PostMapping
-    @Operation(summary = "创建接口", description = "创建新的网络接口")
-    public NetworkInterface createInterface(@RequestBody NetworkInterface networkInterface) {
+    @PutMapping("/{interfaceName}")
+    @Operation(summary = "更新接口", description = "更新已存在的网络接口配置")
+    public NetworkInterface updateInterface(@PathVariable String interfaceName, @RequestBody NetworkInterface networkInterface) {
+        // 确保路径参数和请求体中的接口名称一致
+        networkInterface.setInterface_name(interfaceName);
         return networkInterfaceService.save(networkInterface);
-    }
-
-    @PutMapping("/{id}")
-    @Operation(summary = "更新接口", description = "更新已存在的网络接口")
-    public NetworkInterface updateInterface(@PathVariable Long id, @RequestBody NetworkInterface networkInterface) {
-        networkInterface.setId(id);
-        return networkInterfaceService.save(networkInterface);
-    }
-
-    @DeleteMapping("/{id}")
-    @Operation(summary = "删除接口", description = "删除指定的网络接口")
-    public void deleteInterface(@PathVariable Long id) {
-        networkInterfaceService.deleteById(id);
     }
 
     @GetMapping("/search")
