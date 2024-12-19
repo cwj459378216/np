@@ -58,7 +58,18 @@
 
                         <div  class="flex flex-col sm:flex-row a-l-b">
                             <label for="horizontalPassword" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">Time Zone</label>
-                            <ng-select [items]="optionsTimeZone" [(ngModel)]="input5" name="input5" [clearable]="false" placeholder="Select an option" class="custom-multiselect flex-1">
+                            <ng-select [items]="optionsTimeZone" 
+                                       [(ngModel)]="input5" 
+                                       name="input5" 
+                                       [clearable]="false" 
+                                       placeholder="Select an option" 
+                                       class="custom-multiselect flex-1"
+                                       [labelForId]="'timezone'"
+                                       bindLabel="label"
+                                       bindValue="value">
+                                <ng-template ng-option-tmp let-item="item">
+                                    {{ item }} (UTC{{ getUtcOffset(item) }})
+                                </ng-template>
                             </ng-select>
                         </div>
                         <button type="button" (click)="onSubmit()" class="btn btn-primary !mt-6">Apply</button>

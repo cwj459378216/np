@@ -13,11 +13,29 @@ import Swal from 'sweetalert2';
 export class SystemTimeComponent implements OnInit {
   timeSettingMethod: string = 'manual';
   optionsTimeZone = [
-    'UTC-12:00', 'UTC-11:00', 'UTC-10:00', 'UTC-09:00', 'UTC-08:00', 
-    'UTC-07:00', 'UTC-06:00', 'UTC-05:00', 'UTC-04:00', 'UTC-03:00',
-    'UTC-02:00', 'UTC-01:00', 'UTC+00:00', 'UTC+01:00', 'UTC+02:00',
-    'UTC+03:00', 'UTC+04:00', 'UTC+05:00', 'UTC+06:00', 'UTC+07:00',
-    'UTC+08:00', 'UTC+09:00', 'UTC+10:00', 'UTC+11:00', 'UTC+12:00'
+    'Pacific/Honolulu',     // UTC-10:00
+    'America/Anchorage',    // UTC-09:00
+    'America/Los_Angeles',  // UTC-08:00
+    'America/Denver',       // UTC-07:00
+    'America/Chicago',      // UTC-06:00
+    'America/New_York',     // UTC-05:00
+    'America/Halifax',      // UTC-04:00
+    'America/Sao_Paulo',    // UTC-03:00
+    'Atlantic/South_Georgia', // UTC-02:00
+    'Atlantic/Azores',      // UTC-01:00
+    'Europe/London',        // UTC+00:00
+    'Europe/Paris',         // UTC+01:00
+    'Europe/Helsinki',      // UTC+02:00
+    'Europe/Moscow',        // UTC+03:00
+    'Asia/Dubai',           // UTC+04:00
+    'Asia/Karachi',         // UTC+05:00
+    'Asia/Dhaka',          // UTC+06:00
+    'Asia/Bangkok',         // UTC+07:00
+    'Asia/Shanghai',        // UTC+08:00
+    'Asia/Tokyo',          // UTC+09:00
+    'Pacific/Guam',        // UTC+10:00
+    'Pacific/Guadalcanal',  // UTC+11:00
+    'Pacific/Fiji',        // UTC+12:00
   ];
   optionsFrequency = ['1 Minute', '5 Minutes', '10 Minutes', '15 Minutes', '30 Minutes', '1 Hour', '2 Hours', '4 Hours', '6 Hours', '8 Hours', '12 Hours', '1 Day'];
   dateTime: FlatpickrDefaultsInterface;
@@ -150,6 +168,16 @@ export class SystemTimeComponent implements OnInit {
   onAdapterChange(event: any) {
     this.timeSettingMethod = event.target.value;
     console.log(event.target.value);
+  }
+
+  getUtcOffset(timezone: string): string {
+    const date = new Date();
+    const utcOffset = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset'
+    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || '';
+    
+    return utcOffset.replace('GMT', '');
   }
 
 }
