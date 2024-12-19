@@ -11,7 +11,6 @@ export interface SystemTime {
   ntpServer?: string;
   syncFrequency?: string;
   timeZone: string;
-  autoTimezoneDetection: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

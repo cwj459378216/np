@@ -22,7 +22,6 @@ public class SystemTimeService {
             settings = new SystemTime();
             settings.setTimeSettingMethod("manual");
             settings.setTimeZone("Asia/Shanghai");
-            settings.setAutoTimezoneDetection(false);
             settings.setCreatedAt(LocalDateTime.now());
             settings.setUpdatedAt(LocalDateTime.now());
             return systemTimeRepository.save(settings);
@@ -62,7 +61,6 @@ public class SystemTimeService {
         current.setNtpServer(systemTime.getNtpServer());
         current.setSyncFrequency(systemTime.getSyncFrequency());
         current.setTimeZone(systemTime.getTimeZone());
-        current.setAutoTimezoneDetection(systemTime.getAutoTimezoneDetection());
         current.setUpdatedAt(LocalDateTime.now());
         
         return systemTimeRepository.save(current);

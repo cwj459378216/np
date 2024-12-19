@@ -12,8 +12,14 @@ import Swal from 'sweetalert2';
 })
 export class SystemTimeComponent implements OnInit {
   timeSettingMethod: string = 'manual';
-  optionsTimeZone = ['UTC', 'GMT', 'GMT+1', 'GMT+2', 'GMT+3', 'GMT+4', 'GMT+5', 'GMT+6', 'GMT+7', 'GMT+8', 'GMT+9', 'GMT+10', 'GMT+11', 'GMT+12']
-  optionsFrequency = ['1 Minute', '5 Minutes', '10 Minutes', '15 Minutes', '30 Minutes', '1 Hour', '2 Hours', '4 Hours', '6 Hours', '8 Hours', '12 Hours', '1 Day']
+  optionsTimeZone = [
+    'UTC-12:00', 'UTC-11:00', 'UTC-10:00', 'UTC-09:00', 'UTC-08:00', 
+    'UTC-07:00', 'UTC-06:00', 'UTC-05:00', 'UTC-04:00', 'UTC-03:00',
+    'UTC-02:00', 'UTC-01:00', 'UTC+00:00', 'UTC+01:00', 'UTC+02:00',
+    'UTC+03:00', 'UTC+04:00', 'UTC+05:00', 'UTC+06:00', 'UTC+07:00',
+    'UTC+08:00', 'UTC+09:00', 'UTC+10:00', 'UTC+11:00', 'UTC+12:00'
+  ];
+  optionsFrequency = ['1 Minute', '5 Minutes', '10 Minutes', '15 Minutes', '30 Minutes', '1 Hour', '2 Hours', '4 Hours', '6 Hours', '8 Hours', '12 Hours', '1 Day'];
   dateTime: FlatpickrDefaultsInterface;
   input5: any;
   input4: any;
@@ -32,6 +38,17 @@ export class SystemTimeComponent implements OnInit {
       enableTime: true,
       dateFormat: 'Y-m-d H:i',
       monthSelectorType: 'dropdown',
+      time24hr: true,
+      formatDate: (date) => {
+        return new Date(date).toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+      }
     };
   }
 
@@ -45,8 +62,16 @@ export class SystemTimeComponent implements OnInit {
       this.input5 = settings.timeZone;
       this.input4 = settings.syncFrequency;
       if (settings.manualTime) {
+        const localDate = new Date(settings.manualTime).toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
         this.form2.patchValue({
-          date2: settings.manualTime
+          date2: localDate
         });
       }
     });
@@ -88,11 +113,12 @@ export class SystemTimeComponent implements OnInit {
       return;
     }
 
+    const dateValue = this.form2.get('date2')?.value;
     const settings: SystemTime = {
       timeSettingMethod: this.timeSettingMethod,
       timeZone: this.input5,
-      autoTimezoneDetection: false,
-      manualTime: this.timeSettingMethod === 'manual' ? this.form2.get('date2')?.value : undefined,
+      manualTime: this.timeSettingMethod === 'manual' ? 
+        new Date(dateValue).toISOString().slice(0, 19).replace('Z', '') : undefined,
       ntpServer: this.timeSettingMethod === 'ntp' ? this.input4 : undefined,
       syncFrequency: this.timeSettingMethod === 'ntp' ? this.input4 : undefined
     };

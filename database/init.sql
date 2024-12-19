@@ -33,7 +33,7 @@ CREATE TABLE assets (
     last_updated TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测试数据
+-- 插入一些测��数据
 INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_updated) VALUES
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
@@ -138,14 +138,14 @@ INSERT INTO users (username, password, email, role_id, description, status) VALU
 
 -- 创建模板表
 CREATE TABLE IF NOT EXISTS templates (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    content JSON,
+    content JSONB,
     creator VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
 
 -- 插入一些测试数据
 INSERT INTO templates (name, description, content, creator) VALUES

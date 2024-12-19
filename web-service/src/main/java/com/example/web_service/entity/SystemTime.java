@@ -3,6 +3,8 @@ package com.example.web_service.entity;
 import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.Data;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 
 @Entity
 @Table(name = "system_time_settings")
@@ -16,6 +18,7 @@ public class SystemTime {
     private String timeSettingMethod;
 
     @Column(name = "manual_time")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime manualTime;
 
     @Column(name = "ntp_server")
@@ -26,9 +29,6 @@ public class SystemTime {
 
     @Column(name = "time_zone")
     private String timeZone;
-
-    @Column(name = "auto_timezone_detection")
-    private Boolean autoTimezoneDetection;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
