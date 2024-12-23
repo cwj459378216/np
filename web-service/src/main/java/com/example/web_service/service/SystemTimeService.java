@@ -65,7 +65,6 @@ public class SystemTimeService {
             current.setTimeSettingMethod(systemTime.getTimeSettingMethod());
             current.setManualTime(systemTime.getManualTime());
             current.setNtpServer(systemTime.getNtpServer());
-            current.setSyncFrequency(systemTime.getSyncFrequency());
             current.setTimeZone(systemTime.getTimeZone());
             current.setUpdatedAt(LocalDateTime.now());
             
