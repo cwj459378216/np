@@ -24,9 +24,6 @@ public class SystemTime {
     @Column(name = "ntp_server")
     private String ntpServer;
 
-    @Column(name = "sync_frequency")
-    private String syncFrequency;
-
     @Column(name = "time_zone")
     private String timeZone;
 

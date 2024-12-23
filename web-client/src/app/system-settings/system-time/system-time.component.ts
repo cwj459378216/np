@@ -37,10 +37,9 @@ export class SystemTimeComponent implements OnInit {
     'Pacific/Guadalcanal',  // UTC+11:00
     'Pacific/Fiji',        // UTC+12:00
   ];
-  optionsFrequency = ['1 Minute', '5 Minutes', '10 Minutes', '15 Minutes', '30 Minutes', '1 Hour', '2 Hours', '4 Hours', '6 Hours', '8 Hours', '12 Hours', '1 Day'];
   dateTime: FlatpickrDefaultsInterface;
   input5: any;
-  input4: any;
+  ntpServer: string = '';
   form2!: FormGroup;
 
   constructor(
@@ -78,7 +77,7 @@ export class SystemTimeComponent implements OnInit {
     this.systemTimeService.getSettings().subscribe(settings => {
       this.timeSettingMethod = settings.timeSettingMethod;
       this.input5 = settings.timeZone;
-      this.input4 = settings.syncFrequency;
+      this.ntpServer = settings.ntpServer || '';
       if (settings.manualTime) {
         const localDate = new Date(settings.manualTime).toLocaleString('zh-CN', {
           year: 'numeric',
@@ -137,8 +136,7 @@ export class SystemTimeComponent implements OnInit {
       timeZone: this.input5,
       manualTime: this.timeSettingMethod === 'manual' ? 
         new Date(dateValue).toISOString().slice(0, 19).replace('Z', '') : undefined,
-      ntpServer: this.timeSettingMethod === 'ntp' ? this.input4 : undefined,
-      syncFrequency: this.timeSettingMethod === 'ntp' ? this.input4 : undefined
+      ntpServer: this.timeSettingMethod === 'ntp' ? this.ntpServer : undefined,
     };
 
     this.confirmAction(() => {

@@ -9,7 +9,6 @@ export interface SystemTime {
   timeSettingMethod: string;
   manualTime?: string;
   ntpServer?: string;
-  syncFrequency?: string;
   timeZone: string;
   createdAt?: Date;
   updatedAt?: Date;

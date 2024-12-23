@@ -112,6 +112,9 @@ public class SystemTimeService {
 
     private String executeCommand(String[] command) throws IOException {
         try {
+            // 输出执行的命令
+            System.out.println("执行命令: " + String.join(" ", command));
+            
             ProcessBuilder processBuilder = new ProcessBuilder(command);
             processBuilder.redirectErrorStream(true);
             Process process = processBuilder.start();
@@ -122,18 +125,31 @@ public class SystemTimeService {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     output.append(line).append("\n");
+                    // 实时输出命令执行结果
+                    System.out.println("命令输出: " + line);
                 }
             }
 
             int exitCode = process.waitFor();
+            // 输出命令执行状态
+            System.out.println("命令执行完成，退出码: " + exitCode);
+            
             if (exitCode != 0) {
-                throw new IOException("命令执行失败，退出码: " + exitCode + "\n输出: " + output.toString());
+                String errorMsg = "命令执行失败，退出码: " + exitCode + "\n输出: " + output.toString();
+                System.err.println(errorMsg);
+                throw new IOException(errorMsg);
             }
 
             return output.toString();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IOException("命令执行被中断", e);
+            String errorMsg = "命令执行被中断: " + e.getMessage();
+            System.err.println(errorMsg);
+            throw new IOException(errorMsg);
+        } catch (IOException e) {
+            String errorMsg = "命令执行IO异常: " + e.getMessage();
+            System.err.println(errorMsg);
+            throw new IOException(errorMsg);
         }
     }
 } 

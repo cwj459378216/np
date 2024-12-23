@@ -46,14 +46,13 @@
                      
                         
                         <div *ngIf="timeSettingMethod === 'ntp'" class="flex sm:flex-row flex-col a-l-b">
-                            <label for="horizontalEmail" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">NTP Server</label>
-                            <input id="horizontalEmail" type="text" placeholder="Enter NTP Server" class="form-input flex-1" />
-                        </div>
-
-                        <div *ngIf="timeSettingMethod === 'ntp'" class="flex sm:flex-row flex-col a-l-b">
-                            <label for="horizontalEmail" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">Synchronization Frequency</label>
-                            <ng-select [items]="optionsFrequency" [(ngModel)]="input4" name="input4" [clearable]="false" placeholder="Select an option" class="custom-multiselect flex-1">
-                            </ng-select>
+                            <label for="ntpServer" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">NTP Server</label>
+                            <input id="ntpServer" 
+                                   type="text" 
+                                   [(ngModel)]="ntpServer" 
+                                   name="ntpServer"
+                                   placeholder="Enter NTP Server" 
+                                   class="form-input flex-1" />
                         </div>
 
                         <div  class="flex flex-col sm:flex-row a-l-b">
