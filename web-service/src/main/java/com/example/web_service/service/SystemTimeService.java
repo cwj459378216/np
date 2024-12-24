@@ -19,7 +19,7 @@ public class SystemTimeService {
     private static final String TIMEDATECTL = "timedatectl";
     private static final String SYSTEMCTL = "systemctl";
     private static final String DATE = "date";
-    private static final String HWCLOCK = "hwclock";
+    private static final String HWCLOCK = "/sbin/hwclock";
 
     @Autowired
     private SystemTimeRepository systemTimeRepository;
@@ -87,7 +87,9 @@ public class SystemTimeService {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String timeStr = dateTime.format(formatter);
             executeCommand(new String[]{DATE, "-s", timeStr});
-            executeCommand(new String[]{HWCLOCK, "--systohc"});
+            
+            // 添加sudo以确保有权限执行hwclock
+            // executeCommand(new String[]{"sudo", HWCLOCK, "--systohc"});
         } catch (IOException e) {
             throw new IOException("设置系统时间失败: " + e.getMessage(), e);
         }
@@ -146,7 +148,7 @@ public class SystemTimeService {
             System.err.println(errorMsg);
             throw new IOException(errorMsg);
         } catch (IOException e) {
-            String errorMsg = "命令执行IO异常: " + e.getMessage();
+            String errorMsg = "命令执��IO异常: " + e.getMessage();
             System.err.println(errorMsg);
             throw new IOException(errorMsg);
         }

@@ -131,11 +131,16 @@ export class SystemTimeComponent implements OnInit {
     }
 
     const dateValue = this.form2.get('date2')?.value;
+    const localDate = new Date(dateValue);
+    const timestamp = localDate.getTime();
+    const tzOffset = localDate.getTimezoneOffset() * 60000;
+    const adjustedDate = new Date(timestamp - tzOffset);
+
     const settings: SystemTime = {
       timeSettingMethod: this.timeSettingMethod,
       timeZone: this.input5,
       manualTime: this.timeSettingMethod === 'manual' ? 
-        new Date(dateValue).toISOString().slice(0, 19).replace('Z', '') : undefined,
+        adjustedDate.toISOString().slice(0, 19) : undefined,
       ntpServer: this.timeSettingMethod === 'ntp' ? this.ntpServer : undefined,
     };
 
