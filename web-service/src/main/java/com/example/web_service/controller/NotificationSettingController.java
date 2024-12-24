@@ -3,6 +3,7 @@ package com.example.web_service.controller;
 import com.example.web_service.entity.NotificationSetting;
 import com.example.web_service.service.NotificationSettingService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,7 +37,7 @@ public class NotificationSettingController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "更新设置", description = "更新已存在的通知设置")
+    @Operation(summary = "更��设置", description = "更新已存在的通知设置")
     public NotificationSetting updateSetting(@PathVariable Long id, @RequestBody NotificationSetting notificationSetting) {
         notificationSetting.setId(id);
         return notificationSettingService.save(notificationSetting);
@@ -52,5 +53,15 @@ public class NotificationSettingController {
     @Operation(summary = "搜索设置", description = "根据关键字搜索通知设置")
     public List<NotificationSetting> searchSettings(@RequestParam String keyword) {
         return notificationSettingService.search(keyword);
+    }
+
+    @PostMapping("/test")
+    public ResponseEntity<Boolean> testNotification(@RequestBody NotificationSetting setting) {
+        try {
+            boolean result = notificationSettingService.testNotification(setting);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.ok(false);
+        }
     }
 } 

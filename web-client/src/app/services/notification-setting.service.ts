@@ -14,4 +14,8 @@ export class NotificationSettingService {
     getSettings(): Observable<any[]> {
         return this.http.get<any[]>(this.apiUrl);
     }
+
+    testNotification(setting: any): Observable<boolean> {
+        return this.http.post<boolean>(`${this.apiUrl}/test`, setting);
+    }
 } 

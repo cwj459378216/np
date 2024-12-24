@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import Swal from 'sweetalert2';
+import { NotificationSettingService } from '../../services/notification-setting.service';
 
 interface NotificationSetting {
     id: number;
@@ -50,7 +51,8 @@ export class NotificationSettingsComponent implements OnInit {
 
     constructor(
         private fb: FormBuilder,
-        private http: HttpClient
+        private http: HttpClient,
+        private notificationSettingService: NotificationSettingService
     ) {
         this.initForm();
     }
@@ -209,6 +211,50 @@ export class NotificationSettingsComponent implements OnInit {
             icon: type,
             title: msg,
             padding: '10px 20px',
+        });
+    }
+
+    testSetting(): void {
+        if (!this.params.valid) {
+            this.showMessage('Please fill all required fields before testing.', 'error');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Testing Notification',
+            text: 'Please wait while we test the notification settings...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        this.notificationSettingService.testNotification(this.params.value).subscribe({
+            next: (isValid: boolean) => {
+                if (isValid) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Test Successful',
+                        text: 'The notification settings are working correctly.',
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Test Failed',
+                        text: 'Failed to send test notification. Please check your settings.',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            },
+            error: (error: Error) => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Test Failed',
+                    text: 'An error occurred while testing the notification settings.',
+                    confirmButtonText: 'OK'
+                });
+            }
         });
     }
 } 

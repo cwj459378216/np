@@ -228,9 +228,13 @@
                                 />
                             </div>
                         </div>
-                        <div class="mt-8 flex items-center justify-end">
+                        <div class="mt-8 flex items-center justify-end gap-4">
                             <button type="button" class="btn btn-outline-danger" (click)="addSettingModal.close()">Cancel</button>
-                            <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
+                            <button type="button" class="btn btn-outline-info" (click)="testSetting()">
+                                <icon-play-circle class="ltr:mr-2 rtl:ml-2 shrink-0" />
+                                Test Setting
+                            </button>
+                            <button type="submit" class="btn btn-primary">
                                 {{ params.controls['id'].value ? 'Update' : 'Add' }}
                             </button>
                         </div>
