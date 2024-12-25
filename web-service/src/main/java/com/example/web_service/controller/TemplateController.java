@@ -2,7 +2,11 @@ package com.example.web_service.controller;
 
 import com.example.web_service.entity.Template;
 import com.example.web_service.service.TemplateService;
+import com.example.web_service.service.PdfGeneratorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +20,9 @@ public class TemplateController {
 
     @Autowired
     private TemplateService templateService;
+
+    @Autowired
+    private PdfGeneratorService pdfGeneratorService;
 
     @GetMapping
     @Operation(summary = "获取所有模板")
@@ -52,5 +59,23 @@ public class TemplateController {
     @Operation(summary = "搜索模板")
     public List<Template> searchTemplates(@RequestParam String keyword) {
         return templateService.search(keyword);
+    }
+
+    @GetMapping("/{id}/export-pdf")
+    public ResponseEntity<byte[]> exportPdf(@PathVariable Long id) {
+        try {
+            byte[] pdfContent = pdfGeneratorService.generatePdfFromTemplate(id);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "template-" + id + ".pdf");
+            
+            return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfContent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 } 

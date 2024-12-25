@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { GridsterConfig, GridsterItem } from 'angular-gridster2';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { TemplateService } from '../../../services/template.service';
 import Swal from 'sweetalert2';
 
 interface CustomGridsterItem extends GridsterItem {
@@ -48,7 +49,8 @@ export class PreviewComponent implements OnInit {
     constructor(
         private route: ActivatedRoute,
         private router: Router,
-        private http: HttpClient
+        private http: HttpClient,
+        private templateService: TemplateService
     ) {
         this.initOptions();
         this.isStandalone = this.router.url.includes('standalone/preview');
@@ -217,5 +219,41 @@ export class PreviewComponent implements OnInit {
             cols: Math.max(maxCols, 12),  // 最小 12 列
             rows: Math.max(maxRows, 12)   // 最小 12 行
         };
+    }
+
+    // 添加导出PDF方法
+    exportPdf() {
+        if (!this.id) return;
+
+        Swal.fire({
+            title: '正在生成PDF...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        this.templateService.exportPdf(Number(this.id))
+            .subscribe({
+                next: (blob: Blob) => {
+                    // 创建下载链接
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `template-${this.id}-${new Date().getTime()}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+
+                    Swal.close();
+                    this.showMessage('PDF已成功生成', 'success');
+                },
+                error: (error) => {
+                    Swal.close();
+                    this.showMessage('生成PDF时出错', 'error');
+                    console.error('PDF generation error:', error);
+                }
+            });
     }
 } 

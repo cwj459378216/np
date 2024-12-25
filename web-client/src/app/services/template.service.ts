@@ -14,4 +14,11 @@ export class TemplateService {
     getTemplates(): Observable<any[]> {
         return this.http.get<any[]>(this.apiUrl);
     }
+
+    exportPdf(id: number): Observable<Blob> {
+        const url = `${this.apiUrl}/${id}/export-pdf`;
+        return this.http.get(url, {
+            responseType: 'blob'
+        });
+    }
 } 

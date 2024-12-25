@@ -19,7 +19,6 @@ public class SystemTimeService {
     private static final String TIMEDATECTL = "timedatectl";
     private static final String SYSTEMCTL = "systemctl";
     private static final String DATE = "date";
-    private static final String HWCLOCK = "/sbin/hwclock";
 
     @Autowired
     private SystemTimeRepository systemTimeRepository;
