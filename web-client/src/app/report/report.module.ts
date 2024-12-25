@@ -18,6 +18,7 @@ import { EditComponent } from './template/edit/edit.component';
 import { ReportListComponent } from './report-list/report-list.component';
 import { NotificationRuleComponent } from './notification-rule/notification-rule.component';
 import { ReportSchedulerComponent } from './report-scheduler/report-scheduler.component';
+import { PreviewModule } from '../shared/preview.module';
 
 const routes: Routes = [
     {
@@ -60,7 +61,6 @@ const routes: Routes = [
         ListComponent,
         AddComponent,
         EditComponent,
-        PreviewComponent,
         ReportListComponent,
         NotificationRuleComponent,
         ReportSchedulerComponent
@@ -77,6 +77,7 @@ const routes: Routes = [
             echarts: () => import('echarts')
         }),
         NgSelectModule,
+        PreviewModule
     ]
 })
 export class ReportModule { } 

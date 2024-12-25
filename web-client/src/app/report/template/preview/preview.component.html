@@ -1,14 +1,15 @@
 <div>
-    <ul class="flex space-x-2 rtl:space-x-reverse mb-6">
-        <li>
-            <a routerLink="/report/template/list" class="text-primary hover:underline">Templates</a>
-        </li>
-        <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-            <span>Preview Template</span>
-        </li>
-    </ul>
+    <!-- 只在非独立模式下显示导航和标题 -->
+    <ng-container *ngIf="!isStandalone">
+        <ul class="flex space-x-2 rtl:space-x-reverse mb-6">
+            <li>
+                <a routerLink="/report/template/list" class="text-primary hover:underline">Templates</a>
+            </li>
+            <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
+                <span>Preview Template</span>
+            </li>
+        </ul>
 
-    <div class="">
         <div class="mb-5 flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <button type="button" 
@@ -22,56 +23,60 @@
             </div>
             <div class="flex items-center gap-2">
                 <button type="button" class="btn btn-primary" (click)="printTemplate()">
-                    <icon-printer class="ltr:mr-2 rtl:ml-2"/>
-                    Print
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 ltr:mr-2 rtl:ml-2">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    打印
                 </button>
             </div>
         </div>
+    </ng-container>
 
-        <!-- Gridster布局 -->
-        <gridster [options]="options" class="h-[800px] !bg-transparent">
-            <gridster-item 
-                *ngFor="let item of dashboard"
-                [item]="item"
-            >
-                <div class="panel flex flex-col h-full w-full">
-                    <div class="flex justify-between mb-2">
-                        <span class="text-base font-medium">{{ item.type === 'table' ? 'Table' : (item.chartType | titlecase) + ' Chart' }}</span>
+    <!-- Gridster布局 -->
+    <gridster [options]="options" [ngClass]="{'h-[800px]': !isStandalone, 'h-screen': isStandalone}" class="!bg-transparent">
+        <gridster-item 
+            *ngFor="let item of dashboard"
+            [item]="item"
+        >
+            <div class="panel flex flex-col h-full w-full">
+                <div class="flex justify-between mb-2">
+                    <span class="text-base font-medium">{{ item.type === 'table' ? 'Table' : (item.chartType | titlecase) + ' Chart' }}</span>
+                </div>
+                <div class="flex-1 gridster-item-content">
+                    <!-- 图表内容 -->
+                    <div *ngIf="item['type'] === 'chart'" class="w-full h-full">
+                        <div [id]="'chart_' + item.uniqueId" 
+                             echarts 
+                             [options]="item['chartConfig']"
+                             (chartInit)="onChartInit($event, item)"
+                             class="w-full h-full">
+                        </div>
                     </div>
-                    <div class="flex-1 gridster-item-content">
-                        <!-- 图表内容 -->
-                        <div *ngIf="item['type'] === 'chart'" class="w-full h-full">
-                            <div [id]="'chart_' + item.uniqueId" 
-                                 echarts 
-                                 [options]="item['chartConfig']"
-                                 (chartInit)="onChartInit($event, item)"
-                                 class="w-full h-full">
-                            </div>
-                        </div>
-                        <!-- 表格内容 -->
-                        <div *ngIf="item['type'] === 'table'" class="overflow-x-auto">
-                            <table class="w-full table-auto">
-                                <thead>
-                                    <tr>
-                                        <th *ngFor="let header of getTableHeaders(item)" 
-                                            class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a] text-left">
-                                            {{header.charAt(0).toUpperCase() + header.slice(1)}}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr *ngFor="let row of item['tableData']">
-                                        <td *ngFor="let header of getTableHeaders(item)" 
-                                            class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">
-                                            {{row[header]}}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <!-- 表格内容 -->
+                    <div *ngIf="item['type'] === 'table'" class="overflow-x-auto">
+                        <table class="w-full table-auto">
+                            <thead>
+                                <tr>
+                                    <th *ngFor="let header of getTableHeaders(item)" 
+                                        class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a] text-left">
+                                        {{header.charAt(0).toUpperCase() + header.slice(1)}}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let row of item['tableData']">
+                                    <td *ngFor="let header of getTableHeaders(item)" 
+                                        class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">
+                                        {{row[header]}}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </gridster-item>
-        </gridster>
-    </div>
+            </div>
+        </gridster-item>
+    </gridster>
 </div> 

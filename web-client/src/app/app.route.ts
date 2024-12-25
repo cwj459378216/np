@@ -54,6 +54,7 @@ import { NotificationRuleComponent } from './report/notification-rule/notificati
 import { ReportSchedulerComponent } from './report/report-scheduler/report-scheduler.component';
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
+import { PreviewComponent } from './report/template/preview/preview.component';
 
 export const routes: Routes = [
     {
@@ -130,6 +131,11 @@ export const routes: Routes = [
                 path: 'report',
                 loadChildren: () => import('./report/report.module').then(m => m.ReportModule)
             },
+            {
+                path: 'preview/:id',
+                component: PreviewComponent,
+                data: { standalone: true }
+            },
             { 
                 path: 'asset-book', 
                 component: AssetBookComponent,
@@ -141,5 +147,9 @@ export const routes: Routes = [
                 data: { title: 'Notification Settings' }
             }
         ],
+    },
+    {
+        path: 'standalone/preview/:id',
+        component: PreviewComponent
     }
 ];

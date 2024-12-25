@@ -1,5 +1,5 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GridsterConfig, GridsterItem } from 'angular-gridster2';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -21,9 +21,17 @@ interface CustomGridsterItem extends GridsterItem {
 @Component({
     selector: 'app-preview',
     templateUrl: './preview.component.html',
-    encapsulation: ViewEncapsulation.None
+    styles: [`
+        :host-context(.standalone-preview) .preview-content {
+            width: 100%;
+            height: 100vh;
+            padding: 20px;
+            background: white;
+        }
+    `]
 })
 export class PreviewComponent implements OnInit {
+    isStandalone = false;
     id?: string;
     dashboard: Array<CustomGridsterItem> = [];
     options: GridsterConfig = {};
@@ -39,18 +47,29 @@ export class PreviewComponent implements OnInit {
 
     constructor(
         private route: ActivatedRoute,
+        private router: Router,
         private http: HttpClient
     ) {
         this.initOptions();
+        this.isStandalone = this.router.url.includes('standalone/preview');
     }
 
     ngOnInit() {
-        this.route.queryParams.subscribe(params => {
-            this.id = params['id'];
-            if (this.id) {
-                this.loadTemplate();
-            }
-        });
+        if (this.isStandalone) {
+            this.route.params.subscribe(params => {
+                this.id = params['id'];
+                if (this.id) {
+                    this.loadTemplate();
+                }
+            });
+        } else {
+            this.route.queryParams.subscribe(params => {
+                this.id = params['id'];
+                if (this.id) {
+                    this.loadTemplate();
+                }
+            });
+        }
     }
 
     initOptions() {
@@ -175,7 +194,7 @@ export class PreviewComponent implements OnInit {
 
     // 获取数据属性名
     getDataField(header: string): string {
-        // 直接使用标题作为属性名，因为它们已经是正确的格式了
+        // 直接使用标题作为属性名，因为它们经是正确的格式了
         return header;
     }
 

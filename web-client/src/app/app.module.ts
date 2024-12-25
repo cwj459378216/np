@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpBackend, HttpClient, HttpClientModule } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
+import { NgxEchartsModule } from 'ngx-echarts';
 
 //Routes
 import { routes } from './app.route';
@@ -84,6 +85,7 @@ import { RulesPolicyService } from './services/rules-policy.service';
 import { RuleUpdateService } from './services/rule-update.service';
 import { LocalRuleService } from './services/local-rule.service';
 import { SystemTimeService } from './services/system-time.service';
+import { PreviewModule } from './shared/preview.module';
 
 @NgModule({
     imports: [
@@ -103,8 +105,11 @@ import { SystemTimeService } from './services/system-time.service';
         }),
         StoreModule.forRoot({ index: indexReducer }),
         SharedModule.forRoot(),
-        AnalyzeAnimationComponent,
-        
+        NgxEchartsModule.forRoot({
+            echarts: () => import('echarts')
+        }),
+        PreviewModule,
+        AnalyzeAnimationComponent
     ],
     declarations: [	
         AppComponent,
