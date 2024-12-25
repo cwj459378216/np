@@ -143,104 +143,77 @@ CREATE TABLE IF NOT EXISTS templates (
     description TEXT,
     content JSONB,
     creator VARCHAR(100),
-    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测试数据
+-- 先插入模板数据
 INSERT INTO templates (name, description, content, creator) VALUES
 (
-    'Sales Dashboard',
-    'Sales performance analysis dashboard',
+    'Security Dashboard',
+    'Security monitoring dashboard template',
     '{
-        "widgets": [
+        "dashboard": [
             {
-                "id": "chart_1",
                 "type": "chart",
                 "chartType": "line",
-                "position": {"x": 0, "y": 0, "cols": 2, "rows": 2},
-                "config": {
-                    "title": "Sales Trend",
-                    "dataSource": "sales_data",
-                    "aggregation": {"field": "amount", "type": "sum"}
-                }
-            }
-        ]
-    }',
-    'John Doe'
-),
-(
-    'Marketing Analytics',
-    'Marketing campaign analysis dashboard',
-    '{
-        "widgets": [
+                "uniqueId": "chart1",
+                "x": 0,
+                "y": 0,
+                "cols": 6,
+                "rows": 4
+            },
             {
-                "id": "chart_2",
-                "type": "chart",
-                "chartType": "pie",
-                "position": {"x": 2, "y": 0, "cols": 2, "rows": 2},
-                "config": {
-                    "title": "Channel Distribution",
-                    "dataSource": "marketing_data",
-                    "aggregation": {"field": "visits", "type": "count"}
-                }
+                "type": "table",
+                "uniqueId": "table1",
+                "x": 6,
+                "y": 0,
+                "cols": 6,
+                "rows": 4
             }
         ]
     }',
-    'Jane Smith'
-);
+    'System'
+) ON CONFLICT (id) DO NOTHING;
 
--- 添加报告表的创建语句
+-- 然后创建 reports 表
 CREATE TABLE IF NOT EXISTS reports (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    create_time TIMESTAMP(0) NOT NULL,
-    creator VARCHAR(100) NOT NULL,
-    trigger_mode VARCHAR(50) NOT NULL,
+    template_id BIGINT,
     file_path VARCHAR(255),
-    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
-) ;
-
--- 为reports表创建索引
-CREATE INDEX idx_create_time ON reports(create_time);
-CREATE INDEX idx_creator ON reports(creator);
-
--- 插入报告示例数据
-INSERT INTO reports (name, description, create_time, creator, trigger_mode, file_path) VALUES
-(
-    'Monthly Report',
-    'Monthly security analysis report',
-    '2024-01-15 10:30:00',
-    'John Doe',
-    'Manual',
-    '/reports/monthly/2024-01-security-analysis.pdf'
-),
-(
-    'Weekly Report',
-    'Weekly security status report',
-    '2024-01-16 14:20:00',
-    'Jane Smith',
-    'Scheduled',
-    '/reports/weekly/2024-w3-security-status.pdf'
-),
-(
-    'Daily Report',
-    'Daily system health check report',
-    '2024-01-17 09:00:00',
-    'Mike Johnson',
-    'Scheduled',
-    '/reports/daily/2024-01-17-health-check.pdf'
-),
-(
-    'Incident Report',
-    'Security incident investigation report',
-    '2024-01-17 15:45:00',
-    'Sarah Wilson',
-    'Manual',
-    '/reports/incident/2024-01-17-investigation.pdf'
+    trigger_mode VARCHAR(50),
+    creator VARCHAR(100),
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 创建索引
+CREATE INDEX IF NOT EXISTS idx_template_id ON reports(template_id);
+CREATE INDEX IF NOT EXISTS idx_created_at ON reports(created_at);
+CREATE INDEX IF NOT EXISTS idx_creator ON reports(creator);
+
+-- 添加外键约束（如果需要）
+ALTER TABLE reports 
+DROP CONSTRAINT IF EXISTS fk_reports_template;
+
+ALTER TABLE reports 
+ADD CONSTRAINT fk_reports_template 
+FOREIGN KEY (template_id) 
+REFERENCES templates(id);
+
+-- 插入报告数据（使用 SELECT 确保引用的模板存在）
+INSERT INTO reports (name, description, template_id, file_path, trigger_mode, creator, created_at) 
+SELECT 
+    'Monthly Security Report',
+    'Generated from Security Dashboard template',
+    t.id,
+    '/reports/monthly/security_report_202403.pdf',
+    'Manual',
+    'System',
+    CURRENT_TIMESTAMP
+FROM templates t
+WHERE t.name = 'Security Dashboard'
+LIMIT 1;
 
 -- 创建通知规则表
 CREATE TABLE IF NOT EXISTS notification_rules (

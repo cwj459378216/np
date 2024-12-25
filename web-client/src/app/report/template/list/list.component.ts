@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import Swal from 'sweetalert2';
+import { TemplateService } from '../../../services/template.service';
 
 @Component({
     selector: 'app-list',
@@ -24,7 +25,8 @@ export class ListComponent implements OnInit {
 
     constructor(
         private router: Router,
-        private http: HttpClient
+        private http: HttpClient,
+        private templateService: TemplateService
     ) {}
 
     ngOnInit() {
@@ -115,5 +117,38 @@ export class ListComponent implements OnInit {
                 console.error('Error downloading template:', error);
             }
         );
+    }
+
+    exportPdf(id: number) {
+        Swal.fire({
+            title: '正在生成PDF...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        this.templateService.exportPdf(id)
+            .subscribe({
+                next: (blob: Blob) => {
+                    // 创建下载链接
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `template-${id}-${new Date().getTime()}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+
+                    Swal.close();
+                    this.showMessage('PDF已成功生成', 'success');
+                },
+                error: (error) => {
+                    Swal.close();
+                    this.showMessage('生成PDF时出错', 'error');
+                    console.error('PDF generation error:', error);
+                }
+            });
     }
 } 

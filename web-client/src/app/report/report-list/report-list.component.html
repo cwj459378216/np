@@ -42,7 +42,7 @@
                     <div class="text-gray-600 dark:text-gray-400">{{ value.description }}</div>
                 </ng-template>
                 <ng-template slot="createTime" let-value="data">
-                    <div>{{ value.createTime }}</div>
+                    <div>{{ value.createTime | date:'yyyy-MM-dd HH:mm:ss' }}</div>
                 </ng-template>
                 <ng-template slot="creator" let-value="data">
                     <div class="flex items-center">

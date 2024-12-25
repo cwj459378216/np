@@ -1,14 +1,20 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import Swal from 'sweetalert2';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'app-report-list',
     templateUrl: './report-list.component.html'
 })
-export class ReportListComponent implements OnInit {
+export class ReportListComponent implements OnInit, OnDestroy {
     @ViewChild('datatable') datatable: any;
+    
+    private destroy$ = new Subject<void>();
+    private polling: any;
+    private lastUpdate: string = '';
     
     items: any = [];
     search = '';
@@ -26,17 +32,56 @@ export class ReportListComponent implements OnInit {
 
     ngOnInit() {
         this.loadReports();
+        this.startPolling();
+    }
+
+    ngOnDestroy() {
+        this.stopPolling();
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    private startPolling() {
+        this.polling = setInterval(() => {
+            this.checkForUpdates();
+        }, 5000);
+    }
+
+    private stopPolling() {
+        if (this.polling) {
+            clearInterval(this.polling);
+        }
+    }
+
+    private checkForUpdates() {
+        // 只获取最新报告的创建时间
+        this.http.get(`${environment.apiUrl}/api/reports/latest-update`)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((response: any) => {
+                if (response.lastUpdate !== this.lastUpdate) {
+                    this.loadReports();
+                    this.lastUpdate = response.lastUpdate;
+                }
+            });
     }
 
     loadReports() {
-        this.http.get(`${environment.apiUrl}/api/reports`).subscribe(
-            (data: any) => {
-                this.items = data;
-            },
-            error => {
-                console.error('Error loading reports:', error);
-            }
-        );
+        this.http.get(`${environment.apiUrl}/api/reports`)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(
+                (data: any) => {
+                    this.items = data;
+                    if (data.length > 0) {
+                        // 更新最后更新时间
+                        this.lastUpdate = Math.max(
+                            ...data.map((item: any) => new Date(item.createTime).getTime())
+                        ).toString();
+                    }
+                },
+                error => {
+                    console.error('Error loading reports:', error);
+                }
+            );
     }
 
     deleteRow(item?: any) {

@@ -66,7 +66,7 @@
                         <a [routerLink]="['/report/template/preview']" [queryParams]="{id: value.id}" class="hover:text-primary">
                             <icon-eye />
                         </a>
-                        <button type="button" class="hover:text-secondary" (click)="downloadTemplate(value.id)">
+                        <button type="button" class="hover:text-secondary" (click)="exportPdf(value.id)">
                             <icon-download class="h-4.5 w-4.5" />
                         </button>
                         <button type="button" class="hover:text-danger" (click)="deleteRow(value.id)">

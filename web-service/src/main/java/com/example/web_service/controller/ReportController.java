@@ -11,6 +11,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
+import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -60,5 +63,14 @@ public class ReportController {
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + report.getName() + "\"")
             .body(resource);
+    }
+
+    @GetMapping("/latest-update")
+    public ResponseEntity<Map<String, String>> getLatestUpdate() {
+        LocalDateTime latestUpdate = reportService.getLatestUpdate();
+        Map<String, String> response = new HashMap<>();
+        response.put("lastUpdate", latestUpdate != null ? 
+            latestUpdate.toString() : "");
+        return ResponseEntity.ok(response);
     }
 } 

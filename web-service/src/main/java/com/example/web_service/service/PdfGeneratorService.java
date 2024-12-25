@@ -4,6 +4,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -14,10 +15,25 @@ import com.itextpdf.io.image.ImageDataFactory;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.apache.commons.io.FileUtils;
+import com.example.web_service.entity.Report;
+import com.example.web_service.entity.Template;
+import com.example.web_service.service.ReportService;
+import com.example.web_service.service.TemplateService;
 
 @Service
 public class PdfGeneratorService {
+    
+    @Autowired
+    private ReportService reportService;
+    
+    @Autowired
+    private TemplateService templateService;
+    
+    @Value("${app.report.storage.path}")
+    private String reportStoragePath;
     
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
@@ -49,7 +65,7 @@ public class PdfGeneratorService {
             // 额外等待确保图表渲染完成
             Thread.sleep(2000);
             
-            // 创建临时文件
+            // 创建临���文件
             screenshot = File.createTempFile("template_", ".png");
             pdfFile = File.createTempFile("template_", ".pdf");
             
@@ -83,7 +99,29 @@ public class PdfGeneratorService {
             document.close();
             
             // 读取生成的PDF
-            return FileUtils.readFileToByteArray(pdfFile);
+            byte[] pdfContent = FileUtils.readFileToByteArray(pdfFile);
+            
+            // 保存 PDF 文件
+            String fileName = String.format("template_%d_%s.pdf", 
+                templateId, 
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
+            String filePath = reportStoragePath + "/" + fileName;
+            FileUtils.writeByteArrayToFile(new File(filePath), pdfContent);
+            
+            // 创建报告记录
+            Template template = templateService.findById(templateId);
+            Report report = new Report();
+            report.setName(template.getName() + " Report");
+            report.setDescription("Generated from template: " + template.getName());
+            report.setTemplateId(templateId);
+            report.setFilePath(filePath);
+            report.setTriggerMode("Manual");
+            report.setCreator("System");
+            report.setCreatedAt(LocalDateTime.now());  // 显式设置创建时间
+            
+            reportService.save(report);
+            
+            return pdfContent;
             
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate PDF", e);
