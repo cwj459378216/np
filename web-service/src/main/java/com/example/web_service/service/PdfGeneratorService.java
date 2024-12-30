@@ -20,8 +20,6 @@ import java.time.format.DateTimeFormatter;
 import org.apache.commons.io.FileUtils;
 import com.example.web_service.entity.Report;
 import com.example.web_service.entity.Template;
-import com.example.web_service.service.ReportService;
-import com.example.web_service.service.TemplateService;
 
 @Service
 public class PdfGeneratorService {

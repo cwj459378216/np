@@ -9,6 +9,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -56,5 +57,10 @@ public class ReportServiceImpl implements ReportService {
         } catch (Exception e) {
             throw new RuntimeException("Error: " + e.getMessage());
         }
+    }
+
+    @Override
+    public LocalDateTime getLatestUpdate() {
+        return null;
     }
 } 
