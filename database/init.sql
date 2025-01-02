@@ -33,7 +33,7 @@ CREATE TABLE assets (
     last_updated TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入一些测��数据
+-- 插入一些测试数据
 INSERT INTO assets (asset_name, ip_address, mac_address, type, status, last_updated) VALUES
     ('Server-01', '192.168.1.100', '00:1B:44:11:3A:B7', 'Server', 'Active', '2024-03-21 10:30:45'),
     ('Workstation-02', '192.168.1.101', '00:1B:44:11:3A:B8', 'Workstation', 'Active', '2024-03-21 10:30:45');
@@ -500,6 +500,9 @@ INSERT INTO storage_strategies (name, file_size, file_count, out_of_disk_action,
 VALUES 
 ('Strategy-1', '64M', 10, 'Wrap', 'PCAP', 'Timer', '2024-01-01 00:00:00 to 2024-12-31 23:59:59'),
 ('Strategy-2', '128M', 20, 'Stop', 'PCAPNG', 'Alarm', NULL);
+
+-- 修改 collectors 表，添加 session_id 字段
+ALTER TABLE collectors ADD COLUMN session_id VARCHAR(100);
 
 
 

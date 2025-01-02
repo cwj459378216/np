@@ -57,4 +57,9 @@ public class CollectorController {
         collector.setIdsEnabled(body.get("enabled"));
         collectorService.saveCollector(collector);
     }
+    
+    @PutMapping("/{id}/session")
+    public void updateSessionId(@PathVariable Long id, @RequestBody Map<String, String> session) {
+        collectorService.updateSessionId(id, session.get("sessionId"));
+    }
 } 

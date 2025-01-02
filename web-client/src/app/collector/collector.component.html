@@ -124,23 +124,35 @@
                                                     </td>
                                                     <td>
                                                         <div class="flex items-center justify-center gap-4">
-                                                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                                                (click)="editUser(contact)">Edit</button>
-                                                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                                                (click)="deleteUser(contact)">Delete</button>
-                                                            <button type="button" class="btn btn-sm btn-outline-success" 
-                                                                (click)="deleteUser(contact)">
-                                                                Start
-                                                            </button>
-
-                                                            <button type="button" class="btn btn-sm btn-outline-success" 
-                                                            (click)="deleteUser(contact)">
-                                                                <app-analyze-animation></app-analyze-animation>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-primary"
+                                                                    (click)="editUser(contact)"
+                                                                    [disabled]="contact.status === 'running'">
+                                                                Edit
                                                             </button>
                                                             
-
-                                                            <button type="button" class="btn btn-sm btn-outline-dark"
-                                                                (click)="deleteUser(contact)">Stop</button>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-outline-danger"
+                                                                    (click)="deleteUser(contact)"
+                                                                    [disabled]="contact.status === 'running'">
+                                                                Delete
+                                                            </button>
+                                                            
+                                                            <!-- 使用 ngIf 来切换显示 Start 按钮或 Animation 按钮 -->
+                                                            <ng-container *ngIf="contact.status !== 'running'; else analyzingButton">
+                                                                <button type="button" 
+                                                                        class="btn btn-sm btn-outline-success" 
+                                                                        (click)="startCapture(contact)">
+                                                                    Start
+                                                                </button>
+                                                            </ng-container>
+                                                            <ng-template #analyzingButton>
+                                                                <button type="button" 
+                                                                        class="btn btn-sm btn-outline-success"
+                                                                        (click)="confirmStopCapture(contact)">
+                                                                    <app-analyze-animation></app-analyze-animation>
+                                                                </button>
+                                                            </ng-template>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -316,23 +328,23 @@
                                         </ng-select>
                                     </div>
                                     <div class="mb-5">
-                                        <label for="address">Protocol Analysis Enabled</label>
+                                        <label for="protocolAnalysisEnabled">Protocol Analysis Enabled</label>
                                         <label class="w-12 h-6 relative">
-                                            <input type="checkbox" checked
-                                                class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
-                                                id="custom_switch_checkbox2" />
-                                            <span for="custom_switch_checkbox2"
-                                                class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                            <input type="checkbox" 
+                                                   formControlName="protocolAnalysisEnabled"
+                                                   class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" />
+                                            <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
+                                            </span>
                                         </label>
                                     </div>
                                     <div class="mb-5">
-                                        <label for="address">IDS Enabled </label>
+                                        <label for="idsEnabled">IDS Enabled</label>
                                         <label class="w-12 h-6 relative">
                                             <input type="checkbox" 
-                                                class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
-                                                id="custom_switch_checkbox2" />
-                                            <span for="custom_switch_checkbox2"
-                                                class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                                   formControlName="idsEnabled"
+                                                   class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" />
+                                            <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
+                                            </span>
                                         </label>
                                     </div>
                                     <div class="mt-8 flex items-center justify-end">

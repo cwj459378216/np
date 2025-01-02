@@ -8,7 +8,7 @@ import { Store } from '@ngrx/store';
 import { FileUploadWithPreview } from 'file-upload-with-preview';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
 import { CollectorService } from 'src/app/services/collector.service';
-import { Collector, StorageStrategy } from '../services/collector.service';
+import { Collector, StorageStrategy, CaptureRequest, CaptureResponse } from '../services/collector.service';
 
 interface ContactList extends Collector {
   role?: string;
@@ -20,6 +20,7 @@ interface ContactList extends Collector {
   following?: number;
   path?: string;
   action?: string;
+  sessionId?: string;
 }
 
 @Component({
@@ -69,7 +70,7 @@ export class CollectorComponent implements OnInit {
       action: "",
     },
   ];
-  options = ['DPDK', 'File', 'Adapter 1'];
+  options: string[] = ['File'];
   optionsFileSize = ['64M', '128M', '256M'];
   optionsTrigger = ['Timer', 'Alarm'];
   optionsAlarm = ['Alarm1', 'Alarm2']
@@ -80,6 +81,7 @@ export class CollectorComponent implements OnInit {
   form3!: FormGroup;
   storageParams!: FormGroup;
   storageStrategies: StorageStrategy[] = [];
+  private statusPollingMap = new Map<number, any>(); // 存储轮询定时器
   constructor(
     private http: HttpClient, 
     public fb: FormBuilder, 
@@ -110,7 +112,7 @@ export class CollectorComponent implements OnInit {
       });
 
     this.searchContacts();
-
+    this.loadNetworkInterfaces();
   }
   async initStore() {
     this.storeData
@@ -391,8 +393,8 @@ export class CollectorComponent implements OnInit {
         interfaceName: this.params.value.interfaceName,
         storageStrategy: this.params.value.storageStrategy,
         filterStrategy: this.params.value.filterStrategy,
-        protocolAnalysisEnabled: this.params.value.protocolAnalysisEnabled,
-        idsEnabled: this.params.value.idsEnabled,
+        protocolAnalysisEnabled: this.params.value.protocolAnalysisEnabled || false,
+        idsEnabled: this.params.value.idsEnabled || false,
         status: 'stopped',
         creationTime: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
@@ -675,5 +677,195 @@ export class CollectorComponent implements OnInit {
             this.showMessage('Error updating IDS status.', 'error');
         }
     );
+  }
+
+  loadNetworkInterfaces() {
+    this.collectorService.getNetworkInterfaces().subscribe(
+      interfaces => {
+        // 将网络接口名称添加到选项中
+        this.options = ['File', ...interfaces.map(iface => iface.name)];
+      },
+      error => {
+        console.error('Error loading network interfaces:', error);
+        this.showMessage('Error loading network interfaces', 'error');
+      }
+    );
+  }
+
+  startCapture(collector: ContactList) {
+    // 获取对应的存储策略
+    const storageStrategy = this.storageStrategies.find(s => s.name === collector.storageStrategy);
+    if (!storageStrategy) {
+      this.showMessage('Storage strategy not found', 'error');
+      return;
+    }
+
+    // 构建基本请求参数
+    const request: Partial<CaptureRequest> = {
+      filter: {
+        capture: {
+          items: ["192.168.0.24/24;192.168.0.1"],
+          optReverse: true
+        }
+      },
+      // index: 0 表示file，1表示其他
+      index: collector.interfaceName === 'File' ? 0 : 1,
+      port: "0x1",
+      appOpt: {
+        // apps 中默认包含 zeek
+        apps: [
+          'zeek',
+          ...(collector.idsEnabled ? ['snort'] : [])
+        ],
+        zeek: {
+          enable: collector.protocolAnalysisEnabled || false
+        },
+        // savePacket 完全使用 Storage Strategy 的配置
+        savePacket: {
+          enable: true,
+          duration: storageStrategy.duration || 0,
+          fileCount: storageStrategy.fileCount,
+          fileName: storageStrategy.name, // 使用存储策略的名称作为文件名
+          fileSize: this.parseFileSize(storageStrategy.fileSize),
+          fileType: storageStrategy.fileType === 'PCAP' ? 0 : 1,
+          performanceMode: "string",
+          stopOnWrap: storageStrategy.outOfDiskAction === 'Stop'
+        },
+        snort: {
+          enable: collector.idsEnabled || false
+        }
+      }
+    };
+
+    // 只有当选择File时才添加filePath
+    if (collector.interfaceName === 'File') {
+      request.filePath = `/path/to/${storageStrategy.name}.pcap`; // 使用存储策略名称作为文件名
+    }
+
+    this.collectorService.startCapture(request as CaptureRequest).subscribe(
+      (response: CaptureResponse) => {
+        this.showMessage('Capture started successfully');
+        collector.status = 'running';
+        collector.sessionId = response.uuid;
+        
+        // 保存 sessionId 到数据库
+        this.collectorService.updateCollectorSessionId(collector.id, response.uuid).subscribe(
+          () => {
+            this.collectorService.updateCollectorStatus(collector.id, 'running').subscribe();
+            this.startStatusPolling(collector);
+          },
+          error => {
+            console.error('Error updating session ID:', error);
+          }
+        );
+      },
+      error => {
+        console.error('Error starting capture:', error);
+        this.showMessage('Error starting capture', 'error');
+      }
+    );
+  }
+
+  // 添加辅助方法来解析文件大小字符串
+  private parseFileSize(size: string | undefined): number {
+    if (!size) return 0;
+    
+    const match = size.match(/(\d+)M/);
+    if (!match) return 0;
+    
+    return parseInt(match[1]) * 1024 * 1024; // 转换为字节
+  }
+
+  // 添加开始轮询状态的方法
+  private startStatusPolling(collector: ContactList) {
+    this.stopStatusPolling(collector.id);
+
+    const timer = setInterval(() => {
+      if (collector.sessionId) {
+        this.collectorService.getSessionInfo(collector.sessionId).subscribe(
+          (response: CaptureResponse) => {
+            if (response.status !== 'running') {
+              collector.status = response.status;
+              this.stopStatusPolling(collector.id);
+              if (response.error !== 0) {
+                this.showMessage(`Capture error: ${response.message}`, 'error');
+              }
+            }
+          },
+          error => {
+            console.error('Error getting session info:', error);
+            this.stopStatusPolling(collector.id);
+          }
+        );
+      }
+    }, 5000);
+
+    this.statusPollingMap.set(collector.id, timer);
+  }
+
+  // 添加停止轮询的方法
+  private stopStatusPolling(collectorId: number) {
+    const timer = this.statusPollingMap.get(collectorId);
+    if (timer) {
+      clearInterval(timer);
+      this.statusPollingMap.delete(collectorId);
+    }
+  }
+
+  // 添加停止抓包的方法
+  stopCapture(collector: ContactList) {
+    if (!collector.sessionId) {
+      this.showMessage('No active capture session', 'error');
+      return;
+    }
+
+    this.collectorService.stopCapture(collector.sessionId).subscribe(
+      (response: CaptureResponse) => {
+        if (response.error === 0) {
+          this.showMessage('Capture stopped successfully');
+          collector.status = 'stopped';
+          
+          // 清除数据库中的 sessionId
+          this.collectorService.updateCollectorSessionId(collector.id, '').subscribe(
+            () => {
+              this.collectorService.updateCollectorStatus(collector.id, 'stopped').subscribe();
+              this.stopStatusPolling(collector.id);
+              collector.sessionId = undefined;
+            },
+            error => {
+              console.error('Error clearing session ID:', error);
+            }
+          );
+        } else {
+          this.showMessage(`Error stopping capture: ${response.message}`, 'error');
+        }
+      },
+      error => {
+        console.error('Error stopping capture:', error);
+        this.showMessage('Error stopping capture', 'error');
+      }
+    );
+  }
+
+  // 在组件销毁时清理所有定时器
+  ngOnDestroy() {
+    this.statusPollingMap.forEach((timer) => clearInterval(timer));
+    this.statusPollingMap.clear();
+  }
+
+  confirmStopCapture(collector: ContactList) {
+    Swal.fire({
+      title: 'Stop Capture',
+      text: 'Are you sure you want to stop the capture?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, stop it!',
+      cancelButtonText: 'No, keep it running',
+      padding: '2em'
+    }).then((result) => {
+      if (result.value) {
+        this.stopCapture(collector);
+      }
+    });
   }
 }

@@ -30,6 +30,63 @@ export interface StorageStrategy {
   duration?: number;
 }
 
+export interface NetworkInterface {
+  desc: string;
+  index: number;
+  name: string;
+  ports: {
+    duplex: string;
+    id: number;
+    mac: string;
+    speed: string;
+    state: string;
+    type: string;
+  }[];
+}
+
+export interface CaptureFilter {
+  capture: {
+    items: string[];
+    optReverse: boolean;
+  };
+}
+
+export interface AppOptions {
+  apps: string[];
+  zeek: {
+    enable: boolean;
+  };
+  savePacket: {
+    duration: number;
+    enable: boolean;
+    fileCount: number;
+    fileName: string;
+    fileSize: number;
+    fileType: number;
+    performanceMode: string;
+    stopOnWrap: boolean;
+  };
+  snort: {
+    enable: boolean;
+  };
+}
+
+export interface CaptureRequest {
+  filter: CaptureFilter;
+  index: number;
+  port: string;
+  filePath?: string;
+  appOpt: AppOptions;
+}
+
+export interface CaptureResponse {
+  error: number;
+  message: string;
+  status: string;
+  uuid: string;
+  options: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -89,5 +146,32 @@ export class CollectorService {
   // 添加更新 enabled 状态的方法
   updateCollectorEnabled(id: number, type: string, enabled: boolean): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/collectors/${id}/${type}-enabled`, { enabled });
+  }
+
+  getNetworkInterfaces(): Observable<NetworkInterface[]> {
+    return this.http.get<NetworkInterface[]>(`${this.apiUrl}/capture/interfaces`);
+  }
+
+  // 添加开启抓包的方法
+  startCapture(request: CaptureRequest): Observable<any> {
+    return this.http.post(`${this.apiUrl}/capture/startCapture`, request);
+  }
+
+  // 添加获取会话状态的方法
+  getSessionInfo(sessionId: string): Observable<CaptureResponse> {
+    return this.http.get<CaptureResponse>(`${this.apiUrl}/capture/getSessionInfo`, {
+      params: { sessionid: sessionId }
+    });
+  }
+
+  // 添加停止抓包的方法
+  stopCapture(sessionId: string): Observable<CaptureResponse> {
+    return this.http.get<CaptureResponse>(`${this.apiUrl}/capture/stopCapture`, {
+      params: { sessionid: sessionId }
+    });
+  }
+
+  updateCollectorSessionId(id: number, sessionId: string): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/collectors/${id}/session`, { sessionId });
   }
 } 

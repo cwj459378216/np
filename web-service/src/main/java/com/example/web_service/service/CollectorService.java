@@ -33,4 +33,10 @@ public class CollectorService {
         collector.setStatus(status);
         collectorRepository.save(collector);
     }
+    
+    public void updateSessionId(Long id, String sessionId) {
+        Collector collector = getCollectorById(id);
+        collector.setSessionId(sessionId);
+        collectorRepository.save(collector);
+    }
 } 

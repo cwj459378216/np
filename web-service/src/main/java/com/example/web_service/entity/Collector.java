@@ -25,6 +25,9 @@ public class Collector {
     private Boolean protocolAnalysisEnabled;
     private Boolean idsEnabled;
     private String status;
+    
+    @Column(name = "session_id")
+    private String sessionId;
 
     @PrePersist
     protected void onCreate() {
