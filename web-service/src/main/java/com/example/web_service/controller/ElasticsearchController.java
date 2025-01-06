@@ -1,9 +1,9 @@
 package com.example.web_service.controller;
 
 import com.example.web_service.model.es.ConnRecord;
+import com.example.web_service.model.es.TrendingData;
 import com.example.web_service.service.elasticsearch.ElasticsearchSyncService;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.json.JsonData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/es")
@@ -37,5 +36,17 @@ public class ElasticsearchController {
     @Operation(summary = "高级查询", description = "使用自定义查询条件搜索数据")
     public List<ConnRecord> advancedSearch(@RequestBody Query query) throws IOException {
         return elasticsearchSyncService.searchConnRecords(INDEX_NAME, query);
+    }
+
+    @GetMapping("/trending")
+    @Operation(summary = "查询趋势数据", description = "根据时间范围和其他条件查询数据趋势")
+    public List<TrendingData> getTrending(
+            @RequestParam String startTime,
+            @RequestParam String endTime,
+            @RequestParam(required = false) String filePath,
+            @RequestParam(defaultValue = "conn-realtime") String index,
+            @RequestParam(defaultValue = "1h") String interval
+    ) throws IOException {
+        return elasticsearchSyncService.getTrending(startTime, endTime, filePath, index, interval);
     }
 } 

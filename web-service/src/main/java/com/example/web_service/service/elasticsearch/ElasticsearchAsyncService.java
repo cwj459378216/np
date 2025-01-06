@@ -4,12 +4,14 @@ import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.json.JsonData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 
 @Service
 public class ElasticsearchAsyncService {
@@ -36,10 +38,22 @@ public class ElasticsearchAsyncService {
     public CompletableFuture<Map<String, Object>> searchRawAsync(String index, Query query) {
         return esAsyncClient.search(s -> s
                 .index(index)
-                .query(query),
-                Map.class
+                .query(query)
+                .size(1),
+                JsonData.class
         ).thenApply(response -> 
-            response.hits().hits().get(0).source()
+            Optional.ofNullable(response)
+                .map(SearchResponse::hits)
+                .map(hits -> hits.hits())
+                .filter(hits -> !hits.isEmpty())
+                .map(hits -> hits.get(0))
+                .map(hit -> hit.source())
+                .map(source -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> result = source.to(Map.class);
+                    return result;
+                })
+                .orElse(Map.of())
         );
     }
 } 
