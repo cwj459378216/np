@@ -127,19 +127,19 @@
                                                             <button type="button" 
                                                                     class="btn btn-sm btn-outline-primary"
                                                                     (click)="editUser(contact)"
-                                                                    [disabled]="contact.status === 'running'">
+                                                                    [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
                                                                 Edit
                                                             </button>
                                                             
                                                             <button type="button" 
                                                                     class="btn btn-sm btn-outline-danger"
                                                                     (click)="deleteUser(contact)"
-                                                                    [disabled]="contact.status === 'running'">
+                                                                    [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
                                                                 Delete
                                                             </button>
                                                             
                                                             <!-- 使用 ngIf 来切换显示 Start 按钮或 Animation 按钮 -->
-                                                            <ng-container *ngIf="contact.status !== 'running'; else analyzingButton">
+                                                            <ng-container *ngIf="contact.status !== 'running' && contact.status !== 'STATUS_STARTED'; else analyzingButton">
                                                                 <button type="button" 
                                                                         class="btn btn-sm btn-outline-success" 
                                                                         (click)="startCapture(contact)">

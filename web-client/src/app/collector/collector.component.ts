@@ -515,6 +515,33 @@ export class CollectorComponent implements OnInit {
           action: '',
           creationTime: this.formatDate(collector.creationTime)
         }));
+        
+        // 检查并为正在运行的抓包任务启动状态轮询
+        this.contactList.forEach(collector => {
+          // 检查 status 为 running 或 STATUS_STARTED 的情况
+          if (collector.sessionId && (collector.status === 'running' || collector.status === 'STATUS_STARTED')) {
+            // 先获取一次当前状态
+            this.collectorService.getSessionInfo(collector.sessionId).subscribe(
+              (response: CaptureResponse) => {
+                collector.status = response.status;
+                // 如果状态是 STATUS_STARTED，启动轮询
+                if (response.status === 'STATUS_STARTED') {
+                  this.startStatusPolling(collector);
+                }
+              },
+              error => {
+                console.error('Error getting session info:', error);
+                // 如果获取状态失败，将状态设置为 stopped
+                collector.status = 'stopped';
+                collector.sessionId = undefined;
+                // 更新数据库中的状态
+                this.collectorService.updateCollectorStatus(collector.id, 'stopped').subscribe();
+                this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
+              }
+            );
+          }
+        });
+        
         this.searchContacts();
       },
       error => {
@@ -784,8 +811,11 @@ export class CollectorComponent implements OnInit {
       if (collector.sessionId) {
         this.collectorService.getSessionInfo(collector.sessionId).subscribe(
           (response: CaptureResponse) => {
-            if (response.status !== 'running') {
-              collector.status = response.status;
+            // 更新状态
+            collector.status = response.status;
+            
+            // 只有当状态不是 STATUS_STARTED 时才停止轮询
+            if (response.status !== 'STATUS_STARTED') {
               this.stopStatusPolling(collector.id);
               if (response.error !== 0) {
                 this.showMessage(`Capture error: ${response.message}`, 'error');
@@ -798,7 +828,7 @@ export class CollectorComponent implements OnInit {
           }
         );
       }
-    }, 5000);
+    }, 5000); // 每5秒轮询一次
 
     this.statusPollingMap.set(collector.id, timer);
   }
@@ -822,6 +852,9 @@ export class CollectorComponent implements OnInit {
     this.collectorService.stopCapture(collector.sessionId).subscribe(
       (response: CaptureResponse) => {
         if (response.error === 0) {
+          // 立即停止状态轮询
+          this.stopStatusPolling(collector.id);
+          
           this.showMessage('Capture stopped successfully');
           collector.status = 'stopped';
           
@@ -829,7 +862,6 @@ export class CollectorComponent implements OnInit {
           this.collectorService.updateCollectorSessionId(collector.id, '').subscribe(
             () => {
               this.collectorService.updateCollectorStatus(collector.id, 'stopped').subscribe();
-              this.stopStatusPolling(collector.id);
               collector.sessionId = undefined;
             },
             error => {
