@@ -8,15 +8,24 @@ export interface SessionInfo {
   service: string;
   bytyes: string;
   packets: string;
-  aart: number;
-  nrt: number;
-  srt: number;
-  art: number;
-  ptt: number;
-  crt: number;
-  latency: number;
-  rety: number;
   lastUpdateTime: string;
+  channelID: string;
+  connState: string;
+  duration: number;
+  filePath: string;
+  history: string;
+  localOrig: string;
+  localResp: string;
+  missedBytes: number;
+  origBytes: number;
+  origIpBytes: number;
+  origPkts: number;
+  orig_l2_addr: string;
+  respBytes: number;
+  respIpBytes: number;
+  respPkts: number;
+  resp_l2_addr: string;
+  uid: string;
 }
 
 @Injectable({
@@ -34,15 +43,24 @@ export class SessionInfoService {
         service: ['HTTP', 'FTP', 'DNS', 'SMTP', 'SSH'][Math.floor(Math.random() * 5)],
         bytyes: `${Math.floor(Math.random() * 1000)}kb`,
         packets: `${Math.floor(Math.random() * 100)}`,
-        aart: Math.floor(Math.random() * 1000),
-        nrt: Math.floor(Math.random() * 1000),
-        srt: Math.floor(Math.random() * 1000),
-        art: Math.floor(Math.random() * 1000),
-        ptt: Math.floor(Math.random() * 1000),
-        crt: Math.floor(Math.random() * 1000),
-        latency: Math.floor(Math.random() * 1000),
-        rety: Math.floor(Math.random() * 10),
-        lastUpdateTime: new Date(Date.now() - Math.floor(Math.random() * 10000000)).toISOString()
+        lastUpdateTime: new Date(Date.now() - Math.floor(Math.random() * 10000000)).toISOString(),
+        channelID: Math.random().toString(),
+        connState: ['CONNECTED', 'DISCONNECTED', 'PENDING'][Math.floor(Math.random() * 3)],
+        duration: Math.floor(Math.random() * 1000),
+        filePath: Math.random().toString(),
+        history: Math.random().toString(),
+        localOrig: Math.random().toString(),
+        localResp: Math.random().toString(),
+        missedBytes: Math.floor(Math.random() * 1000),
+        origBytes: Math.floor(Math.random() * 1000000),
+        origIpBytes: Math.floor(Math.random() * 1000000),
+        origPkts: Math.floor(Math.random() * 1000),
+        orig_l2_addr: Math.random().toString(),
+        respBytes: Math.floor(Math.random() * 1000000),
+        respIpBytes: Math.floor(Math.random() * 1000000),
+        respPkts: Math.floor(Math.random() * 1000),
+        resp_l2_addr: Math.random().toString(),
+        uid: Math.random().toString()
       });
     }
   }

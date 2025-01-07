@@ -1,6 +1,43 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { toggleAnimation } from 'src/app/shared/animations';
 import { SessionInfoService, SessionInfo } from '../services/session-info.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+
+export interface TrendingData {
+    timestamp: number;
+    count: number;
+}
+
+export interface ESQueryResponse {
+    total: number;
+    hits: Array<{
+        channelID: string;
+        connState: string;
+        dstIP: string;
+        dstPort: number;
+        duration: number;
+        filePath: string;
+        history: string;
+        localOrig: string;
+        localResp: string;
+        missedBytes: number;
+        origBytes: number;
+        origIpBytes: number;
+        origPkts: number;
+        orig_l2_addr: string;
+        proto: string;
+        respBytes: number;
+        respIpBytes: number;
+        respPkts: number;
+        resp_l2_addr: string;
+        srcIP: string;
+        srcPort: number;
+        timestamp: string;
+        ts: number;
+        uid: string;
+    }>;
+}
 
 @Component({
   selector: 'app-session-info',
@@ -8,7 +45,7 @@ import { SessionInfoService, SessionInfo } from '../services/session-info.servic
   styleUrl: './session-info.component.css',
   animations: [toggleAnimation]
 })
-export class SessionInfoComponent implements OnInit {
+export class SessionInfoComponent implements OnInit, OnDestroy {
     search = '';
     loading = false;
     currentPage = 1;
@@ -17,16 +54,20 @@ export class SessionInfoComponent implements OnInit {
     sortField?: string;
     sortOrder?: 'asc' | 'desc';
 
+    // 添加加载状态
+    chartLoading = false;
+
     revenueChart: any = {
-        series: [
-            {
-                name: 'Sessions',
-                data: [50, 60, 70, 80, 90, 100]
-            }
-        ],
+        series: [{
+            name: 'Sessions',
+            data: []
+        }],
         chart: {
             height: 300,
             type: 'line',
+            animations: {
+                enabled: true
+            },
             toolbar: {
                 show: true,
                 tools: {
@@ -55,28 +96,54 @@ export class SessionInfoComponent implements OnInit {
         },
         colors: ['#4361ee'],
         xaxis: {
-            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+            type: 'datetime',
+            categories: [],
+            labels: {
+                datetimeFormatter: {
+                    year: 'yyyy',
+                    month: 'MMM \'yy',
+                    day: 'dd MMM',
+                    hour: 'HH:mm'
+                },
+                formatter: function(value: string) {
+                    const date = new Date(Number(value));
+                    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+                }
+            }
         },
         yaxis: {
             title: {
-                text: 'Sessions'
+                text: 'Sessions Count'
             }
         },
         grid: {
             borderColor: '#e0e6ed'
         },
         tooltip: {
+            x: {
+                formatter: function(value: number) {
+                    const date = new Date(value);
+                    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+                }
+            },
             theme: 'dark'
         },
         markers: {
             size: 4
         },
-        labels: [],
         legend: {
             show: true
         },
         fill: {
             type: 'solid'
+        },
+        noData: {
+            text: 'Loading...',
+            align: 'center',
+            verticalAlign: 'middle',
+            style: {
+                fontSize: '16px'
+            }
         }
     };
 
@@ -86,58 +153,135 @@ export class SessionInfoComponent implements OnInit {
         { field: 'service', title: 'Service', hide: false },
         { field: 'bytyes', title: 'Bytyes', hide: false },
         { field: 'packets', title: 'Packets', hide: false },
-        { field: 'aart', title: 'AART(ms)', hide: false },
-        { field: 'nrt', title: 'NRT(ms)', hide: true },
-        { field: 'srt', title: 'SRT(ms)', hide: true },
-        { field: 'art', title: 'ART(ms)', hide: true },
-        { field: 'ptt', title: 'PTT(ms)', hide: true },
-        { field: 'crt', title: 'CRT(ms)', hide: true },
-        { field: 'latency', title: 'Latency(ms)', hide: true },
-        { field: 'rety', title: 'Rety', hide: true },
         { field: 'lastUpdateTime', title: 'Last Updated Time', hide: false },
+        { field: 'channelID', title: 'Channel ID', hide: true },
+        { field: 'connState', title: 'Conn State', hide: true },
+        { field: 'duration', title: 'Duration', hide: true },
+        { field: 'filePath', title: 'File Path', hide: true },
+        { field: 'history', title: 'History', hide: true },
+        { field: 'localOrig', title: 'Local Orig', hide: true },
+        { field: 'localResp', title: 'Local Resp', hide: true },
+        { field: 'missedBytes', title: 'Missed Bytes', hide: true },
+        { field: 'origBytes', title: 'Orig Bytes', hide: true },
+        { field: 'origIpBytes', title: 'Orig IP Bytes', hide: true },
+        { field: 'origPkts', title: 'Orig Packets', hide: true },
+        { field: 'orig_l2_addr', title: 'Orig L2 Addr', hide: true },
+        { field: 'respBytes', title: 'Resp Bytes', hide: true },
+        { field: 'respIpBytes', title: 'Resp IP Bytes', hide: true },
+        { field: 'respPkts', title: 'Resp Packets', hide: true },
+        { field: 'resp_l2_addr', title: 'Resp L2 Addr', hide: true },
+        { field: 'uid', title: 'UID', hide: true }
     ];
 
     rows: SessionInfo[] = [];
 
+    private refreshInterval: NodeJS.Timeout | undefined;
+
     constructor(
         private sessionInfoService: SessionInfoService,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private http: HttpClient
     ) {}
 
     ngOnInit() {
+        this.loadTrendingData();
         this.loadData();
+
+        this.refreshInterval = setInterval(() => {
+            this.loadTrendingData();
+        }, 60000);
+    }
+
+    ngOnDestroy() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+    }
+
+    loadTrendingData() {
+        this.chartLoading = true;
+        const endTime = Date.now();
+        const startTime = endTime - (7 * 24 * 60 * 60 * 1000);
+
+        this.http.get<TrendingData[]>(`${environment.apiUrl}/es/trending`, {
+            params: {
+                startTime: startTime.toString(),
+                endTime: endTime.toString(),
+                index: 'conn-realtime',
+                interval: '1h'
+            }
+        }).subscribe({
+            next: (data) => {
+                console.log('Trending data received:', data);
+
+                // 更新图表数据
+                const chartData = {
+                    series: [{
+                        name: 'Sessions',
+                        data: data.map(item => ({
+                            x: item.timestamp,
+                            y: item.count
+                        }))
+                    }]
+                };
+
+                // 使用 Object.assign 更新图表配置
+                Object.assign(this.revenueChart, chartData);
+                
+                console.log('Chart data updated:', this.revenueChart);
+                
+                this.chartLoading = false;
+                // 强制更新视图
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                console.error('Error loading trending data:', error);
+                this.chartLoading = false;
+                this.cdr.detectChanges();
+            }
+        });
     }
 
     loadData() {
-        console.log('Loading data with params:', {
-            page: this.currentPage,
-            pageSize: this.pageSize,
-            sortField: this.sortField,
-            sortOrder: this.sortOrder,
-            search: this.search,
-            currentRows: this.rows.length
-        });
-        
         this.loading = true;
-        this.cdr.detectChanges();
-        
-        this.sessionInfoService.getSessionInfo({
-            page: this.currentPage - 1,
-            pageSize: this.pageSize,
-            sortField: this.sortField,
-            sortOrder: this.sortOrder,
-            search: this.search
+        const endTime = Date.now();
+        const startTime = endTime - (7 * 24 * 60 * 60 * 1000);
+
+        this.http.get<ESQueryResponse>(`${environment.apiUrl}/es/query`, {
+            params: {
+                startTime: startTime.toString(),
+                endTime: endTime.toString(),
+                index: 'conn-realtime',
+                size: this.pageSize.toString(),
+                from: ((this.currentPage - 1) * this.pageSize).toString()
+            }
         }).subscribe({
             next: (response) => {
-                console.log('Data loaded:', {
-                    dataLength: response.data.length,
-                    total: response.total,
-                    currentPage: this.currentPage,
-                    sortField: this.sortField,
-                    sortOrder: this.sortOrder
-                });
-                
-                this.rows = [...response.data];
+                this.rows = response.hits.map(hit => ({
+                    srcIP: `${hit.srcIP}:${hit.srcPort}`,
+                    dstIP: `${hit.dstIP}:${hit.dstPort}`,
+                    service: hit.proto,
+                    bytyes: `${hit.origIpBytes + hit.respIpBytes}`,
+                    packets: `${hit.origPkts + hit.respPkts}`,
+                    lastUpdateTime: this.formatDate(hit.timestamp),
+                    channelID: hit.channelID,
+                    connState: hit.connState,
+                    duration: hit.duration,
+                    filePath: hit.filePath,
+                    history: hit.history,
+                    localOrig: hit.localOrig,
+                    localResp: hit.localResp,
+                    missedBytes: hit.missedBytes,
+                    origBytes: hit.origBytes,
+                    origIpBytes: hit.origIpBytes,
+                    origPkts: hit.origPkts,
+                    orig_l2_addr: hit.orig_l2_addr,
+                    respBytes: hit.respBytes,
+                    respIpBytes: hit.respIpBytes,
+                    respPkts: hit.respPkts,
+                    resp_l2_addr: hit.resp_l2_addr,
+                    uid: hit.uid
+                }));
                 this.total = response.total;
                 this.loading = false;
                 this.cdr.detectChanges();
@@ -322,9 +466,15 @@ export class SessionInfoComponent implements OnInit {
     formatDate(date: string) {
         if (date) {
             const dt = new Date(date);
-            const month = dt.getMonth() + 1 < 10 ? '0' + (dt.getMonth() + 1) : dt.getMonth() + 1;
-            const day = dt.getDate() < 10 ? '0' + dt.getDate() : dt.getDate();
-            return day + '/' + month + '/' + dt.getFullYear();
+            return dt.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
         }
         return '';
     }

@@ -24,6 +24,9 @@
             </div>
         </div>
         <div class="relative overflow-hidden">
+            <div *ngIf="chartLoading" class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/50 z-10">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
             <apx-chart 
                 [series]="revenueChart.series" 
                 [chart]="revenueChart.chart"
@@ -31,13 +34,13 @@
                 [stroke]="revenueChart.stroke"
                 [colors]="revenueChart.colors"
                 [markers]="revenueChart.markers"
-                [labels]="revenueChart.labels"
                 [xaxis]="revenueChart.xaxis"
                 [yaxis]="revenueChart.yaxis"
                 [grid]="revenueChart.grid"
                 [legend]="revenueChart.legend"
                 [tooltip]="revenueChart.tooltip"
                 [fill]="revenueChart.fill"
+                [noData]="revenueChart.noData"
                 class="rounded-lg bg-white dark:bg-black">
             </apx-chart>
         </div>

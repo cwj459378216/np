@@ -7,22 +7,18 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import co.elastic.clients.util.ObjectBuilder;
-import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import co.elastic.clients.transport.endpoints.BooleanResponse;
-import co.elastic.clients.util.ObjectBuilder;
-import jakarta.json.JsonValue;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import co.elastic.clients.json.JsonData;
 import com.example.web_service.model.es.ConnRecord;
 import com.example.web_service.model.es.TrendingData;
+import java.util.Optional;
 
 @Service
 public class ElasticsearchSyncService {
@@ -44,10 +40,11 @@ public class ElasticsearchSyncService {
         );
         return response.hits().hits().stream()
                 .map(hit -> hit.source())
+                .filter(source -> source != null)
                 .toList();
     }
 
-    public List<JsonData> searchRaw(String index, Query query) throws IOException {
+    public List<Map<String, Object>> searchRaw(String index, Query query) throws IOException {
         SearchResponse<JsonData> response = esClient.search(s -> s
                 .index(index)
                 .query(query)
@@ -58,7 +55,13 @@ public class ElasticsearchSyncService {
         return response.hits().hits().stream()
                 .map(hit -> hit.source())
                 .filter(source -> source != null)
-                .toList();
+                .map(source -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> result = source.to(Map.class);
+                    return result;
+                })
+                .filter(source -> source != null)
+                .collect(Collectors.toList());
     }
 
     public List<ConnRecord> searchConnRecords(String index, Query query) throws IOException {
@@ -141,9 +144,7 @@ public class ElasticsearchSyncService {
 
         // 打印响应
         log.info("ES Response: {}", objectMapper.writeValueAsString(response));
-        log.info("Response details - took: {}ms, total hits: {}", 
-            response.took(),
-            response.hits().total() != null ? response.hits().total().value() : 0);
+  
 
         if (response.aggregations() == null) {
             log.warn("No aggregations in response");
@@ -175,5 +176,44 @@ public class ElasticsearchSyncService {
 
         log.info("Trending result size: {}", result.size());
         return result;
+    }
+
+    public Map<String, Object> searchRawWithPagination(String index, Query query, Integer size, Integer from) throws IOException {
+        SearchResponse<JsonData> response = esClient.search(s -> s
+                .index(index)
+                .query(query)
+                .size(size)
+                .from(from)
+                .sort(sort -> sort
+                    .field(f -> f
+                        .field("timestamp")
+                        .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)
+                    )
+                ),
+                JsonData.class
+        );
+        
+        log.info("ES Query: {}", objectMapper.writeValueAsString(response.toString()));
+        
+        List<Map<String, Object>> hits = response.hits().hits().stream()
+                .map(hit -> hit.source())
+                .filter(source -> source != null)
+                .map(source -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> result = source.to(Map.class);
+                    return result;
+                })
+                .filter(source -> source != null)
+                .collect(Collectors.toList());
+
+        long total = Optional.ofNullable(response.hits())
+                .map(h -> h.total())
+                .map(t -> t.value())
+                .orElse(0L);
+
+        return Map.of(
+            "total", total,
+            "hits", hits
+        );
     }
 } 

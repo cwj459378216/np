@@ -4,6 +4,7 @@ import com.example.web_service.model.es.ConnRecord;
 import com.example.web_service.model.es.TrendingData;
 import com.example.web_service.service.elasticsearch.ElasticsearchSyncService;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.json.JsonData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/es")
@@ -48,5 +50,45 @@ public class ElasticsearchController {
             @RequestParam(defaultValue = "1h") String interval
     ) throws IOException {
         return elasticsearchSyncService.getTrending(startTime, endTime, filePath, index, interval);
+    }
+
+    @GetMapping("/query")
+    @Operation(summary = "查询ES数据", description = "根据时间范围和其他条件查询数据")
+    public Map<String, Object> queryData(
+            @RequestParam String startTime,
+            @RequestParam String endTime,
+            @RequestParam(required = false) String filePath,
+            @RequestParam(defaultValue = "conn-realtime") String index,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "0") Integer from
+    ) throws IOException {
+        // 构建查询条件
+        var rangeQuery = new Query.Builder()
+            .range(r -> r
+                .field("timestamp")
+                .gte(JsonData.of(startTime))
+                .lte(JsonData.of(endTime))
+            );
+
+        // 如果指定了filePath，添加过滤条件
+        var query = filePath != null
+            ? Query.of(q -> q
+                .bool(b -> b
+                    .must(rangeQuery.build())
+                    .must(m -> m
+                        .match(t -> t
+                            .field("filePath")
+                            .query(filePath)
+                        )
+                    )
+                )
+            )
+            : Query.of(q -> q
+                .bool(b -> b
+                    .must(rangeQuery.build())
+                )
+            );
+
+        return elasticsearchSyncService.searchRawWithPagination(index, query, size, from);
     }
 } 
