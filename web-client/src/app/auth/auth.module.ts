@@ -1,20 +1,25 @@
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Routes } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SharedModule } from 'src/shared.module';
+import { loginGuard } from 'src/share/auth/login.guard';
 
 import { BoxedSigninComponent } from './boxed-signin';
-import { AUTH_ROUTES } from './auth.routes';
+
+const routes: Routes = [
+    {
+        path: 'boxed-signin',
+        component: BoxedSigninComponent,
+        canActivate: [loginGuard]
+    }
+];
 
 @NgModule({
-    declarations: [
-        BoxedSigninComponent
-    ],
     imports: [
         CommonModule,
         FormsModule,
-        RouterModule.forChild(AUTH_ROUTES),
+        RouterModule.forChild(routes),
         SharedModule
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]

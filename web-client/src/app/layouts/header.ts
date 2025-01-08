@@ -5,6 +5,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { AppService } from '../service/app.service';
 import { DomSanitizer } from '@angular/platform-browser';
 import { TranslateService } from '@ngx-translate/core';
+import { AuthService } from '../../share/auth/auth.service';
 
 @Component({
     selector: 'header',
@@ -79,6 +80,7 @@ export class HeaderComponent {
         public router: Router,
         private appSetting: AppService,
         private sanitizer: DomSanitizer,
+        private authService: AuthService
     ) {
         this.initStore();
     }
@@ -137,5 +139,9 @@ export class HeaderComponent {
             this.storeData.dispatch({ type: 'toggleRTL', payload: 'ltr' });
         }
         window.location.reload();
+    }
+
+    signOut() {
+        this.authService.logout();
     }
 }
