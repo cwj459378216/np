@@ -87,6 +87,7 @@ import { RuleUpdateService } from './services/rule-update.service';
 import { LocalRuleService } from './services/local-rule.service';
 import { SystemTimeService } from './services/system-time.service';
 import { PreviewModule } from './shared/preview.module';
+import { ApplicationSslComponent } from './protocol-analysis/application-protocols/application-ssl/application-ssl.component';
 
 @NgModule({
     imports: [
@@ -143,6 +144,7 @@ import { PreviewModule } from './shared/preview.module';
       ApplicationHttpComponent,
       ApplicationSmtpComponent,
       ApplicationDnsComponent,
+      ApplicationSslComponent,
       EventComponent,
       AlarmSettingsComponent,
       BasicConfigurationComponent,

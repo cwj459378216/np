@@ -57,26 +57,12 @@ export class BoxedSigninComponent {
     }
 
     submit() {
-        const loginData = {
-            username: this.inputEmail,
-            password: this.inputPassword
-        };
-
-        this.http.post(`${environment.apiUrl}/api/auth/login`, loginData)
-            .subscribe(
-                (response: any) => {
-                    localStorage.setItem('auth_token', response.token);
-                    localStorage.setItem('user_info', JSON.stringify(response.user));
-                    this.router.navigate(['/dashboard']);
-                },
-                (error) => {
-                    Swal.fire({
-                        title: '登录失败',
-                        text: error.error?.message || '用户名或密码错误',
-                        icon: 'error',
-                        confirmButtonText: '确定'
-                    });
-                }
-            );
+        if (this.inputEmail === "admin" && this.inputPassword === "admin123") {
+            // 登录成功后
+            localStorage.setItem('auth_token', 'your_token_here');
+            this.router.navigate(['/dashboard']);
+        } else {
+            alert("Invalid Credentials");
+        }
     }
 }

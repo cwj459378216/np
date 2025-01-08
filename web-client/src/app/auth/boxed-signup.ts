@@ -1,12 +1,21 @@
-import { Component } from '@angular/core';
 import { toggleAnimation } from 'src/app/shared/animations';
-import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { AppService } from 'src/app/service/app.service';
-
+import { IconModule } from 'src/app/shared/icon/icon.module';
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 @Component({
     templateUrl: './boxed-signup.html',
+    standalone: true,
+    imports: [
+        CommonModule,
+        FormsModule,
+        RouterModule,
+        IconModule
+    ],
     animations: [toggleAnimation],
 })
 export class BoxedSignupComponent {

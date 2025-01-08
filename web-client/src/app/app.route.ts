@@ -56,6 +56,7 @@ import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 import { PreviewComponent } from './report/template/preview/preview.component';
 import { ApplicationDnsComponent } from './protocol-analysis/application-protocols/application-dns/application-dns.component';
+import { ApplicationSslComponent } from './protocol-analysis/application-protocols/application-ssl/application-ssl.component';
 
 export const routes: Routes = [
     {
@@ -88,6 +89,7 @@ export const routes: Routes = [
             { path: 'protocol-analysis/application-protocols/smtp', component: ApplicationSmtpComponent, data: { title: 'SMTP' } },
             { path: 'protocol-analysis/application-protocols/ftp', component: ApplicationFtpComponent, data: { title: 'FTP' } },
             { path: 'protocol-analysis/application-protocols/dns', component: ApplicationDnsComponent, data: { title: 'DNS' } },
+            { path: 'protocol-analysis/application-protocols/ssl', component: ApplicationSslComponent, data: { title: 'SSL' } },
             { path: 'protocol-analysis/settings', component: SettingsComponent, data: { title: 'Settings' } },
             { path: 'alarm/event', component: EventComponent, data: { title: 'Event' } },
             { path: 'alarm/settings', component: AlarmSettingsComponent, data: { title: 'Alarm Settings' } },
