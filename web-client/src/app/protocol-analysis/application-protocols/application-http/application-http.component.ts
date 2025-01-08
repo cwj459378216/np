@@ -1,6 +1,37 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { colDef } from '@bhplugin/ng-datatable';
 import { toggleAnimation } from 'src/app/shared/animations';
+import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
+
+export interface HttpTrendingData {
+    timestamp: number;
+    count: number;
+}
+
+export interface HttpQueryResponse {
+    total: number;
+    hits: Array<{
+        channelID: string;
+        dstIP: string;
+        dstPort: number;
+        filePath: string;
+        requestBodyLen: number;
+        respFuids: string;
+        respMimeTypes: string;
+        responseBodyLen: number;
+        srcIP: string;
+        srcPort: number;
+        statusCode: number;
+        statusMsg: string;
+        tags: string;
+        timestamp: string;
+        transDepth: number;
+        ts: number;
+        uid: string;
+        version: number;
+    }>;
+}
 
 @Component({
   selector: 'app-application-http',
@@ -9,64 +40,140 @@ import { toggleAnimation } from 'src/app/shared/animations';
   animations: [toggleAnimation],
 
 })
-export class ApplicationHttpComponent {
-
+export class ApplicationHttpComponent implements OnInit, OnDestroy {
     search = '';
+    loading = false;
+    chartLoading = false;
+    currentPage = 1;
+    pageSize = 10;
+    total = 0;
+    private refreshInterval: NodeJS.Timeout | undefined;
+    sortField?: string;
+    sortOrder?: 'asc' | 'desc';
+
     cols = [
-      { field: 'srcIP', title: 'Src.IP:Port', hide: false },
-      { field: 'dstIP', title: 'Dst.IP:Port', hide: false  },
-      { field: 'webSite', title: 'Web Site', hide: false  },
-      { field: 'responseDate', title: 'Response Data', hide: true  },
-      { field: 'lastUpdateTime', title: 'Last Updated Time', hide: true  },
+        { field: 'srcIP', title: 'Src.IP:Port', hide: false },
+        { field: 'dstIP', title: 'Dst.IP:Port', hide: false },
+        { field: 'statusCode', title: 'Status Code', hide: false },
+        { field: 'statusMsg', title: 'Status Message', hide: false },
+        { field: 'requestBodyLen', title: 'Request Length', hide: false },
+        { field: 'responseBodyLen', title: 'Response Length', hide: false },
+        { field: 'respMimeTypes', title: 'MIME Types', hide: false },
+        { field: 'lastUpdateTime', title: 'Last Updated Time', hide: false },
+        // 隐藏的列
+        { field: 'channelID', title: 'Channel ID', hide: true },
+        { field: 'filePath', title: 'File Path', hide: true },
+        { field: 'respFuids', title: 'Response FUIDs', hide: true },
+        { field: 'tags', title: 'Tags', hide: true },
+        { field: 'transDepth', title: 'Trans Depth', hide: true },
+        { field: 'uid', title: 'UID', hide: true },
+        { field: 'version', title: 'Version', hide: true }
     ];
-  
-    rows = [
-      {
-        srcIP: "192.168.1.1:80",
-        dstIP: "192.168.1.2:1110",
-        webSite: "www.baidu.com",
-        responseDate: "128kb",
-        lastUpdateTime: "2019-09-09 12:00:00"
-      },
-      {
-        srcIP: "192.168.1.1:80",
-        dstIP: "192.168.1.2:1110",
-        webSite: "www.baidu.com",
-        responseDate: "128kb",
-        lastUpdateTime: "2019-09-09 12:00:00"
-      },
-      {
-        srcIP: "192.168.1.1:80",
-        dstIP: "192.168.1.2:1110",
-        webSite: "www.baidu.com",
-        responseDate: "128kb",
-        lastUpdateTime: "2019-09-09 12:00:00"
-      },
-      {
-        srcIP: "192.168.1.1:80",
-        dstIP: "192.168.1.2:1110",
-        webSite: "www.baidu.com",
-        responseDate: "128kb",
-        lastUpdateTime: "2019-09-09 12:00:00"
-      }, {
-        srcIP: "192.168.1.1:80",
-        dstIP: "192.168.1.2:1110",
-        webSite: "www.baidu.com",
-        responseDate: "128kb",
-        lastUpdateTime: "2019-09-09 12:00:00"
-      }
-    ];
-    jsonData = this.rows;
+
+    rows: any[] = [];
+
+    constructor(
+        private http: HttpClient,
+        private cdr: ChangeDetectorRef
+    ) {}
+
     ngOnInit() {
-      this.jsonData = this.rows.map((obj: any) => {
-        const newObj: any = {};
-        this.cols.forEach((col) => {
-          newObj[col.field] = obj[col.field];
-        });
-        return newObj;
-      });
+        this.loadTrendingData();
+        this.loadData();
+
+        // 每分钟刷新一次趋势数据
+        this.refreshInterval = setInterval(() => {
+            this.loadTrendingData();
+        }, 60000);
     }
-  
+
+    ngOnDestroy() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+    }
+
+    loadTrendingData() {
+        this.chartLoading = true;
+        const endTime = Date.now();
+        const startTime = endTime - (7 * 24 * 60 * 60 * 1000);
+
+        this.http.get<HttpTrendingData[]>(`${environment.apiUrl}/es/trending`, {
+            params: {
+                startTime: startTime.toString(),
+                endTime: endTime.toString(),
+                index: 'http-realtime',
+                interval: '1h'
+            }
+        }).subscribe({
+            next: (data) => {
+                if (Array.isArray(data) && data.length > 0) {
+                    const chartData = {
+                        series: [{
+                            name: 'HTTP Sessions',
+                            data: data.map(item => ({
+                                x: item.timestamp,
+                                y: item.count
+                            }))
+                        }]
+                    };
+                    Object.assign(this.revenueChart, chartData);
+                }
+                this.chartLoading = false;
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                console.error('Error loading trending data:', error);
+                this.chartLoading = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    loadData() {
+        this.loading = true;
+        const endTime = Date.now();
+        const startTime = endTime - (7 * 24 * 60 * 60 * 1000);
+
+        this.http.get<HttpQueryResponse>(`${environment.apiUrl}/es/query`, {
+            params: {
+                startTime: startTime.toString(),
+                endTime: endTime.toString(),
+                index: 'http-realtime',
+                size: this.pageSize.toString(),
+                from: ((this.currentPage - 1) * this.pageSize).toString()
+            }
+        }).subscribe({
+            next: (response) => {
+                this.rows = response.hits.map(hit => ({
+                    srcIP: `${hit.srcIP}:${hit.srcPort}`,
+                    dstIP: `${hit.dstIP}:${hit.dstPort}`,
+                    statusCode: hit.statusCode,
+                    statusMsg: hit.statusMsg,
+                    requestBodyLen: hit.requestBodyLen,
+                    responseBodyLen: hit.responseBodyLen,
+                    respMimeTypes: hit.respMimeTypes,
+                    lastUpdateTime: this.formatDate(hit.timestamp),
+                    channelID: hit.channelID,
+                    filePath: hit.filePath,
+                    respFuids: hit.respFuids,
+                    tags: hit.tags,
+                    transDepth: hit.transDepth,
+                    uid: hit.uid,
+                    version: hit.version
+                }));
+                this.total = response.total;
+                this.loading = false;
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                console.error('Error loading data:', error);
+                this.loading = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
     exportTable(type: string) {
       let columns: any = this.cols.map((d: { field: any }) => {
         return d.field;
@@ -203,14 +310,20 @@ export class ApplicationHttpComponent {
         .join(' ');
     }
   
-    formatDate(date: any) {
-      if (date) {
-        const dt = new Date(date);
-        const month = dt.getMonth() + 1 < 10 ? '0' + (dt.getMonth() + 1) : dt.getMonth() + 1;
-        const day = dt.getDate() < 10 ? '0' + dt.getDate() : dt.getDate();
-        return day + '/' + month + '/' + dt.getFullYear();
-      }
-      return '';
+    formatDate(date: string) {
+        if (date) {
+            const dt = new Date(date);
+            return dt.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        }
+        return '';
     }
   
     updateColumn(col: colDef) {
@@ -219,15 +332,16 @@ export class ApplicationHttpComponent {
   }
   
     revenueChart: any = {
-        series: [
-            {
-                name: 'HTTP Traffic',
-                data: [45, 55, 65, 75, 85, 95]
-            }
-        ],
+        series: [{
+            name: 'HTTP Sessions',
+            data: []
+        }],
         chart: {
             height: 300,
             type: 'line',
+            animations: {
+                enabled: true
+            },
             toolbar: {
                 show: true,
                 tools: {
@@ -256,19 +370,122 @@ export class ApplicationHttpComponent {
         },
         colors: ['#4361ee'],
         xaxis: {
-            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+            type: 'datetime',
+            labels: {
+                datetimeFormatter: {
+                    year: 'yyyy',
+                    month: 'MMM \'yy',
+                    day: 'dd MMM',
+                    hour: 'HH:mm'
+                },
+                formatter: function(value: string) {
+                    const date = new Date(Number(value));
+                    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+                }
+            }
         },
         yaxis: {
             title: {
-                text: 'Sessions'
+                text: 'HTTP Sessions Count'
             }
         },
         grid: {
             borderColor: '#e0e6ed'
         },
         tooltip: {
+            x: {
+                formatter: function(value: number) {
+                    const date = new Date(value);
+                    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+                }
+            },
             theme: 'dark'
+        },
+        markers: {
+            size: 4
+        },
+        legend: {
+            show: true
+        },
+        fill: {
+            type: 'solid'
+        },
+        noData: {
+            text: 'Loading...',
+            align: 'center',
+            verticalAlign: 'middle',
+            style: {
+                fontSize: '16px'
+            }
         }
     };
-  }
+
+    onServerChange(event: any) {
+        console.log('Server change:', event);
+        
+        if (event.current_page !== undefined) {
+            this.currentPage = event.current_page;
+        }
+        
+        if (event.sort_column !== undefined) {
+            this.sortField = event.sort_column;
+            this.sortOrder = event.sort_direction;
+        }
+        
+        if (event.page_size !== undefined) {
+            this.pageSize = event.page_size;
+        }
+        
+        if (event.search !== undefined) {
+            this.search = event.search;
+        }
+        
+        this.loadData();
+    }
+
+    onPageChange(event: any) {
+        console.log('Page changed:', {
+            fromPage: this.currentPage,
+            toPage: event,
+            eventType: typeof event
+        });
+        
+        if (this.currentPage !== event) {
+            this.currentPage = event;
+            this.loadData();
+        }
+    }
+
+    onPageSizeChange(event: any) {
+        console.log('Page size changed:', event);
+        if (this.pageSize !== event) {
+            this.pageSize = event;
+            this.currentPage = 1;
+            this.loadData();
+        }
+    }
+
+    onSortChange(event: any) {
+        console.log('Sort changed:', {
+            column: event.column,
+            direction: event.direction,
+            event: event
+        });
+        
+        this.sortField = event.column;
+        this.sortOrder = event.direction;
+        
+        this.currentPage = 1;
+        this.loadData();
+    }
+
+    onSearchChange(event: any) {
+        console.log('Search changed:', event);
+        if (this.search !== event) {
+            this.search = event;
+            this.currentPage = 1;
+            this.loadData();
+        }
+    }
+}
   

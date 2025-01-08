@@ -105,17 +105,29 @@
                 [rows]="rows"
                 [columns]="cols"
                 [sortable]="true"
+                [loading]="loading"
                 [search]="search"
+                [pagination]="true"
+                [page]="currentPage"
+                [pageSize]="pageSize"
+                [totalRows]="total"
+                [showPageSize]="true"
+                [pageSizeOptions]="[10, 20, 50, 100]"
+                [isServerMode]="true"
+                [showNumbers]="true"
+                [showFirstPage]="true"
+                [showLastPage]="true"
+                (changeServer)="onServerChange($event)"
+                (pageChange)="onPageChange($event)"
+                (pageSizeChange)="onPageSizeChange($event)"
+                (sortChange)="onSortChange($event)"
+                (searchChange)="onSearchChange($event)"
                 skin="whitespace-nowrap table-hover"
-                firstArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M13 19L7 12L13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M16.9998 19L10.9998 12L16.9998 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
-                lastArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M11 19L17 12L11 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M6.99976 19L12.9998 12L6.99976 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg> '
-                previousArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
-                nextArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
             >
-                <ng-template slot="dob" let-value="data"> {{ formatDate(value.dob) }} </ng-template>
-            
+                <ng-template slot="lastUpdateTime" let-value="data">
+                    {{ formatDate(value.lastUpdateTime) }}
+                </ng-template>
             </ng-datatable>
-           
         </div>
     </div>
 </div>
