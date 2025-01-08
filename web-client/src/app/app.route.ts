@@ -55,6 +55,7 @@ import { ReportSchedulerComponent } from './report/report-scheduler/report-sched
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 import { PreviewComponent } from './report/template/preview/preview.component';
+import { ApplicationDnsComponent } from './protocol-analysis/application-protocols/application-dns/application-dns.component';
 
 export const routes: Routes = [
     {
@@ -77,12 +78,7 @@ export const routes: Routes = [
         component: AppLayout,
         canActivate: [authGuard],
         children: [
-            { 
-                path: 'dashboard', 
-                component: DashboardComponent, 
-                data: { title: 'Dashboard' }
-            },
-            { path: 'collector', component: CollectorComponent, data: { title: 'Collector' } },
+            { path: 'dashboard', component: DashboardComponent, data: { title: 'Dashboard' } },
             { path: 'user-management', component: UserManagementComponent, data: { title: 'User Management' } },
             { path: 'role-management', component: RoleManagementComponent, data: { title: 'Role Management' } },
             { path: 'system-time', component: SystemTimeComponent, data: { title: 'System Time' } },
@@ -91,17 +87,10 @@ export const routes: Routes = [
             { path: 'protocol-analysis/application-protocols/http', component: ApplicationHttpComponent, data: { title: 'HTTP' } },
             { path: 'protocol-analysis/application-protocols/smtp', component: ApplicationSmtpComponent, data: { title: 'SMTP' } },
             { path: 'protocol-analysis/application-protocols/ftp', component: ApplicationFtpComponent, data: { title: 'FTP' } },
+            { path: 'protocol-analysis/application-protocols/dns', component: ApplicationDnsComponent, data: { title: 'DNS' } },
             { path: 'protocol-analysis/settings', component: SettingsComponent, data: { title: 'Settings' } },
-            { 
-                path: 'alarm/event', 
-                component: EventComponent, 
-                data: { title: 'Event' }
-            },
-            { 
-                path: 'alarm/settings', 
-                component: AlarmSettingsComponent, 
-                data: { title: 'Alarm Settings' }
-            },
+            { path: 'alarm/event', component: EventComponent, data: { title: 'Event' } },
+            { path: 'alarm/settings', component: AlarmSettingsComponent, data: { title: 'Alarm Settings' } },
             {
                 path: 'threat-management',
                 children: [
@@ -136,20 +125,16 @@ export const routes: Routes = [
                 component: PreviewComponent,
                 data: { standalone: true }
             },
-            { 
-                path: 'asset-book', 
-                component: AssetBookComponent,
-                data: { title: 'Asset Book' }
-            },
-            { 
-                path: 'notification-settings', 
-                component: NotificationSettingsComponent,
-                data: { title: 'Notification Settings' }
-            }
-        ],
+            { path: 'asset-book', component: AssetBookComponent, data: { title: 'Asset Book' } },
+            { path: 'notification-settings', component: NotificationSettingsComponent, data: { title: 'Notification Settings' } }
+        ]
     },
     {
         path: 'standalone/preview/:id',
-        component: PreviewComponent
+        component: PreviewComponent,
+    },
+    {
+        path: '**',
+        redirectTo: 'auth/boxed-signin'
     }
 ];

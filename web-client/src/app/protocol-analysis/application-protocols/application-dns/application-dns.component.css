@@ -1,0 +1,16 @@
+/* 可以为空或添加所需的样式 */ 
+
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+}
+
+.tooltip-container span {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+} 

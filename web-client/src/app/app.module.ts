@@ -72,6 +72,7 @@ import { SessionInfoComponent } from './protocol-analysis/session-info/session-i
 import { ApplicationHttpComponent } from './protocol-analysis/application-protocols/application-http/application-http.component';
 import { ApplicationFtpComponent } from './protocol-analysis/application-protocols/application-ftp/application-ftp.component';
 import { ApplicationSmtpComponent } from './protocol-analysis/application-protocols/application-smtp/application-smtp.component';
+import { ApplicationDnsComponent } from './protocol-analysis/application-protocols/application-dns/application-dns.component';
 import { EventComponent } from './alarm/event/event.component';
 import { AlarmSettingsComponent } from './alarm/alarm-settings/alarm-settings.component';
 import { BasicConfigurationComponent } from './pages/threat-management/basic-configuration/basic-configuration.component';
@@ -141,6 +142,7 @@ import { PreviewModule } from './shared/preview.module';
       ApplicationFtpComponent,
       ApplicationHttpComponent,
       ApplicationSmtpComponent,
+      ApplicationDnsComponent,
       EventComponent,
       AlarmSettingsComponent,
       BasicConfigurationComponent,
