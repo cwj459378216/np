@@ -83,6 +83,7 @@ export const routes: Routes = [
             { path: 'user-management', component: UserManagementComponent, data: { title: 'User Management' } },
             { path: 'role-management', component: RoleManagementComponent, data: { title: 'Role Management' } },
             { path: 'system-time', component: SystemTimeComponent, data: { title: 'System Time' } },
+            { path: 'collector', component: CollectorComponent, data: { title: 'Collector' } },
             { path: 'interface-management', component: InterfaceManagementComponent, data: { title: 'Interface Management' } },
             { path: 'protocol-analysis/session-info', component: SessionInfoComponent, data: { title: 'Session Info' } },
             { path: 'protocol-analysis/application-protocols/http', component: ApplicationHttpComponent, data: { title: 'HTTP' } },
