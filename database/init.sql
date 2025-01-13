@@ -131,7 +131,7 @@ CREATE TABLE users (
 
 -- 插入一些测试数据
 INSERT INTO users (username, password, email, role_id, description, status) VALUES
-('admin', '$2a$10$BqWZyqrZ0Kg3pxqL0q.RXOyYzXbWFM3U8AFZZ6mJywX5/pXNL4rMi', 'admin@example.com', 
+('admin', '$2a$10$46rdxR82sJ7yy1X0kWRaquxwNdwQVu30VmwqSx2VQy006GqbUPb0S', 'admin@example.com', 
  (SELECT id FROM roles WHERE name = 'Administrator'), 'System administrator', true),
 ('operator', '$2a$10$BqWZyqrZ0Kg3pxqL0q.RXOyYzXbWFM3U8AFZZ6mJywX5/pXNL4rMi', 'operator@example.com', 
  (SELECT id FROM roles WHERE name = 'Operator'), 'System operator', true); 

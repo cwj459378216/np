@@ -20,25 +20,22 @@ public class NetworkInterfaceService {
     public List<NetworkInterface> findAll() {
         List<NetworkInterface> interfaces = new ArrayList<>();
         try {
-            // 首先获取物理网卡列表
-            ProcessBuilder pb = new ProcessBuilder("bash", "-c", "ls -l /sys/class/net/ | grep -v virtual");
+            // 获取所有非lo的网络接口
+            ProcessBuilder pb = new ProcessBuilder("bash", "-c", 
+                "ip -o link show | grep -v 'lo:' | cut -d':' -f2 | tr -d ' '");
             Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             
             String line;
-            Pattern physicalIfacePattern = Pattern.compile(".*/([^/]+)$");
-            List<String> physicalInterfaces = new ArrayList<>();
+            List<String> networkInterfaces = new ArrayList<>();
             
             while ((line = reader.readLine()) != null) {
-                Matcher matcher = physicalIfacePattern.matcher(line);
-                if (matcher.find()) {
-                    physicalInterfaces.add(matcher.group(1));
-                }
+                networkInterfaces.add(line.trim());
             }
             reader.close();
             process.waitFor();
 
-            // 然后获取这些物理网卡的详细信息
+            // 然后获取这些网卡的详细信息
             pb = new ProcessBuilder("ip", "addr");
             process = pb.start();
             reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -51,7 +48,7 @@ public class NetworkInterfaceService {
                 Matcher interfaceMatcher = interfacePattern.matcher(line);
                 if (interfaceMatcher.find()) {
                     String ifaceName = interfaceMatcher.group(1);
-                    if (physicalInterfaces.contains(ifaceName)) {
+                    if (networkInterfaces.contains(ifaceName)) {
                         if (currentInterface != null) {
                             interfaces.add(currentInterface);
                         }
