@@ -21,8 +21,10 @@ public class NetworkInterfaceService {
         List<NetworkInterface> interfaces = new ArrayList<>();
         try {
             // 获取所有非lo的网络接口
-            ProcessBuilder pb = new ProcessBuilder("bash", "-c", 
-                "ip -o link show | grep -v 'lo:' | cut -d':' -f2 | tr -d ' '");
+            String command = "ip -o link show | grep -v 'lo:' | cut -d':' -f2 | tr -d ' '";
+            logger.debug("Executing command to get network interfaces: {}", command);
+            
+            ProcessBuilder pb = new ProcessBuilder("bash", "-c", command);
             Process process = pb.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             
@@ -31,11 +33,15 @@ public class NetworkInterfaceService {
             
             while ((line = reader.readLine()) != null) {
                 networkInterfaces.add(line.trim());
+                logger.debug("Found network interface: {}", line.trim());
             }
             reader.close();
             process.waitFor();
+            
+            logger.info("Found {} network interfaces: {}", networkInterfaces.size(), networkInterfaces);
 
             // 然后获取这些网卡的详细信息
+            logger.debug("Executing 'ip addr' to get interface details");
             pb = new ProcessBuilder("ip", "addr");
             process = pb.start();
             reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -45,17 +51,23 @@ public class NetworkInterfaceService {
             Pattern ipPattern = Pattern.compile("\\s+inet (\\d+\\.\\d+\\.\\d+\\.\\d+)/(\\d+)");
             
             while ((line = reader.readLine()) != null) {
+                logger.trace("Processing line: {}", line);
                 Matcher interfaceMatcher = interfacePattern.matcher(line);
                 if (interfaceMatcher.find()) {
                     String ifaceName = interfaceMatcher.group(1);
+                    logger.debug("Found interface in ip addr output: {}", ifaceName);
                     if (networkInterfaces.contains(ifaceName)) {
                         if (currentInterface != null) {
                             interfaces.add(currentInterface);
+                            logger.debug("Added interface to list: {}", currentInterface);
                         }
                         currentInterface = new NetworkInterface();
                         currentInterface.setInterface_name(ifaceName);
-                        currentInterface.setMethod(getInterfaceMethod(ifaceName));
+                        String method = getInterfaceMethod(ifaceName);
+                        currentInterface.setMethod(method);
+                        logger.debug("Created new interface object for {}, method: {}", ifaceName, method);
                     } else {
+                        logger.debug("Skipping interface {} as it's not in our target list", ifaceName);
                         currentInterface = null;
                     }
                 }
@@ -63,19 +75,30 @@ public class NetworkInterfaceService {
                 if (currentInterface != null) {
                     Matcher ipMatcher = ipPattern.matcher(line);
                     if (ipMatcher.find()) {
-                        currentInterface.setIp_address(ipMatcher.group(1));
-                        currentInterface.setNetmask(convertCIDRToNetmask(Integer.parseInt(ipMatcher.group(2))));
-                        currentInterface.setGateway(getGateway(currentInterface.getInterface_name()));
+                        String ipAddress = ipMatcher.group(1);
+                        int cidr = Integer.parseInt(ipMatcher.group(2));
+                        String netmask = convertCIDRToNetmask(cidr);
+                        String gateway = getGateway(currentInterface.getInterface_name());
+                        
+                        currentInterface.setIp_address(ipAddress);
+                        currentInterface.setNetmask(netmask);
+                        currentInterface.setGateway(gateway);
+                        
+                        logger.debug("Interface {} details - IP: {}, Netmask: {}, Gateway: {}", 
+                            currentInterface.getInterface_name(), ipAddress, netmask, gateway);
                     }
                 }
             }
             
             if (currentInterface != null) {
                 interfaces.add(currentInterface);
+                logger.debug("Added final interface to list: {}", currentInterface);
             }
             
             reader.close();
             process.waitFor();
+            
+            logger.info("Successfully found {} network interfaces", interfaces.size());
             
         } catch (Exception e) {
             logger.error("Error getting network interfaces: ", e);
