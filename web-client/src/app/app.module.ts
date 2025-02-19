@@ -69,10 +69,9 @@ import { SystemTimeComponent } from './system-settings/system-time/system-time.c
 import { InterfaceManagementComponent } from './system-settings/interface-management/interface-management.component';
 import { SettingsComponent } from './protocol-analysis/settings/settings.component';
 import { SessionInfoComponent } from './protocol-analysis/session-info/session-info.component';
-import { ApplicationHttpComponent } from './protocol-analysis/application-protocols/application-http/application-http.component';
 import { ApplicationFtpComponent } from './protocol-analysis/application-protocols/application-ftp/application-ftp.component';
 import { ApplicationSmtpComponent } from './protocol-analysis/application-protocols/application-smtp/application-smtp.component';
-import { ApplicationDnsComponent } from './protocol-analysis/application-protocols/application-dns/application-dns.component';
+import { ApplicationSslComponent } from './protocol-analysis/application-protocols/application-ssl/application-ssl.component';
 import { EventComponent } from './alarm/event/event.component';
 import { AlarmSettingsComponent } from './alarm/alarm-settings/alarm-settings.component';
 import { BasicConfigurationComponent } from './pages/threat-management/basic-configuration/basic-configuration.component';
@@ -87,7 +86,6 @@ import { RuleUpdateService } from './services/rule-update.service';
 import { LocalRuleService } from './services/local-rule.service';
 import { SystemTimeService } from './services/system-time.service';
 import { PreviewModule } from './shared/preview.module';
-import { ApplicationSslComponent } from './protocol-analysis/application-protocols/application-ssl/application-ssl.component';
 
 @NgModule({
     imports: [
@@ -111,7 +109,7 @@ import { ApplicationSslComponent } from './protocol-analysis/application-protoco
             echarts: () => import('echarts')
         }),
         PreviewModule,
-        AnalyzeAnimationComponent
+        AnalyzeAnimationComponent,
     ],
     declarations: [	
         AppComponent,
@@ -141,9 +139,7 @@ import { ApplicationSslComponent } from './protocol-analysis/application-protoco
       SettingsComponent,
       SessionInfoComponent,
       ApplicationFtpComponent,
-      ApplicationHttpComponent,
       ApplicationSmtpComponent,
-      ApplicationDnsComponent,
       ApplicationSslComponent,
       EventComponent,
       AlarmSettingsComponent,
@@ -153,8 +149,8 @@ import { ApplicationSslComponent } from './protocol-analysis/application-protoco
       LocalRulesComponent,
       LogComponent,
       AssetBookComponent,
-      NotificationSettingsComponent
-   ],
+      NotificationSettingsComponent,
+    ],
 
     providers: [Title, RulesPolicyService, RuleUpdateService, LocalRuleService, SystemTimeService],
     bootstrap: [AppComponent],

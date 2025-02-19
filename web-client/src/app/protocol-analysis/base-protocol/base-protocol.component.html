@@ -7,13 +7,13 @@
             <span>Application Protocols</span>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>HTTP</span>
+            <span>{{protocolName}}</span>
         </li>
     </ul>
 
     <div class="panel h-full mt-6">
         <div class="mb-5 flex items-center justify-between dark:text-white-light">
-            <h5 class="text-lg font-semibold">HTTP Traffic Trending</h5>
+            <h5 class="text-lg font-semibold">{{protocolName}} Traffic Trending</h5>
             <div class="dropdown ltr:ml-auto rtl:mr-auto">
                 <div hlMenu>
                     <a hlMenuButton href="javascript:;" class="align-middle">
@@ -28,6 +28,9 @@
             </div>
         </div>
         <div class="relative overflow-hidden">
+            <div *ngIf="chartLoading" class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/50 z-10">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
             <apx-chart 
                 [series]="revenueChart.series"
                 [chart]="revenueChart.chart"
@@ -35,19 +38,19 @@
                 [stroke]="revenueChart.stroke"
                 [colors]="revenueChart.colors"
                 [markers]="revenueChart.markers"
-                [labels]="revenueChart.labels"
                 [xaxis]="revenueChart.xaxis"
                 [yaxis]="revenueChart.yaxis"
                 [grid]="revenueChart.grid"
                 [legend]="revenueChart.legend"
                 [tooltip]="revenueChart.tooltip"
                 [fill]="revenueChart.fill"
+                [noData]="revenueChart.noData"
                 class="rounded-lg bg-white dark:bg-black">
             </apx-chart>
         </div>
     </div>
 
-    <div class="pt-5 panel mt-6 pb-0">
+    <div class="panel mt-6">
         <div class="mb-4.5 flex flex-col justify-between gap-5 md:flex-row md:items-center">
             <div class="flex flex-wrap items-center">
                 <button type="button" class="btn btn-primary btn-sm m-1" (click)="exportTable('csv')">
@@ -94,6 +97,7 @@
                         </ng-container>
                     </ul>
                 </div>
+
                 <div>
                     <input [(ngModel)]="search" type="text" class="form-input" placeholder="Search..." />
                 </div>
@@ -127,7 +131,9 @@
                 <ng-template slot="lastUpdateTime" let-value="data">
                     {{ formatDate(value.lastUpdateTime) }}
                 </ng-template>
+                
+                <ng-content></ng-content>
             </ng-datatable>
         </div>
     </div>
-</div>
+</div> 
