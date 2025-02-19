@@ -1,0 +1,1622 @@
+BeginAttr:
+  - keyWord: "ts"
+    keyAlias: "timestamp"
+    keyType: "time"
+    defaultShow: true
+    descrption: "This is the time of the first packet"
+
+  - keyWord: "uid"
+    keyAlias: "id"
+    keyType: "string"
+    descrption: "A unique identifier of the connection"
+
+  - keyWord: "id.orig_h"
+    keyAlias: "srcIP"
+    keyType: "ip"
+    defaultShow: true
+    descrption: "source ip address"
+
+  - keyWord: "id.orig_p"
+    keyAlias: "srcPort"
+    keyType: "uint32"
+    defaultShow: true
+    descrption: "source port number"
+
+  - keyWord: "id.resp_h"
+    keyAlias: "dstIp"
+    keyType: "ip"
+    descrption: "destination ip address"
+
+  - keyWord: "id.resp_p"
+    keyAlias: "dstPort"
+    keyType: "uint32"
+    defaultShow: true
+    descrption: "destination port number"
+
+EndAttr:
+  - keyWord: "file_path"
+    keyAlias: "filePath"
+    keyType: "string"
+    descrption: "data source"
+
+  - keyWord: "ch_id"
+    extended: true
+    keyAlias: "channelId"
+    keyType: "uint32"
+    descrption: "channel id"
+
+Zeek:
+  - logName: "conn"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "proto"
+        keyAlias: "protoName"
+        keyType: "string"
+        defaultShow: true
+        descrption: "The transport layer protocol of the connection"
+      - keyWord: "service"
+        keyAlias: "serviceName"
+        keyType: "string"
+        defaultShow: true
+        descrption: "An identification of an application protocol being sent over the connection"
+      - keyWord: "duration"
+        keyAlias: "connDuration"
+        keyType: "float"
+        defaultShow: true
+        descrption: "How long the connection lasted.unit:second"
+      - keyWord: "orig_bytes"
+        keyAlias: "origBytes"
+        keyType: "uint64"
+        descrption: "The number of payload bytes the originator sent. For TCP this is taken from sequence numbers and might be inaccurate"
+      - keyWord: "resp_bytes"
+        keyAlias: "respBytes"
+        keyType: "uint64"
+        descrption: "The number of payload bytes the responder sent"
+      - keyWord: "conn_state"
+        keyAlias: "connState"
+        keyType: "string"
+        defaultShow: true
+        descrption: "S0: Connection attempt seen, no reply;S1: Connection established, not terminated;SF: Normal establishment and termination. Note that this is the same symbol as for state S1. You can tell the two apart because for S1 there will not be any byte counts in the summary, while for SF there will be;REJ: Connection attempt rejected;S2: Connection established and close attempt by originator seen (but no reply from responder);S3: Connection established and close attempt by responder seen (but no reply from originator);RSTO: Connection established, originator aborted (sent a RST);RSTR: Responder sent a RST;RSTOS0: Originator sent a SYN followed by a RST, we never saw a SYN-ACK from the responder;RSTRH: Responder sent a SYN ACK followed by a RST, we never saw a SYN from the (purported) originator;SH: Originator sent a SYN followed by a FIN, we never saw a SYN ACK from the responder (hence the connection was “half” open);SHR: Responder sent a SYN ACK followed by a FIN, we never saw a SYN from the originator;OTH: No SYN seen, just midstream traffic (one example of this is a “partial connection” that was not later closed"
+      - keyWord: "local_orig"
+        keyAlias: "localOrig"
+        keyType: "bool"
+        descrption: "If the connection is originated locally, this value will be T. If it was originated remotely it will be F"
+      - keyWord: "local_resp"
+        keyAlias: "localResp"
+        keyType: "bool"
+        descrption: "If the connection is responded to locally, this value will be T. If it was responded to remotely it will be F"
+      - keyWord: "missed_bytes"
+        keyAlias: "missedBytes"
+        keyType: "uint64"
+        descrption: "Indicates the number of bytes missed in content gaps, which is representative of packet loss. A value other than zero will normally cause protocol analysis to fail but some analysis may have been completed prior to the packet loss"
+      - keyWord: "history"
+        keyAlias: "connHistory"
+        keyType: "string"
+        descrption: "Records the state history of connections as a string of letters"
+      - keyWord: "orig_pkts"
+        keyAlias: "origPkts"
+        keyType: "uint64"
+        defaultShow: true
+        descrption: "Number of packets that the originator sent"
+      - keyWord: "orig_ip_bytes"
+        keyAlias: "origIpBytes"
+        keyType: "uint64"
+        defaultShow: true
+        descrption: "Number of IP level bytes that the originator sent"
+      - keyWord: "resp_pkts"
+        keyAlias: "respPkts"
+        keyType: "uint64"
+        defaultShow: true
+        descrption: "Number of packets that the responder sent"
+      - keyWord: "resp_ip_bytes"
+        keyAlias: "respIpBytes"
+        keyType: "uint64"
+        defaultShow: true
+        descrption: "Number of IP level bytes that the responder sent"
+      - keyWord: "tunnel_parents"
+        keyAlias: "tunnelParents"
+        keyType: "string"
+        descrption: "If this connection was over a tunnel, indicate the uid values for any encapsulating parent connections used over the lifetime of this inner connection"
+      - keyWord: "orig_l2_addr"
+        keyAlias: "origL2Addr"
+        keyType: "string"
+        descrption: "Link-layer address of the originator"
+      - keyWord: "resp_l2_addr"
+        keyAlias: "respL2Addr"
+        keyType: "string"
+        descrption: "Link-layer address of the responder"
+      - keyWord: "vlan"
+        keyAlias: "vlanId"
+        keyType: "uint32"
+        descrption: "The outer VLAN for this connection"
+      - keyWord: "inner_vlan"
+        keyAlias: "innerVlanId"
+        keyType: "uint32"
+        descrption: "The inner VLAN for this connection"
+
+  - logName: "http"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "trans_depth"
+        keyAlias: "transDepth"
+        keyType: "uint32"
+        descrption: "Represents the pipelined depth into the connection of this request/response transaction"
+      - keyWord: "method"
+        keyAlias: "reqMethod"
+        keyType: "string"
+        descrption: "Verb used in the HTTP request (GET, POST, HEAD, etc.)."
+      - keyWord: "host"
+        keyAlias: "host"
+        keyType: "string"
+        descrption: "Value of the HOST header."
+      - keyWord: "uri"
+        keyAlias: "URI"
+        keyType: "string"
+        descrption: "URI used in the request"
+      - keyWord: "referrer"
+        keyAlias: "referrer"
+        keyType: "string"
+        descrption: "Value of the “referer” header. The comment is deliberately misspelled like the standard declares, but the name used here is “referrer”, spelled correctly"
+      - keyWord: "version"
+        keyAlias: "verNumber"
+        keyType: "string"
+        descrption: "Value of the version portion of the reply"
+      - keyWord: "user_agent"
+        keyAlias: "userAgent"
+        keyType: "string"
+        descrption: "Value of the User-Agent header from the client"
+
+      - keyWord: "request_body_len"
+        keyAlias: "requestBodyLen"
+        keyType: "uint32"
+        description: "Actual uncompressed content size of the data transferred from the client."
+
+      - keyWord: "response_body_len"
+        keyAlias: "responseBodyLen"
+        keyType: "uint32"
+        description: "Actual uncompressed content size of the data transferred from the server."
+
+      - keyWord: "status_code"
+        keyAlias: "statusCode"
+        keyType: "uint32"
+        description: "Status code returned by the server."
+
+      - keyWord: "status_msg"
+        keyAlias: "statusMsg"
+        keyType: "string"
+        description: "Status message returned by the server."
+
+      - keyWord: "info_code"
+        keyAlias: "infoCode"
+        keyType: "uint32"
+        description: "Last seen 1xx informational reply code returned by the server."
+
+      - keyWord: "info_msg"
+        keyAlias: "infoMsg"
+        keyType: "string"
+        description: "Last seen 1xx informational reply message returned by the server."
+
+      - keyWord: "tags"
+        keyAlias: "tags"
+        keyType: "string"
+        description: "A set of indicators of various attributes discovered and related to a particular request/response pair."
+
+      - keyWord: "username"
+        keyAlias: "username"
+        keyType: "string"
+        description: "Username if basic-auth is performed for the request."
+
+      - keyWord: "password"
+        keyAlias: "password"
+        keyType: "string"
+        description: "Password if basic-auth is performed for the request."
+
+      - keyWord: "capture_password"
+        keyAlias: "capturePassword"
+        keyType: "bool"
+        description: "Determines if the password will be captured for this request."
+
+      - keyWord: "proxied"
+        keyAlias: "proxied"
+        keyType: "string"
+        description: "All of the headers that may indicate if the request was proxied."
+
+      - keyWord: "range_request"
+        keyAlias: "rangeRequest"
+        keyType: "bool"
+        description: "Indicates if this request can assume 206 partial content in response."
+
+      - keyWord: "file_path"
+        keyAlias: "filePath"
+        keyType: "string"
+        descrption: "data source"
+
+      - keyWord: "ch_id"
+        keyAlias: "channelId"
+        keyType: "uint32"
+        descrption: "channel id"
+
+  - logName: "dns"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "proto"
+        keyAlias: "proto"
+        keyType: "string"
+        description: "The transport layer protocol of the connection."
+
+      - keyWord: "trans_id"
+        keyAlias: "transId"
+        keyType: "uint32"
+        description: "A 16-bit identifier assigned by the program that generated the DNS query. Also used in responses to match up replies to outstanding queries."
+
+      - keyWord: "rtt"
+        keyAlias: "rtt"
+        keyType: "float"
+        description: "Round trip time for the query and response. This indicates the delay between when the request was seen until the answer started."
+
+      - keyWord: "query"
+        keyAlias: "query"
+        keyType: "string"
+        description: "The domain name that is the subject of the DNS query."
+
+      - keyWord: "qclass"
+        keyAlias: "qclass"
+        keyType: "uint32"
+        description: "The QCLASS value specifying the class of the query."
+
+      - keyWord: "qclass_name"
+        keyAlias: "qclassName"
+        keyType: "string"
+        description: "A descriptive name for the class of the query."
+
+      - keyWord: "qtype"
+        keyAlias: "qtype"
+        keyType: "uint32"
+        description: "A QTYPE value specifying the type of the query."
+
+      - keyWord: "qtype_name"
+        keyAlias: "qtypeName"
+        keyType: "string"
+        description: "A descriptive name for the type of the query."
+
+      - keyWord: "rcode"
+        keyAlias: "rcode"
+        keyType: "uint32"
+        description: "The response code value in DNS response messages."
+
+      - keyWord: "rcode_name"
+        keyAlias: "rcodeName"
+        keyType: "string"
+        description: "A descriptive name for the response code value."
+
+      - keyWord: "AA"
+        keyAlias: "AA"
+        keyType: "bool"
+        description: "The Authoritative Answer bit for response messages specifies that the responding name server is an authority for the domain name in the question section."
+
+      - keyWord: "TC"
+        keyAlias: "TC"
+        keyType: "bool"
+        description: "The Truncation bit specifies that the message was truncated."
+
+      - keyWord: "RD"
+        keyAlias: "RD"
+        keyType: "bool"
+        description: "The Recursion Desired bit in a request message indicates that the client wants recursive service for this query."
+
+      - keyWord: "RA"
+        keyAlias: "RA"
+        keyType: "bool"
+        description: "The Recursion Available bit in a response message indicates that the name server supports recursive queries."
+
+      - keyWord: "Z"
+        keyAlias: "Z"
+        keyType: "uint32"
+        description: "A reserved field that is zero in queries and responses unless using DNSSEC. This field represents the 3-bit Z field using the specification from RFC 1035."
+
+      - keyWord: "answers"
+        keyAlias: "answers"
+        keyType: "string"
+        description: "The set of resource descriptions in the query answer."
+
+      - keyWord: "TTLs"
+        keyAlias: "TTLs"
+        keyType: "string"
+        description: "The caching intervals of the associated RRs described by the answers field."
+
+      - keyWord: "rejected"
+        keyAlias: "rejected"
+        keyType: "bool"
+        description: "The DNS query was rejected by the server."
+
+      - keyWord: "total_answers"
+        keyAlias: "totalAnswers"
+        keyType: "uint32"
+        description: "The total number of resource records in a reply message’s answer section."
+
+      - keyWord: "total_replies"
+        keyAlias: "totalReplies"
+        keyType: "uint32"
+        description: "The total number of resource records in a reply message’s answer, authority, and additional sections."
+
+      - keyWord: "saw_query"
+        keyAlias: "sawQuery"
+        keyType: "bool"
+        description: "Whether the full DNS query has been seen."
+
+      - keyWord: "saw_reply"
+        keyAlias: "sawReply"
+        keyType: "bool"
+        description: "Whether the full DNS reply has been seen."
+
+  - logName: "dce_rpc"
+    needBeginAttr: false
+    needEndAttr: true
+    attribute:
+      - keyWord: "ts"
+        keyAlias: "timestamp"
+        keyType: "time"
+        defaultShow: true
+        descrption: "This is the time of the first packet"
+      - keyWord: "uid"
+        keyAlias: "id"
+        keyType: "string"
+        descrption: "A unique identifier of the connection"
+      - keyWord: "rtt"
+        keyAlias: "rtt"
+        keyType: "float"
+        description: "Round trip time from the request to the response. If either the request or response wasn’t seen, this will be null."
+
+      - keyWord: "named_pipe"
+        keyAlias: "namedPipe"
+        keyType: "string"
+        description: "Remote pipe name."
+
+      - keyWord: "endpoint"
+        keyAlias: "endpoint"
+        keyType: "string"
+        description: "Endpoint name looked up from the uuid."
+
+      - keyWord: "operation"
+        keyAlias: "operation"
+        keyType: "string"
+        description: "Operation seen in the call."
+  
+  - logName: "dhcp"
+    needBeginAttr: false
+    needEndAttr: true
+    attribute:
+      - keyWord: "ts"
+        keyAlias: "timestamp"
+        keyType: "time"
+        defaultShow: true
+        descrption: "This is the time of the first packet"
+
+      - keyWord: "uid"
+        keyAlias: "id"
+        keyType: "string"
+        descrption: "A unique identifier of the connection"
+
+      - keyWord: "client_addr"
+        keyAlias: "clientAddr"
+        keyType: "ip"
+        description: "IP address of the client. If a transaction is only a client sending INFORM messages then there is no lease information exchanged so this is helpful to know who sent the messages. Getting an address in this field does require that the client sources at least one DHCP message using a non-broadcast address."
+
+      - keyWord: "server_addr"
+        keyAlias: "serverAddr"
+        keyType: "ip"
+        description: "IP address of the server involved in actually handing out the lease. There could be other servers replying with OFFER messages which won’t be represented here. Getting an address in this field also requires that the server handing out the lease also sources packets from a non-broadcast IP address."
+
+      - keyWord: "client_port"
+        keyAlias: "clientPort"
+        keyType: "uint32"
+        description: "Client port number seen at time of server handing out IP (expected as 68/udp)."
+
+      - keyWord: "server_port"
+        keyAlias: "serverPort"
+        keyType: "uint32"
+        description: "Server port number seen at time of server handing out IP (expected as 67/udp)."
+
+      - keyWord: "mac"
+        keyAlias: "mac"
+        keyType: "string"
+        description: "Client’s hardware address."
+
+      - keyWord: "host_name"
+        keyAlias: "hostName"
+        keyType: "string"
+        description: "Name given by client in Hostname option 12."
+
+      - keyWord: "client_fqdn"
+        keyAlias: "clientFqdn"
+        keyType: "string"
+        description: "FQDN given by client in Client FQDN option 81."
+
+      - keyWord: "domain"
+        keyAlias: "domain"
+        keyType: "string"
+        description: "Domain given by the server in option 15."
+
+      - keyWord: "requested_addr"
+        keyAlias: "requestedAddr"
+        keyType: "ip"
+        description: "IP address requested by the client."
+
+      - keyWord: "assigned_addr"
+        keyAlias: "assignedAddr"
+        keyType: "ip"
+        description: "IP address assigned by the server."
+
+      - keyWord: "lease_time"
+        keyAlias: "leaseTime"
+        keyType: "float"
+        description: "IP address lease interval."
+
+      - keyWord: "client_message"
+        keyAlias: "clientMessage"
+        keyType: "string"
+        description: "Message typically accompanied with a DHCP_DECLINE so the client can tell the server why it rejected an address."
+
+      - keyWord: "server_message"
+        keyAlias: "serverMessage"
+        keyType: "string"
+        description: "Message typically accompanied with a DHCP_NAK to let the client know why it rejected the request."
+
+      - keyWord: "msg_types"
+        keyAlias: "msgTypes"
+        keyType: "string"
+        description: "The DHCP message types seen by this DHCP transaction."
+
+      - keyWord: "duration"
+        keyAlias: "duration"
+        keyType: "float"
+        description: "Duration of the DHCP 'session' representing the time from the first message to the last."
+
+      - keyWord: "client_chaddr"
+        keyAlias: "clientChaddr"
+        keyType: "string"
+        description: "The CHADDR field sent by the client."
+
+      - keyWord: "last_message_ts"
+        keyAlias: "lastMessageTs"
+        keyType: "time"
+        description: "Timestamp of the last message in the DHCP transaction."
+  
+  - logName: "dnp3"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "fc_request"
+        keyAlias: "fcRequest"
+        keyType: "string"
+        description: "The name of the function message in the request."
+
+      - keyWord: "fc_reply"
+        keyAlias: "fcReply"
+        keyType: "string"
+        description: "The name of the function message in the reply."
+
+      - keyWord: "iin"
+        keyAlias: "iin"
+        keyType: "uint64"
+        description: "The response’s “internal indication number”."
+
+  - logName: "ftp"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "user"
+        keyAlias: "user"
+        keyType: "string"
+        description: "User name for the current FTP session."
+
+      - keyWord: "password"
+        keyAlias: "password"
+        keyType: "string"
+        description: "Password for the current FTP session if captured."
+
+      - keyWord: "command"
+        keyAlias: "command"
+        keyType: "string"
+        description: "Command given by the client."
+
+      - keyWord: "arg"
+        keyAlias: "arg"
+        keyType: "string"
+        description: "Argument for the command if one is given."
+
+      - keyWord: "mime_type"
+        keyAlias: "mimeType"
+        keyType: "string"
+        description: "Sniffed mime type of file."
+
+      - keyWord: "file_size"
+        keyAlias: "fileSize"
+        keyType: "uint64"
+        description: "Size of the file if the command indicates a file transfer."
+
+      - keyWord: "reply_code"
+        keyAlias: "replyCode"
+        keyType: "uint64"
+        description: "Reply code from the server in response to the command."
+
+      - keyWord: "reply_msg"
+        keyAlias: "replyMsg"
+        keyType: "string"
+        description: "Reply message from the server in response to the command."
+
+      - keyWord: "data_channel"
+        keyAlias: "dataChannel"
+        keyType: "string"
+        description: "Expected FTP data channel."
+
+      - keyWord: "cwd"
+        keyAlias: "cwd"
+        keyType: "string"
+        description: "Current working directory that this session is in. By making the default value ‘.’, we can indicate that unless something more concrete is discovered that the existing but unknown directory is ok to use."
+
+      - keyWord: "cmdarg"
+        keyAlias: "cmdarg"
+        keyType: "string"
+        description: "Command that is currently waiting for a response."
+
+      - keyWord: "pending_commands"
+        keyAlias: "pendingCommands"
+        keyType: "string"
+        description: "Queue for commands that have been sent but not yet responded to are tracked here."
+
+      - keyWord: "command_seq"
+        keyAlias: "commandSeq"
+        keyType: "uint64"
+        description: "Sequence number of previous command."
+
+      - keyWord: "passive"
+        keyAlias: "passive"
+        keyType: "bool"
+        description: "Indicates if the session is in active or passive mode."
+
+      - keyWord: "capture_password"
+        keyAlias: "capturePassword"
+        keyType: "bool"
+        description: "Determines if the password will be captured for this request."
+
+  - logName: "irc"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "nick"
+        keyAlias: "nick"
+        keyType: "string"
+        description: "Nickname given for the connection."
+
+      - keyWord: "user"
+        keyAlias: "user"
+        keyType: "string"
+        description: "Username given for the connection."
+
+      - keyWord: "command"
+        keyAlias: "command"
+        keyType: "string"
+        description: "Command given by the client."
+
+      - keyWord: "value"
+        keyAlias: "value"
+        keyType: "string"
+        description: "Value for the command given by the client."
+
+      - keyWord: "addl"
+        keyAlias: "addl"
+        keyType: "string"
+        description: "Any additional data for the command."
+
+  - logName: "kerberos"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "request_type"
+        keyAlias: "requestType"
+        keyType: "string"
+        description: "Request type - Authentication Service (“AS”) or Ticket Granting Service (“TGS”)"
+
+      - keyWord: "client"
+        keyAlias: "client"
+        keyType: "string"
+        description: "Client"
+
+      - keyWord: "service"
+        keyAlias: "service"
+        keyType: "string"
+        description: "Service"
+
+      - keyWord: "success"
+        keyAlias: "success"
+        keyType: "bool"
+        description: "Request result"
+
+      - keyWord: "error_code"
+        keyAlias: "errorCode"
+        keyType: "uint64"
+        description: "Error code"
+
+      - keyWord: "error_msg"
+        keyAlias: "errorMsg"
+        keyType: "string"
+        description: "Error message"
+
+      - keyWord: "from"
+        keyAlias: "from"
+        keyType: "time"
+        description: "Ticket valid from"
+
+      - keyWord: "till"
+        keyAlias: "till"
+        keyType: "time"
+        description: "Ticket valid till"
+
+      - keyWord: "cipher"
+        keyAlias: "cipher"
+        keyType: "string"
+        description: "Ticket encryption type"
+
+      - keyWord: "forwardable"
+        keyAlias: "forwardable"
+        keyType: "bool"
+        description: "Forwardable ticket requested"
+
+      - keyWord: "renewable"
+        keyAlias: "renewable"
+        keyType: "bool"
+        description: "Renewable ticket requested"
+
+      - keyWord: "logged"
+        keyAlias: "logged"
+        keyType: "bool"
+        description: "We’ve already logged this"
+
+  - logName: "modbus"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "tid"
+        keyAlias: "tid"
+        keyType: "uint64"
+        description: "Modbus transaction ID"
+
+      - keyWord: "unit"
+        keyAlias: "unit"
+        keyType: "uint64"
+        description: "The terminal unit identifier for the message"
+
+      - keyWord: "func"
+        keyAlias: "func"
+        keyType: "string"
+        description: "The name of the function message that was sent."
+
+      - keyWord: "pdu_type"
+        keyAlias: "pduType"
+        keyType: "string"
+        description: "Whether this PDU was a response (“RESP”) or request (“REQ”)"
+
+      - keyWord: "exception"
+        keyAlias: "exception"
+        keyType: "string"
+        description: "The exception if the response was a failure."
+        
+  - logName: "mysql"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "cmd"
+        keyAlias: "cmd"
+        keyType: "string"
+        description: "The command that was issued"
+
+      - keyWord: "arg"
+        keyAlias: "arg"
+        keyType: "string"
+        description: "The argument issued to the command"
+
+      - keyWord: "success"
+        keyAlias: "success"
+        keyType: "bool"
+        description: "Did the server tell us that the command succeeded?"
+
+      - keyWord: "rows"
+        keyAlias: "rows"
+        keyType: "uint64"
+        description: "The number of affected rows, if any"
+
+      - keyWord: "response"
+        keyAlias: "response"
+        keyType: "string"
+        description: "Server message, if any"
+  
+  - logName: "ntm"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "username"
+        keyAlias: "username"
+        keyType: "string"
+        description: "Username given by the client."
+
+      - keyWord: "hostname"
+        keyAlias: "hostname"
+        keyType: "string"
+        description: "Hostname given by the client."
+
+      - keyWord: "domainname"
+        keyAlias: "domainname"
+        keyType: "string"
+        description: "Domainname given by the client."
+
+      - keyWord: "server_nb_computer_name"
+        keyAlias: "serverNbComputerName"
+        keyType: "string"
+        description: "NetBIOS name given by the server in a CHALLENGE."
+
+      - keyWord: "server_dns_computer_name"
+        keyAlias: "serverDnsComputerName"
+        keyType: "string"
+        description: "DNS name given by the server in a CHALLENGE."
+
+      - keyWord: "server_tree_name"
+        keyAlias: "serverTreeName"
+        keyType: "string"
+        description: "Tree name given by the server in a CHALLENGE."
+
+      - keyWord: "success"
+        keyAlias: "success"
+        keyType: "bool"
+        description: "Indicate whether or not the authentication was successful."
+
+      - keyWord: "done"
+        keyAlias: "done"
+        keyType: "bool"
+        description: "Internally used field to indicate if the login attempt has already been logged."
+
+  - logName: "radius"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "username"
+        keyAlias: "username"
+        keyType: "string"
+        description: "The username, if present."
+
+      - keyWord: "mac"
+        keyAlias: "mac"
+        keyType: "string"
+        description: "MAC address, if present."
+
+      - keyWord: "framed_addr"
+        keyAlias: "framedAddr"
+        keyType: "ip"
+        description: "The address given to the network access server, if present. This is only a hint from the RADIUS server and the network access server is not required to honor the address."
+
+      - keyWord: "tunnel_client"
+        keyAlias: "tunnelClient"
+        keyType: "string"
+        description: "Address (IPv4, IPv6, or FQDN) of the initiator end of the tunnel, if present. This is collected from the Tunnel-Client-Endpoint attribute."
+
+      - keyWord: "connect_info"
+        keyAlias: "connectInfo"
+        keyType: "string"
+        description: "Connect info, if present."
+
+      - keyWord: "reply_msg"
+        keyAlias: "replyMsg"
+        keyType: "string"
+        description: "Reply message from the server challenge. This is frequently shown to the user authenticating."
+
+      - keyWord: "result"
+        keyAlias: "result"
+        keyType: "string"
+        description: "Successful or failed authentication."
+
+      - keyWord: "ttl"
+        keyAlias: "ttl"
+        keyType: "float"
+        description: "The duration between the first request and either the “Access-Accept” message or an error. If the field is empty, it means that either the request or response was not seen."
+
+      - keyWord: "logged"
+        keyAlias: "logged"
+        keyType: "bool"
+        description: "Whether this has already been logged and can be ignored."
+
+  - logName: "rdp"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "cookie"
+        keyAlias: "cookie"
+        keyType: "string"
+        description: "Cookie value used by the client machine. This is typically a username."
+
+      - keyWord: "result"
+        keyAlias: "result"
+        keyType: "string"
+        description: "Status result for the connection. It’s a mix between RDP negotiation failure messages and GCC server create response messages."
+
+      - keyWord: "security_protocol"
+        keyAlias: "securityProtocol"
+        keyType: "string"
+        description: "Security protocol chosen by the server."
+
+      - keyWord: "client_channels"
+        keyAlias: "clientChannels"
+        keyType: "string"
+        description: "The channels requested by the client"
+
+      - keyWord: "keyboard_layout"
+        keyAlias: "keyboardLayout"
+        keyType: "string"
+        description: "Keyboard layout (language) of the client machine."
+
+      - keyWord: "client_build"
+        keyAlias: "clientBuild"
+        keyType: "string"
+        description: "RDP client version used by the client machine."
+
+      - keyWord: "client_name"
+        keyAlias: "clientName"
+        keyType: "string"
+        description: "Name of the client machine."
+
+      - keyWord: "client_dig_product_id"
+        keyAlias: "clientDigProductId"
+        keyType: "string"
+        description: "Product ID of the client machine."
+
+      - keyWord: "desktop_width"
+        keyAlias: "desktopWidth"
+        keyType: "uint64"
+        description: "Desktop width of the client machine."
+
+      - keyWord: "desktop_height"
+        keyAlias: "desktopHeight"
+        keyType: "uint64"
+        description: "Desktop height of the client machine."
+
+      - keyWord: "requested_color_depth"
+        keyAlias: "requestedColorDepth"
+        keyType: "string"
+        description: "The color depth requested by the client in the high_color_depth field."
+
+      - keyWord: "cert_type"
+        keyAlias: "certType"
+        keyType: "string"
+        description: "If the connection is being encrypted with native RDP encryption, this is the type of cert being used."
+
+      - keyWord: "cert_count"
+        keyAlias: "certCount"
+        keyType: "uint64"
+        description: "The number of certs seen. X.509 can transfer an entire certificate chain."
+
+      - keyWord: "cert_permanent"
+        keyAlias: "certPermanent"
+        keyType: "bool"
+        description: "Indicates if the provided certificate or certificate chain is permanent or temporary."
+
+      - keyWord: "encryption_level"
+        keyAlias: "encryptionLevel"
+        keyType: "string"
+        description: "Encryption level of the connection."
+
+      - keyWord: "encryption_method"
+        keyAlias: "encryptionMethod"
+        keyType: "string"
+        description: "Encryption method of the connection."
+
+      - keyWord: "analyzer_id"
+        keyAlias: "analyzerId"
+        keyType: "uint64"
+        description: "The analyzer ID used for the analyzer instance attached to each connection. It is not used for logging since it’s a meaningless arbitrary number."
+
+      - keyWord: "done"
+        keyAlias: "done"
+        keyType: "bool"
+        description: "Track status of logging RDP connections."
+
+  - logName: "rfb"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "client_major_version"
+        keyAlias: "clientMajorVersion"
+        keyType: "string"
+        description: "Major version of the client."
+
+      - keyWord: "client_minor_version"
+        keyAlias: "clientMinorVersion"
+        keyType: "string"
+        description: "Minor version of the client."
+
+      - keyWord: "server_major_version"
+        keyAlias: "serverMajorVersion"
+        keyType: "string"
+        description: "Major version of the server."
+
+      - keyWord: "server_minor_version"
+        keyAlias: "serverMinorVersion"
+        keyType: "string"
+        description: "Minor version of the server."
+
+      - keyWord: "authentication_method"
+        keyAlias: "authenticationMethod"
+        keyType: "string"
+        description: "Identifier of authentication method used."
+
+      - keyWord: "auth"
+        keyAlias: "auth"
+        keyType: "bool"
+        description: "Whether or not authentication was successful."
+
+      - keyWord: "share_flag"
+        keyAlias: "shareFlag"
+        keyType: "bool"
+        description: "Whether the client has an exclusive or a shared session."
+
+      - keyWord: "desktop_name"
+        keyAlias: "desktopName"
+        keyType: "string"
+        description: "Name of the screen that is being shared."
+
+      - keyWord: "width"
+        keyAlias: "width"
+        keyType: "uint64"
+        description: "Width of the screen that is being shared."
+
+      - keyWord: "height"
+        keyAlias: "height"
+        keyType: "uint64"
+        description: "Height of the screen that is being shared."
+
+      - keyWord: "done"
+        keyAlias: "done"
+        keyType: "bool"
+        description: "Internally used value to determine if this connection has already been logged."
+
+  - logName: "sip"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "trans_depth"
+        keyAlias: "transDepth"
+        keyType: "uint64"
+        description: "Represents the pipelined depth into the connection of this request/response transaction."
+
+      - keyWord: "method"
+        keyAlias: "method"
+        keyType: "string"
+        description: "Verb used in the SIP request (INVITE, REGISTER etc.)."
+
+      - keyWord: "uri"
+        keyAlias: "uri"
+        keyType: "string"
+        description: "URI used in the request."
+
+      - keyWord: "date"
+        keyAlias: "date"
+        keyType: "string"
+        description: "Contents of the Date: header from the client."
+
+      - keyWord: "request_from"
+        keyAlias: "requestFrom"
+        keyType: "string"
+        description: "Contents of the request From: header Note: The tag= value that’s usually appended to the sender is stripped off and not logged."
+
+      - keyWord: "request_to"
+        keyAlias: "requestTo"
+        keyType: "string"
+        description: "Contents of the To: header."
+
+      - keyWord: "response_from"
+        keyAlias: "responseFrom"
+        keyType: "string"
+        description: "Contents of the response From: header Note: The tag= value that’s usually appended to the sender is stripped off and not logged."
+
+      - keyWord: "response_to"
+        keyAlias: "responseTo"
+        keyType: "string"
+        description: "Contents of the response To: header."
+
+      - keyWord: "reply_to"
+        keyAlias: "replyTo"
+        keyType: "string"
+        description: "Contents of the Reply-To: header."
+
+      - keyWord: "call_id"
+        keyAlias: "callId"
+        keyType: "string"
+        description: "Contents of the Call-ID: header from the client."
+
+      - keyWord: "seq"
+        keyAlias: "seq"
+        keyType: "string"
+        description: "Contents of the CSeq: header from the client."
+
+      - keyWord: "subject"
+        keyAlias: "subject"
+        keyType: "string"
+        description: "Contents of the Subject: header from the client."
+
+      - keyWord: "request_path"
+        keyAlias: "requestPath"
+        keyType: "string"
+        description: "The client message transmission path, as extracted from the headers."
+
+      - keyWord: "response_path"
+        keyAlias: "responsePath"
+        keyType: "string"
+        description: "The server message transmission path, as extracted from the headers."
+
+      - keyWord: "user_agent"
+        keyAlias: "userAgent"
+        keyType: "string"
+        description: "Contents of the User-Agent: header from the client."
+
+      - keyWord: "status_code"
+        keyAlias: "statusCode"
+        keyType: "uint64"
+        description: "Status code returned by the server."
+
+      - keyWord: "status_msg"
+        keyAlias: "statusMsg"
+        keyType: "string"
+        description: "Status message returned by the server."
+
+      - keyWord: "warning"
+        keyAlias: "warning"
+        keyType: "string"
+        description: "Contents of the Warning: header."
+
+      - keyWord: "request_body_len"
+        keyAlias: "requestBodyLen"
+        keyType: "uint64"
+        description: "Contents of the Content-Length: header from the client."
+
+      - keyWord: "response_body_len"
+        keyAlias: "responseBodyLen"
+        keyType: "uint64"
+        description: "Contents of the Content-Length: header from the server."
+
+      - keyWord: "content_type"
+        keyAlias: "contentType"
+        keyType: "string"
+        description: "Contents of the Content-Type: header from the server."
+
+  - logName: "smb_cmd"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "command"
+        keyAlias: "command"
+        keyType: "string"
+        description: "The command sent by the client."
+
+      - keyWord: "sub_command"
+        keyAlias: "subCommand"
+        keyType: "string"
+        description: "The subcommand sent by the client, if present."
+
+      - keyWord: "argument"
+        keyAlias: "argument"
+        keyType: "string"
+        description: "Command argument sent by the client, if any."
+
+      - keyWord: "status"
+        keyAlias: "status"
+        keyType: "string"
+        description: "Server reply to the client’s command."
+
+      - keyWord: "rtt"
+        keyAlias: "rtt"
+        keyType: "float"
+        description: "Round trip time from the request to the response."
+
+      - keyWord: "version"
+        keyAlias: "version"
+        keyType: "string"
+        description: "Version of SMB for the command."
+
+      - keyWord: "username"
+        keyAlias: "username"
+        keyType: "string"
+        description: "Authenticated username, if available."
+
+      - keyWord: "tree"
+        keyAlias: "tree"
+        keyType: "string"
+        description: "If this is related to a tree, this is the tree that was used for the current command."
+
+      - keyWord: "tree_service"
+        keyAlias: "treeService"
+        keyType: "string"
+        description: "The type of tree (disk share, printer share, named pipe, etc.)."
+
+      - keyWord: "referenced_file"
+        keyAlias: "referencedFile"
+        keyType: "string"
+        description: "If the command referenced a file, store it here."
+
+      - keyWord: "referenced_tree"
+        keyAlias: "referencedTree"
+        keyType: "string"
+        description: "If the command referenced a tree, store it here."
+
+
+  - logName: "smb_files"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "fuid"
+        keyAlias: "fuid"
+        keyType: "string"
+        description: "Unique ID of the file."
+
+      - keyWord: "action"
+        keyAlias: "action"
+        keyType: "string"
+        description: "Action this log record represents."
+
+      - keyWord: "path"
+        keyAlias: "path"
+        keyType: "string"
+        description: "Path pulled from the tree this file was transferred to or from."
+
+      - keyWord: "name"
+        keyAlias: "name"
+        keyType: "string"
+        description: "Filename if one was seen."
+
+      - keyWord: "size"
+        keyAlias: "size"
+        keyType: "uint64"
+        description: "Total size of the file."
+
+      - keyWord: "prev_name"
+        keyAlias: "prevName"
+        keyType: "string"
+        description: "If the rename action was seen, this will be the file’s previous name."
+
+      - keyWord: "times"
+        keyAlias: "times"
+        keyType: "string"
+        description: "Last time this file was modified."
+
+      - keyWord: "fid"
+        keyAlias: "fid"
+        keyType: "uint64"
+        description: "ID referencing this file."
+
+      - keyWord: "uuid"
+        keyAlias: "uuid"
+        keyType: "string"
+        description: "UUID referencing this file if DCE/RPC."
+
+  - logName: "smtp"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "trans_depth"
+        keyAlias: "transDepth"
+        keyType: "uint64"
+        description: "A count to represent the depth of this message transaction in a single connection where multiple messages were transferred."
+
+      - keyWord: "helo"
+        keyAlias: "helo"
+        keyType: "string"
+        description: "Contents of the Helo header."
+
+      - keyWord: "mailfrom"
+        keyAlias: "mailfrom"
+        keyType: "string"
+        description: "Email addresses found in the From header."
+
+      - keyWord: "rcptto"
+        keyAlias: "rcptTo"
+        keyType: "set[string]"
+        description: "Email addresses found in the Rcpt header."
+
+      - keyWord: "date"
+        keyAlias: "date"
+        keyType: "string"
+        description: "Contents of the Date header."
+
+      - keyWord: "from"
+        keyAlias: "from"
+        keyType: "string"
+        description: "Contents of the From header."
+
+      - keyWord: "to"
+        keyAlias: "to"
+        keyType: "set[string]"
+        description: "Contents of the To header."
+
+      - keyWord: "cc"
+        keyAlias: "cc"
+        keyType: "set[string]"
+        description: "Contents of the CC header."
+
+      - keyWord: "reply_to"
+        keyAlias: "replyTo"
+        keyType: "string"
+        description: "Contents of the ReplyTo header."
+
+      - keyWord: "msg_id"
+        keyAlias: "msgId"
+        keyType: "string"
+        description: "Contents of the MsgID header."
+
+      - keyWord: "in_reply_to"
+        keyAlias: "inReplyTo"
+        keyType: "string"
+        description: "Contents of the In-Reply-To header."
+
+      - keyWord: "subject"
+        keyAlias: "subject"
+        keyType: "string"
+        description: "Contents of the Subject header."
+
+      - keyWord: "x_originating_ip"
+        keyAlias: "xOriginatingIp"
+        keyType: "ip"
+        description: "Contents of the X-Originating-IP header."
+
+      - keyWord: "first_received"
+        keyAlias: "firstReceived"
+        keyType: "string"
+        description: "Contents of the first Received header."
+
+      - keyWord: "second_received"
+        keyAlias: "secondReceived"
+        keyType: "string"
+        description: "Contents of the second Received header."
+
+      - keyWord: "last_reply"
+        keyAlias: "lastReply"
+        keyType: "string"
+        description: "The last message that the server sent to the client."
+
+      - keyWord: "path"
+        keyAlias: "path"
+        keyType: "vector[ip]"
+        description: "The message transmission path, as extracted from the headers."
+
+      - keyWord: "user_agent"
+        keyAlias: "userAgent"
+        keyType: "string"
+        description: "Value of the User-Agent header from the client."
+
+      - keyWord: "tls"
+        keyAlias: "tls"
+        keyType: "bool"
+        description: "Indicates that the connection has switched to using TLS."
+
+      - keyWord: "process_received_from"
+        keyAlias: "processReceivedFrom"
+        keyType: "bool"
+        description: "Indicates if the “Received: from” headers should still be processed."
+
+      - keyWord: "has_client_activity"
+        keyAlias: "hasClientActivity"
+        keyType: "bool"
+        description: "Indicates if client activity has been seen, but not yet logged."
+
+      - keyWord: "process_smtp_headers"
+        keyAlias: "processSmtpHeaders"
+        keyType: "bool"
+        description: "Indicates if the SMTP headers should still be processed."
+
+  - logName: "snmp"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "duration"
+        keyAlias: "duration"
+        keyType: "float"
+        description: "The amount of time between the first packet belonging to the SNMP session and the latest one seen."
+
+      - keyWord: "version"
+        keyAlias: "version"
+        keyType: "string"
+        description: "The version of SNMP being used."
+
+      - keyWord: "community"
+        keyAlias: "community"
+        keyType: "string"
+        description: "The community string of the first SNMP packet associated with the session. This is used as part of SNMP’s (v1 and v2c) administrative/security framework. See RFC 1157 or RFC 1901."
+
+      - keyWord: "get_requests"
+        keyAlias: "getRequests"
+        keyType: "uint64"
+        description: "The number of variable bindings in GetRequest/GetNextRequest PDUs seen for the session."
+
+      - keyWord: "get_bulk_requests"
+        keyAlias: "getBulkRequests"
+        keyType: "uint64"
+        description: "The number of variable bindings in GetBulkRequest PDUs seen for the session."
+
+      - keyWord: "get_responses"
+        keyAlias: "getResponses"
+        keyType: "uint64"
+        description: "The number of variable bindings in GetResponse/Response PDUs seen for the session."
+
+      - keyWord: "set_requests"
+        keyAlias: "setRequests"
+        keyType: "uint64"
+        description: "The number of variable bindings in SetRequest PDUs seen for the session."
+
+      - keyWord: "display_string"
+        keyAlias: "displayString"
+        keyType: "string"
+        description: "A system description of the SNMP responder endpoint."
+
+      - keyWord: "up_since"
+        keyAlias: "upSince"
+        keyType: "time"
+        description: "The time at which the SNMP responder endpoint claims it’s been up since."
+
+  - logName: "socks"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "version"
+        keyAlias: "version"
+        keyType: "uint64"
+        description: "Protocol version of SOCKS."
+
+      - keyWord: "user"
+        keyAlias: "user"
+        keyType: "string"
+        description: "Username used to request a login to the proxy."
+
+      - keyWord: "password"
+        keyAlias: "password"
+        keyType: "string"
+        description: "Password used to request a login to the proxy."
+
+      - keyWord: "status"
+        keyAlias: "status"
+        keyType: "string"
+        description: "Server status for the attempt at using the proxy."
+
+      - keyWord: "request"
+        keyAlias: "request"
+        keyType: "ip"
+        description: "Client requested SOCKS address. Could be an address, a name or both."
+
+      - keyWord: "request_p"
+        keyAlias: "requestPort"
+        keyType: "port"
+        description: "Client requested port."
+
+      - keyWord: "bound"
+        keyAlias: "bound"
+        keyType: "ip"
+        description: "Server bound address. Could be an address, a name or both."
+
+      - keyWord: "bound_p"
+        keyAlias: "boundPort"
+        keyType: "port"
+        description: "Server bound port."
+
+      - keyWord: "capture_password"
+        keyAlias: "capturePassword"
+        keyType: "bool"
+        description: "Determines if the password will be captured for this request."
+
+  - logName: "ssh"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "version"
+        keyAlias: "version"
+        keyType: "uint64"
+        description: "SSH major version (1, 2, or unset). The version can be unset if the client and server version strings are unset, malformed or incompatible so no common version can be extracted. If no version can be extracted even though both client and server versions are set a weird will be generated."
+
+      - keyWord: "auth_success"
+        keyAlias: "authSuccess"
+        keyType: "bool"
+        description: "Authentication result (T=success, F=failure, unset=unknown)"
+
+      - keyWord: "auth_attempts"
+        keyAlias: "authAttempts"
+        keyType: "uint64"
+        description: "The number of authentication attempts we observed. There’s always at least one, since some servers might support no authentication at all. It’s important to note that not all of these are failures, since some servers require two-factor auth (e.g. password AND pubkey)"
+
+      - keyWord: "direction"
+        keyAlias: "direction"
+        keyType: "string"
+        description: "Direction of the connection. If the client was a local host logging into an external host, this would be OUTBOUND. INBOUND would be set for the opposite situation."
+
+      - keyWord: "client"
+        keyAlias: "client"
+        keyType: "string"
+        description: "The client’s version string"
+
+      - keyWord: "server"
+        keyAlias: "server"
+        keyType: "string"
+        description: "The server’s version string"
+
+      - keyWord: "cipher_alg"
+        keyAlias: "cipherAlgorithm"
+        keyType: "string"
+        description: "The encryption algorithm in use"
+
+      - keyWord: "mac_alg"
+        keyAlias: "macAlgorithm"
+        keyType: "string"
+        description: "The signing (MAC) algorithm in use"
+
+      - keyWord: "compression_alg"
+        keyAlias: "compressionAlgorithm"
+        keyType: "string"
+        description: "The compression algorithm in use"
+
+      - keyWord: "kex_alg"
+        keyAlias: "kexAlgorithm"
+        keyType: "string"
+        description: "The key exchange algorithm in use"
+
+      - keyWord: "host_key_alg"
+        keyAlias: "hostKeyAlgorithm"
+        keyType: "string"
+        description: "The server host key’s algorithm"
+
+      - keyWord: "host_key"
+        keyAlias: "hostKey"
+        keyType: "string"
+        description: "The server’s key fingerprint"
+
+      - keyWord: "logged"
+        keyAlias: "logged"
+        keyType: "bool"
+        description: "Whether this has already been logged and can be ignored."
+
+      - keyWord: "capabilities"
+        keyAlias: "capabilities"
+        keyType: "SSH::Capabilities"
+        description: "SSH capabilities"
+
+      - keyWord: "analyzer_id"
+        keyAlias: "analyzerId"
+        keyType: "uint64"
+        description: "Analyzer ID"
+
+  - logName: "ssl"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "version_num"
+        keyAlias: "versionNum"
+        keyType: "uint64"
+        description: "Numeric SSL/TLS version that the server chose."
+
+      - keyWord: "version"
+        keyAlias: "version"
+        keyType: "string"
+        description: "SSL/TLS version that the server chose."
+
+      - keyWord: "cipher"
+        keyAlias: "cipher"
+        keyType: "string"
+        description: "SSL/TLS cipher suite that the server chose."
+
+      - keyWord: "curve"
+        keyAlias: "curve"
+        keyType: "string"
+        description: "Elliptic curve the server chose when using ECDH/ECDHE."
+
+      - keyWord: "server_name"
+        keyAlias: "serverName"
+        keyType: "string"
+        description: "Value of the Server Name Indicator SSL/TLS extension. It indicates the server name that the client was requesting."
+
+      - keyWord: "session_id"
+        keyAlias: "sessionId"
+        keyType: "string"
+        description: "Session ID offered by the client for session resumption. Not used for logging."
+
+      - keyWord: "resumed"
+        keyAlias: "resumed"
+        keyType: "bool"
+        description: "Flag to indicate if the session was resumed reusing the key material exchanged in an earlier connection."
+
+      - keyWord: "client_ticket_empty_session_seen"
+        keyAlias: "clientTicketEmptySessionSeen"
+        keyType: "bool"
+        description: "Flag to indicate if we saw a non-empty session ticket being sent by the client using an empty session ID. This value is used to determine if a session is being resumed. It’s not logged."
+
+      - keyWord: "client_key_exchange_seen"
+        keyAlias: "clientKeyExchangeSeen"
+        keyType: "bool"
+        description: "Flag to indicate if we saw a client key exchange message sent by the client. This value is used to determine if a session is being resumed. It’s not logged."
+
+      - keyWord: "client_psk_seen"
+        keyAlias: "clientPskSeen"
+        keyType: "bool"
+        description: "Track if the client sent a pre-shared-key extension. Used to determine if a TLS 1.3 session is being resumed. Not logged."
+
+      - keyWord: "last_alert"
+        keyAlias: "lastAlert"
+        keyType: "string"
+        description: "Last alert that was seen during the connection."
+
+      - keyWord: "next_protocol"
+        keyAlias: "nextProtocol"
+        keyType: "string"
+        description: "Next protocol the server chose using the application layer next protocol extension, if present."
+
+      - keyWord: "analyzer_id"
+        keyAlias: "analyzerId"
+        keyType: "uint64"
+        description: "The analyzer ID used for the analyzer instance attached to each connection. It is not used for logging since it’s a meaningless arbitrary number."
+
+      - keyWord: "established"
+        keyAlias: "established"
+        keyType: "bool"
+        description: "Flag to indicate if this SSL session has been established successfully, or if it was aborted during the handshake."
+
+      - keyWord: "logged"
+        keyAlias: "logged"
+        keyType: "bool"
+        description: "Flag to indicate if this record already has been logged, to prevent duplicates."
+
+      - keyWord: "hrr_seen"
+        keyAlias: "hrrSeen"
+        keyType: "bool"
+        description: "Flag to indicate that we have seen a Hello Retry request message. Used internally for SSL history logging."
+
+      - keyWord: "ssl_history"
+        keyAlias: "sslHistory"
+        keyType: "string"
+        description: "SSL history showing which types of packets we received in which order."
+
+      - keyWord: "delay_tokens"
+        keyAlias: "delayTokens"
+        keyType: "string"
+        description: "delay tokens."
+
+  - logName: "syslog"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "proto"
+        keyAlias: "proto"
+        keyType: "string"
+        description: "Protocol over which the message was seen."
+
+      - keyWord: "facility"
+        keyAlias: "facility"
+        keyType: "string"
+        description: "Syslog facility for the message."
+
+      - keyWord: "severity"
+        keyAlias: "severity"
+        keyType: "string"
+        description: "Syslog severity for the message."
+
+      - keyWord: "message"
+        keyAlias: "message"
+        keyType: "string"
+        description: "The plain text message."
+
+  - logName: "tunnel"
+    needBeginAttr: true
+    needEndAttr: true
+    attribute:
+      - keyWord: "tunnel_type"
+        keyAlias: "tunnel_type"
+        keyType: "string"
+        description: "The type of tunnel."
+
+      - keyWord: "action"
+        keyAlias: "action"
+        keyType: "string"
+        description: "The type of activity that occurred."
