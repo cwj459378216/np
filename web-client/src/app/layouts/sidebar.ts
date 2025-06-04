@@ -4,6 +4,7 @@ import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { slideDownUp } from '../shared/animations';
 import { filter } from 'rxjs/operators';
+import { ZeekConfigService, ZeekLogType } from '../services/zeek-config.service';
 
 @Component({
     selector: 'sidebar',
@@ -15,11 +16,13 @@ export class SidebarComponent implements OnInit {
     store: any;
     activeDropdown: string[] = [];
     parentDropdown: string = '';
+    zeekProtocols: ZeekLogType[] = [];
     
     constructor(
         public translate: TranslateService,
         public storeData: Store<any>,
         public router: Router,
+        private zeekConfigService: ZeekConfigService
     ) {
         this.initStore();
     }
@@ -33,6 +36,9 @@ export class SidebarComponent implements OnInit {
     }
 
     ngOnInit() {
+        // 获取 Zeek 配置
+        this.loadZeekProtocols();
+        
         // 初始化时检查当前路由
         this.setActiveDropdown();
         
@@ -41,6 +47,19 @@ export class SidebarComponent implements OnInit {
             filter(event => event instanceof NavigationEnd)
         ).subscribe(() => {
             this.setActiveDropdown();
+        });
+    }
+
+    loadZeekProtocols() {
+        this.zeekConfigService.getZeekConfig().subscribe({
+            next: (config) => {
+                console.log('Zeek config:', config);
+                this.zeekProtocols = config.Zeek;
+                console.log('Zeek protocols:', this.zeekProtocols);
+            },
+            error: (error) => {
+                console.error('Error loading Zeek protocols:', error);
+            }
         });
     }
 

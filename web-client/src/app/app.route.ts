@@ -38,9 +38,6 @@ import { SystemTimeComponent } from './system-settings/system-time/system-time.c
 import { InterfaceManagementComponent } from './system-settings/interface-management/interface-management.component';
 import { SessionInfoComponent } from './protocol-analysis/session-info/session-info.component';
 import { SettingsComponent } from './protocol-analysis/settings/settings.component';
-import { ApplicationHttpComponent } from './protocol-analysis/application-protocols/application-http/application-http.component';
-import { ApplicationSmtpComponent } from './protocol-analysis/application-protocols/application-smtp/application-smtp.component';
-import { ApplicationFtpComponent } from './protocol-analysis/application-protocols/application-ftp/application-ftp.component';
 import { EventComponent } from './alarm/event/event.component';
 import { AlarmSettingsComponent } from './alarm/alarm-settings/alarm-settings.component';
 import { BasicConfigurationComponent } from './pages/threat-management/basic-configuration/basic-configuration.component';
@@ -55,8 +52,7 @@ import { ReportSchedulerComponent } from './report/report-scheduler/report-sched
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 import { PreviewComponent } from './report/template/preview/preview.component';
-import { ApplicationDnsComponent } from './protocol-analysis/application-protocols/application-dns/application-dns.component';
-import { ApplicationSslComponent } from './protocol-analysis/application-protocols/application-ssl/application-ssl.component';
+import { CommonProtocolComponent } from './protocol-analysis/application-protocols/common-protocol/common-protocol.component';
 
 export const routes: Routes = [
     {
@@ -86,11 +82,7 @@ export const routes: Routes = [
             { path: 'collector', component: CollectorComponent, data: { title: 'Collector' } },
             { path: 'interface-management', component: InterfaceManagementComponent, data: { title: 'Interface Management' } },
             { path: 'protocol-analysis/session-info', component: SessionInfoComponent, data: { title: 'Session Info' } },
-            { path: 'protocol-analysis/application-protocols/http', component: ApplicationHttpComponent, data: { title: 'HTTP' } },
-            { path: 'protocol-analysis/application-protocols/smtp', component: ApplicationSmtpComponent, data: { title: 'SMTP' } },
-            { path: 'protocol-analysis/application-protocols/ftp', component: ApplicationFtpComponent, data: { title: 'FTP' } },
-            { path: 'protocol-analysis/application-protocols/dns', component: ApplicationDnsComponent, data: { title: 'DNS' } },
-            { path: 'protocol-analysis/application-protocols/ssl', component: ApplicationSslComponent, data: { title: 'SSL' } },
+            { path: 'protocol-analysis/application-protocols/:protocol', component: CommonProtocolComponent },
             { path: 'protocol-analysis/settings', component: SettingsComponent, data: { title: 'Settings' } },
             { path: 'alarm/event', component: EventComponent, data: { title: 'Event' } },
             { path: 'alarm/settings', component: AlarmSettingsComponent, data: { title: 'Alarm Settings' } },

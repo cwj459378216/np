@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input, SimpleChanges, OnChanges } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { toggleAnimation } from 'src/app/shared/animations';
@@ -21,7 +21,7 @@ import { SharedModule } from 'src/shared.module';
         SharedModule
     ]
 })
-export class BaseProtocolComponent implements OnInit, OnDestroy {
+export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
     @Input() protocolName: string = '';
     @Input() indexName: string = '';
     @Input() cols: any[] = [];
@@ -29,7 +29,7 @@ export class BaseProtocolComponent implements OnInit, OnDestroy {
     
     search = '';
     loading = false;
-    chartLoading = false;
+    chartLoading = false; 
     currentPage = 1;
     pageSize = 10;
     total = 0;
@@ -136,13 +136,28 @@ export class BaseProtocolComponent implements OnInit, OnDestroy {
         protected cdr: ChangeDetectorRef
     ) {}
 
-    ngOnInit() {
-        this.loadTrendingData();
-        this.loadData();
-
-        this.refreshInterval = setInterval(() => {
+    ngOnChanges(changes: SimpleChanges) {
+        // 当 protocolName 或 indexName 变化时重新加载数据
+        if ((changes['protocolName'] || changes['indexName']) && !changes['protocolName']?.firstChange) {
+            console.log('Protocol or index changed, reloading data...');
+            // 重置分页
+            this.currentPage = 1;
+            this.pageSize = 10;
+            // 重新加载数据
             this.loadTrendingData();
-        }, 60000);
+            this.loadData();
+        }
+    }
+
+    ngOnInit() {
+        if (this.protocolName && this.indexName) {
+            this.loadTrendingData();
+            this.loadData();
+
+            this.refreshInterval = setInterval(() => {
+                this.loadTrendingData();
+            }, 60000);
+        }
     }
 
     ngOnDestroy() {

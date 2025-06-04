@@ -177,21 +177,20 @@
                                             </button>
         
                                             <div [@slideDownUp]="!activeDropdown.includes('Application Protocols')" class="accordion-content">
+                                                <div *ngIf="!zeekProtocols?.length" class="text-gray-500 p-2">
+                                                    No protocols loaded
+                                                </div>
+                                                
                                                 <ul class="sub-menu text-gray-500">
-                                                    <li >
-                                                        <a routerLink="/protocol-analysis/application-protocols/http" routerLinkActive="active" (click)="toggleMobileMenu()" >{{ 'HTTP' | translate }}</a>
-                                                    </li>
-                                                    <li >
-                                                        <a routerLink="/protocol-analysis/application-protocols/smtp" routerLinkActive="active" (click)="toggleMobileMenu()" >{{ 'SMTP' | translate }}</a>
-                                                    </li>
-                                                    <li >
-                                                        <a routerLink="/protocol-analysis/application-protocols/ftp" routerLinkActive="active" (click)="toggleMobileMenu()" >{{ 'FTP' | translate }}</a>
-                                                    </li>
-                                                    <li>
-                                                        <a routerLink="/protocol-analysis/application-protocols/dns" routerLinkActive="active" (click)="toggleMobileMenu()">{{ 'DNS' | translate }}</a>
-                                                    </li>
-                                                    <li>
-                                                        <a routerLink="/protocol-analysis/application-protocols/ssl" routerLinkActive="active" (click)="toggleMobileMenu()">{{ 'SSL' | translate }}</a>
+                                                    <li *ngFor="let protocol of zeekProtocols">
+                                                        <a 
+                                                            [routerLink]="['/protocol-analysis/application-protocols', protocol.logName.toLowerCase()]"
+                                                            routerLinkActive="active" 
+                                                            (click)="toggleMobileMenu()"
+                                                        >
+                                                            {{ protocol.logName | uppercase }}
+                                                            <!-- <small class="ml-2">({{ protocol.attribute.length || 0 }} attrs)</small> -->
+                                                        </a>
                                                     </li>
                                                 </ul>
                                             </div>
