@@ -10,27 +10,27 @@ import Swal from 'sweetalert2';
 })
 export class NotificationRuleComponent implements OnInit {
     @ViewChild('addRuleModal') addRuleModal: any;
-    
+
     displayType: string = 'list';
     searchText: string = '';
     params!: FormGroup;
-    
+
     timeWindowOptions = [
         { value: '24 hours', label: '24 Hours' },
         { value: '7 days', label: '7 Days' },
         { value: '30 days', label: '30 Days' }
     ];
-    
+
     triggerConditionOptions = [
         { value: 'new_event', label: 'On New Event' },
         { value: 'condition', label: 'On Specific Condition' }
     ];
-    
+
     notificationMethodOptions = [
         { value: 'email', label: 'Email' },
         { value: 'syslog', label: 'Syslog' }
     ];
-    
+
     rules = [
         {
             id: 1,
@@ -49,9 +49,9 @@ export class NotificationRuleComponent implements OnInit {
             status: 'Inactive'
         }
     ];
-    
+
     filteredRules: any[] = [];
-    
+
     filters: any[] = [{ field: '', value: '' }];
     filterFields = [
         { value: 'cpu_usage', label: 'CPU Usage' },
@@ -59,7 +59,7 @@ export class NotificationRuleComponent implements OnInit {
         { value: 'disk_usage', label: 'Disk Usage' },
         { value: 'network_traffic', label: 'Network Traffic' }
     ];
-    
+
     constructor(private fb: FormBuilder, private http: HttpClient) {
         this.initForm();
     }
@@ -113,7 +113,7 @@ export class NotificationRuleComponent implements OnInit {
 
             this.params.patchValue(formValue);
             this.filters = rule.filters || [];
-            
+
             if (rule.triggerCondition === 'condition' && this.filters.length === 0) {
                 this.filters = [{ field: '', value: '' }];
             }
@@ -132,7 +132,7 @@ export class NotificationRuleComponent implements OnInit {
             padding: '2em'
         }).then((result) => {
             if (result.value) {
-                this.http.delete(`${environment.apiUrl}/api/notification-rules/${rule.id}`).subscribe(
+                this.http.delete(`${environment.apiUrl}/notification-rules/${rule.id}`).subscribe(
                     () => {
                         this.loadRules();
                         this.showMessage('Rule has been deleted successfully', 'success');
@@ -149,7 +149,7 @@ export class NotificationRuleComponent implements OnInit {
     saveRule() {
         const requiredFields = ['ruleName', 'timeWindow', 'triggerCondition', 'notificationMethod'];
         const invalidFields = requiredFields.filter(field => !this.params.get(field)?.valid);
-        
+
         if (invalidFields.length > 0) {
             this.showMessage(`Please fill the following fields: ${invalidFields.join(', ')}`, 'error');
             return;
@@ -166,12 +166,12 @@ export class NotificationRuleComponent implements OnInit {
         const formValue = this.params.value;
         const ruleData = {
             ...formValue,
-            filters: this.params.get('triggerCondition')?.value === 'condition' 
+            filters: this.params.get('triggerCondition')?.value === 'condition'
                 ? this.filters.filter(f => f.field && f.value)
                 : []
         };
 
-        const url = `${environment.apiUrl}/api/notification-rules${ruleData.id ? `/${ruleData.id}` : ''}`;
+        const url = `${environment.apiUrl}/notification-rules${ruleData.id ? `/${ruleData.id}` : ''}`;
         const method = ruleData.id ? 'put' : 'post';
 
         this.http[method](url, ruleData).subscribe(
@@ -194,7 +194,7 @@ export class NotificationRuleComponent implements OnInit {
         }
 
         const searchTerm = this.searchText.toLowerCase();
-        this.filteredRules = this.rules.filter(rule => 
+        this.filteredRules = this.rules.filter(rule =>
             rule.ruleName.toLowerCase().includes(searchTerm) ||
             rule.triggerCondition.toLowerCase().includes(searchTerm) ||
             rule.notificationMethod.toLowerCase().includes(searchTerm)
@@ -202,7 +202,7 @@ export class NotificationRuleComponent implements OnInit {
     }
 
     loadRules() {
-        this.http.get(`${environment.apiUrl}/api/notification-rules`).subscribe(
+        this.http.get(`${environment.apiUrl}/notification-rules`).subscribe(
             (data: any) => {
                 this.rules = data;
                 this.searchRules();
@@ -222,4 +222,4 @@ export class NotificationRuleComponent implements OnInit {
             padding: '2em'
         });
     }
-} 
+}

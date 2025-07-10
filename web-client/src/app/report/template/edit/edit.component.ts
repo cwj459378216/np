@@ -159,20 +159,20 @@ export class EditComponent implements OnInit {
     }
 
     loadTemplate() {
-        this.http.get(`${environment.apiUrl}/api/templates/${this.id}`).subscribe(
+        this.http.get(`${environment.apiUrl}/templates/${this.id}`).subscribe(
             (template: any) => {
                 this.originalTemplate = template;  // 保存原始模板数据
                 this.name = template.name;
                 this.description = template.description;
-                
-                const content = typeof template.content === 'string' 
-                    ? JSON.parse(template.content) 
+
+                const content = typeof template.content === 'string'
+                    ? JSON.parse(template.content)
                     : template.content;
 
                 if (content.dashboard) {
                     this.dashboard = content.dashboard;
                 }
-                
+
                 if (content.options) {
                     // 使用保存的 gridster 配置，但保持编辑模式下的拖拽和调整大小功能
                     this.options = {
@@ -593,7 +593,7 @@ export class EditComponent implements OnInit {
             createdAt: this.originalTemplate?.createdAt || new Date().toISOString()  // 保持原始的创建时间
         };
 
-        this.http.put(`${environment.apiUrl}/api/templates/${this.id}`, template).subscribe(
+        this.http.put(`${environment.apiUrl}/templates/${this.id}`, template).subscribe(
             () => {
                 this.showMessage('Template has been updated successfully');
                 this.router.navigate(['/report/template/list']);
@@ -624,8 +624,8 @@ export class EditComponent implements OnInit {
     onTitlesChange(event: any) {
         // 确保标题按照预定义的顺序排序
         const orderedTitles = ['id', 'email', 'lastName', 'firstName'];
-        this.selectedTitles = this.selectedTitles.sort((a, b) => 
+        this.selectedTitles = this.selectedTitles.sort((a, b) =>
             orderedTitles.indexOf(a.toLowerCase()) - orderedTitles.indexOf(b.toLowerCase())
         );
     }
-} 
+}

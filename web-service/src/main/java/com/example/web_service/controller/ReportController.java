@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 
 @RestController
-@RequestMapping("/api/reports")
+@RequestMapping("/reports")
 @Tag(name = "报告管理", description = "报告的增删改查操作")
 @CrossOrigin(origins = "*")
 public class ReportController {

@@ -18,7 +18,7 @@ interface Scheduler {
     providedIn: 'root'
 })
 export class ReportSchedulerService {
-    private apiUrl = `${environment.apiUrl}/api/report-schedulers`;
+    private apiUrl = `${environment.apiUrl}/report-schedulers`;
 
     constructor(private http: HttpClient) {}
 
@@ -41,4 +41,4 @@ export class ReportSchedulerService {
     deleteScheduler(id: number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
-} 
+}

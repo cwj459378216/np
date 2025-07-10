@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/local-rules")
+@RequestMapping("/local-rules")
 public class LocalRuleController {
     
     @Autowired

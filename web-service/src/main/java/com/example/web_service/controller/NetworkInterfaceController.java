@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/interfaces")
+@RequestMapping("/interfaces")
 @Tag(name = "网络接口管理", description = "网络接口的查询和修改操作")
 @CrossOrigin(origins = "*")
 public class NetworkInterfaceController {

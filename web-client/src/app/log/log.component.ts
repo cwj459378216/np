@@ -16,9 +16,9 @@ registerLocaleData(localeEn);
 export class LogComponent implements OnInit {
     search = '';
     cols = [
-        { 
-            field: 'date', 
-            title: 'Date', 
+        {
+            field: 'date',
+            title: 'Date',
             type: 'date',
             filterConfig: {
                 type: 'date',
@@ -28,7 +28,7 @@ export class LogComponent implements OnInit {
             }
         },
         { field: 'level', title: 'Level' },
-        { field: 'user', title: 'User' }, 
+        { field: 'user', title: 'User' },
         { field: 'module', title: 'Module' },
         { field: 'content', title: 'Log Content' }
     ];
@@ -42,7 +42,7 @@ export class LogComponent implements OnInit {
     }
 
     loadLogs() {
-        this.http.get(`${environment.apiUrl}/api/logs`).subscribe(
+        this.http.get(`${environment.apiUrl}/logs`).subscribe(
             (data: any) => {
                 this.rows = data;
             },
@@ -65,4 +65,4 @@ export class LogComponent implements OnInit {
         }
         return '';
     }
-} 
+}

@@ -8,7 +8,7 @@ import com.example.web_service.service.SystemTimeService;
 import org.springframework.http.HttpStatus;
 
 @RestController
-@RequestMapping("/api/system-time")
+@RequestMapping("/system-time")
 @CrossOrigin(origins = "*")
 public class SystemTimeController {
     @Autowired

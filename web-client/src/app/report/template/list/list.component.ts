@@ -11,10 +11,10 @@ import { TemplateService } from '../../../services/template.service';
 })
 export class ListComponent implements OnInit {
     @ViewChild('datatable') datatable: any;
-    
+
     items: any = [];
     search = '';
-    
+
     cols = [
         { field: 'name', title: 'Name' },
         { field: 'description', title: 'Description' },
@@ -34,7 +34,7 @@ export class ListComponent implements OnInit {
     }
 
     loadTemplates() {
-        this.http.get(`${environment.apiUrl}/api/templates`).subscribe(
+        this.http.get(`${environment.apiUrl}/templates`).subscribe(
             (data: any) => {
                 this.items = data;
             },
@@ -55,7 +55,7 @@ export class ListComponent implements OnInit {
         }).then((result) => {
             if (result.value) {
                 if (id) {
-                    this.http.delete(`${environment.apiUrl}/api/templates/${id}`).subscribe(
+                    this.http.delete(`${environment.apiUrl}/templates/${id}`).subscribe(
                         () => {
                             this.loadTemplates();
                             this.datatable?.clearSelectedRows();
@@ -71,8 +71,8 @@ export class ListComponent implements OnInit {
                     const ids: number[] = selectedRows.map((d: any) => d.id);
                     // 批量删除
                     Promise.all(
-                        ids.map((id: number) => 
-                            this.http.delete(`${environment.apiUrl}/api/templates/${id}`).toPromise()
+                        ids.map((id: number) =>
+                            this.http.delete(`${environment.apiUrl}/templates/${id}`).toPromise()
                         )
                     ).then(() => {
                         this.loadTemplates();
@@ -102,7 +102,7 @@ export class ListComponent implements OnInit {
     }
 
     downloadTemplate(id: number) {
-        this.http.get(`${environment.apiUrl}/api/templates/${id}`).subscribe(
+        this.http.get(`${environment.apiUrl}/templates/${id}`).subscribe(
             (template: any) => {
                 // 创建并下载 JSON 文件
                 const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
@@ -151,4 +151,4 @@ export class ListComponent implements OnInit {
                 }
             });
     }
-} 
+}

@@ -43,15 +43,15 @@ export class AssetBookComponent {
         public fb: FormBuilder,
         private http: HttpClient
     ) {}
-    
+
     displayType = 'list';
     optionsType = ['Server', 'Workstation', 'Network Device', 'Security Device'];
-    
+
     @ViewChild('addContactModal') addContactModal!: NgxCustomModalComponent;
     params!: FormGroup;
     filterdContactsList: Asset[] = [];
     searchUser = '';
-    
+
     assetList: Asset[] = [];
 
     mask11 = [/\d/, /\d/, /\d/, '.', /\d/, /\d/, /\d/, '.', /\d/, /\d/, /\d/, '.', /\d/, /\d/, /\d/];
@@ -75,7 +75,7 @@ export class AssetBookComponent {
     }
 
     loadAssets() {
-        this.http.get(`${environment.apiUrl}/api/assets`).subscribe(
+        this.http.get(`${environment.apiUrl}/assets`).subscribe(
             (data: any) => {
                 this.assetList = data;
                 console.log('Loaded assets:', this.assetList);
@@ -122,7 +122,7 @@ export class AssetBookComponent {
         }
 
         const asset = this.params.value;
-        const url = `${environment.apiUrl}/api/assets${asset.id ? `/${asset.id}` : ''}`;
+        const url = `${environment.apiUrl}/assets${asset.id ? `/${asset.id}` : ''}`;
         const method = asset.id ? 'put' : 'post';
 
         this.http[method](url, asset).subscribe(
@@ -147,7 +147,7 @@ export class AssetBookComponent {
             padding: '2em'
         }).then((result) => {
             if (result.value) {
-                this.http.delete(`${environment.apiUrl}/api/assets/${asset.id}`).subscribe(
+                this.http.delete(`${environment.apiUrl}/assets/${asset.id}`).subscribe(
                     () => {
                         this.loadAssets();
                         this.showMessage('Asset has been deleted successfully.');
@@ -174,4 +174,4 @@ export class AssetBookComponent {
             padding: '10px 20px',
         });
     }
-} 
+}

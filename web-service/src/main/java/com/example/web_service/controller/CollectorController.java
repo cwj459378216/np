@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/collectors")
+@RequestMapping("/collectors")
 public class CollectorController {
     @Autowired
     private CollectorService collectorService;

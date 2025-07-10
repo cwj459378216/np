@@ -7,7 +7,7 @@ import com.example.web_service.service.StorageStrategyService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/storage-strategies")
+@RequestMapping("/storage-strategies")
 public class StorageStrategyController {
     @Autowired
     private StorageStrategyService storageStrategyService;

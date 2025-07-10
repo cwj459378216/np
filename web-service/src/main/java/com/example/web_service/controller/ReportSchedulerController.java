@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/report-schedulers")
+@RequestMapping("/report-schedulers")
 @Tag(name = "报告调度器", description = "报告调度器的增删改查操作")
 @CrossOrigin(origins = "*")
 public class ReportSchedulerController {

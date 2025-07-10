@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/logs")
+@RequestMapping("/logs")
 @Tag(name = "日志管理", description = "系统日志的增删改查操作")
 @CrossOrigin(origins = "*")
 public class LogController {

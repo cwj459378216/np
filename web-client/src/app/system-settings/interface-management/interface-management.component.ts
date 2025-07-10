@@ -44,7 +44,7 @@ export class InterfaceManagementComponent {
   }
 
   loadInterfaces() {
-    this.http.get(`${environment.apiUrl}/api/interfaces`).subscribe(
+    this.http.get(`${environment.apiUrl}/interfaces`).subscribe(
       (data: any) => {
         this.interfaces = data;
         this.searchInterfaces();
@@ -70,7 +70,7 @@ export class InterfaceManagementComponent {
       this.filteredInterfaces = this.interfaces;
     } else {
       const search = this.searchText.toLowerCase();
-      this.filteredInterfaces = this.interfaces.filter(iface => 
+      this.filteredInterfaces = this.interfaces.filter(iface =>
         iface.interface_name.toLowerCase().includes(search) ||
         (iface.ip_address && iface.ip_address.toLowerCase().includes(search))
       );
@@ -120,15 +120,15 @@ export class InterfaceManagementComponent {
         iface.netmask = null;
         iface.gateway = null;
     } else {
-        if (!this.isValidIpFormat(iface.ip_address) || 
-            !this.isValidIpFormat(iface.netmask) || 
+        if (!this.isValidIpFormat(iface.ip_address) ||
+            !this.isValidIpFormat(iface.netmask) ||
             !this.isValidIpFormat(iface.gateway)) {
             this.showMessage('Please enter valid IP addresses', 'error');
             return;
         }
     }
 
-    const url = `${environment.apiUrl}/api/interfaces/${iface.interface_name}`;
+    const url = `${environment.apiUrl}/interfaces/${iface.interface_name}`;
     this.http.put(url, iface).subscribe(
         (response: any) => {
             this.loadInterfaces();
@@ -146,10 +146,10 @@ export class InterfaceManagementComponent {
     if (!ip) return false;
     const parts = ip.split('.');
     if (parts.length !== 4) return false;
-    
+
     return parts.every(part => {
       const num = parseInt(part, 10);
-      return !isNaN(num) && num >= 0 && num <= 255 && 
+      return !isNaN(num) && num >= 0 && num <= 255 &&
              (part === '0' || !part.startsWith('0'));
     });
   }
@@ -168,7 +168,7 @@ export class InterfaceManagementComponent {
       padding: '10px 20px',
     });
   }
-  
+
   onAdapterChange(event: any) {
     console.log(event);
     if (event === 'DHCP') {

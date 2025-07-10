@@ -13,7 +13,7 @@ import java.io.IOException;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/zeek-logs")
+@RequestMapping("/zeek-logs")
 public class ZeekLogController {
 
     private final ObjectMapper yamlMapper;

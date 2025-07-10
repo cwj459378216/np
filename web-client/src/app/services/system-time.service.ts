@@ -18,7 +18,7 @@ export interface SystemTime {
   providedIn: 'root'
 })
 export class SystemTimeService {
-  private apiUrl = `${environment.apiUrl}/api/system-time`;
+  private apiUrl = `${environment.apiUrl}/system-time`;
 
   constructor(private http: HttpClient) { }
 
@@ -51,4 +51,4 @@ export class SystemTimeService {
     console.error(errorMessage);
     return throwError(() => new Error(errorMessage));
   }
-} 
+}

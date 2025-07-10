@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/alarm-settings")
+@RequestMapping("/alarm-settings")
 public class AlarmSettingController {
 
     @Autowired

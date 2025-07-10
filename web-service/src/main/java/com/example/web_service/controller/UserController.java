@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @Tag(name = "用户管理", description = "用户的增删改查操作")
 @CrossOrigin(origins = "*")
 public class UserController {

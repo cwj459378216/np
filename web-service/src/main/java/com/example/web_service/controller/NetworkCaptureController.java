@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/capture")
+@RequestMapping("/capture")
 @Tag(name = "网络抓包接口", description = "用于网络接口查询和抓包操作")
 @RequiredArgsConstructor
 public class NetworkCaptureController {

@@ -91,7 +91,7 @@ export interface CaptureResponse {
   providedIn: 'root'
 })
 export class CollectorService {
-  private apiUrl = `${environment.apiUrl}/api`;
+  private apiUrl = `${environment.apiUrl}`;
 
   constructor(private http: HttpClient) { }
 
@@ -121,7 +121,7 @@ export class CollectorService {
     return this.http.put<void>(`${this.apiUrl}/collectors/${id}/status`, { status });
   }
 
-  // Storage Strategy APIs  
+  // Storage Strategy APIs
   getAllStorageStrategies(): Observable<StorageStrategy[]> {
     return this.http.get<StorageStrategy[]>(`${this.apiUrl}/storage-strategies`);
   }
@@ -174,4 +174,4 @@ export class CollectorService {
   updateCollectorSessionId(id: number, sessionId: string): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/collectors/${id}/session`, { sessionId });
   }
-} 
+}

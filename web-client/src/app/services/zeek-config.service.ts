@@ -32,6 +32,6 @@ export class ZeekConfigService {
   constructor(private http: HttpClient) {}
 
   getZeekConfig(): Observable<ZeekLogsConfig> {
-    return this.http.get<ZeekLogsConfig>(`${environment.apiUrl}/api/zeek-logs/config`);
+    return this.http.get<ZeekLogsConfig>(`${environment.apiUrl}/zeek-logs/config`);
   }
-} 
+}

@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/roles")
+@RequestMapping("/roles")
 @Tag(name = "角色管理", description = "角色的增删改查操作")
 @CrossOrigin(origins = "*")
 public class RoleController {

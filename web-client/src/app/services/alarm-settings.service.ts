@@ -19,7 +19,7 @@ export interface AlarmSetting {
   providedIn: 'root'
 })
 export class AlarmSettingsService {
-  private apiUrl = `${environment.apiUrl}/api/alarm-settings`;
+  private apiUrl = `${environment.apiUrl}/alarm-settings`;
 
   constructor(private http: HttpClient) {}
 
@@ -42,4 +42,4 @@ export class AlarmSettingsService {
   deleteSetting(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
-} 
+}

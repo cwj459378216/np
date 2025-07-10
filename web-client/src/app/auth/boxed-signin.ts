@@ -44,7 +44,7 @@ export class BoxedSigninComponent {
                 this.store = d;
             });
     }
-    
+
     changeLanguage(item: any) {
         this.translate.use(item.code);
         this.appSetting.toggleLanguage(item);
@@ -58,7 +58,7 @@ export class BoxedSigninComponent {
 
     async submit() {
         try {
-            const response = await this.http.post<{token: string; user: any}>(`${environment.apiUrl}/api/users/login`, {
+            const response = await this.http.post<{token: string; user: any}>(`${environment.apiUrl}/users/login`, {
                 username: this.inputEmail,
                 password: this.inputPassword
             }).toPromise();

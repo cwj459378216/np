@@ -30,7 +30,7 @@ interface NotificationSetting {
 })
 export class NotificationSettingsComponent implements OnInit {
     @ViewChild('addSettingModal') addSettingModal!: NgxCustomModalComponent;
-    
+
     displayType: string = 'list';
     searchText: string = '';
     params!: FormGroup;
@@ -102,7 +102,7 @@ export class NotificationSettingsComponent implements OnInit {
     }
 
     loadSettings() {
-        this.http.get<NotificationSetting[]>(`${environment.apiUrl}/api/notifications`).subscribe(
+        this.http.get<NotificationSetting[]>(`${environment.apiUrl}/notifications`).subscribe(
             (data) => {
                 this.settings = data;
                 this.searchSettings();
@@ -121,7 +121,7 @@ export class NotificationSettingsComponent implements OnInit {
         }
 
         const searchStr = this.searchText.toLowerCase();
-        this.filteredSettings = this.settings.filter(item => 
+        this.filteredSettings = this.settings.filter(item =>
             item.name.toLowerCase().includes(searchStr) ||
             item.description.toLowerCase().includes(searchStr) ||
             item.service.toLowerCase().includes(searchStr)
@@ -159,7 +159,7 @@ export class NotificationSettingsComponent implements OnInit {
         }
 
         const setting = this.params.value;
-        const url = `${environment.apiUrl}/api/notifications${setting.id ? `/${setting.id}` : ''}`;
+        const url = `${environment.apiUrl}/notifications${setting.id ? `/${setting.id}` : ''}`;
         const method = setting.id ? 'put' : 'post';
 
         this.http[method](url, setting).subscribe(
@@ -185,7 +185,7 @@ export class NotificationSettingsComponent implements OnInit {
             padding: '2em'
         }).then((result) => {
             if (result.value) {
-                this.http.delete(`${environment.apiUrl}/api/notifications/${setting.id}`).subscribe(
+                this.http.delete(`${environment.apiUrl}/notifications/${setting.id}`).subscribe(
                     () => {
                         this.loadSettings();
                         this.showMessage('Setting has been deleted successfully.');
@@ -257,4 +257,4 @@ export class NotificationSettingsComponent implements OnInit {
             }
         });
     }
-} 
+}

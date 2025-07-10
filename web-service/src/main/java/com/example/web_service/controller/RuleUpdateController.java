@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/rule-update")
+@RequestMapping("/rule-update")
 @Tag(name = "规则更新管理", description = "规则更新相关接口")
 public class RuleUpdateController {
     

@@ -18,7 +18,7 @@ export interface ProtocolSetting {
   providedIn: 'root'
 })
 export class ProtocolSettingsService {
-  private apiUrl = `${environment.apiUrl}/api/protocol-settings`;
+  private apiUrl = `${environment.apiUrl}/protocol-settings`;
 
   constructor(private http: HttpClient) {}
 
@@ -41,4 +41,4 @@ export class ProtocolSettingsService {
   deleteSetting(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
-} 
+}

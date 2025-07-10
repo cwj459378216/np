@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
     providedIn: 'root'
 })
 export class TemplateService {
-    private apiUrl = `${environment.apiUrl}/api/templates`;
+    private apiUrl = `${environment.apiUrl}/templates`;
 
     constructor(private http: HttpClient) {}
 
@@ -21,4 +21,4 @@ export class TemplateService {
             responseType: 'blob'
         });
     }
-} 
+}

@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/protocol-settings")
+@RequestMapping("/protocol-settings")
 public class ProtocolSettingController {
 
     @Autowired

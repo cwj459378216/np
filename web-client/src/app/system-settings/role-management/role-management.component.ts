@@ -45,7 +45,7 @@ interface Role {
 })
 export class RoleManagementComponent implements OnInit {
     @ViewChild('addContactModal') addContactModal!: NgxCustomModalComponent;
-    
+
     displayType = 'list';
     searchText = '';
     params!: FormGroup;
@@ -254,7 +254,7 @@ export class RoleManagementComponent implements OnInit {
     }
 
     loadRoles() {
-        this.http.get<Role[]>(`${environment.apiUrl}/api/roles`).subscribe(
+        this.http.get<Role[]>(`${environment.apiUrl}/roles`).subscribe(
             (data) => {
                 this.roles = data;
                 this.searchRoles();
@@ -273,7 +273,7 @@ export class RoleManagementComponent implements OnInit {
         }
 
         const searchStr = this.searchText.toLowerCase();
-        this.filteredRoles = this.roles.filter(role => 
+        this.filteredRoles = this.roles.filter(role =>
             role.name.toLowerCase().includes(searchStr) ||
             role.description.toLowerCase().includes(searchStr)
         );
@@ -292,10 +292,10 @@ export class RoleManagementComponent implements OnInit {
             });
 
             // 根据权限设置树形结构的选中状态
-            const permissions = typeof role.permissions === 'string' 
-                ? JSON.parse(role.permissions) 
+            const permissions = typeof role.permissions === 'string'
+                ? JSON.parse(role.permissions)
                 : role.permissions;
-            
+
             this.setPermissions(this.tableData, permissions);
         } else {
             // 重置树形结构的选中状态
@@ -341,7 +341,7 @@ export class RoleManagementComponent implements OnInit {
             permissions: permissions
         };
 
-        const url = `${environment.apiUrl}/api/roles${role.id ? `/${role.id}` : ''}`;
+        const url = `${environment.apiUrl}/roles${role.id ? `/${role.id}` : ''}`;
         const method = role.id ? 'put' : 'post';
 
         this.http[method](url, role).subscribe(
@@ -383,7 +383,7 @@ export class RoleManagementComponent implements OnInit {
             padding: '2em'
         }).then((result) => {
             if (result.value) {
-                this.http.delete(`${environment.apiUrl}/api/roles/${role.id}`).subscribe(
+                this.http.delete(`${environment.apiUrl}/roles/${role.id}`).subscribe(
                     () => {
                         this.loadRoles();
                         this.showMessage('Role has been deleted successfully.');
@@ -399,12 +399,12 @@ export class RoleManagementComponent implements OnInit {
 
     updatePermission(node: TreeViewItem, type: 'readWrite' | 'readOnly', event: any) {
         node[type] = event.target.checked;
-        
+
         // 如果选中了读写权限，自动取消只读权限
         if (type === 'readWrite' && event.target.checked) {
             node.readOnly = false;
         }
-        
+
         // 如果选中了只读权限，自动取消读写权限
         if (type === 'readOnly' && event.target.checked) {
             node.readWrite = false;

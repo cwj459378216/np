@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/templates")
+@RequestMapping("/templates")
 @Tag(name = "模板管理", description = "模板的增删改查操作")
 @CrossOrigin(origins = "*")
 public class TemplateController {

@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/notification-rules")
+@RequestMapping("/notification-rules")
 @Tag(name = "通知规则", description = "通知规则的增删改查操作")
 @CrossOrigin(origins = "*")
 public class NotificationRuleController {

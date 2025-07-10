@@ -11,14 +11,14 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class ReportListComponent implements OnInit, OnDestroy {
     @ViewChild('datatable') datatable: any;
-    
+
     private destroy$ = new Subject<void>();
     private polling: any;
     private lastUpdate: string = '';
-    
+
     items: any = [];
     search = '';
-    
+
     cols = [
         { field: 'name', title: 'Name' },
         { field: 'description', title: 'Description' },
@@ -55,7 +55,7 @@ export class ReportListComponent implements OnInit, OnDestroy {
 
     private checkForUpdates() {
         // 只获取最新报告的创建时间
-        this.http.get(`${environment.apiUrl}/api/reports/latest-update`)
+        this.http.get(`${environment.apiUrl}/reports/latest-update`)
             .pipe(takeUntil(this.destroy$))
             .subscribe((response: any) => {
                 if (response.lastUpdate !== this.lastUpdate) {
@@ -66,7 +66,7 @@ export class ReportListComponent implements OnInit, OnDestroy {
     }
 
     loadReports() {
-        this.http.get(`${environment.apiUrl}/api/reports`)
+        this.http.get(`${environment.apiUrl}/reports`)
             .pipe(takeUntil(this.destroy$))
             .subscribe(
                 (data: any) => {
@@ -96,7 +96,7 @@ export class ReportListComponent implements OnInit, OnDestroy {
         }).then((result) => {
             if (result.value) {
                 if (item) {
-                    this.http.delete(`${environment.apiUrl}/api/reports/${item}`).subscribe(
+                    this.http.delete(`${environment.apiUrl}/reports/${item}`).subscribe(
                         () => {
                             this.loadReports();
                             this.showMessage('Report has been deleted successfully.');
@@ -109,8 +109,8 @@ export class ReportListComponent implements OnInit, OnDestroy {
                 } else {
                     let selectedRows = this.datatable.getSelectedRows();
                     const ids = selectedRows.map((d: any) => d.id);
-                    
-                    this.http.delete(`${environment.apiUrl}/api/reports`, { body: ids }).subscribe(
+
+                    this.http.delete(`${environment.apiUrl}/reports`, { body: ids }).subscribe(
                         () => {
                             this.loadReports();
                             this.showMessage('Reports have been deleted successfully.');
@@ -141,6 +141,6 @@ export class ReportListComponent implements OnInit, OnDestroy {
     }
 
     downloadReport(id: number) {
-        window.location.href = `${environment.apiUrl}/api/reports/download/${id}`;
+        window.location.href = `${environment.apiUrl}/reports/download/${id}`;
     }
-} 
+}

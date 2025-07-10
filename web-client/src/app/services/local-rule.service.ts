@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
     providedIn: 'root'
 })
 export class LocalRuleService {
-    private apiUrl = `${environment.apiUrl}/api/local-rules`;
+    private apiUrl = `${environment.apiUrl}/local-rules`;
 
     constructor(private http: HttpClient) {}
 
@@ -48,4 +48,4 @@ export class LocalRuleService {
         const payload = { rule_content: ruleContent };
         return this.http.post<boolean>(`${this.apiUrl}/test`, payload);
     }
-} 
+}

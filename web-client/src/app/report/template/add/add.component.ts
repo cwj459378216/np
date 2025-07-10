@@ -61,7 +61,7 @@ export class AddComponent implements OnInit {
         { id: 3, firstName: 'Lisa', lastName: 'Doe', email: 'lisadoe@yahoo.com' },
         { id: 4, firstName: 'Vincent', lastName: 'Carpenter', email: 'vinnyc@yahoo.com' },
     ];
-    
+
     // 下拉选项数据
     indexList = [
         { value: 'index1', label: 'Index 1' },
@@ -356,7 +356,7 @@ export class AddComponent implements OnInit {
             createdAt: new Date().toISOString()
         };
 
-        this.http.post(`${environment.apiUrl}/api/templates`, template).subscribe(
+        this.http.post(`${environment.apiUrl}/templates`, template).subscribe(
             () => {
                 this.showMessage('Template has been saved successfully');
                 this.router.navigate(['/report/template/list']);
@@ -386,8 +386,8 @@ export class AddComponent implements OnInit {
     onTitlesChange(event: any) {
         // 确保标题按照预定义的顺序排序
         const orderedTitles = ['id', 'email', 'lastName', 'firstName'];
-        this.selectedTitles = this.selectedTitles.sort((a, b) => 
+        this.selectedTitles = this.selectedTitles.sort((a, b) =>
             orderedTitles.indexOf(a.toLowerCase()) - orderedTitles.indexOf(b.toLowerCase())
         );
     }
-} 
+}

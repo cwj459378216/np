@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
     providedIn: 'root'
 })
 export class NotificationSettingService {
-    private apiUrl = `${environment.apiUrl}/api/notifications`;
+    private apiUrl = `${environment.apiUrl}/notifications`;
 
     constructor(private http: HttpClient) {}
 
@@ -18,4 +18,4 @@ export class NotificationSettingService {
     testNotification(setting: any): Observable<boolean> {
         return this.http.post<boolean>(`${this.apiUrl}/test`, setting);
     }
-} 
+}

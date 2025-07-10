@@ -118,10 +118,10 @@ export class PreviewComponent implements OnInit {
     }
 
     loadTemplate() {
-        this.http.get(`${environment.apiUrl}/api/templates/${this.id}`).subscribe(
+        this.http.get(`${environment.apiUrl}/templates/${this.id}`).subscribe(
             (template: any) => {
-                const content = typeof template.content === 'string' 
-                    ? JSON.parse(template.content) 
+                const content = typeof template.content === 'string'
+                    ? JSON.parse(template.content)
                     : template.content;
 
                 if (content.dashboard) {
@@ -133,7 +133,7 @@ export class PreviewComponent implements OnInit {
                         rows: item.rows
                     }));
                 }
-                
+
                 if (content.options) {
                     this.options = {
                         ...content.options,
@@ -189,7 +189,7 @@ export class PreviewComponent implements OnInit {
         if (item.titles && item.titles.length > 0) {
             return item.titles;
         }
-        
+
         // 默认列顺序
         return ['id', 'email', 'lastName', 'firstName'];
     }
@@ -256,4 +256,4 @@ export class PreviewComponent implements OnInit {
                 }
             });
     }
-} 
+}

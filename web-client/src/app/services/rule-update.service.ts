@@ -8,7 +8,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class RuleUpdateService {
-  private apiUrl = environment.apiUrl + '/api/rule-update';
+  private apiUrl = environment.apiUrl + '/rule-update';
 
   constructor(private http: HttpClient) {}
 
@@ -38,4 +38,4 @@ export class RuleUpdateService {
   deleteConfig(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/config/${id}`);
   }
-} 
+}

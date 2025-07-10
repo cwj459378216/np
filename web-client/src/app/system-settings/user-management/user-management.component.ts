@@ -26,7 +26,7 @@ interface User {
 })
 export class UserManagementComponent implements OnInit {
     @ViewChild('addContactModal') addContactModal!: NgxCustomModalComponent;
-    
+
     displayType = 'list';
     searchText = '';
     params!: FormGroup;
@@ -59,7 +59,7 @@ export class UserManagementComponent implements OnInit {
     }
 
     loadUsers() {
-        this.http.get<User[]>(`${environment.apiUrl}/api/users`).subscribe(
+        this.http.get<User[]>(`${environment.apiUrl}/users`).subscribe(
             (data) => {
                 this.users = data;
                 this.searchUsers();
@@ -72,7 +72,7 @@ export class UserManagementComponent implements OnInit {
     }
 
     loadRoles() {
-        this.http.get<any[]>(`${environment.apiUrl}/api/roles`).subscribe(
+        this.http.get<any[]>(`${environment.apiUrl}/roles`).subscribe(
             (data) => {
                 this.roles = data;
             },
@@ -88,7 +88,7 @@ export class UserManagementComponent implements OnInit {
             this.filteredUsers = [...this.users];
         } else {
             const searchTerm = this.searchText.toLowerCase();
-            this.filteredUsers = this.users.filter(user => 
+            this.filteredUsers = this.users.filter(user =>
                 user.username.toLowerCase().includes(searchTerm) ||
                 user.email.toLowerCase().includes(searchTerm) ||
                 user.description?.toLowerCase().includes(searchTerm)
@@ -124,7 +124,7 @@ export class UserManagementComponent implements OnInit {
         };
         delete user.roleId;
 
-        const url = `${environment.apiUrl}/api/users${user.id ? `/${user.id}` : ''}`;
+        const url = `${environment.apiUrl}/users${user.id ? `/${user.id}` : ''}`;
         const method = user.id ? 'put' : 'post';
 
         if (user.id && !user.password) {
@@ -154,7 +154,7 @@ export class UserManagementComponent implements OnInit {
             padding: '2em'
         }).then((result) => {
             if (result.value) {
-                this.http.delete(`${environment.apiUrl}/api/users/${user.id}`).subscribe(
+                this.http.delete(`${environment.apiUrl}/users/${user.id}`).subscribe(
                     () => {
                         this.loadUsers();
                         this.showMessage('User has been deleted successfully.');
