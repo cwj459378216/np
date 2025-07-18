@@ -17,7 +17,7 @@ public class ZeekLogAttribute {
     @JsonProperty("defaultShow")
     private Boolean defaultShow;
     
-    @JsonProperty(value = "descrption")
+    @JsonProperty(value = "description")
     private String description;
     
     @JsonProperty("extended")

@@ -2,6 +2,7 @@ import { Component, ChangeDetectorRef } from '@angular/core';
 import { BaseProtocolComponent } from '../../base-protocol/base-protocol.component';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { ZeekConfigService } from '../../../services/zeek-config.service';
 
 export interface DnsQueryResponse {
     total: number;
@@ -85,8 +86,8 @@ export class ApplicationDnsComponent extends BaseProtocolComponent {
         { field: 'rtt', title: 'RTT', hide: true }
     ];
 
-    constructor(http: HttpClient, cdr: ChangeDetectorRef) {
-        super(http, cdr);
+    constructor(http: HttpClient, cdr: ChangeDetectorRef, zeekConfigService: ZeekConfigService) {
+        super(http, cdr, zeekConfigService);
     }
 
     protected override processQueryResponse(response: DnsQueryResponse): void {
@@ -123,4 +124,4 @@ export class ApplicationDnsComponent extends BaseProtocolComponent {
         if (!text) return '';
         return text.length > 50 ? text.substring(0, 47) + '...' : text;
     }
-} 
+}

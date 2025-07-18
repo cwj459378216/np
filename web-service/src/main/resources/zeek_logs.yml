@@ -3,47 +3,47 @@ BeginAttr:
     keyAlias: "timestamp"
     keyType: "time"
     defaultShow: true
-    descrption: "This is the time of the first packet"
+    description: "This is the time of the first packet"
 
   - keyWord: "uid"
     keyAlias: "id"
     keyType: "string"
-    descrption: "A unique identifier of the connection"
+    description: "A unique identifier of the connection"
 
   - keyWord: "id.orig_h"
     keyAlias: "srcIP"
     keyType: "ip"
     defaultShow: true
-    descrption: "source ip address"
+    description: "source ip address"
 
   - keyWord: "id.orig_p"
     keyAlias: "srcPort"
     keyType: "uint32"
     defaultShow: true
-    descrption: "source port number"
+    description: "source port number"
 
   - keyWord: "id.resp_h"
     keyAlias: "dstIp"
     keyType: "ip"
-    descrption: "destination ip address"
+    description: "destination ip address"
 
   - keyWord: "id.resp_p"
     keyAlias: "dstPort"
     keyType: "uint32"
     defaultShow: true
-    descrption: "destination port number"
+    description: "destination port number"
 
 EndAttr:
   - keyWord: "file_path"
     keyAlias: "filePath"
     keyType: "string"
-    descrption: "data source"
+    description: "data source"
 
   - keyWord: "ch_id"
     extended: true
     keyAlias: "channelId"
     keyType: "uint32"
-    descrption: "channel id"
+    description: "channel id"
 
 Zeek:
   - logName: "conn"
@@ -54,86 +54,86 @@ Zeek:
         keyAlias: "protoName"
         keyType: "string"
         defaultShow: true
-        descrption: "The transport layer protocol of the connection"
+        description: "The transport layer protocol of the connection"
       - keyWord: "service"
         keyAlias: "serviceName"
         keyType: "string"
         defaultShow: true
-        descrption: "An identification of an application protocol being sent over the connection"
+        description: "An identification of an application protocol being sent over the connection"
       - keyWord: "duration"
         keyAlias: "connDuration"
         keyType: "float"
         defaultShow: true
-        descrption: "How long the connection lasted.unit:second"
+        description: "How long the connection lasted.unit:second"
       - keyWord: "orig_bytes"
         keyAlias: "origBytes"
         keyType: "uint64"
-        descrption: "The number of payload bytes the originator sent. For TCP this is taken from sequence numbers and might be inaccurate"
+        description: "The number of payload bytes the originator sent. For TCP this is taken from sequence numbers and might be inaccurate"
       - keyWord: "resp_bytes"
         keyAlias: "respBytes"
         keyType: "uint64"
-        descrption: "The number of payload bytes the responder sent"
+        description: "The number of payload bytes the responder sent"
       - keyWord: "conn_state"
         keyAlias: "connState"
         keyType: "string"
         defaultShow: true
-        descrption: "S0: Connection attempt seen, no reply;S1: Connection established, not terminated;SF: Normal establishment and termination. Note that this is the same symbol as for state S1. You can tell the two apart because for S1 there will not be any byte counts in the summary, while for SF there will be;REJ: Connection attempt rejected;S2: Connection established and close attempt by originator seen (but no reply from responder);S3: Connection established and close attempt by responder seen (but no reply from originator);RSTO: Connection established, originator aborted (sent a RST);RSTR: Responder sent a RST;RSTOS0: Originator sent a SYN followed by a RST, we never saw a SYN-ACK from the responder;RSTRH: Responder sent a SYN ACK followed by a RST, we never saw a SYN from the (purported) originator;SH: Originator sent a SYN followed by a FIN, we never saw a SYN ACK from the responder (hence the connection was “half” open);SHR: Responder sent a SYN ACK followed by a FIN, we never saw a SYN from the originator;OTH: No SYN seen, just midstream traffic (one example of this is a “partial connection” that was not later closed"
+        description: "S0: Connection attempt seen, no reply;S1: Connection established, not terminated;SF: Normal establishment and termination. Note that this is the same symbol as for state S1. You can tell the two apart because for S1 there will not be any byte counts in the summary, while for SF there will be;REJ: Connection attempt rejected;S2: Connection established and close attempt by originator seen (but no reply from responder);S3: Connection established and close attempt by responder seen (but no reply from originator);RSTO: Connection established, originator aborted (sent a RST);RSTR: Responder sent a RST;RSTOS0: Originator sent a SYN followed by a RST, we never saw a SYN-ACK from the responder;RSTRH: Responder sent a SYN ACK followed by a RST, we never saw a SYN from the (purported) originator;SH: Originator sent a SYN followed by a FIN, we never saw a SYN ACK from the responder (hence the connection was “half” open);SHR: Responder sent a SYN ACK followed by a FIN, we never saw a SYN from the originator;OTH: No SYN seen, just midstream traffic (one example of this is a “partial connection” that was not later closed"
       - keyWord: "local_orig"
         keyAlias: "localOrig"
         keyType: "bool"
-        descrption: "If the connection is originated locally, this value will be T. If it was originated remotely it will be F"
+        description: "If the connection is originated locally, this value will be T. If it was originated remotely it will be F"
       - keyWord: "local_resp"
         keyAlias: "localResp"
         keyType: "bool"
-        descrption: "If the connection is responded to locally, this value will be T. If it was responded to remotely it will be F"
+        description: "If the connection is responded to locally, this value will be T. If it was responded to remotely it will be F"
       - keyWord: "missed_bytes"
         keyAlias: "missedBytes"
         keyType: "uint64"
-        descrption: "Indicates the number of bytes missed in content gaps, which is representative of packet loss. A value other than zero will normally cause protocol analysis to fail but some analysis may have been completed prior to the packet loss"
+        description: "Indicates the number of bytes missed in content gaps, which is representative of packet loss. A value other than zero will normally cause protocol analysis to fail but some analysis may have been completed prior to the packet loss"
       - keyWord: "history"
         keyAlias: "connHistory"
         keyType: "string"
-        descrption: "Records the state history of connections as a string of letters"
+        description: "Records the state history of connections as a string of letters"
       - keyWord: "orig_pkts"
         keyAlias: "origPkts"
         keyType: "uint64"
         defaultShow: true
-        descrption: "Number of packets that the originator sent"
+        description: "Number of packets that the originator sent"
       - keyWord: "orig_ip_bytes"
         keyAlias: "origIpBytes"
         keyType: "uint64"
         defaultShow: true
-        descrption: "Number of IP level bytes that the originator sent"
+        description: "Number of IP level bytes that the originator sent"
       - keyWord: "resp_pkts"
         keyAlias: "respPkts"
         keyType: "uint64"
         defaultShow: true
-        descrption: "Number of packets that the responder sent"
+        description: "Number of packets that the responder sent"
       - keyWord: "resp_ip_bytes"
         keyAlias: "respIpBytes"
         keyType: "uint64"
         defaultShow: true
-        descrption: "Number of IP level bytes that the responder sent"
+        description: "Number of IP level bytes that the responder sent"
       - keyWord: "tunnel_parents"
         keyAlias: "tunnelParents"
         keyType: "string"
-        descrption: "If this connection was over a tunnel, indicate the uid values for any encapsulating parent connections used over the lifetime of this inner connection"
+        description: "If this connection was over a tunnel, indicate the uid values for any encapsulating parent connections used over the lifetime of this inner connection"
       - keyWord: "orig_l2_addr"
         keyAlias: "origL2Addr"
         keyType: "string"
-        descrption: "Link-layer address of the originator"
+        description: "Link-layer address of the originator"
       - keyWord: "resp_l2_addr"
         keyAlias: "respL2Addr"
         keyType: "string"
-        descrption: "Link-layer address of the responder"
+        description: "Link-layer address of the responder"
       - keyWord: "vlan"
         keyAlias: "vlanId"
         keyType: "uint32"
-        descrption: "The outer VLAN for this connection"
+        description: "The outer VLAN for this connection"
       - keyWord: "inner_vlan"
         keyAlias: "innerVlanId"
         keyType: "uint32"
-        descrption: "The inner VLAN for this connection"
+        description: "The inner VLAN for this connection"
 
   - logName: "http"
     needBeginAttr: true
@@ -142,31 +142,36 @@ Zeek:
       - keyWord: "trans_depth"
         keyAlias: "transDepth"
         keyType: "uint32"
-        descrption: "Represents the pipelined depth into the connection of this request/response transaction"
+        description: "Represents the pipelined depth into the connection of this request/response transaction"
       - keyWord: "method"
         keyAlias: "reqMethod"
         keyType: "string"
-        descrption: "Verb used in the HTTP request (GET, POST, HEAD, etc.)."
+        description: "Verb used in the HTTP request (GET, POST, HEAD, etc.)."
       - keyWord: "host"
         keyAlias: "host"
         keyType: "string"
-        descrption: "Value of the HOST header."
+        description: "Value of the HOST header."
       - keyWord: "uri"
         keyAlias: "URI"
         keyType: "string"
-        descrption: "URI used in the request"
+        description: "URI used in the request"
       - keyWord: "referrer"
         keyAlias: "referrer"
         keyType: "string"
-        descrption: "Value of the “referer” header. The comment is deliberately misspelled like the standard declares, but the name used here is “referrer”, spelled correctly"
+        description: "Value of the “referer” header. The comment is deliberately misspelled like the standard declares, but the name used here is “referrer”, spelled correctly"
       - keyWord: "version"
         keyAlias: "verNumber"
         keyType: "string"
-        descrption: "Value of the version portion of the reply"
+        description: "Value of the version portion of the reply"
       - keyWord: "user_agent"
         keyAlias: "userAgent"
         keyType: "string"
-        descrption: "Value of the User-Agent header from the client"
+        description: "Value of the User-Agent header from the client"
+
+      - keyWord: "origin"
+        keyAlias: "origin"
+        keyType: "string"
+        description: "Value of the Origin header from the client. This is used in CORS requests to indicate the origin of the request."
 
       - keyWord: "request_body_len"
         keyAlias: "requestBodyLen"
@@ -213,31 +218,43 @@ Zeek:
         keyType: "string"
         description: "Password if basic-auth is performed for the request."
 
-      - keyWord: "capture_password"
-        keyAlias: "capturePassword"
-        keyType: "bool"
-        description: "Determines if the password will be captured for this request."
 
       - keyWord: "proxied"
         keyAlias: "proxied"
         keyType: "string"
         description: "All of the headers that may indicate if the request was proxied."
 
-      - keyWord: "range_request"
-        keyAlias: "rangeRequest"
-        keyType: "bool"
-        description: "Indicates if this request can assume 206 partial content in response."
-
-      - keyWord: "file_path"
-        keyAlias: "filePath"
+      - keyWord: "orig_fuids"
+        keyAlias: "origFuids"
         keyType: "string"
-        descrption: "data source"
+        description: "extracted file uids from the request."
 
-      - keyWord: "ch_id"
-        keyAlias: "channelId"
-        keyType: "uint32"
-        descrption: "channel id"
+      - keyWord: "orig_filenames"
+        keyAlias: "origFilenames"
+        keyType: "string"
+        description: "extracted file names from the request."
 
+
+      - keyWord: "orig_mine_types"
+        keyAlias: "origMineTypes"
+        keyType: "string"
+        description: "extracted mime types from the request."
+
+      - keyWord: "resp_fuids"
+        keyAlias: "respFuids"
+        keyType: "string"
+        description: "extracted file uids from the response."
+
+      - keyWord: "resp_filenames"
+        keyAlias: "respFilenames"
+        keyType: "string"
+        description: "extracted file names from the response."
+
+      - keyWord: "resp_mine_types"
+        keyAlias: "respMineTypes"
+        keyType: "string"
+        description: "extracted mime types from the response."
+        
   - logName: "dns"
     needBeginAttr: true
     needEndAttr: true
@@ -332,26 +349,6 @@ Zeek:
         keyType: "bool"
         description: "The DNS query was rejected by the server."
 
-      - keyWord: "total_answers"
-        keyAlias: "totalAnswers"
-        keyType: "uint32"
-        description: "The total number of resource records in a reply message’s answer section."
-
-      - keyWord: "total_replies"
-        keyAlias: "totalReplies"
-        keyType: "uint32"
-        description: "The total number of resource records in a reply message’s answer, authority, and additional sections."
-
-      - keyWord: "saw_query"
-        keyAlias: "sawQuery"
-        keyType: "bool"
-        description: "Whether the full DNS query has been seen."
-
-      - keyWord: "saw_reply"
-        keyAlias: "sawReply"
-        keyType: "bool"
-        description: "Whether the full DNS reply has been seen."
-
   - logName: "dce_rpc"
     needBeginAttr: false
     needEndAttr: true
@@ -360,11 +357,11 @@ Zeek:
         keyAlias: "timestamp"
         keyType: "time"
         defaultShow: true
-        descrption: "This is the time of the first packet"
+        description: "This is the time of the first packet"
       - keyWord: "uid"
         keyAlias: "id"
         keyType: "string"
-        descrption: "A unique identifier of the connection"
+        description: "A unique identifier of the connection"
       - keyWord: "rtt"
         keyAlias: "rtt"
         keyType: "float"
@@ -393,12 +390,12 @@ Zeek:
         keyAlias: "timestamp"
         keyType: "time"
         defaultShow: true
-        descrption: "This is the time of the first packet"
+        description: "This is the time of the first packet"
 
       - keyWord: "uid"
         keyAlias: "id"
         keyType: "string"
-        descrption: "A unique identifier of the connection"
+        description: "A unique identifier of the connection"
 
       - keyWord: "client_addr"
         keyAlias: "clientAddr"
@@ -409,16 +406,6 @@ Zeek:
         keyAlias: "serverAddr"
         keyType: "ip"
         description: "IP address of the server involved in actually handing out the lease. There could be other servers replying with OFFER messages which won’t be represented here. Getting an address in this field also requires that the server handing out the lease also sources packets from a non-broadcast IP address."
-
-      - keyWord: "client_port"
-        keyAlias: "clientPort"
-        keyType: "uint32"
-        description: "Client port number seen at time of server handing out IP (expected as 68/udp)."
-
-      - keyWord: "server_port"
-        keyAlias: "serverPort"
-        keyType: "uint32"
-        description: "Server port number seen at time of server handing out IP (expected as 67/udp)."
 
       - keyWord: "mac"
         keyAlias: "mac"
@@ -475,16 +462,6 @@ Zeek:
         keyType: "float"
         description: "Duration of the DHCP 'session' representing the time from the first message to the last."
 
-      - keyWord: "client_chaddr"
-        keyAlias: "clientChaddr"
-        keyType: "string"
-        description: "The CHADDR field sent by the client."
-
-      - keyWord: "last_message_ts"
-        keyAlias: "lastMessageTs"
-        keyType: "time"
-        description: "Timestamp of the last message in the DHCP transaction."
-  
   - logName: "dnp3"
     needBeginAttr: true
     needEndAttr: true
@@ -1219,7 +1196,7 @@ Zeek:
 
       - keyWord: "rcptto"
         keyAlias: "rcptTo"
-        keyType: "set[string]"
+        keyType: "string"
         description: "Email addresses found in the Rcpt header."
 
       - keyWord: "date"
@@ -1234,12 +1211,12 @@ Zeek:
 
       - keyWord: "to"
         keyAlias: "to"
-        keyType: "set[string]"
+        keyType: "string"
         description: "Contents of the To header."
 
       - keyWord: "cc"
         keyAlias: "cc"
-        keyType: "set[string]"
+        keyType: "string"
         description: "Contents of the CC header."
 
       - keyWord: "reply_to"
@@ -1284,7 +1261,7 @@ Zeek:
 
       - keyWord: "path"
         keyAlias: "path"
-        keyType: "vector[ip]"
+        keyType: "string"
         description: "The message transmission path, as extracted from the headers."
 
       - keyWord: "user_agent"
@@ -1481,7 +1458,7 @@ Zeek:
 
       - keyWord: "capabilities"
         keyAlias: "capabilities"
-        keyType: "SSH::Capabilities"
+        keyType: "string"
         description: "SSH capabilities"
 
       - keyWord: "analyzer_id"
@@ -1518,30 +1495,14 @@ Zeek:
         keyType: "string"
         description: "Value of the Server Name Indicator SSL/TLS extension. It indicates the server name that the client was requesting."
 
-      - keyWord: "session_id"
-        keyAlias: "sessionId"
-        keyType: "string"
-        description: "Session ID offered by the client for session resumption. Not used for logging."
-
       - keyWord: "resumed"
         keyAlias: "resumed"
         keyType: "bool"
         description: "Flag to indicate if the session was resumed reusing the key material exchanged in an earlier connection."
-
       - keyWord: "client_ticket_empty_session_seen"
         keyAlias: "clientTicketEmptySessionSeen"
         keyType: "bool"
         description: "Flag to indicate if we saw a non-empty session ticket being sent by the client using an empty session ID. This value is used to determine if a session is being resumed. It’s not logged."
-
-      - keyWord: "client_key_exchange_seen"
-        keyAlias: "clientKeyExchangeSeen"
-        keyType: "bool"
-        description: "Flag to indicate if we saw a client key exchange message sent by the client. This value is used to determine if a session is being resumed. It’s not logged."
-
-      - keyWord: "client_psk_seen"
-        keyAlias: "clientPskSeen"
-        keyType: "bool"
-        description: "Track if the client sent a pre-shared-key extension. Used to determine if a TLS 1.3 session is being resumed. Not logged."
 
       - keyWord: "last_alert"
         keyAlias: "lastAlert"
@@ -1553,35 +1514,30 @@ Zeek:
         keyType: "string"
         description: "Next protocol the server chose using the application layer next protocol extension, if present."
 
-      - keyWord: "analyzer_id"
-        keyAlias: "analyzerId"
-        keyType: "uint64"
-        description: "The analyzer ID used for the analyzer instance attached to each connection. It is not used for logging since it’s a meaningless arbitrary number."
-
       - keyWord: "established"
         keyAlias: "established"
         keyType: "bool"
         description: "Flag to indicate if this SSL session has been established successfully, or if it was aborted during the handshake."
-
-      - keyWord: "logged"
-        keyAlias: "logged"
-        keyType: "bool"
-        description: "Flag to indicate if this record already has been logged, to prevent duplicates."
-
-      - keyWord: "hrr_seen"
-        keyAlias: "hrrSeen"
-        keyType: "bool"
-        description: "Flag to indicate that we have seen a Hello Retry request message. Used internally for SSL history logging."
 
       - keyWord: "ssl_history"
         keyAlias: "sslHistory"
         keyType: "string"
         description: "SSL history showing which types of packets we received in which order."
 
-      - keyWord: "delay_tokens"
-        keyAlias: "delayTokens"
+      - keyWord: "cert_chain_fps"
+        keyAlias: "certChainFps"
         keyType: "string"
-        description: "delay tokens."
+        description: "List of certificate fingerprints in the certificate chain, if any. The fingerprints are separated by commas."
+      
+      - keyWord: "client_cert_chain_fps"
+        keyAlias: "clientCertChainFps"
+        keyType: "string"
+        description: "List of client certificate fingerprints in the certificate chain, if any. The fingerprints are separated by commas."
+
+      - keyWord: "sni_matches_cert"
+        keyAlias: "sniMatchesCert"
+        keyType: "bool"
+        description: "Indicates if the SNI matches the certificate presented by the server."
 
   - logName: "syslog"
     needBeginAttr: true

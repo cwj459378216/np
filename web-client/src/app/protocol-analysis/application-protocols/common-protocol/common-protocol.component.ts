@@ -35,13 +35,13 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
     override cols: any[] = [];
 
     constructor(
-        http: HttpClient, 
+        http: HttpClient,
         cdr: ChangeDetectorRef,
         private route: ActivatedRoute,
-        private zeekConfigService: ZeekConfigService
+        protected override zeekConfigService: ZeekConfigService
     ) {
-        super(http, cdr);
-        
+        super(http, cdr, zeekConfigService);
+
         // 监听路由参数变化
         this.routeSubscription = this.route.params.subscribe(params => {
             const protocol = params['protocol'];
@@ -54,23 +54,96 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
     private loadProtocolConfig(protocol: string) {
         this.protocolName = protocol.toUpperCase();
         this.indexName = `${protocol.toLowerCase()}-realtime`;
-        
+
         this.zeekConfigService.getZeekConfig().subscribe({
             next: (config) => {
+                console.log('Zeek配置:', config);
                 const protocolConfig = config.Zeek.find(
                     (p: ZeekLogType) => p.logName.toLowerCase() === protocol.toLowerCase()
                 );
                 if (protocolConfig) {
-                    this.attributes = protocolConfig.attribute;
+                    // 构建完整的属性列表，包含 BeginAttr、协议特定字段和 EndAttr
+                    this.attributes = this.buildCompleteAttributes(config, protocolConfig);
+
+                    // 根据完整的属性列表构建列配置
                     this.cols = this.attributes.map(attr => ({
                         field: attr.keyAlias,
-                        title: attr.keyWord,
+                        title: this.capitalize(attr.keyAlias),
                         hide: !attr.defaultShow,
                         type: attr.keyType
                     }));
+
+                    // 构建字段描述信息并传递给父组件
+                    this.buildFieldDescriptions(config, protocolConfig);
                 }
             }
         });
+    }
+
+    private buildFieldDescriptions(config: any, protocolConfig: ZeekLogType) {
+        console.log('构建字段描述信息:', config);
+        console.log('协议配置:', protocolConfig);
+        const fieldDescriptions: any[] = [];
+
+        // 使用已经构建好的完整属性列表
+        this.attributes.forEach(attr => {
+            fieldDescriptions.push({
+                keyWord: attr.keyWord,
+                keyAlias: attr.keyAlias,
+                keyType: attr.keyType,
+                description: attr.description || '',
+                defaultShow: attr.defaultShow || false
+            });
+        });
+
+        console.log('构建的字段描述信息:', fieldDescriptions);
+        // 将字段描述信息设置到父组件
+        this.setFieldDescriptions(fieldDescriptions);
+    }
+
+    private buildCompleteAttributes(config: any, protocolConfig: ZeekLogType): ZeekLogAttribute[] {
+        const allAttributes: ZeekLogAttribute[] = [];
+
+        // 添加通用开始字段 (BeginAttr)
+        if (protocolConfig.needBeginAttr && config.BeginAttr) {
+            config.BeginAttr.forEach((attr: any) => {
+                allAttributes.push({
+                    keyWord: attr.keyWord,
+                    keyAlias: attr.keyAlias,
+                    keyType: attr.keyType,
+                    defaultShow: attr.defaultShow || false,
+                    description: attr.description
+                });
+            });
+        }
+
+        // 添加协议特定字段
+        if (protocolConfig.attribute) {
+            protocolConfig.attribute.forEach((attr: any) => {
+                allAttributes.push({
+                    keyWord: attr.keyWord,
+                    keyAlias: attr.keyAlias,
+                    keyType: attr.keyType,
+                    defaultShow: attr.defaultShow || false,
+                    description: attr.description
+                });
+            });
+        }
+
+        // 添加通用结束字段 (EndAttr)
+        if (protocolConfig.needEndAttr && config.EndAttr) {
+            config.EndAttr.forEach((attr: any) => {
+                allAttributes.push({
+                    keyWord: attr.keyWord,
+                    keyAlias: attr.keyAlias,
+                    keyType: attr.keyType,
+                    defaultShow: attr.defaultShow || false,
+                    description: attr.description
+                });
+            });
+        }
+
+        return allAttributes;
     }
 
     override ngOnInit() {
@@ -106,4 +179,4 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
         if (!text) return '';
         return text.length > 50 ? text.substring(0, 47) + '...' : text;
     }
-} 
+}
