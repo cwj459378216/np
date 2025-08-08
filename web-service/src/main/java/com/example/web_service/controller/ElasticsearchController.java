@@ -52,6 +52,16 @@ public class ElasticsearchController {
         return elasticsearchSyncService.getTrending(startTime, endTime, filePath, index, interval);
     }
 
+    @GetMapping("/protocol-trends")
+    @Operation(summary = "查询协议交易趋势", description = "获取HTTP、DNS和其他协议的趋势数据，时间参数使用毫秒时间戳")
+    public Map<String, List<TrendingData>> getProtocolTrends(
+            @RequestParam Long startTime,
+            @RequestParam Long endTime,
+            @RequestParam(defaultValue = "1h") String interval
+    ) throws IOException {
+        return elasticsearchSyncService.getProtocolTrends(startTime, endTime, interval);
+    }
+
     @GetMapping("/query")
     @Operation(summary = "查询ES数据", description = "根据时间范围和其他条件查询数据")
     public Map<String, Object> queryData(

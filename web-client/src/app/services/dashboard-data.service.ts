@@ -1,0 +1,120 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+export interface TrendingData {
+  timestamp: number;
+  count: number;
+}
+
+export interface ProtocolTrendsResponse {
+  HTTP: TrendingData[];
+  DNS: TrendingData[];
+  Others: TrendingData[];
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class DashboardDataService {
+  private apiUrl = `${environment.apiUrl}/es`;
+
+  constructor(private http: HttpClient) { }
+
+  /**
+   * 获取协议交易趋势数据
+   * @param startTime 开始时间戳（毫秒）
+   * @param endTime 结束时间戳（毫秒）
+   * @param interval 时间间隔 (默认: 1h)
+   * @returns Observable<ProtocolTrendsResponse>
+   */
+  getProtocolTrends(startTime: number, endTime: number, interval: string = '1h'): Observable<ProtocolTrendsResponse> {
+    const params = new HttpParams()
+      .set('startTime', startTime.toString())
+      .set('endTime', endTime.toString())
+      .set('interval', interval);
+
+    console.log('Fetching protocol trends with params:', { startTime, endTime, interval });
+    return this.http.get<ProtocolTrendsResponse>(`${this.apiUrl}/protocol-trends`, { params });
+  }
+
+  /**
+   * 获取趋势数据（原有方法）
+   * @param startTime 开始时间
+   * @param endTime 结束时间
+   * @param filePath 文件路径
+   * @param index 索引名称
+   * @param interval 时间间隔
+   * @returns Observable<TrendingData[]>
+   */
+  getTrending(
+    startTime: string,
+    endTime: string,
+    filePath?: string,
+    index: string = 'conn-realtime',
+    interval: string = '1h'
+  ): Observable<TrendingData[]> {
+    let params = new HttpParams()
+      .set('startTime', startTime)
+      .set('endTime', endTime)
+      .set('index', index)
+      .set('interval', interval);
+
+    if (filePath) {
+      params = params.set('filePath', filePath);
+    }
+
+    console.log('Fetching trending data with params:', { startTime, endTime, filePath, index, interval });
+    return this.http.get<TrendingData[]>(`${this.apiUrl}/trending`, { params });
+  }
+
+  /**
+   * 查询ES数据
+   * @param startTime 开始时间戳（毫秒）
+   * @param endTime 结束时间戳（毫秒）
+   * @param filePath 文件路径
+   * @param index 索引名称
+   * @param size 返回数量
+   * @param from 起始位置
+   * @returns Observable<any>
+   */
+  queryData(
+    startTime: number,
+    endTime: number,
+    filePath?: string,
+    index: string = 'conn-realtime',
+    size: number = 10,
+    from: number = 0
+  ): Observable<any> {
+    let params = new HttpParams()
+      .set('startTime', startTime.toString())
+      .set('endTime', endTime.toString())
+      .set('index', index)
+      .set('size', size.toString())
+      .set('from', from.toString());
+
+    if (filePath) {
+      params = params.set('filePath', filePath);
+    }
+
+    console.log('Querying ES data with params:', { startTime, endTime, filePath, index, size, from });
+    return this.http.get<any>(`${this.apiUrl}/query`, { params });
+  }
+
+  /**
+   * 搜索ES数据
+   * @param keyword 关键字
+   * @returns Observable<any[]>
+   */
+  searchData(keyword?: string): Observable<any[]> {
+    let params = new HttpParams();
+
+    if (keyword) {
+      params = params.set('keyword', keyword);
+    }
+
+    console.log('Searching ES data with keyword:', keyword);
+    return this.http.get<any[]>(`${this.apiUrl}/search`, { params });
+  }
+}

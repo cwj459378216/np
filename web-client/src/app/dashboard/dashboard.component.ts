@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { an } from '@fullcalendar/core/internal-common';
 import { Store } from '@ngrx/store';
+import { DashboardDataService, ProtocolTrendsResponse, TrendingData } from '../services/dashboard-data.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -25,12 +26,13 @@ export class DashboardComponent implements OnInit {
   tcpTrending: any;
   udpTrending: any;
 
-  constructor(public storeData: Store<any>) {
+  constructor(public storeData: Store<any>, private dashboardDataService: DashboardDataService) {
     this.initStore();
     this.isLoading = false;
   }
+
   ngOnInit(): void {
-    // throw new Error('Method not implemented.');
+    this.loadProtocolTrendsData();
   }
 
   async initStore() {
@@ -54,6 +56,192 @@ export class DashboardComponent implements OnInit {
           }
         }
       });
+  }
+
+  loadProtocolTrendsData() {
+    // 获取最近24小时的数据
+    const endTime = new Date();
+    const startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // 24小时前
+
+    const startTimeTimestamp = startTime.getTime();
+    const endTimeTimestamp = endTime.getTime();
+
+    this.dashboardDataService.getProtocolTrends(startTimeTimestamp, endTimeTimestamp, '1h')
+      .subscribe({
+        next: (data: ProtocolTrendsResponse) => {
+          this.updateProtocolTrendingChart(data);
+        },
+        error: (error) => {
+          console.error('Error loading protocol trends data:', error);
+          // 如果API调用失败，使用模拟数据
+          this.initCharts();
+        }
+      });
+  }
+
+  updateProtocolTrendingChart(data: ProtocolTrendsResponse) {
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+    const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
+
+    // 转换数据格式为ApexCharts需要的格式
+    const httpData = data.HTTP.map(item => [item.timestamp, item.count]);
+    const dnsData = data.DNS.map(item => [item.timestamp, item.count]);
+    const othersData = data.Others.map(item => [item.timestamp, item.count]);
+
+    this.protocolTrending = {
+      chart: {
+        height: 350,
+        type: 'area',
+        fontFamily: 'Nunito, sans-serif',
+        zoom: {
+          enabled: false,
+        },
+        toolbar: {
+          show: false,
+        },
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      stroke: {
+        show: true,
+        curve: 'smooth',
+        width: 2,
+        lineCap: 'square',
+      },
+      dropShadow: {
+        enabled: true,
+        opacity: 0.2,
+        blur: 10,
+        left: -7,
+        top: 22,
+      },
+      colors: isDark ? ['#2196f3', '#e7515a', '#00ab55'] : ['#1b55e2', '#e7515a', '#00ab55'],
+      markers: {
+        size: 0,
+        colors: ['#1b55e2', '#e7515a', '#00ab55'],
+        strokeColor: '#fff',
+        strokeWidth: 2,
+        shape: 'circle',
+        hover: {
+          size: 6,
+          sizeOffset: 3,
+        },
+      },
+      xaxis: {
+        type: 'datetime',
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+        crosshairs: {
+          show: true,
+        },
+        labels: {
+          offsetX: isRtl ? 2 : 0,
+          offsetY: 5,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-xaxis-title',
+          },
+          formatter: (value: number) => {
+            const date = new Date(value);
+            const formatter = new Intl.DateTimeFormat('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric'
+            });
+            return formatter.format(date);
+          },
+        },
+      },
+      yaxis: {
+        tickAmount: 5,
+        labels: {
+          formatter: (value: number) => {
+            return value / 1000 + "K";
+          },
+          offsetX: isRtl ? -30 : -10,
+          offsetY: 0,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-yaxis-title',
+          },
+        },
+        opposite: isRtl ? true : false,
+      },
+      grid: {
+        borderColor: isDark ? '#191e3a' : '#e0e6ed',
+        strokeDashArray: 5,
+        xaxis: {
+          lines: {
+            show: true,
+          },
+        },
+        yaxis: {
+          lines: {
+            show: false,
+          },
+        },
+        padding: {
+          top: 0,
+          right: 20,
+          bottom: 0,
+          left: 0,
+        },
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        fontSize: '16px',
+        markers: {
+          width: 10,
+          height: 10,
+          offsetX: -2,
+        },
+        itemMargin: {
+          horizontal: 10,
+          vertical: 5,
+        },
+      },
+      tooltip: {
+        marker: {
+          show: true,
+        },
+        x: {
+          show: false,
+        },
+      },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          inverseColors: false,
+          opacityFrom: isDark ? 0.19 : 0.28,
+          opacityTo: 0.05,
+          stops: isDark ? [100, 100] : [45, 100],
+        },
+      },
+      series: [
+        {
+          name: 'HTTP',
+          data: httpData,
+        },
+        {
+          name: 'DNS',
+          data: dnsData,
+        },
+        {
+          name: 'Others',
+          data: othersData,
+        },
+      ],
+    };
+
+    // 如果数据加载成功，初始化其他图表
+    this.initCharts();
   }
 
   initCharts() {
@@ -807,198 +995,198 @@ export class DashboardComponent implements OnInit {
       ],
     };
     // protocolTrending
-    this.protocolTrending = {
-      chart: {
-        height: 350,
-        type: 'area',
-        fontFamily: 'Nunito, sans-serif',
-        zoom: {
-          enabled: false,
-        },
-        toolbar: {
-          show: false,
-        },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      stroke: {
-        show: true,
-        curve: 'smooth',
-        width: 2,
-        lineCap: 'square',
-      },
-      dropShadow: {
-        enabled: true,
-        opacity: 0.2,
-        blur: 10,
-        left: -7,
-        top: 22,
-      },
-      colors: isDark ? ['#2196f3', '#e7515a', '#00ab55'] : ['#1b55e2', '#e7515a', '#00ab55'],
-      markers: {
-        size: 0,  // 设置标记的大小
-        colors: ['#1b55e2', '#e7515a', '#00ab55'],  // 设置标记的颜色，可以设置为不同的颜色数组
-        strokeColor: '#fff',  // 设置标记的边框颜色
-        strokeWidth: 2,  // 设置边框宽度
-        shape: 'circle',  // 设置标记的形状为圆形
-        hover: {
-          size: 6,  // 鼠标悬停时标记的大小
-          sizeOffset: 3,  // 鼠标悬停时标记的大小偏移
-        },
-      },
-      // labels: ['Jan', 'Feb', 'M  ar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      xaxis: {
-        type: 'datetime',
-        axisBorder: {
-          show: false,
-        },
-        axisTicks: {
-          show: false,
-        },
-        crosshairs: {
-          show: true,
-        },
-        labels: {
-          offsetX: isRtl ? 2 : 0,
-          offsetY: 5,
-          style: {
-            fontSize: '12px',
-            cssClass: 'apexcharts-xaxis-title',
-          },
-          formatter: (value: number) => {
-            // 使用固定格式化的日期
-            const date = new Date(value);
-            const formatter = new Intl.DateTimeFormat('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            });
-            return formatter.format(date); // 返回固定格式
-          },
-        },
-      },
-      yaxis: {
-        tickAmount: 5,
-        labels: {
-          formatter: (value: number) => {
-            return value / 1000 + "KB";
-          },
-          offsetX: isRtl ? -30 : -10,
-          offsetY: 0,
-          style: {
-            fontSize: '12px',
-            cssClass: 'apexcharts-yaxis-title',
-          },
-        },
-        opposite: isRtl ? true : false,
-      },
-      grid: {
-        borderColor: isDark ? '#191e3a' : '#e0e6ed',
-        strokeDashArray: 5,
-        xaxis: {
-          lines: {
-            show: true,
-          },
-        },
-        yaxis: {
-          lines: {
-            show: false,
-          },
-        },
-        padding: {
-          top: 0,
-          right: 20,
-          bottom: 0,
-          left: 0,
-        },
-      },
-      legend: {
-        position: 'top',
-        horizontalAlign: 'right',
-        fontSize: '16px',
-        markers: {
-          width: 10,
-          height: 10,
-          offsetX: -2,
-        },
-        itemMargin: {
-          horizontal: 10,
-          vertical: 5,
-        },
-      },
-      tooltip: {
-        marker: {
-          show: true,
-        },
-        x: {
-          show: false,
-        },
-      },
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shadeIntensity: 1,
-          inverseColors: !1,
-          opacityFrom: isDark ? 0.19 : 0.28,
-          opacityTo: 0.05,
-          stops: isDark ? [100, 100] : [45, 100],
-        },
-      },
-      series: [
-        {
-          name: 'HTTP',
-          data: [
-            [1609459200000, 1000], // 时间戳，收入
-            [1612137600000, 2000],
-            [1614556800000, 5000],
-            [1617235200000, 8000],
-            [1619827200000, 3000],
-            [1622505600000, 6000],
-            [1625097600000, 5000],
-            [1627776000000, 9000],
-            [1630454400000, 7000],
-            [1633046400000, 4000],
-            [1635724800000, 8000],
-            [1638316800000, 6000],
-          ],
-        },
-        {
-          name: 'DNS',
-          data: [
-            [1609459200000, 2000], // 时间戳，支出
-            [1612137600000, 3000],
-            [1614556800000, 1000],
-            [1617235200000, 5000],
-            [1619827200000, 2000],
-            [1622505600000, 7000],
-            [1625097600000, 8000],
-            [1627776000000, 5000],
-            [1630454400000, 1000],
-            [1633046400000, 4000],
-            [1635724800000, 3000],
-            [1638316800000, 8000],
-          ],
-        },
-        {
-          name: 'Others',
-          data: [
-            [1609459200000, 1000], // 时间戳，支出
-            [1612137600000, 2000],
-            [1614556800000, 5000],
-            [1617235200000, 2000],
-            [1619827200000, 3000],
-            [1622505600000, 5000],
-            [1625097600000, 6000],
-            [1627776000000, 2000],
-            [1630454400000, 3000],
-            [1633046400000, 1000],
-            [1635724800000, 2000],
-            [1638316800000, 8000],
-          ],
-        },
-      ],
-    };
+    // this.protocolTrending = {
+    //   chart: {
+    //     height: 350,
+    //     type: 'area',
+    //     fontFamily: 'Nunito, sans-serif',
+    //     zoom: {
+    //       enabled: false,
+    //     },
+    //     toolbar: {
+    //       show: false,
+    //     },
+    //   },
+    //   dataLabels: {
+    //     enabled: false,
+    //   },
+    //   stroke: {
+    //     show: true,
+    //     curve: 'smooth',
+    //     width: 2,
+    //     lineCap: 'square',
+    //   },
+    //   dropShadow: {
+    //     enabled: true,
+    //     opacity: 0.2,
+    //     blur: 10,
+    //     left: -7,
+    //     top: 22,
+    //   },
+    //   colors: isDark ? ['#2196f3', '#e7515a', '#00ab55'] : ['#1b55e2', '#e7515a', '#00ab55'],
+    //   markers: {
+    //     size: 0,  // 设置标记的大小
+    //     colors: ['#1b55e2', '#e7515a', '#00ab55'],  // 设置标记的颜色，可以设置为不同的颜色数组
+    //     strokeColor: '#fff',  // 设置标记的边框颜色
+    //     strokeWidth: 2,  // 设置边框宽度
+    //     shape: 'circle',  // 设置标记的形状为圆形
+    //     hover: {
+    //       size: 6,  // 鼠标悬停时标记的大小
+    //       sizeOffset: 3,  // 鼠标悬停时标记的大小偏移
+    //     },
+    //   },
+    //   // labels: ['Jan', 'Feb', 'M  ar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    //   xaxis: {
+    //     type: 'datetime',
+    //     axisBorder: {
+    //       show: false,
+    //     },
+    //     axisTicks: {
+    //       show: false,
+    //     },
+    //     crosshairs: {
+    //       show: true,
+    //     },
+    //     labels: {
+    //       offsetX: isRtl ? 2 : 0,
+    //       offsetY: 5,
+    //       style: {
+    //         fontSize: '12px',
+    //         cssClass: 'apexcharts-xaxis-title',
+    //       },
+    //       formatter: (value: number) => {
+    //         // 使用固定格式化的日期
+    //         const date = new Date(value);
+    //         const formatter = new Intl.DateTimeFormat('en-GB', {
+    //           day: '2-digit',
+    //           month: 'short',
+    //           year: 'numeric'
+    //         });
+    //         return formatter.format(date); // 返回固定格式
+    //       },
+    //     },
+    //   },
+    //   yaxis: {
+    //     tickAmount: 5,
+    //     labels: {
+    //       formatter: (value: number) => {
+    //         return value / 1000 + "KB";
+    //       },
+    //       offsetX: isRtl ? -30 : -10,
+    //       offsetY: 0,
+    //       style: {
+    //         fontSize: '12px',
+    //         cssClass: 'apexcharts-yaxis-title',
+    //       },
+    //     },
+    //     opposite: isRtl ? true : false,
+    //   },
+    //   grid: {
+    //     borderColor: isDark ? '#191e3a' : '#e0e6ed',
+    //     strokeDashArray: 5,
+    //     xaxis: {
+    //       lines: {
+    //         show: true,
+    //       },
+    //     },
+    //     yaxis: {
+    //       lines: {
+    //         show: false,
+    //       },
+    //     },
+    //     padding: {
+    //       top: 0,
+    //       right: 20,
+    //       bottom: 0,
+    //       left: 0,
+    //     },
+    //   },
+    //   legend: {
+    //     position: 'top',
+    //     horizontalAlign: 'right',
+    //     fontSize: '16px',
+    //     markers: {
+    //       width: 10,
+    //       height: 10,
+    //       offsetX: -2,
+    //     },
+    //     itemMargin: {
+    //       horizontal: 10,
+    //       vertical: 5,
+    //     },
+    //   },
+    //   tooltip: {
+    //     marker: {
+    //       show: true,
+    //     },
+    //     x: {
+    //       show: false,
+    //     },
+    //   },
+    //   fill: {
+    //     type: 'gradient',
+    //     gradient: {
+    //       shadeIntensity: 1,
+    //       inverseColors: !1,
+    //       opacityFrom: isDark ? 0.19 : 0.28,
+    //       opacityTo: 0.05,
+    //       stops: isDark ? [100, 100] : [45, 100],
+    //     },
+    //   },
+    //   series: [
+    //     {
+    //       name: 'HTTP',
+    //       data: [
+    //         [1609459200000, 1000], // 时间戳，收入
+    //         [1612137600000, 2000],
+    //         [1614556800000, 5000],
+    //         [1617235200000, 8000],
+    //         [1619827200000, 3000],
+    //         [1622505600000, 6000],
+    //         [1625097600000, 5000],
+    //         [1627776000000, 9000],
+    //         [1630454400000, 7000],
+    //         [1633046400000, 4000],
+    //         [1635724800000, 8000],
+    //         [1638316800000, 6000],
+    //       ],
+    //     },
+    //     {
+    //       name: 'DNS',
+    //       data: [
+    //         [1609459200000, 2000], // 时间戳，支出
+    //         [1612137600000, 3000],
+    //         [1614556800000, 1000],
+    //         [1617235200000, 5000],
+    //         [1619827200000, 2000],
+    //         [1622505600000, 7000],
+    //         [1625097600000, 8000],
+    //         [1627776000000, 5000],
+    //         [1630454400000, 1000],
+    //         [1633046400000, 4000],
+    //         [1635724800000, 3000],
+    //         [1638316800000, 8000],
+    //       ],
+    //     },
+    //     {
+    //       name: 'Others',
+    //       data: [
+    //         [1609459200000, 1000], // 时间戳，支出
+    //         [1612137600000, 2000],
+    //         [1614556800000, 5000],
+    //         [1617235200000, 2000],
+    //         [1619827200000, 3000],
+    //         [1622505600000, 5000],
+    //         [1625097600000, 6000],
+    //         [1627776000000, 2000],
+    //         [1630454400000, 3000],
+    //         [1633046400000, 1000],
+    //         [1635724800000, 2000],
+    //         [1638316800000, 8000],
+    //       ],
+    //     },
+    //   ],
+    // };
 
     this.icmpTrending = {
       chart: {
@@ -1156,8 +1344,8 @@ export class DashboardComponent implements OnInit {
             [1638316800000, 6000],
           ],
         },
-      
-       
+
+
       ],
     };
     this.udpTrending = {
@@ -1316,8 +1504,8 @@ export class DashboardComponent implements OnInit {
             [1638316800000, 6000],
           ],
         },
-      
-       
+
+
       ],
     };
 

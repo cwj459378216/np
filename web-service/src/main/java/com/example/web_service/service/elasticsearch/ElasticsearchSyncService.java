@@ -216,4 +216,60 @@ public class ElasticsearchSyncService {
             "hits", hits
         );
     }
+
+    public Map<String, List<TrendingData>> getProtocolTrends(Long startTime, Long endTime, String interval) throws IOException {
+        Map<String, List<TrendingData>> result = new java.util.HashMap<>();
+        
+        // 将时间戳转换为ISO字符串格式
+        String startTimeStr = java.time.Instant.ofEpochMilli(startTime).toString();
+        String endTimeStr = java.time.Instant.ofEpochMilli(endTime).toString();
+        
+        // HTTP趋势 - 从http-realtime索引获取
+        List<TrendingData> httpTrends = getTrending(startTimeStr, endTimeStr, null, "http-realtime", interval);
+        result.put("HTTP", httpTrends);
+        
+        // DNS趋势 - 从dns-realtime索引获取
+        List<TrendingData> dnsTrends = getTrending(startTimeStr, endTimeStr, null, "dns-realtime", interval);
+        result.put("DNS", dnsTrends);
+        
+        // Others趋势 - 合并smb_cmd-realtime和conn-realtime索引的数据
+        List<TrendingData> smbTrends = getTrending(startTimeStr, endTimeStr, null, "smb_cmd-realtime", interval);
+        List<TrendingData> connTrends = getTrending(startTimeStr, endTimeStr, null, "conn-realtime", interval);
+        
+        // 合并Others数据 - 将smb和conn的数据合并
+        List<TrendingData> othersTrends = mergeOthersTrends(smbTrends, connTrends);
+        result.put("Others", othersTrends);
+        
+        return result;
+    }
+
+    private List<TrendingData> mergeOthersTrends(List<TrendingData> smbTrends, List<TrendingData> connTrends) {
+        Map<Long, TrendingData> mergedMap = new java.util.HashMap<>();
+        
+        // 添加SMB数据
+        for (TrendingData smb : smbTrends) {
+            mergedMap.put(smb.getTimestamp(), smb);
+        }
+        
+        // 合并CONN数据
+        for (TrendingData conn : connTrends) {
+            Long timestamp = conn.getTimestamp();
+            if (mergedMap.containsKey(timestamp)) {
+                // 如果时间戳已存在，合并count
+                TrendingData existing = mergedMap.get(timestamp);
+                TrendingData merged = new TrendingData();
+                merged.setTimestamp(timestamp);
+                merged.setCount(existing.getCount() + conn.getCount());
+                mergedMap.put(timestamp, merged);
+            } else {
+                // 如果时间戳不存在，直接添加
+                mergedMap.put(timestamp, conn);
+            }
+        }
+        
+        // 转换为List并按时间戳排序
+        return mergedMap.values().stream()
+                .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
+                .collect(Collectors.toList());
+    }
 } 
