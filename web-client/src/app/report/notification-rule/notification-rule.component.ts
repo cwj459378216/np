@@ -22,7 +22,7 @@ export class NotificationRuleComponent implements OnInit {
         { value: '30 days', label: '30 Days' }
     ];
 
-    triggerOptions = [
+    triggerConditionOptions = [
         { value: 'new_event', label: 'On New Event' },
         { value: 'condition', label: 'On Specific Condition' }
     ];
@@ -39,7 +39,9 @@ export class NotificationRuleComponent implements OnInit {
             timeWindow: '24 hours',
             triggerCondition: 'new_event',
             notificationMethod: 'email',
-            status: 'Active'
+            endpoint: 'admin@example.com',
+            status: 'Active',
+            filters: []
         },
         {
             id: 2,
@@ -47,7 +49,9 @@ export class NotificationRuleComponent implements OnInit {
             timeWindow: '7 days',
             triggerCondition: 'condition',
             notificationMethod: 'syslog',
-            status: 'Inactive'
+            endpoint: '192.168.1.100:514',
+            status: 'Inactive',
+            filters: [{ field: 'memory_usage', value: '80' }]
         }
     ];
 
@@ -77,6 +81,7 @@ export class NotificationRuleComponent implements OnInit {
             timeWindow: ['', Validators.required],
             triggerCondition: ['', Validators.required],
             notificationMethod: ['', Validators.required],
+            endpoint: [''],
             status: ['Active']
         });
 
@@ -109,6 +114,7 @@ export class NotificationRuleComponent implements OnInit {
                 timeWindow: rule.timeWindow,
                 triggerCondition: rule.triggerCondition,
                 notificationMethod: rule.notificationMethod,
+                endpoint: rule.endpoint,
                 status: rule.status
             };
 

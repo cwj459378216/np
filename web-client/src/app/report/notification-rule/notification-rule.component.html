@@ -182,6 +182,11 @@
                             </select>
                         </div>
                         <div class="mb-5">
+                            <label for="endpoint">{{ 'Endpoint' | translate }}</label>
+                            <input id="endpoint" type="text" formControlName="endpoint" class="form-input"
+                                   [placeholder]="params.get('notificationMethod')?.value === 'email' ? 'Email address' : 'Server:Port'" />
+                        </div>
+                        <div class="mb-5">
                             <label for="status">{{ 'Status' | translate }}</label>
                             <select id="status" formControlName="status" class="form-select" required>
                                 <option value="Active">{{ 'Active' | translate }}</option>
