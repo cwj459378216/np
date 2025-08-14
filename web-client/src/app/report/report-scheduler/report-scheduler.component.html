@@ -1,7 +1,7 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">{{ 'Report' | translate }}</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.report' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
             <span>{{ 'Report Scheduler' | translate }}</span>
@@ -53,12 +53,12 @@
                             <tr>
                                 <th>{{ 'Name' | translate }}</th>
                                 <th>{{ 'Description' | translate }}</th>
-                                <th>{{ 'Template' | translate }}</th>
-                                <th>{{ 'Frequency' | translate }}</th>
-                                <th>{{ 'Time' | translate }}</th>
+                                <th>{{ 'templates.templates' | translate }}</th>
+                                <th>{{ 'templates.frequency' | translate }}</th>
+                                <th>{{ 'templates.time' | translate }}</th>
                                 <th>{{ 'Where to Send' | translate }}</th>
                                 <th>{{ 'Status' | translate }}</th>
-                                <th>{{ 'Creation Time' | translate }}</th>
+                                <th>{{ 'roles.createdAt' | translate }}</th>
                                 <th class="!text-center">{{ 'Actions' | translate }}</th>
                             </tr>
                         </thead>
@@ -66,23 +66,23 @@
                             <tr *ngFor="let scheduler of filteredSchedulers">
                                 <td>{{ scheduler.name }}</td>
                                 <td>{{ scheduler.description }}</td>
-                                <td>{{ scheduler.template }}</td>
-                                <td>{{ scheduler.frequency }}</td>
-                                <td>{{ scheduler.time }}</td>
+                                <td>{{ getTemplateLabel(scheduler.template) }}</td>
+                                <td>{{ getFrequencyLabel(scheduler.frequency) }}</td>
+                                <td>{{ formatTime(scheduler.time) }}</td>
                                 <td>{{ getWhereToSendLabel(scheduler.whereToSend) }}</td>
                                 <td>
                                     <span [ngClass]="{
                                         'badge badge-outline-success': scheduler.status === 'Active',
                                         'badge badge-outline-danger': scheduler.status === 'Inactive'
-                                    }">{{ scheduler.status | translate }}</span>
+                                    }">{{ scheduler.status === 'Active' ? ('users.active' | translate) : ('users.inactive' | translate) }}</span>
                                 </td>
-                                <td>{{ scheduler.creationTime }}</td>
+                                <td>{{ scheduler.createdAt }}</td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="editScheduler(scheduler)">{{ 'Edit' | translate }}</button>
+                                            (click)="editScheduler(scheduler)">{{ 'general.edit' | translate }}</button>
                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                            (click)="deleteScheduler(scheduler)">{{ 'Delete' | translate }}</button>
+                                            (click)="deleteScheduler(scheduler)">{{ 'general.delete' | translate }}</button>
                                     </div>
                                 </td>
                             </tr>
@@ -108,7 +108,7 @@
                     <textarea id="description" formControlName="description" class="form-input" rows="3" required></textarea>
                 </div>
                 <div class="mb-5">
-                    <label for="template">{{ 'Template' | translate }}</label>
+                    <label for="template">{{ 'templates.templates' | translate }}</label>
                     <select id="template" formControlName="template" class="form-select" required>
                         <option value="">{{ 'Select Template' | translate }}</option>
                         <option *ngFor="let option of templateOptions" [value]="option.value">
@@ -117,16 +117,16 @@
                     </select>
                 </div>
                 <div class="mb-5">
-                    <label for="frequency">{{ 'Frequency' | translate }}</label>
+                    <label for="frequency">{{ 'templates.frequency' | translate }}</label>
                     <select id="frequency" formControlName="frequency" class="form-select" required>
                         <option value="">{{ 'Select Frequency' | translate }}</option>
-                        <option value="Daily">{{ 'Daily' | translate }}</option>
-                        <option value="Weekly">{{ 'Weekly' | translate }}</option>
-                        <option value="Monthly">{{ 'Monthly' | translate }}</option>
+                        <option value="Daily">{{ 'common.Daily' | translate }}</option>
+                        <option value="Weekly">{{ 'common.Weekly' | translate }}</option>
+                        <option value="Monthly">{{ 'common.Monthly' | translate }}</option>
                     </select>
                 </div>
                 <div class="mb-5">
-                    <label for="time">{{ 'Time' | translate }}</label>
+                    <label for="time">{{ 'templates.time' | translate }}</label>
                     <input id="time" type="time" formControlName="time" class="form-input" required />
                 </div>
                 <div class="mb-5">
@@ -146,8 +146,8 @@
                 <div class="mb-5">
                     <label for="status">{{ 'Status' | translate }}</label>
                     <select id="status" formControlName="status" class="form-select" required>
-                        <option value="Active">{{ 'Active' | translate }}</option>
-                        <option value="Inactive">{{ 'Inactive' | translate }}</option>
+                        <option value="Active">{{ 'users.active' | translate }}</option>
+                        <option value="Inactive">{{ 'users.inactive' | translate }}</option>
                     </select>
                 </div>
                 <div class="mt-8 flex items-center justify-end">

@@ -41,7 +41,7 @@
                                         <button type="button" class="btn btn-primary" (click)="editUser()">
                                             <icon-plus class="ltr:mr-2 rtl:ml-2" />
 
-                                            {{ 'Add' | translate }}
+                                            {{ 'general.add' | translate }}
                                         </button>
                                     </div>
                                     <div>
@@ -128,7 +128,7 @@
                                                                     class="btn btn-sm btn-outline-primary"
                                                                     (click)="editUser(contact)"
                                                                     [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
-                                                                {{ 'Edit' | translate }}
+                                                                {{ 'general.edit' | translate }}
                                                             </button>
 
                                                             <button type="button"
@@ -253,7 +253,7 @@
                                         <div
                                             class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
                                             <button type="button" class="btn btn-outline-primary w-1/2"
-                                                (click)="editUser(contact)">{{ 'Edit' | translate }}</button>
+                                                (click)="editUser(contact)">{{ 'general.edit' | translate }}</button>
                                             <button type="button" class="btn btn-outline-danger w-1/2"
                                                 (click)="deleteUser(contact)">{{ 'Delete' | translate }}</button>
                                         </div>
@@ -265,7 +265,7 @@
                         <!-- add contact modal -->
                         <ngx-custom-modal #addContactModal class="no-footer">
                             <ng-template #modalHeader>
-                                <div class="!font-medium">{{ params.controls['id'].value ? ('Edit' | translate) : ('Add' | translate) }}
+                                <div class="!font-medium">{{ params.controls['id'].value ? ('general.edit' | translate) : ('general.add' | translate) }}
                                 </div>
                             </ng-template>
                             <ng-template #modalBody>
@@ -426,7 +426,7 @@
                                                 <td>
                                                     <div class="flex items-center justify-center gap-4">
                                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                                            (click)="editStorageStrategy(strategy)">{{ 'Edit' | translate }}</button>
+                                                            (click)="editStorageStrategy(strategy)">{{ 'general.edit' | translate }}</button>
                                                         <button type="button" class="btn btn-sm btn-outline-danger"
                                                             (click)="deleteStorageStrategy(strategy)">{{ 'Delete' | translate }}</button>
                                                     </div>

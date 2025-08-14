@@ -1,7 +1,7 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">{{ 'Report' | translate }}</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.report' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
             <span>{{ 'Notification Rule' | translate }}</span>
@@ -85,14 +85,14 @@
                                     <span [ngClass]="{
                                         'badge badge-outline-success': rule.status === 'Active',
                                         'badge badge-outline-danger': rule.status === 'Inactive'
-                                    }">{{ rule.status | translate }}</span>
+                                    }">{{ rule.status === 'Active' ? ('users.active' | translate) : ('users.inactive' | translate) }}</span>
                                 </td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="editRule(rule)">{{ 'Edit' | translate }}</button>
+                                            (click)="editRule(rule)">{{ 'general.edit' | translate }}</button>
                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                            (click)="deleteRule(rule)">{{ 'Delete' | translate }}</button>
+                                            (click)="deleteRule(rule)">{{ 'general.delete' | translate }}</button>
                                     </div>
                                 </td>
                             </tr>
@@ -189,8 +189,8 @@
                         <div class="mb-5">
                             <label for="status">{{ 'Status' | translate }}</label>
                             <select id="status" formControlName="status" class="form-select" required>
-                                <option value="Active">{{ 'Active' | translate }}</option>
-                                <option value="Inactive">{{ 'Inactive' | translate }}</option>
+                                <option value="Active">{{ 'users.active' | translate }}</option>
+                                <option value="Inactive">{{ 'users.inactive' | translate }}</option>
                             </select>
                         </div>
                         <div class="mt-8 flex items-center justify-end">

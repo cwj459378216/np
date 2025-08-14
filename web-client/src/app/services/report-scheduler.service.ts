@@ -12,6 +12,7 @@ interface Scheduler {
     time: string;
     whereToSend: string;
     status: string;
+    createdAt?: string;
 }
 
 @Injectable({

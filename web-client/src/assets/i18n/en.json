@@ -139,7 +139,15 @@
     "active": "Active",
     "inactive": "Inactive",
     "addUser": "Add User",
-    "editUser": "Edit User"
+    "editUser": "Edit User",
+    "searchUsers": "Search Users",
+    "enterUsername": "Enter Username",
+    "enterEmail": "Enter Email",
+    "enterPassword": "Enter Password",
+    "leaveBlankKeepPassword": "Leave blank to keep current password",
+    "selectRole": "Select Role",
+    "enterDescription": "Enter Description",
+    "password": "Password"
   },
   "roles": {
     "name": "Name",
@@ -208,6 +216,7 @@
     "Memory": "Memory",
     "Disk": "Disk",
     "Bandwidth": "Bandwidth",
+    "Daily": "Daily",
     "Weekly": "Weekly",
     "Monthly": "Monthly",
     "Yearly": "Yearly"
@@ -317,6 +326,7 @@
   "Enable Protocol": "Enable Protocol",
   "Disable Protocol": "Disable Protocol",
   "Normal": "Normal",
+  "Important": "Important",
   "Negligible": "Negligible",
   "Port": "Port",
   "Protocol": "Protocol",
@@ -535,5 +545,12 @@
     "placeholder": {
       "date": "Year/Month/Day"
     }
+  },
+  "templates": {
+    "templates": "Templates",
+    "frequency": "Frequency",
+    "time": "Time",
+    "systemStatusTemplate": "System Status Template",
+    "securityAlertTemplate": "Security Alert Template"
   }
 }

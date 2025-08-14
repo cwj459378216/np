@@ -10,7 +10,7 @@
     <div class="pt-5">
         <div>
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <h2 class="text-xl"></h2>
+<h2 class="text-xl"></h2>
                 <div class="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
                     <div class="flex gap-3">
                         <div>
@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="relative">
-                        <input type="text" placeholder="Search Users"
+<input type="text" [placeholder]="'users.searchUsers' | translate"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchText"
                             (ngModelChange)="searchUsers()" />
                         <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
@@ -72,10 +72,10 @@
                                     </td>
                                     <td>
                                         <div class="flex items-center justify-center gap-4">
-                                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                                (click)="editUser(user)">Edit</button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                                (click)="deleteUser(user)">Delete</button>
+<button type="button" class="btn btn-sm btn-outline-primary"
+    (click)="editUser(user)">{{ 'general.edit' | translate }}</button>
+<button type="button" class="btn btn-sm btn-outline-danger"
+    (click)="deleteUser(user)">{{ 'general.delete' | translate }}</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -93,47 +93,47 @@
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>
                         <div class="mb-5">
-                            <label for="username">Username</label>
-                            <input id="username" type="text" placeholder="Enter Username" class="form-input"
-                                formControlName="username" />
+<label for="username">{{ 'users.username' | translate }}</label>
+<input id="username" type="text" [placeholder]="'users.enterUsername' | translate" class="form-input"
+    formControlName="username" />
                         </div>
                         <div class="mb-5">
-                            <label for="email">Email</label>
-                            <input id="email" type="email" placeholder="Enter Email" class="form-input"
-                                formControlName="email" />
+<label for="email">{{ 'users.email' | translate }}</label>
+<input id="email" type="email" [placeholder]="'users.enterEmail' | translate" class="form-input"
+    formControlName="email" />
                         </div>
                         <div class="mb-5">
-                            <label for="password">Password</label>
-                            <input id="password" type="password" placeholder="Enter Password" class="form-input"
-                                formControlName="password" />
-                            <div class="text-xs text-gray-400 mt-1" *ngIf="params.controls['id'].value">
-                                Leave blank to keep current password
-                            </div>
+<label for="password">{{ 'users.password' | translate }}</label>
+<input id="password" type="password" [placeholder]="'users.enterPassword' | translate" class="form-input"
+    formControlName="password" />
+<div class="text-xs text-gray-400 mt-1" *ngIf="params.controls['id'].value">
+    {{ 'users.leaveBlankKeepPassword' | translate }}
+</div>
                         </div>
                         <div class="mb-5">
-                            <label for="roleId">Role</label>
+<label for="roleId">{{ 'users.role' | translate }}</label>
                             <select id="roleId" class="form-select" formControlName="roleId">
-                                <option value="">Select Role</option>
+<option value="">{{ 'users.selectRole' | translate }}</option>
                                 <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
                             </select>
                         </div>
                         <div class="mb-5">
-                            <label for="description">Description</label>
-                            <textarea id="description" rows="3" placeholder="Enter Description"
-                                class="form-textarea min-h-[130px] resize-none" formControlName="description"></textarea>
+<label for="description">{{ 'users.description' | translate }}</label>
+<textarea id="description" rows="3" [placeholder]="'users.enterDescription' | translate"
+    class="form-textarea min-h-[130px] resize-none" formControlName="description"></textarea>
                         </div>
                         <div class="mb-5">
                             <label class="inline-flex">
                                 <input type="checkbox" class="form-checkbox" formControlName="status" />
-                                <span>Active</span>
+<span>{{ 'users.active' | translate }}</span>
                             </label>
                         </div>
                         <div class="mt-8 flex items-center justify-end">
-                            <button type="button" class="btn btn-outline-danger"
-                                (click)="addContactModal.close()">Cancel</button>
-                            <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
-                            </button>
+<button type="button" class="btn btn-outline-danger"
+    (click)="addContactModal.close()">{{ 'general.cancel' | translate }}</button>
+<button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
+    {{ params.controls['id'].value ? ('general.update' | translate) : ('general.add' | translate) }}
+</button>
                         </div>
                     </form>
                 </ng-template>

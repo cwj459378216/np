@@ -210,6 +210,44 @@ export class ReportSchedulerComponent implements OnInit {
         return option ? option.label : value;
     }
 
+    getFrequencyLabel(value: string): string {
+        switch (value) {
+            case 'Daily':
+                return this.translate.instant('common.Daily');
+            case 'Weekly':
+                return this.translate.instant('common.Weekly');
+            case 'Monthly':
+                return this.translate.instant('common.Monthly');
+            default:
+                return value;
+        }
+    }
+
+    getTemplateLabel(value: string): string {
+        switch (value) {
+            case 'System Status Template':
+                return this.translate.instant('templates.systemStatusTemplate');
+            case 'Security Alert Template':
+                return this.translate.instant('templates.securityAlertTemplate');
+            case '系统状态模板':
+                return this.translate.instant('templates.systemStatusTemplate');
+            case '安全警报模板':
+                return this.translate.instant('templates.securityAlertTemplate');
+            default:
+                return value;
+        }
+    }
+
+    formatTime(time: string): string {
+        if (!time) return '';
+        // 确保时间格式为 HH:mm
+        if (time.includes(':')) {
+            return time;
+        }
+        // 如果是其他格式，尝试转换
+        return time;
+    }
+
     showMessage(msg = '', type = 'success') {
         const toast: any = Swal.mixin({
             toast: true,

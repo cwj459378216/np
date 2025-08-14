@@ -139,7 +139,15 @@
     "active": "活跃",
     "inactive": "未激活",
     "addUser": "添加用户",
-    "editUser": "编辑用户"
+    "editUser": "编辑用户",
+    "searchUsers": "搜索用户",
+    "enterUsername": "输入用户名",
+    "enterEmail": "输入邮箱",
+    "enterPassword": "输入密码",
+    "leaveBlankKeepPassword": "留空则保留当前密码",
+    "selectRole": "选择角色",
+    "enterDescription": "输入描述",
+    "password": "密码"
   },
   "roles": {
     "name": "名称",
@@ -208,6 +216,7 @@
     "Memory": "内存",
     "Disk": "磁盘",
     "Bandwidth": "带宽",
+    "Daily": "每日",
     "Weekly": "每周",
     "Monthly": "每月",
     "Yearly": "每年"
@@ -315,6 +324,7 @@
   "Enable Protocol": "启用协议",
   "Disable Protocol": "禁用协议",
   "Normal": "正常",
+  "Important": "重要",
   "Negligible": "可忽略",
   "Port": "端口",
   "Protocol": "协议",
@@ -533,5 +543,12 @@
     "placeholder": {
       "date": "年/月/日"
     }
+  },
+  "templates": {
+    "templates": "模板",
+    "frequency": "频率",
+    "time": "时间",
+    "systemStatusTemplate": "系统状态模板",
+    "securityAlertTemplate": "安全警报模板"
   }
 }
