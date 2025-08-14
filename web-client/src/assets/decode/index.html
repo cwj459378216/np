@@ -18,8 +18,8 @@
   <div style='display:flex; height: 28px'>
     <div class='filter-buttonset' style='flex-grow:1; display:flex'>
       <a href='#' style='display:none' data-note='placeholder for buttonset'></a>
-      <textarea name='filter' tabindex=1 id='filter-field' spellcheck='false' 
-                autocorrect='off' autocapitalize='off' 
+      <textarea name='filter' tabindex=1 id='filter-field' spellcheck='false'
+                autocorrect='off' autocapitalize='off'
                 placeholder="Start typing a Display Filter"></textarea>
       <a href='#' class='button' data-icon='check' style='margin-left: -4px' id='filter-button'>Apply</a>
       <a href='#' class='button' id='filter-clear-button'>Clear</a>
@@ -97,7 +97,7 @@ Streams</a></li>
 </script>
 
   <ul class='menu' id='df-menu'>
-  
+
 
   <li>
       <a class="disabled-df-management-link" title="File is read-only. You may not change these settings." href="#">Manage saved filters</a>
@@ -141,7 +141,7 @@ var ShowAnnotationsByDefault = true;
   //  permissions on this file. Annotating will be disabled.
   var WriteAccess = false;
 
-$(document).ready(function() {  
+$(document).ready(function() {
 
   // update the title
   var title = $(document).attr('title');
@@ -155,11 +155,11 @@ $(document).ready(function() {
 
   // load our initial summary
   $("#wrapper").cloudsharkTable({
-    totalPackets: TotalPacketCount, 
+    totalPackets: TotalPacketCount,
     displayRangeMax: TotalDuration,
     filter: $("#filter-field").val(),
     loadingText: "Loading...",
-    baseUrl: "https://s699.cn:2333/captures/ca3302fd7d41/tf"
+    baseUrl: "http://192.168.1.23:8000//captures/ca3302fd7d41/tf"
   });
 
   if (WriteAccess === false) {
@@ -176,7 +176,7 @@ $(document).ready(function() {
 
    <div id='footer'>
      <div style='margin:auto; width:50%; text-align:center'>
-       
+
      </div>
      Support: <a href="mailto:support@qacafe.com">support@qacafe.com</a>
      |
@@ -187,7 +187,7 @@ $(document).ready(function() {
      &copy; 2024 <a href="https://www.qacafe.com">QA Cafe</a>
     </div>
 
-   
+
 
 <script>
   $(document).ready(function() {
@@ -235,6 +235,6 @@ $(document).ready(function() {
   });
 </script>
 
-    
+
     </body>
   </html>
