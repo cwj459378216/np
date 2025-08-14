@@ -3,27 +3,27 @@
         <div class=" flex-1 px-0 py-6 ltr:xl:mr-6 rtl:xl:ml-6">
             <!-- 标题和添加按钮 -->
             <div class="px-6 mb-6 flex justify-between items-center">
-                <button type="button" 
+                <button type="button"
                         class="btn btn-outline-primary p-2"
                         routerLink="/report/template/list">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
                         <path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
-                <button type="button" 
+                <button type="button"
                         class="btn btn-primary p-2 flex items-center gap-2"
                         (click)="openAddChartModal()">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                          class="w-5 h-5">
                         <path d="M12 5v14m-7-7h14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    Add Widget
+                    {{ 'Add Widget' | translate }}
                 </button>
             </div>
 
             <!-- Gridster布局 -->
             <gridster [options]="options" class="h-[800px] !bg-transparent">
-                <gridster-item 
+                <gridster-item
                     *ngFor="let item of dashboard; trackBy: trackByFn"
                     [item]="item"
                 >
@@ -36,8 +36,8 @@
                         </div>
                         <div class="flex-1 gridster-item-content">
                             <div *ngIf="item['type'] === 'chart'" class="w-full h-full">
-                                <div [id]="'chart_' + item.uniqueId" 
-                                     echarts 
+                                <div [id]="'chart_' + item.uniqueId"
+                                     echarts
                                      [options]="item['chartConfig']"
                                      (chartInit)="onChartInit($event, item)"
                                      class="w-full h-full">
@@ -73,17 +73,17 @@
         <div class="mt-6 w-full xl:mt-0 xl:w-96">
             <div class="panel mb-5">
                 <div>
-                    <label for="name">Name</label>
+                    <label for="name">{{ 'Name' | translate }}</label>
                     <input
                         id="name"
                         type="text"
                         class="form-input"
-                        placeholder="Enter name"
+                        placeholder="{{ 'Enter name' | translate }}"
                         [(ngModel)]="name"
                     />
                 </div>
                 <div class="mt-4">
-                    <label for="description">Description</label>
+                    <label for="description">{{ 'Description' | translate }}</label>
                     <textarea
                         id="description"
                         class="form-input"
@@ -99,35 +99,35 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-1">
                     <button type="button" class="btn btn-success w-full gap-2" (click)="saveTemplate()">
                         <icon-save class="shrink-0 ltr:mr-2 rtl:ml-2" />
-                        Save
+                        {{ 'Save' | translate }}
                     </button>
 
                     <a routerLink="/report/template/preview" class="btn btn-primary w-full gap-2">
                         <icon-eye class="shrink-0 ltr:mr-2 rtl:ml-2" />
-                        Preview
+                        {{ 'Preview' | translate }}
                     </a>
                 </div>
             </div>
         </div>
     </div>
-</div> 
+</div>
 
 <!-- 添加图表的弹出框 -->
 <ngx-custom-modal #addChartModal customClass="modal-top">
     <ng-template #modalHeader>
-        <div>Add Widget</div>
+        <div>{{ 'Add Widget' | translate }}</div>
     </ng-template>
     <ng-template #modalBody>
         <form class="space-y-5" (ngSubmit)="addWidget()" #widgetFormRef="ngForm">
             <!-- Widget Name -->
             <div>
-                <label for="widgetName">Widget Name</label>
+                <label for="widgetName">{{ 'Widget Name' | translate }}</label>
                 <input
                     id="widgetName"
                     type="text"
                     name="name"
                     class="form-input"
-                    placeholder="Enter widget name"
+                    placeholder="{{ 'Enter widget name' | translate }}"
                     [(ngModel)]="formData.name"
                     required
                 />
@@ -135,33 +135,33 @@
 
             <!-- Widget Type -->
             <div>
-                <label for="widgetType">Widget Type</label>
-                <select 
-                    id="widgetType" 
+                <label for="widgetType">{{ 'Widget Type' | translate }}</label>
+                <select
+                    id="widgetType"
                     name="type"
-                    class="form-select" 
+                    class="form-select"
                     [(ngModel)]="formData.type"
                     required
                 >
-                    <option value="">Select Type</option>
-                    <option value="line">Line Chart</option>
-                    <option value="bar">Bar Chart</option>
-                    <option value="pie">Pie Chart</option>
-                    <option value="table">Table</option>
+                    <option value="">{{ 'Select Type' | translate }}</option>
+                    <option value="line">{{ 'Line Chart' | translate }}</option>
+                    <option value="bar">{{ 'Bar Chart' | translate }}</option>
+                    <option value="pie">{{ 'Pie Chart' | translate }}</option>
+                    <option value="table">{{ 'Table' | translate }}</option>
                 </select>
             </div>
 
             <!-- Index -->
             <div>
-                <label for="index">Data Source</label>
-                <select 
-                    id="index" 
+                <label for="index">{{ 'Data Source' | translate }}</label>
+                <select
+                    id="index"
                     name="index"
-                    class="form-select" 
+                    class="form-select"
                     [(ngModel)]="formData.index"
                     required
                 >
-                    <option value="">Select Index</option>
+                    <option value="">{{ 'Select Index' | translate }}</option>
                     <option *ngFor="let idx of indexList" [value]="idx.value">
                         {{idx.label}}
                     </option>
@@ -170,39 +170,39 @@
 
             <!-- Filter -->
             <div>
-                <label>Filter</label>
+                <label>{{ 'Filter' | translate }}</label>
                 <div class="space-y-3">
                     <div *ngFor="let filter of filters; let i = index" class="flex gap-2">
-                        <select 
-                            class="form-select flex-1" 
+                        <select
+                            class="form-select flex-1"
                             [(ngModel)]="filter.field"
                             [name]="'filterField' + i"
                         >
-                            <option value="">Select Field</option>
+                            <option value="">{{ 'Select Field' | translate }}</option>
                             <option *ngFor="let field of filterFields" [value]="field.value">
                                 {{field.label}}
                             </option>
                         </select>
-                        
+
                         <input
                             type="text"
                             class="form-input flex-1"
-                            placeholder="Enter filter value"
+                            placeholder="{{ 'Enter filter value' | translate }}"
                             [(ngModel)]="filter.value"
                             [name]="'filterValue' + i"
                         />
-                        
-                        <button 
-                            type="button" 
+
+                        <button
+                            type="button"
                             class="btn btn-danger p-2"
                             *ngIf="i > 0"
                             (click)="removeFilter(i)"
                         >
                             <icon-x class="w-4 h-4"/>
                         </button>
-                        
-                        <button 
-                            type="button" 
+
+                        <button
+                            type="button"
                             class="btn btn-primary p-2"
                             *ngIf="i === filters.length - 1"
                             (click)="addFilter()"
@@ -215,7 +215,7 @@
 
             <!-- Table Titles (仅在选择 table 时显示) -->
             <div *ngIf="formData.type === 'table'">
-                <label for="tableTitles">Table Titles</label>
+                <label for="tableTitles">{{ 'Table Titles' | translate }}</label>
                 <ng-select
                     id="tableTitles"
                     [items]="titleOptions"
@@ -223,7 +223,7 @@
                     [multiple]="true"
                     [clearable]="false"
                     [dropdownPosition]="'top'"
-                    placeholder="Select table titles"
+                    placeholder="{{ 'Select table titles' | translate }}"
                     name="tableTitles"
                     bindLabel="label"
                     bindValue="value"
@@ -234,27 +234,27 @@
 
             <!-- Aggregation (仅在不选择 table 时显示) -->
             <div *ngIf="formData.type && formData.type !== 'table'">
-                <label>Aggregation</label>
+                <label>{{ 'Aggregation' | translate }}</label>
                 <div class="flex gap-2">
-                    <select 
-                        class="form-select flex-1" 
+                    <select
+                        class="form-select flex-1"
                         name="aggregationField"
                         [(ngModel)]="formData.aggregationField"
                         required
                     >
-                        <option value="">Select Field</option>
+                        <option value="">{{ 'Select Field' | translate }}</option>
                         <option *ngFor="let field of aggregationFields" [value]="field.value">
                             {{field.label}}
                         </option>
                     </select>
-                    
-                    <select 
-                        class="form-select flex-1" 
+
+                    <select
+                        class="form-select flex-1"
                         name="aggregationType"
                         [(ngModel)]="formData.aggregationType"
                         required
                     >
-                        <option value="">Select Type</option>
+                        <option value="">{{ 'Select Type' | translate }}</option>
                         <option *ngFor="let type of aggregationTypes" [value]="type.value">
                             {{type.label}}
                         </option>
@@ -264,21 +264,21 @@
 
             <!-- Submit Button -->
             <div class="flex justify-end">
-                <button 
-                    type="button" 
+                <button
+                    type="button"
                     class="btn btn-outline-danger ltr:mr-2 rtl:ml-2"
                     (click)="addChartModal.close()"
                 >
-                    Cancel
+                    {{ 'Cancel' | translate }}
                 </button>
-                <button 
-                    type="submit" 
-                    class="btn btn-primary" 
+                <button
+                    type="submit"
+                    class="btn btn-primary"
                     [disabled]="!widgetFormRef.valid"
                 >
-                    Add Widget
+                    {{ 'Add Widget' | translate }}
                 </button>
             </div>
         </form>
     </ng-template>
-</ngx-custom-modal> 
+</ngx-custom-modal>

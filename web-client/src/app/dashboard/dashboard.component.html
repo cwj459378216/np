@@ -1,17 +1,17 @@
 <div>
   <ul class="flex space-x-2 rtl:space-x-reverse">
     <li>
-      <a href="javascript:;" class="text-primary hover:underline">Dashboard</a>
+      <a href="javascript:;" class="text-primary hover:underline">{{ 'breadcrumbs.dashboard' | translate }}</a>
     </li>
     <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-      <span>Dashboard</span>
+      <span>{{ 'breadcrumbs.dashboard' | translate }}</span>
     </li>
   </ul>
   <div class="pt-5">
     <div class="mb-6 grid gap-6 xl:grid-cols-3">
       <div class="panel h-full sm:col-span-2 xl:col-span-1">
         <div class="mb-5 flex items-start justify-between">
-          <h5 class="text-lg font-semibold dark:text-white-light">System Info</h5>
+          <h5 class="text-lg font-semibold dark:text-white-light">{{ 'System Info' | translate }}</h5>
         </div>
         <div class="flex flex-col space-y-5">
           <div class="flex items-center">
@@ -23,7 +23,7 @@
             </div>
             <div class="w-full flex-initial px-3">
               <div class="w-summary-info mb-1 flex justify-between font-semibold text-white-dark">
-                <h6>CPU</h6>
+                <h6>{{ 'CPU' | translate }}</h6>
                 <p class="text-xs ltr:ml-auto rtl:mr-auto">65%</p>
               </div>
               <div>
@@ -45,7 +45,7 @@
             </div>
             <div class="w-full flex-initial px-3">
               <div class="w-summary-info mb-1 flex justify-between font-semibold text-white-dark">
-                <h6>Memory</h6>
+                <h6>{{ 'Memory' | translate }}</h6>
                 <p class="text-xs ltr:ml-auto rtl:mr-auto">40%</p>
               </div>
               <div>
@@ -67,7 +67,7 @@
             </div>
             <div class="w-full flex-initial px-3">
               <div class="w-summary-info mb-1 flex justify-between font-semibold text-white-dark">
-                <h6>Disk</h6>
+                <h6>{{ 'Disk' | translate }}</h6>
                 <p class="text-xs ltr:ml-auto rtl:mr-auto">25%</p>
               </div>
               <div>
@@ -84,7 +84,7 @@
       </div>
       <div class="panel h-full xl:col-span-2">
         <div class="mb-5 flex items-center justify-between dark:text-white-light">
-          <h5 class="text-lg font-semibold">Bandwidth</h5>
+          <h5 class="text-lg font-semibold">{{ 'Bandwidth' | translate }}</h5>
           <div class="dropdown ltr:ml-auto rtl:mr-auto">
             <div hlMenu>
               <a hlMenuButton href="javascript:;" class="align-middle">
@@ -92,19 +92,19 @@
               </a>
               <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
                 <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">Weekly</a>
+                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Weekly' | translate }}</a>
                 </li>
                 <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">Monthly</a>
+                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Monthly' | translate }}</a>
                 </li>
                 <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">Yearly</a>
+                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Yearly' | translate }}</a>
                 </li>
               </ul>
             </div>
           </div>
         </div>
-        <p class="text-lg dark:text-white-light/90"> Average bandwidth<span class="ml-2 text-primary">50%</span></p>
+        <p class="text-lg dark:text-white-light/90"> {{ 'Average bandwidth' | translate }}<span class="ml-2 text-primary">50%</span></p>
         <div class="relative overflow-hidden">
           <apx-chart [series]="revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
             [stroke]="revenueChart.stroke" [colors]="revenueChart.colors" [markers]="revenueChart.markers"
@@ -125,7 +125,7 @@
     <div class="mb-6 grid gap-6 lg:grid-cols-3">
       <div class="panel h-full xl:col-span-2">
         <div class="mb-5 flex items-center justify-between dark:text-white-light">
-          <h5 class="text-lg font-semibold">Protocol Transaction Trends</h5>
+          <h5 class="text-lg font-semibold">{{ 'Protocol Transaction Trends' | translate }}</h5>
           <div class="dropdown ltr:ml-auto rtl:mr-auto">
             <div hlMenu>
               <a hlMenuButton href="javascript:;" class="align-middle">
@@ -133,32 +133,31 @@
               </a>
               <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
                 <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">Weekly</a>
+                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Weekly' | translate }}</a>
                 </li>
                 <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">Monthly</a>
+                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Monthly' | translate }}</a>
                 </li>
                 <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">Yearly</a>
+                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Yearly' | translate }}</a>
                 </li>
               </ul>
             </div>
           </div>
         </div>
-        <p class="text-lg dark:text-white-light/90">Flow Count<span class="ml-2 text-primary">1,532,000</span></p>
+        <p class="text-lg dark:text-white-light/90">{{ 'dashboard.flowCount' | translate }}<span class="ml-2 text-primary">{{ totalFlowCount | number }}</span></p>
         <div class="relative overflow-hidden">
-          <apx-chart [series]="protocolTrending.series" [chart]="protocolTrending.chart"
+          <apx-chart *ngIf="protocolTrending" [series]="protocolTrending.series" [chart]="protocolTrending.chart"
             [dataLabels]="protocolTrending.dataLabels" [stroke]="protocolTrending.stroke"
             [colors]="protocolTrending.colors" [markers]="protocolTrending.markers" [labels]="protocolTrending.labels"
             [xaxis]="protocolTrending.xaxis" [yaxis]="protocolTrending.yaxis" [grid]="protocolTrending.grid"
             [legend]="protocolTrending.legend" [tooltip]="protocolTrending.tooltip" [fill]="protocolTrending.fill"
             class="rounded-lg bg-white dark:bg-black">
-            <!-- loader -->
-            <div class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
-              <span
-                class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
-            </div>
           </apx-chart>
+          <div *ngIf="!protocolTrending" class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+            <span
+              class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+          </div>
         </div>
       </div>
 
@@ -166,7 +165,7 @@
 
       <div class="panel h-full">
         <div class="mb-5 flex items-center">
-          <h5 class="text-lg font-semibold dark:text-white-light">Application Protocol</h5>
+          <h5 class="text-lg font-semibold dark:text-white-light">{{ 'Application Protocol' | translate }}</h5>
         </div>
         <div class="overflow-hidden">
           <apx-chart [series]="salesByCategory.series" [chart]="salesByCategory.chart"
@@ -188,40 +187,40 @@
     <div class="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
       <div class="panel h-full w-full">
         <div class="mb-5 flex items-center justify-between">
-          <h5 class="text-lg font-semibold dark:text-white-light">Asset</h5>
+          <h5 class="text-lg font-semibold dark:text-white-light">{{ 'Asset' | translate }}</h5>
         </div>
         <div class="table-responsive">
           <table>
             <thead>
               <tr>
-                <th class="ltr:rounded-l-md rtl:rounded-r-md">Severity</th>
-                <th>Asset</th>
-                <th>Timestmap</th>
+                <th class="ltr:rounded-l-md rtl:rounded-r-md">{{ 'Severity' | translate }}</th>
+                <th>{{ 'Asset' | translate }}</th>
+                <th>{{ 'Timestamp' | translate }}</th>
               </tr>
             </thead>
             <tbody>
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-danger shadow-md dark:group-hover:bg-transparent">High</span></td>
+                <td><span class="badge bg-danger shadow-md dark:group-hover:bg-transparent">{{ 'High' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview">192.168.1.1</a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-warning shadow-md dark:group-hover:bg-transparent">Medium</span></td>
+                <td><span class="badge bg-warning shadow-md dark:group-hover:bg-transparent">{{ 'Medium' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview">192.168.1.2</a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">Low</span></td>
+                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview">192.168.1.3</a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">Low</span></td>
+                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview">192.168.1.4</a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">Low</span></td>
+                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview">192.168.1.5</a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
@@ -232,43 +231,43 @@
 
       <div class="panel h-full w-full">
         <div class="mb-5 flex items-center justify-between">
-          <h5 class="text-lg font-semibold dark:text-white-light">Alarm</h5>
+          <h5 class="text-lg font-semibold dark:text-white-light">{{ 'Alarm' | translate }}</h5>
         </div>
         <div class="table-responsive">
           <table>
             <thead>
               <tr>
-                <th class="ltr:rounded-l-md rtl:rounded-r-md">Severity</th>
-                <th>SourceClass</th>
-                <th>Timestmap</th>
+                <th class="ltr:rounded-l-md rtl:rounded-r-md">{{ 'Severity' | translate }}</th>
+                <th>{{ 'SourceClass' | translate }}</th>
+                <th>{{ 'Timestamp' | translate }}</th>
               </tr>
             </thead>
             <tbody>
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-danger shadow-md dark:group-hover:bg-transparent">High</span></td>
+                <td><span class="badge bg-danger shadow-md dark:group-hover:bg-transparent">{{ 'High' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview">EXE_Source</a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
 
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-warning shadow-md dark:group-hover:bg-transparent">Medium</span></td>
+                <td><span class="badge bg-warning shadow-md dark:group-hover:bg-transparent">{{ 'Medium' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview"> Misc Attack </a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
 
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">Low</span></td>
+                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview"> Attempted Information Leak </a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">Low</span></td>
+                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview"> Information Leak </a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
 
               <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">Low</span></td>
+                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
                 <td><a routerLink="/apps/invoice/preview"> Detection of a Network Scan </a></td>
                 <td>2024/11/5 09:11:12</td>
               </tr>
@@ -283,7 +282,7 @@
     <div class="grid gap-6 lg:grid-cols-3">
       <div class="panel h-full xl:col-span-3">
         <div class="mb-5 flex items-center justify-between dark:text-white-light">
-          <h5 class="text-lg font-semibold">Network Protocol Trend Chart</h5>
+          <h5 class="text-lg font-semibold">{{ 'Network Protocol Trend Chart' | translate }}</h5>
           <div class="dropdown ltr:ml-auto rtl:mr-auto">
             <div hlMenu>
               <a hlMenuButton href="javascript:;" class="align-middle">
@@ -291,19 +290,19 @@
               </a>
               <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
                 <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">Weekly</a>
+                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Weekly' | translate }}</a>
                 </li>
                 <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">Monthly</a>
+                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Monthly' | translate }}</a>
                 </li>
                 <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">Yearly</a>
+                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Yearly' | translate }}</a>
                 </li>
               </ul>
             </div>
           </div>
         </div>
-        <p class="text-lg dark:text-white-light/90">Flow Count<span class="ml-2 text-primary">1,532,000</span></p>
+        <p class="text-lg dark:text-white-light/90">{{ 'Flow Count' | translate }}<span class="ml-2 text-primary">1,532,000</span></p>
         <div class="relative overflow-hidden">
           <apx-chart [series]="tcpTrending.series" [chart]="tcpTrending.chart"
             [dataLabels]="tcpTrending.dataLabels" [stroke]="tcpTrending.stroke"

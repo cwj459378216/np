@@ -290,7 +290,7 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
     protected loadTrendingData() {
         this.chartLoading = true;
         const endTime = Date.now();
-        const startTime = endTime - ( 100 * 24 * 60 * 60 * 1000);
+        const startTime = endTime - ( 100 * 24 * 60 * 60 * 10);
 
         this.http.get<any[]>(`${environment.apiUrl}/es/trending`, {
             params: {

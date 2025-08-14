@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { AppService } from 'src/app/service/app.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
@@ -18,7 +18,8 @@ import { IconModule } from 'src/app/shared/icon/icon.module';
         CommonModule,
         FormsModule,
         RouterModule,
-        IconModule
+        IconModule,
+        TranslateModule
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Threat Management</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'Threat Management' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Local Rules</span>
+            <span>{{ 'Local Rules' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -15,12 +15,12 @@
                     <div class="flex gap-3">
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editRule()">
-                                Add Local Rule
+                                {{ 'Add Local Rule' | translate }}
                             </button>
                         </div>
                     </div>
                     <div class="relative">
-                        <input type="text" placeholder="Search Rules"
+                        <input type="text" placeholder="{{ 'Search Rules' | translate }}"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchTerm"
                             (ngModelChange)="searchRules()" />
                         <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
@@ -34,13 +34,13 @@
                     <table class="table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>Rule ID</th>
-                                <th>Rule Content</th>
-                                <th>Created Date</th>
-                                <th>Status</th>
-                                <th>Category</th>
-                                <th>Last Updated</th>
-                                <th class="!text-center">Actions</th>
+                                <th>{{ 'Rule ID' | translate }}</th>
+                                <th>{{ 'Rule Content' | translate }}</th>
+                                <th>{{ 'Created Date' | translate }}</th>
+                                <th>{{ 'Status' | translate }}</th>
+                                <th>{{ 'Category' | translate }}</th>
+                                <th>{{ 'Last Updated' | translate }}</th>
+                                <th class="!text-center">{{ 'Actions' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -59,9 +59,9 @@
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="editRule(rule)">Edit</button>
+                                            (click)="editRule(rule)">{{ 'Edit' | translate }}</button>
                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                            (click)="deleteRule(rule)">Delete</button>
+                                            (click)="deleteRule(rule)">{{ 'Delete' | translate }}</button>
                                     </div>
                                 </td>
                             </tr>
@@ -73,35 +73,35 @@
             <!-- add/edit rule modal -->
             <ngx-custom-modal #addRuleModal class="no-footer">
                 <ng-template #modalHeader>
-                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Rule' : 'Add Rule' }}</div>
+                    <div class="!font-medium">{{ params.controls['id'].value ? ('Edit Rule' | translate) : ('Add Rule' | translate) }}</div>
                 </ng-template>
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveRule()" ngNativeValidate>
                         <div class="mb-5">
-                            <label for="rule_content">Rule Content</label>
+                            <label for="rule_content">{{ 'Rule Content' | translate }}</label>
                             <textarea id="rule_content" formControlName="rule_content" class="form-textarea" rows="4" required></textarea>
                         </div>
                         <div class="mb-5">
-                            <label for="category">Category</label>
-                            <ng-select id="category" [items]="categories" formControlName="category" [clearable]="false" 
-                                placeholder="Select a category" class="custom-multiselect flex-1">
+                            <label for="category">{{ 'Category' | translate }}</label>
+                            <ng-select id="category" [items]="categories" formControlName="category" [clearable]="false"
+                                placeholder="{{ 'Select a category' | translate }}" class="custom-multiselect flex-1">
                             </ng-select>
                         </div>
                         <div class="mb-5">
-                            <label for="status">Status</label>
+                            <label for="status">{{ 'Status' | translate }}</label>
                             <select id="status" formControlName="status" class="form-select">
-                                <option value="Enabled">Enabled</option>
-                                <option value="Disabled">Disabled</option>
+                                <option value="Enabled">{{ 'Enabled' | translate }}</option>
+                                <option value="Disabled">{{ 'Disabled' | translate }}</option>
                             </select>
                         </div>
                         <div class="mt-8 flex items-center justify-end gap-4">
-                            <button type="button" class="btn btn-outline-danger" (click)="addRuleModal.close()">Cancel</button>
+                            <button type="button" class="btn btn-outline-danger" (click)="addRuleModal.close()">{{ 'Cancel' | translate }}</button>
                             <button type="button" class="btn btn-outline-info" (click)="testRule()">
                                 <icon-play-circle class="ltr:mr-2 rtl:ml-2 shrink-0" />
-                                Test Rule
+                                {{ 'Test Rule' | translate }}
                             </button>
                             <button type="submit" class="btn btn-primary">
-                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                                {{ params.controls['id'].value ? ('Update' | translate) : ('Add' | translate) }}
                             </button>
                         </div>
                     </form>
@@ -109,4 +109,4 @@
             </ngx-custom-modal>
         </div>
     </div>
-</div> 
+</div>

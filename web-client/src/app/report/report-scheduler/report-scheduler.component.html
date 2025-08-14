@@ -1,13 +1,13 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Report</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'Report' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Report Scheduler</span>
+            <span>{{ 'Report Scheduler' | translate }}</span>
         </li>
     </ul>
-    
+
     <div class="pt-5">
         <div>
             <div class="flex flex-wrap items-center justify-between gap-4">
@@ -16,7 +16,7 @@
                     <div class="flex gap-3">
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editScheduler()">
-                                Add Schedule
+                                {{ 'Add Schedule' | translate }}
                             </button>
                         </div>
                         <div>
@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="relative">
-                        <input type="text" placeholder="Search Schedules"
+                        <input type="text" placeholder="{{ 'Search Schedules' | translate }}"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchText"
                             (ngModelChange)="searchSchedulers()" />
                         <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
@@ -45,21 +45,21 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="panel mt-5 overflow-hidden border-0 p-0">
                 <div class="table-responsive">
                     <table class="table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Template</th>
-                                <th>Frequency</th>
-                                <th>Time</th>
-                                <th>Where to Send</th>
-                                <th>Status</th>
-                                <th>Creation Time</th>
-                                <th class="!text-center">Actions</th>
+                                <th>{{ 'Name' | translate }}</th>
+                                <th>{{ 'Description' | translate }}</th>
+                                <th>{{ 'Template' | translate }}</th>
+                                <th>{{ 'Frequency' | translate }}</th>
+                                <th>{{ 'Time' | translate }}</th>
+                                <th>{{ 'Where to Send' | translate }}</th>
+                                <th>{{ 'Status' | translate }}</th>
+                                <th>{{ 'Creation Time' | translate }}</th>
+                                <th class="!text-center">{{ 'Actions' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,15 +74,15 @@
                                     <span [ngClass]="{
                                         'badge badge-outline-success': scheduler.status === 'Active',
                                         'badge badge-outline-danger': scheduler.status === 'Inactive'
-                                    }">{{ scheduler.status }}</span>
+                                    }">{{ scheduler.status | translate }}</span>
                                 </td>
                                 <td>{{ scheduler.creationTime }}</td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="editScheduler(scheduler)">Edit</button>
+                                            (click)="editScheduler(scheduler)">{{ 'Edit' | translate }}</button>
                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                            (click)="deleteScheduler(scheduler)">Delete</button>
+                                            (click)="deleteScheduler(scheduler)">{{ 'Delete' | translate }}</button>
                                     </div>
                                 </td>
                             </tr>
@@ -95,68 +95,68 @@
 
     <ngx-custom-modal #addSchedulerModal class="no-footer">
         <ng-template #modalHeader>
-            <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Schedule' : 'Add Schedule' }}</div>
+            <div class="!font-medium">{{ params.controls['id'].value ? ('Edit Schedule' | translate) : ('Add Schedule' | translate) }}</div>
         </ng-template>
         <ng-template #modalBody>
             <form [formGroup]="params" class="text-sm" (ngSubmit)="saveScheduler()" ngNativeValidate>
                 <div class="mb-5">
-                    <label for="name">Name</label>
+                    <label for="name">{{ 'Name' | translate }}</label>
                     <input id="name" type="text" formControlName="name" class="form-input" required />
                 </div>
                 <div class="mb-5">
-                    <label for="description">Description</label>
+                    <label for="description">{{ 'Description' | translate }}</label>
                     <textarea id="description" formControlName="description" class="form-input" rows="3" required></textarea>
                 </div>
                 <div class="mb-5">
-                    <label for="template">Template</label>
+                    <label for="template">{{ 'Template' | translate }}</label>
                     <select id="template" formControlName="template" class="form-select" required>
-                        <option value="">Select Template</option>
+                        <option value="">{{ 'Select Template' | translate }}</option>
                         <option *ngFor="let option of templateOptions" [value]="option.value">
                             {{ option.label }}
                         </option>
                     </select>
                 </div>
                 <div class="mb-5">
-                    <label for="frequency">Frequency</label>
+                    <label for="frequency">{{ 'Frequency' | translate }}</label>
                     <select id="frequency" formControlName="frequency" class="form-select" required>
-                        <option value="">Select Frequency</option>
-                        <option value="Daily">Daily</option>
-                        <option value="Weekly">Weekly</option>
-                        <option value="Monthly">Monthly</option>
+                        <option value="">{{ 'Select Frequency' | translate }}</option>
+                        <option value="Daily">{{ 'Daily' | translate }}</option>
+                        <option value="Weekly">{{ 'Weekly' | translate }}</option>
+                        <option value="Monthly">{{ 'Monthly' | translate }}</option>
                     </select>
                 </div>
                 <div class="mb-5">
-                    <label for="time">Time</label>
+                    <label for="time">{{ 'Time' | translate }}</label>
                     <input id="time" type="time" formControlName="time" class="form-input" required />
                 </div>
                 <div class="mb-5">
-                    <label for="whereToSend">Where to Send</label>
-                    <select 
-                        id="whereToSend" 
-                        formControlName="whereToSend" 
-                        class="form-select" 
+                    <label for="whereToSend">{{ 'Where to Send' | translate }}</label>
+                    <select
+                        id="whereToSend"
+                        formControlName="whereToSend"
+                        class="form-select"
                         required
                     >
-                        <option value="">Select Destination</option>
+                        <option value="">{{ 'Select Destination' | translate }}</option>
                         <option *ngFor="let option of whereToSendOptions" [value]="option.value">
                             {{ option.label }}
                         </option>
                     </select>
                 </div>
                 <div class="mb-5">
-                    <label for="status">Status</label>
+                    <label for="status">{{ 'Status' | translate }}</label>
                     <select id="status" formControlName="status" class="form-select" required>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
+                        <option value="Active">{{ 'Active' | translate }}</option>
+                        <option value="Inactive">{{ 'Inactive' | translate }}</option>
                     </select>
                 </div>
                 <div class="mt-8 flex items-center justify-end">
-                    <button type="button" class="btn btn-outline-danger" (click)="addSchedulerModal.close()">Cancel</button>
+                    <button type="button" class="btn btn-outline-danger" (click)="addSchedulerModal.close()">{{ 'Cancel' | translate }}</button>
                     <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                        {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                        {{ params.controls['id'].value ? ('Update' | translate) : ('Add' | translate) }}
                     </button>
                 </div>
             </form>
         </ng-template>
     </ngx-custom-modal>
-</div> 
+</div>

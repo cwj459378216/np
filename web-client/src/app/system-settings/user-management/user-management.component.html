@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.systemSettings' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>User Management</span>
+            <span>{{ 'navigation.userManagement' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -16,7 +16,7 @@
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editUser()">
                                 <icon-user-plus class="ltr:mr-2 rtl:ml-2" />
-                                Add User
+                                {{ 'users.addUser' | translate }}
                             </button>
                         </div>
                         <div>
@@ -51,12 +51,12 @@
                         <table class="table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Username</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Description</th>
-                                    <th>Status</th>
-                                    <th class="!text-center">Actions</th>
+                                    <th>{{ 'users.username' | translate }}</th>
+                                    <th>{{ 'users.email' | translate }}</th>
+                                    <th>{{ 'users.role' | translate }}</th>
+                                    <th>{{ 'users.description' | translate }}</th>
+                                    <th>{{ 'users.status' | translate }}</th>
+                                    <th class="!text-center">{{ 'users.actions' | translate }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -67,7 +67,7 @@
                                     <td>{{ user.description }}</td>
                                     <td>
                                         <span [class]="user.status ? 'badge badge-outline-success' : 'badge badge-outline-danger'">
-                                            {{ user.status ? 'Active' : 'Inactive' }}
+                                            {{ user.status ? ('users.active' | translate) : ('users.inactive' | translate) }}
                                         </span>
                                     </td>
                                     <td>
@@ -88,7 +88,7 @@
             <!-- add/edit user modal -->
             <ngx-custom-modal #addContactModal class="no-footer">
                 <ng-template #modalHeader>
-                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit User' : 'Add User' }}</div>
+                    <div class="!font-medium">{{ params.controls['id'].value ? ('users.editUser' | translate) : ('users.addUser' | translate) }}</div>
                 </ng-template>
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>

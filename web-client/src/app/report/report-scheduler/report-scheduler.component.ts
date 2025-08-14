@@ -4,6 +4,7 @@ import { ReportSchedulerService } from '../../services/report-scheduler.service'
 import { TemplateService } from '../../services/template.service';
 import { NotificationSettingService } from '../../services/notification-setting.service';
 import { environment } from '../../../environments/environment';
+import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -12,14 +13,14 @@ import Swal from 'sweetalert2';
 })
 export class ReportSchedulerComponent implements OnInit {
     @ViewChild('addSchedulerModal') addSchedulerModal: any;
-    
+
     displayType: string = 'list';
     searchText: string = '';
     params!: FormGroup;
 
     whereToSendOptions: any[] = [];
     templateOptions: any[] = [];
-    
+
     schedulers: any[] = [];
     filteredSchedulers: any[] = [];
 
@@ -27,7 +28,8 @@ export class ReportSchedulerComponent implements OnInit {
         private fb: FormBuilder,
         private reportSchedulerService: ReportSchedulerService,
         private templateService: TemplateService,
-        private notificationSettingService: NotificationSettingService
+        private notificationSettingService: NotificationSettingService,
+        private translate: TranslateService
     ) {
         this.initForm();
     }
@@ -111,32 +113,37 @@ export class ReportSchedulerComponent implements OnInit {
     }
 
     deleteScheduler(scheduler: any) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            padding: '2em'
-        }).then((result) => {
-            if (result.value) {
-                this.reportSchedulerService.deleteScheduler(scheduler.id).subscribe({
-                    next: () => {
-                        this.loadSchedulers();
-                        this.showMessage('Scheduler has been deleted successfully');
-                    },
-                    error: (error) => {
-                        console.error('Error deleting scheduler:', error);
-                        this.showMessage('Error deleting scheduler', 'error');
-                    }
-                });
-            }
+        this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Scheduler has been deleted successfully', 'Error deleting scheduler'])
+        .subscribe(translations => {
+            Swal.fire({
+                title: translations['Are you sure?'],
+                text: translations["You won't be able to revert this!"],
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: translations['Yes, delete it!'],
+                padding: '2em'
+            }).then((result) => {
+                if (result.value) {
+                    this.reportSchedulerService.deleteScheduler(scheduler.id).subscribe({
+                        next: () => {
+                            this.loadSchedulers();
+                            this.showMessage(translations['Scheduler has been deleted successfully']);
+                        },
+                        error: (error) => {
+                            console.error('Error deleting scheduler:', error);
+                            this.showMessage(translations['Error deleting scheduler'], 'error');
+                        }
+                    });
+                }
+            });
         });
     }
 
     saveScheduler() {
         if (!this.params.valid) {
-            this.showMessage('Please fill all required fields.', 'error');
+            this.translate.get('Please fill all required fields.').subscribe(message => {
+                this.showMessage(message, 'error');
+            });
             return;
         }
 
@@ -151,19 +158,25 @@ export class ReportSchedulerComponent implements OnInit {
             this.reportSchedulerService.updateScheduler(formValue.id, schedulerData).subscribe({
                 next: () => {
                     this.loadSchedulers();
-                    this.showMessage('Scheduler has been updated successfully');
+                    this.translate.get('Scheduler has been updated successfully').subscribe(message => {
+                        this.showMessage(message);
+                    });
                     this.addSchedulerModal.close();
                 },
                 error: (error) => {
                     console.error('Error updating scheduler:', error);
-                    this.showMessage('Error updating scheduler', 'error');
+                    this.translate.get('Error updating scheduler').subscribe(message => {
+                        this.showMessage(message, 'error');
+                    });
                 }
             });
         } else {
             this.reportSchedulerService.createScheduler(schedulerData).subscribe({
                 next: () => {
                     this.loadSchedulers();
-                    this.showMessage('Scheduler has been created successfully');
+                    this.translate.get('Scheduler has been created successfully').subscribe(message => {
+                        this.showMessage(message);
+                    });
                     this.addSchedulerModal.close();
                 },
                 error: (error) => {
@@ -171,7 +184,9 @@ export class ReportSchedulerComponent implements OnInit {
                     if (error.error) {
                         console.error('Error details:', error.error);
                     }
-                    this.showMessage('Error creating scheduler', 'error');
+                    this.translate.get('Error creating scheduler').subscribe(message => {
+                        this.showMessage(message, 'error');
+                    });
                 }
             });
         }
@@ -209,4 +224,4 @@ export class ReportSchedulerComponent implements OnInit {
             padding: '10px 20px',
         });
     }
-} 
+}

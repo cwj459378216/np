@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.systemSettings' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>System Time</span>
+            <span>{{ 'navigation.systemTime' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -12,18 +12,18 @@
 
             <div class="panel">
                 <div class="mb-5 flex items-center justify-between">
-                    <h5 class="text-lg font-semibold dark:text-white-light">System Time</h5>
+                    <h5 class="text-lg font-semibold dark:text-white-light">{{ 'navigation.systemTime' | translate }}</h5>
                 </div>
                 <div class="mb-5">
                     <form class="space-y-5">
 
                         <div class="flex flex-col sm:flex-row a-l-b">
-                            <label class="sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">Time Setting Method</label>
+                            <label class="sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">{{ 'systemTime.timeSettingMethod' | translate }}</label>
                             <div class="flex">
                               <div class="mb-2 mr-5">
                                 <label class="mt-1 inline-flex cursor-pointer">
                                   <input type="radio" name="segments" class="form-radio" value="manual" [(ngModel)]="timeSettingMethod" (change)="onAdapterChange($event)" />
-                                  <span class="text-white-dark">Manual Time</span>
+                                  <span class="text-white-dark">{{ 'systemTime.manualTime' | translate }}</span>
                                 </label>
                               </div>
                               <div class="mb-2">
@@ -34,34 +34,34 @@
                               </div>
                             </div>
                           </div>
-                          
+
                           <!-- 根据选择的时间设置方式动态显示输入框 -->
                           <div *ngIf="timeSettingMethod === 'manual'" class="flex flex-col sm:flex-row a-l-b">
-                            <label for="horizontalEmail" [formGroup]="form2" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">Time</label>
+                            <label for="horizontalEmail" [formGroup]="form2" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">{{ 'systemTime.time' | translate }}</label>
                             <form [formGroup]="form2" class="flex-1">
                               <input type="text" mwlFlatpickr formControlName="date2" [options]="dateTime" class="form-input " />
                             </form>
                           </div>
-                          
-                     
-                        
+
+
+
                         <div *ngIf="timeSettingMethod === 'ntp'" class="flex sm:flex-row flex-col a-l-b">
-                            <label for="ntpServer" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">NTP Server</label>
-                            <input id="ntpServer" 
-                                   type="text" 
-                                   [(ngModel)]="ntpServer" 
+                            <label for="ntpServer" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">{{ 'systemTime.ntpServer' | translate }}</label>
+                            <input id="ntpServer"
+                                   type="text"
+                                   [(ngModel)]="ntpServer"
                                    name="ntpServer"
-                                   placeholder="Enter NTP Server" 
+                                   placeholder="{{ 'systemTime.enterNtpServer' | translate }}"
                                    class="form-input flex-1" />
                         </div>
 
                         <div  class="flex flex-col sm:flex-row a-l-b">
-                            <label for="horizontalPassword" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">Time Zone</label>
-                            <ng-select [items]="optionsTimeZone" 
-                                       [(ngModel)]="input5" 
-                                       name="input5" 
-                                       [clearable]="false" 
-                                       placeholder="Select an option" 
+                            <label for="horizontalPassword" class="mb-0 sm:w-1/4 sm:ltr:mr-2 rtl:ml-2">{{ 'systemTime.timeZone' | translate }}</label>
+                            <ng-select [items]="optionsTimeZone"
+                                       [(ngModel)]="input5"
+                                       name="input5"
+                                       [clearable]="false"
+                                       placeholder="{{ 'systemTime.selectTimeZone' | translate }}"
                                        class="custom-multiselect flex-1"
                                        [labelForId]="'timezone'"
                                        bindLabel="label"
@@ -71,11 +71,11 @@
                                 </ng-template>
                             </ng-select>
                         </div>
-                        <button type="button" (click)="onSubmit()" class="btn btn-primary !mt-6">Apply</button>
+                        <button type="button" (click)="onSubmit()" class="btn btn-primary !mt-6">{{ 'general.apply' | translate }}</button>
                     </form>
                 </div>
             </div>
         </div>
-       
+
     </div>
 </div>

@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -21,7 +22,7 @@ export class NotificationRuleComponent implements OnInit {
         { value: '30 days', label: '30 Days' }
     ];
 
-    triggerConditionOptions = [
+    triggerOptions = [
         { value: 'new_event', label: 'On New Event' },
         { value: 'condition', label: 'On Specific Condition' }
     ];
@@ -60,7 +61,7 @@ export class NotificationRuleComponent implements OnInit {
         { value: 'network_traffic', label: 'Network Traffic' }
     ];
 
-    constructor(private fb: FormBuilder, private http: HttpClient) {
+    constructor(private fb: FormBuilder, private http: HttpClient, private translate: TranslateService) {
         this.initForm();
     }
 
@@ -123,26 +124,29 @@ export class NotificationRuleComponent implements OnInit {
     }
 
     deleteRule(rule: any) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            padding: '2em'
-        }).then((result) => {
-            if (result.value) {
-                this.http.delete(`${environment.apiUrl}/notification-rules/${rule.id}`).subscribe(
-                    () => {
-                        this.loadRules();
-                        this.showMessage('Rule has been deleted successfully', 'success');
-                    },
-                    error => {
-                        console.error('Error deleting rule:', error);
-                        this.showMessage('Error deleting rule', 'error');
-                    }
-                );
-            }
+        this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Rule has been deleted successfully', 'Error deleting rule'])
+        .subscribe(translations => {
+            Swal.fire({
+                title: translations['Are you sure?'],
+                text: translations["You won't be able to revert this!"],
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: translations['Yes, delete it!'],
+                padding: '2em'
+            }).then((result) => {
+                if (result.value) {
+                    this.http.delete(`${environment.apiUrl}/notification-rules/${rule.id}`).subscribe(
+                        () => {
+                            this.loadRules();
+                            this.showMessage(translations['Rule has been deleted successfully'], 'success');
+                        },
+                        error => {
+                            console.error('Error deleting rule:', error);
+                            this.showMessage(translations['Error deleting rule'], 'error');
+                        }
+                    );
+                }
+            });
         });
     }
 
@@ -158,7 +162,9 @@ export class NotificationRuleComponent implements OnInit {
         if (this.params.get('triggerCondition')?.value === 'condition') {
             const validFilters = this.filters.filter(f => f.field && f.value);
             if (validFilters.length === 0) {
-                this.showMessage('Please add at least one valid condition', 'error');
+                this.translate.get('Please add at least one valid condition').subscribe(message => {
+                    this.showMessage(message, 'error');
+                });
                 return;
             }
         }
@@ -177,12 +183,16 @@ export class NotificationRuleComponent implements OnInit {
         this.http[method](url, ruleData).subscribe(
             () => {
                 this.loadRules();
-                this.showMessage('Rule has been saved successfully', 'success');
+                this.translate.get('Rule has been saved successfully').subscribe(message => {
+                    this.showMessage(message, 'success');
+                });
                 this.addRuleModal.close();
             },
             error => {
                 console.error('Error saving rule:', error);
-                this.showMessage('Error saving rule', 'error');
+                this.translate.get('Error saving rule').subscribe(message => {
+                    this.showMessage(message, 'error');
+                });
             }
         );
     }
@@ -209,17 +219,22 @@ export class NotificationRuleComponent implements OnInit {
             },
             error => {
                 console.error('Error loading rules:', error);
-                this.showMessage('Error loading rules', 'error');
+                this.translate.get('Error loading rules').subscribe(message => {
+                    this.showMessage(message, 'error');
+                });
             }
         );
     }
 
     showMessage(message: string, type: 'success' | 'error') {
-        Swal.fire({
-            title: type === 'success' ? 'Success' : 'Error',
-            text: message,
-            icon: type === 'success' ? 'success' : 'error',
-            padding: '2em'
+        this.translate.get([type === 'success' ? 'Success' : 'Error']).subscribe(translations => {
+            const title = Object.values(translations)[0] as string;
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: type === 'success' ? 'success' : 'error',
+                padding: '2em'
+            });
         });
     }
 }

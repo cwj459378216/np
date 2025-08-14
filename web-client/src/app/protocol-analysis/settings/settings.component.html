@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Protocol Analysis</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'Protocol Analysis' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Settings</span>
+            <span>{{ 'Settings' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -20,7 +20,7 @@
                             <div class="shrink-0">
                                 <icon-notes />
                             </div>
-                            <h3 class="text-lg font-semibold ltr:ml-3 rtl:mr-3">Protocol Settings</h3>
+                            <h3 class="text-lg font-semibold ltr:ml-3 rtl:mr-3">{{ 'Protocol Settings' | translate }}</h3>
                         </div>
                         <div class="my-4 h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b]"></div>
                         <ng-scrollbar class="relative h-full grow ltr:pr-3.5 rtl:pl-3.5" appearance="compact">
@@ -32,7 +32,7 @@
                                     <div class="flex items-center">
                                         <icon-notes-edit class="shrink-0" />
 
-                                        <div class="ltr:ml-3 rtl:mr-3">All Protocol</div>
+                                        <div class="ltr:ml-3 rtl:mr-3">{{ 'All Protocol' | translate }}</div>
                                     </div>
                                 </button>
                                 <button type="button"
@@ -41,7 +41,7 @@
                                     (click)="tabChanged('enabled')">
                                     <div class="flex items-center">
                                         <icon-circle-check class="shrink-0" />
-                                        <div class="ltr:ml-3 rtl:mr-3">Enable Protocol</div>
+                                        <div class="ltr:ml-3 rtl:mr-3">{{ 'Enable Protocol' | translate }}</div>
                                     </div>
                                 </button>
                                 <button type="button"
@@ -50,24 +50,24 @@
                                     (click)="tabChanged('disabled')">
                                     <div class="flex items-center">
                                         <icon-x-circle class="shrink-0" />
-                                        <div class="ltr:ml-3 rtl:mr-3">Disable Protocol</div>
+                                        <div class="ltr:ml-3 rtl:mr-3">{{ 'Disable Protocol' | translate }}</div>
                                     </div>
                                 </button>
                                 <div class="h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b]"></div>
-                                <div class="px-1 py-3 text-white-dark">Tags</div>
+                                <div class="px-1 py-3 text-white-dark">{{ 'Tags' | translate }}</div>
                                 <button type="button"
                                     class="flex h-10 w-full items-center rounded-md p-1 font-medium text-danger duration-300 hover:bg-white-dark/10 ltr:hover:pl-3 rtl:hover:pr-3 dark:hover:bg-[#181F32]"
                                     [ngClass]="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'important' }"
                                     (click)="tabChanged('important')">
                                     <icon-square-rotated class="shrink-0 fill-danger" />
-                                    <div class="ltr:ml-3 rtl:mr-3">Important</div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ 'Important' | translate }}</div>
                                 </button>
                                 <button type="button"
                                     class="flex h-10 w-full items-center rounded-md p-1 font-medium text-primary duration-300 hover:bg-white-dark/10 ltr:hover:pl-3 rtl:hover:pr-3 dark:hover:bg-[#181F32]"
                                     [ngClass]="{'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'personal' }"
                                     (click)="tabChanged('personal')">
                                     <icon-square-rotated class="shrink-0 fill-primary" />
-                                    <div class="ltr:ml-3 rtl:mr-3">Normal </div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ 'Normal' | translate }}</div>
                                 </button>
 
                                 <button type="button"
@@ -75,7 +75,7 @@
                                     [ngClass]="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'work' }"
                                     (click)="tabChanged('work')">
                                     <icon-square-rotated class="shrink-0 fill-warning" />
-                                    <div class="ltr:ml-3 rtl:mr-3">Negligible </div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ 'Negligible' | translate }}</div>
                                 </button>
 
                                 <!-- <button type="button"
@@ -93,7 +93,7 @@
                     <!-- <div class="absolute bottom-0 w-full p-4 ltr:left-0 rtl:right-0">
                         <button class="btn btn-primary w-full" type="button" (click)="editNote()">
                             <icon-plus class="h-5 w-5 shrink-0 ltr:mr-2 rtl:ml-2" />
-                            Add 
+                            Add
                         </button>
                     </div> -->
                 </div>
@@ -108,7 +108,7 @@
                     <ng-container *ngIf="!filterdNotesList.length">
                         <div
                             class="flex h-full min-h-[400px] items-center justify-center text-lg font-semibold sm:min-h-[300px]">
-                            No data available</div>
+                            {{ 'No data available' | translate }}</div>
                     </ng-container>
                     <ng-container *ngIf="filterdNotesList.length">
                         <div class="min-h-[400px] sm:min-h-[300px]">
@@ -155,7 +155,7 @@
                                                                 <icon-pencil
                                                                     class="h-4 w-4 shrink-0 ltr:mr-3 rtl:ml-3" />
 
-                                                                Edit
+                                                                {{ 'Edit' | translate }}
                                                             </a>
                                                         </li>
                                                         <!-- <li>
@@ -173,14 +173,14 @@
                                                                 <icon-eye
                                                                     class="h-4.5 w-4.5 shrink-0 ltr:mr-3 rtl:ml-3" />
 
-                                                                View
+                                                                {{ 'View' | translate }}
                                                             </a>
                                                         </li>
                                                     </ul>
                                                 </div>
                                             </div>
                                             <div>
-                                                <h4 class="mt-4 font-semibold">Port : {{ note.title }}</h4>
+                                                <h4 class="mt-4 font-semibold">{{ 'Port' | translate }} : {{ note.title }}</h4>
                                                 <p class="mt-2 text-white-dark">{{ note.description }}</p>
                                             </div>
                                         </div>
@@ -209,7 +209,7 @@
                                                                 (click)="setTag(note, 'work')">
                                                                 <icon-square-rotated
                                                                     class="fill-warning text-warning ltr:mr-2 rtl:ml-2" />
-                                                                    Negligible 
+                                                                    {{ 'Negligible' | translate }}
                                                             </a>
                                                         </li>
                                                         <li>
@@ -217,7 +217,7 @@
                                                                 (click)="setTag(note, 'social')">
                                                                 <icon-square-rotated
                                                                     class="fill-info text-info ltr:mr-2 rtl:ml-2" />
-                                                                    Normal 
+                                                                    {{ 'Normal' | translate }}
                                                             </a>
                                                         </li>
                                                         <li>
@@ -225,23 +225,23 @@
                                                                 (click)="setTag(note, 'important')">
                                                                 <icon-square-rotated
                                                                     class="fill-danger text-danger ltr:mr-2 rtl:ml-2" />
-                                                                Important
+                                                                {{ 'Important' | translate }}
                                                             </a>
                                                         </li>
                                                     </ul>
                                                 </div>
                                                 <div class="flex items-center">
                                                     <label class="w-12 h-6 relative">
-                                                        <input type="checkbox" 
-                                                               class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" 
-                                                               id="custom_switch_checkbox2" 
+                                                        <input type="checkbox"
+                                                               class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
+                                                               id="custom_switch_checkbox2"
                                                                [checked]="note.isFav"
                                                                (change)="toggleEnabled(note)" />
-                                                        <span for="custom_switch_checkbox2" 
+                                                        <span for="custom_switch_checkbox2"
                                                               class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
                                                         </span>
                                                     </label>
-                                                  
+
                                                 </div>
                                             </div>
                                         </div>
@@ -253,14 +253,14 @@
 
                     <ngx-custom-modal #isAddNoteModal class="no-footer">
                         <ng-template #modalHeader>
-                            <div class="!font-medium">{{ params.value.id ? 'Edit ' : 'Add ' }}</div>
+                            <div class="!font-medium">{{ params.value.id ? ('Edit' | translate) : ('Add' | translate) }}</div>
                         </ng-template>
                         <ng-template #modalBody>
                             <form [formGroup]="params" (submit)="saveNote()" class="text-sm">
                                 <div class="mb-5">
-                                    <label for="name">Protocol</label>
+                                    <label for="name">{{ 'Protocol' | translate }}</label>
                                     <select id="name" class="form-select" formControlName="user">
-                                       
+
                                         <option value="HTTP">HTTP</option>
                                         <option value="SSL">SSL</option>
                                         <option value="DNS">DNS</option>
@@ -268,8 +268,8 @@
                                     </select>
                                 </div>
                                 <div class="mb-5">
-                                    <label for="title">Port</label>
-                                    <input id="title" type="number" placeholder="Enter Title" class="form-input"
+                                    <label for="title">{{ 'Port' | translate }}</label>
+                                    <input id="title" type="number" placeholder="{{ 'Enter Title' | translate }}" class="form-input"
                                         formControlName="title" />
                                 </div>
                                 <!-- <div class="mb-5">
@@ -278,27 +278,27 @@
                                         <span>Enable</span>
                                     </label>
                                 </div> -->
-                             
+
                                 <div class="mb-5">
-                                    <label for="tag">Tag</label>
+                                    <label for="tag">{{ 'Tag' | translate }}</label>
                                     <select id="tag" class="form-select" formControlName="tag">
-                                        <option value="">None</option>
-                                        <option value="personal">Personal</option>
-                                        <option value="work">Work</option>
-                                        <option value="social">Social</option>
-                                        <option value="important">Important</option>
+                                        <option value="">{{ 'None' | translate }}</option>
+                                        <option value="personal">{{ 'Personal' | translate }}</option>
+                                        <option value="work">{{ 'Work' | translate }}</option>
+                                        <option value="social">{{ 'Social' | translate }}</option>
+                                        <option value="important">{{ 'Important' | translate }}</option>
                                     </select>
                                 </div>
                                 <div class="mb-5">
-                                    <label for="desc">Description</label>
+                                    <label for="desc">{{ 'Description' | translate }}</label>
                                     <textarea id="desc" rows="3" class="form-textarea min-h-[130px] resize-none"
-                                        placeholder="Enter Description" formControlName="description"></textarea>
+                                        placeholder="{{ 'Enter Description' | translate }}" formControlName="description"></textarea>
                                 </div>
                                 <div class="mt-8 flex items-center justify-end">
                                     <button type="button" class="btn btn-outline-danger gap-2"
-                                        (click)="isAddNoteModal.close()">Cancel</button>
+                                        (click)="isAddNoteModal.close()">{{ 'Cancel' | translate }}</button>
                                     <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">{{ params.value.id ?
-                                        'Update ' : 'Add ' }}</button>
+                                        ('Update' | translate) : ('Add' | translate) }}</button>
                                 </div>
                             </form>
                         </ng-template>
@@ -306,20 +306,20 @@
 
                     <ngx-custom-modal #isDeleteNoteModal class="no-footer">
                         <ng-template #modalHeader>
-                            <div class="!font-medium">Delete Protocol</div>
+                            <div class="!font-medium">{{ 'Delete Protocol' | translate }}</div>
                         </ng-template>
                         <ng-template #modalBody>
                             <div class="text-center text-sm">
                                 <div class="mx-auto w-fit rounded-full bg-danger p-4 text-white ring-4 ring-danger/30">
                                     <icon-trash-lines class="mx-auto h-7 w-7" />
                                 </div>
-                                <div class="mx-auto mt-5 sm:w-3/4">Are you sure you want to delete this protocol?</div>
+                                <div class="mx-auto mt-5 sm:w-3/4">{{ 'Are you sure you want to delete this protocol?' | translate }}</div>
 
                                 <div class="mt-8 flex items-center justify-center">
                                     <button type="button" class="btn btn-outline-danger"
-                                        (click)="isDeleteNoteModal.close()">Cancel</button>
+                                        (click)="isDeleteNoteModal.close()">{{ 'Cancel' | translate }}</button>
                                     <button type="button" class="btn btn-primary ltr:ml-4 rtl:mr-4"
-                                        (click)="deleteNote()">Delete</button>
+                                        (click)="deleteNote()">{{ 'Delete' | translate }}</button>
                                 </div>
                             </div>
                         </ng-template>
@@ -346,7 +346,7 @@
 
                             <div class="mt-8 ltr:text-right rtl:text-left">
                                 <button type="button" class="btn btn-outline-danger"
-                                    (click)="isViewNoteModal.close()">Close</button>
+                                    (click)="isViewNoteModal.close()">{{ 'Close' | translate }}</button>
                             </div>
                         </ng-template>
                     </ngx-custom-modal>

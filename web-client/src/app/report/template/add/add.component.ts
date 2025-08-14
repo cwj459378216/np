@@ -3,6 +3,7 @@ import { GridsterConfig, GridsterItem, GridsterItemComponentInterface } from 'an
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
 
 // 首先定义 GridsterItem 接口
@@ -113,7 +114,8 @@ export class AddComponent implements OnInit {
 
     constructor(
         private http: HttpClient,
-        private router: Router
+        private router: Router,
+        private translate: TranslateService
     ) {}
 
     ngOnInit() {
@@ -141,7 +143,9 @@ export class AddComponent implements OnInit {
     // 处理添加图表的提交
     addWidget() {
         if (!this.formData.type) {
-            this.showMessage('Please select widget type', 'error');
+            this.translate.get('Please select widget type').subscribe(message => {
+                this.showMessage(message, 'error');
+            });
             return;
         }
 
@@ -183,7 +187,9 @@ export class AddComponent implements OnInit {
                 break;
 
             default:
-                this.showMessage('Invalid widget type', 'error');
+                this.translate.get('Invalid widget type').subscribe(message => {
+                    this.showMessage(message, 'error');
+                });
                 return;
         }
 
@@ -310,7 +316,9 @@ export class AddComponent implements OnInit {
 
     saveTemplate() {
         if (!this.name.trim()) {
-            this.showMessage('Please enter template name', 'error');
+            this.translate.get('Please enter template name').subscribe(message => {
+                this.showMessage(message, 'error');
+            });
             return;
         }
 
@@ -358,12 +366,16 @@ export class AddComponent implements OnInit {
 
         this.http.post(`${environment.apiUrl}/templates`, template).subscribe(
             () => {
-                this.showMessage('Template has been saved successfully');
+                this.translate.get('Template has been saved successfully').subscribe(message => {
+                    this.showMessage(message);
+                });
                 this.router.navigate(['/report/template/list']);
             },
             error => {
                 console.error('Error saving template:', error);
-                this.showMessage('Error saving template', 'error');
+                this.translate.get('Error saving template').subscribe(message => {
+                    this.showMessage(message, 'error');
+                });
             }
         );
     }

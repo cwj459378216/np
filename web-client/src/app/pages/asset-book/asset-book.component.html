@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.systemSettings' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Asset Book</span>
+            <span>{{ 'navigation.assetBook' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -15,7 +15,7 @@
                     <div class="flex gap-3">
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editUser()">
-                                Add 
+                                {{ 'assetBook.addAsset' | translate }}
                             </button>
                         </div>
                         <div>
@@ -35,7 +35,7 @@
                     </div>
 
                     <div class="relative">
-                        <input type="text" placeholder="Search Assets"
+                        <input type="text" placeholder="{{ 'assetBook.searchAssets' | translate }}"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchUser" name="searchUser"
                             (ngModelChange)="searchAssets()" />
                         <div
@@ -51,13 +51,13 @@
                         <table class="table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Asset Name</th>
-                                    <th>IP Address</th>
-                                    <th>MAC Address</th>
-                                    <th>Type</th>
-                                    <th>Status</th>
-                                    <th>Last Updated</th>
-                                    <th class="!text-center">Actions</th>
+                                    <th>{{ 'assetBook.assetName' | translate }}</th>
+                                    <th>{{ 'assetBook.ipAddress' | translate }}</th>
+                                    <th>{{ 'assetBook.macAddress' | translate }}</th>
+                                    <th>{{ 'assetBook.type' | translate }}</th>
+                                    <th>{{ 'assetBook.status' | translate }}</th>
+                                    <th>{{ 'assetBook.lastUpdated' | translate }}</th>
+                                    <th class="!text-center">{{ 'assetBook.actions' | translate }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -70,15 +70,15 @@
                                         <span [ngClass]="{
                                             'badge badge-outline-success': asset.status === 'Active',
                                             'badge badge-outline-danger': asset.status === 'Inactive'
-                                        }">{{ asset.status }}</span>
+                                        }">{{ asset.status === 'Active' ? ('assetBook.active' | translate) : ('assetBook.inactive' | translate) }}</span>
                                     </td>
                                     <td>{{ asset.last_updated }}</td>
                                     <td>
                                         <div class="flex items-center justify-center gap-4">
                                             <button type="button" class="btn btn-sm btn-outline-primary"
-                                                (click)="editUser(asset)">Edit</button>
+                                                (click)="editUser(asset)">{{ 'general.edit' | translate }}</button>
                                             <button type="button" class="btn btn-sm btn-outline-danger"
-                                                (click)="deleteUser(asset)">Delete</button>
+                                                (click)="deleteUser(asset)">{{ 'general.delete' | translate }}</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -91,35 +91,35 @@
             <!-- add asset modal -->
             <ngx-custom-modal #addContactModal class="no-footer">
                 <ng-template #modalHeader>
-                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Asset' : 'Add Asset' }}</div>
+                    <div class="!font-medium">{{ params.controls['id'].value ? ('assetBook.editAsset' | translate) : ('assetBook.addAsset' | translate) }}</div>
                 </ng-template>
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>
                         <div class="mb-5">
-                            <label for="asset_name">Asset Name</label>
+                            <label for="asset_name">{{ 'assetBook.assetName' | translate }}</label>
                             <input id="asset_name" type="text" formControlName="asset_name" class="form-input" required />
                         </div>
                         <div class="mb-5">
-                            <label for="type">Type</label>
-                            <ng-select id="type" [items]="optionsType" formControlName="type" [clearable]="false" 
-                                placeholder="Select an option" class="custom-multiselect flex-1">
+                            <label for="type">{{ 'assetBook.type' | translate }}</label>
+                            <ng-select id="type" [items]="optionsType" formControlName="type" [clearable]="false"
+                                placeholder="{{ 'assetBook.selectType' | translate }}" class="custom-multiselect flex-1">
                             </ng-select>
                         </div>
                         <div class="mb-5">
-                            <label for="ip_address">IP Address</label>
-                            <input id="ip_address" type="text" formControlName="ip_address" class="form-input" 
-                                [textMask]="{mask: mask11}" placeholder="___.___.___.___" required />
+                            <label for="ip_address">{{ 'assetBook.ipAddress' | translate }}</label>
+                            <input id="ip_address" type="text" formControlName="ip_address" class="form-input"
+                                [textMask]="{mask: mask11}" placeholder="{{ 'assetBook.ipPlaceholder' | translate }}" required />
                         </div>
                         <div class="mb-5">
-                            <label for="mac_address">MAC Address</label>
-                            <input id="mac_address" type="text" formControlName="mac_address" class="form-input" 
-                                [textMask]="{mask: maskMAC}" placeholder="XX:XX:XX:XX:XX:XX" required />
+                            <label for="mac_address">{{ 'assetBook.macAddress' | translate }}</label>
+                            <input id="mac_address" type="text" formControlName="mac_address" class="form-input"
+                                [textMask]="{mask: maskMAC}" placeholder="{{ 'assetBook.macPlaceholder' | translate }}" required />
                         </div>
                         <div class="mt-8 flex items-center justify-end">
                             <button type="button" class="btn btn-outline-danger"
-                                (click)="addContactModal.close()">Cancel</button>
+                                (click)="addContactModal.close()">{{ 'general.cancel' | translate }}</button>
                             <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                                {{ params.controls['id'].value ? ('general.update' | translate) : ('general.add' | translate) }}
                             </button>
                         </div>
                     </form>
@@ -127,4 +127,4 @@
             </ngx-custom-modal>
         </div>
     </div>
-</div> 
+</div>

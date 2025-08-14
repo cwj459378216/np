@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { an } from '@fullcalendar/core/internal-common';
 import { Store } from '@ngrx/store';
+import { TranslateService } from '@ngx-translate/core';
 import { DashboardDataService, ProtocolTrendsResponse, TrendingData } from '../services/dashboard-data.service';
 
 @Component({
@@ -25,8 +26,9 @@ export class DashboardComponent implements OnInit {
   icmpTrending: any;
   tcpTrending: any;
   udpTrending: any;
+  totalFlowCount: number = 0; // 新增属性存储总流量计数
 
-  constructor(public storeData: Store<any>, private dashboardDataService: DashboardDataService) {
+  constructor(public storeData: Store<any>, private dashboardDataService: DashboardDataService, private translate: TranslateService) {
     this.initStore();
     this.isLoading = false;
   }
@@ -73,7 +75,7 @@ export class DashboardComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error loading protocol trends data:', error);
-          // 如果API调用失败，使用模拟数据
+          // 如果API调用失败，设置默认值并使用模拟数据
           this.initCharts();
         }
       });
@@ -87,6 +89,12 @@ export class DashboardComponent implements OnInit {
     const httpData = data.HTTP.map(item => [item.timestamp, item.count]);
     const dnsData = data.DNS.map(item => [item.timestamp, item.count]);
     const othersData = data.Others.map(item => [item.timestamp, item.count]);
+
+    // 计算所有协议的总流量数
+    const httpTotal = data.HTTP.reduce((sum, item) => sum + item.count, 0);
+    const dnsTotal = data.DNS.reduce((sum, item) => sum + item.count, 0);
+    const othersTotal = data.Others.reduce((sum, item) => sum + item.count, 0);
+    this.totalFlowCount = httpTotal + dnsTotal + othersTotal;
 
     this.protocolTrending = {
       chart: {
@@ -666,7 +674,7 @@ export class DashboardComponent implements OnInit {
               },
               total: {
                 show: true,
-                label: 'Total',
+                label: this.translate.instant('Total'),
                 color: '#888ea8',
                 fontSize: '29px',
                 formatter: (w: any) => {

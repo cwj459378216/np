@@ -1,13 +1,13 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Report</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'Report' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Notification Rules</span>
+            <span>{{ 'Notification Rule' | translate }}</span>
         </li>
     </ul>
-    
+
     <div class="pt-5">
         <div>
             <div class="flex flex-wrap items-center justify-between gap-4">
@@ -16,7 +16,7 @@
                     <div class="flex gap-3">
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editRule()">
-                                Add Rule
+                                {{ 'Add Rule' | translate }}
                             </button>
                         </div>
                         <div>
@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="relative">
-                        <input type="text" placeholder="Search Rules"
+                        <input type="text" placeholder="{{ 'Search Rules' | translate }}"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchText"
                             (ngModelChange)="searchRules()" />
                         <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
@@ -45,18 +45,18 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="panel mt-5 overflow-hidden border-0 p-0">
                 <div class="table-responsive">
                     <table class="table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>Rule Name</th>
-                                <th>Time Window</th>
-                                <th>Trigger Condition</th>
-                                <th>Notification Method</th>
-                                <th>Status</th>
-                                <th class="!text-center">Actions</th>
+                                <th>{{ 'Rule Name' | translate }}</th>
+                                <th>{{ 'Time Window' | translate }}</th>
+                                <th>{{ 'Trigger Condition' | translate }}</th>
+                                <th>{{ 'Notification Method' | translate }}</th>
+                                <th>{{ 'Status' | translate }}</th>
+                                <th class="!text-center">{{ 'Actions' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -65,7 +65,7 @@
                                 <td>{{ rule.timeWindow }}</td>
                                 <td>
                                     <ng-container *ngIf="rule.triggerCondition === 'new_event'">
-                                        On New Event
+                                        {{ 'On New Event' | translate }}
                                     </ng-container>
                                     <ng-container *ngIf="rule.triggerCondition === 'condition'">
                                         <div *ngFor="let filter of rule.filters">
@@ -75,24 +75,24 @@
                                 </td>
                                 <td>
                                     <ng-container *ngIf="rule.notificationMethod === 'syslog'">
-                                        Syslog ({{ rule.endpoint }})
+                                        {{ 'Syslog' | translate }} ({{ rule.endpoint }})
                                     </ng-container>
                                     <ng-container *ngIf="rule.notificationMethod === 'email'">
-                                        Email
+                                        {{ 'Email' | translate }}
                                     </ng-container>
                                 </td>
                                 <td>
                                     <span [ngClass]="{
                                         'badge badge-outline-success': rule.status === 'Active',
                                         'badge badge-outline-danger': rule.status === 'Inactive'
-                                    }">{{ rule.status }}</span>
+                                    }">{{ rule.status | translate }}</span>
                                 </td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="editRule(rule)">Edit</button>
+                                            (click)="editRule(rule)">{{ 'Edit' | translate }}</button>
                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                            (click)="deleteRule(rule)">Delete</button>
+                                            (click)="deleteRule(rule)">{{ 'Delete' | translate }}</button>
                                     </div>
                                 </td>
                             </tr>
@@ -104,16 +104,16 @@
             <!-- add/edit rule modal -->
             <ngx-custom-modal #addRuleModal class="no-footer">
                 <ng-template #modalHeader>
-                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Rule' : 'Add Rule' }}</div>
+                    <div class="!font-medium">{{ params.controls['id'].value ? ('Edit Rule' | translate) : ('Add Rule' | translate) }}</div>
                 </ng-template>
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveRule()" ngNativeValidate>
                         <div class="mb-5">
-                            <label for="ruleName">Rule Name</label>
+                            <label for="ruleName">{{ 'Rule Name' | translate }}</label>
                             <input id="ruleName" type="text" formControlName="ruleName" class="form-input" required />
                         </div>
                         <div class="mb-5">
-                            <label for="timeWindow">Time Window</label>
+                            <label for="timeWindow">{{ 'Time Window' | translate }}</label>
                             <select id="timeWindow" formControlName="timeWindow" class="form-select" required>
                                 <option *ngFor="let option of timeWindowOptions" [value]="option.value">
                                     {{ option.label }}
@@ -121,7 +121,7 @@
                             </select>
                         </div>
                         <div class="mb-5">
-                            <label for="triggerCondition">Trigger Condition</label>
+                            <label for="triggerCondition">{{ 'Trigger Condition' | translate }}</label>
                             <select id="triggerCondition" formControlName="triggerCondition" class="form-select" required>
                                 <option *ngFor="let option of triggerConditionOptions" [value]="option.value">
                                     {{ option.label }}
@@ -129,41 +129,41 @@
                             </select>
                         </div>
                         <div class="mb-5" *ngIf="params.get('triggerCondition')?.value === 'condition'">
-                            <label>Filter</label>
+                            <label>{{ 'Filter' | translate }}</label>
                             <div class="space-y-3">
                                 <div *ngFor="let filter of filters; let i = index" class="flex gap-2">
-                                    <select 
-                                        class="form-select flex-1" 
+                                    <select
+                                        class="form-select flex-1"
                                         [(ngModel)]="filter.field"
                                         [name]="'filterField' + i"
                                         [ngModelOptions]="{standalone: true}"
                                     >
-                                        <option value="">Select Field</option>
+                                        <option value="">{{ 'Select Field' | translate }}</option>
                                         <option *ngFor="let field of filterFields" [value]="field.value">
                                             {{field.label}}
                                         </option>
                                     </select>
-                                    
+
                                     <input
                                         type="text"
                                         class="form-input flex-1"
-                                        placeholder="Enter filter value"
+                                        placeholder="{{ 'Enter filter value' | translate }}"
                                         [(ngModel)]="filter.value"
                                         [name]="'filterValue' + i"
                                         [ngModelOptions]="{standalone: true}"
                                     />
-                                    
-                                    <button 
-                                        type="button" 
+
+                                    <button
+                                        type="button"
                                         class="btn btn-danger p-2"
                                         *ngIf="i > 0"
                                         (click)="removeFilter(i)"
                                     >
                                         <icon-x class="w-4 h-4"/>
                                     </button>
-                                    
-                                    <button 
-                                        type="button" 
+
+                                    <button
+                                        type="button"
                                         class="btn btn-primary p-2"
                                         *ngIf="i === filters.length - 1"
                                         (click)="addFilter()"
@@ -174,7 +174,7 @@
                             </div>
                         </div>
                         <div class="mb-5">
-                            <label for="notificationMethod">Notification Method</label>
+                            <label for="notificationMethod">{{ 'Notification Method' | translate }}</label>
                             <select id="notificationMethod" formControlName="notificationMethod" class="form-select" required>
                                 <option *ngFor="let option of notificationMethodOptions" [value]="option.value">
                                     {{ option.label }}
@@ -182,16 +182,16 @@
                             </select>
                         </div>
                         <div class="mb-5">
-                            <label for="status">Status</label>
+                            <label for="status">{{ 'Status' | translate }}</label>
                             <select id="status" formControlName="status" class="form-select" required>
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value="Active">{{ 'Active' | translate }}</option>
+                                <option value="Inactive">{{ 'Inactive' | translate }}</option>
                             </select>
                         </div>
                         <div class="mt-8 flex items-center justify-end">
-                            <button type="button" class="btn btn-outline-danger" (click)="addRuleModal.close()">Cancel</button>
+                            <button type="button" class="btn btn-outline-danger" (click)="addRuleModal.close()">{{ 'Cancel' | translate }}</button>
                             <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                                {{ params.controls['id'].value ? 'Update' : 'Add' }}
+                                {{ params.controls['id'].value ? ('Update' | translate) : ('Add' | translate) }}
                             </button>
                         </div>
                     </form>
@@ -199,4 +199,4 @@
             </ngx-custom-modal>
         </div>
     </div>
-</div> 
+</div>

@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Threat Management</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'Threat Management' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Rule Update</span>
+            <span>{{ 'Rule Update' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -20,7 +20,7 @@
                         </div>
                     </div>
                     <div class="relative">
-                        <input type="text" placeholder="Search Updates"
+                        <input type="text" placeholder="{{ 'Search Updates' | translate }}"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchTerm"
                             (ngModelChange)="searchUpdates()" />
                         <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
@@ -34,9 +34,9 @@
                     <table class="table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>Last Update Time</th>
-                                <th>Total Rules</th>
-                                <th class="!text-center">Actions</th>
+                                <th>{{ 'Last Update Time' | translate }}</th>
+                                <th>{{ 'Total Rules' | translate }}</th>
+                                <th class="!text-center">{{ 'Actions' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -46,9 +46,9 @@
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="executeUpdate()">Update Now</button>
+                                            (click)="executeUpdate()">{{ 'Update Now' | translate }}</button>
                                         <button type="button" class="btn btn-sm btn-outline-secondary"
-                                            (click)="viewDetails()">Details</button>
+                                            (click)="viewDetails()">{{ 'Details' | translate }}</button>
                                     </div>
                                 </td>
                             </tr>
@@ -62,19 +62,19 @@
     <!-- add rule modal -->
     <ngx-custom-modal #updateModal class="no-footer">
         <ng-template #modalHeader>
-            <div class="!font-medium">Update Rules Configuration</div>
+            <div class="!font-medium">{{ 'Update Rules Configuration' | translate }}</div>
         </ng-template>
         <ng-template #modalBody>
             <form [formGroup]="updateForm" class="text-sm" (ngSubmit)="saveUpdateConfig()" ngNativeValidate>
                 <div class="mb-5">
-                    <label for="updateMode">Update Mode</label>
-                    <ng-select 
-                        id="updateMode" 
+                    <label for="updateMode">{{ 'Update Mode' | translate }}</label>
+                    <ng-select
+                        id="updateMode"
                         [items]="updateModes"
-                        [clearable]="false" 
+                        [clearable]="false"
                         bindLabel="name"
                         bindValue="value"
-                        placeholder="Select update mode" 
+                        placeholder="{{ 'Select update mode' | translate }}"
                         class="custom-multiselect flex-1"
                         formControlName="updateMode"
                         (change)="onUpdateModeChange($event)">
@@ -84,62 +84,62 @@
                 <!-- Automatic模式的字段 -->
                 <div *ngIf="isAutomaticMode">
                     <div class="mb-5">
-                        <label for="updateUrl">Update URL</label>
-                        <input 
-                            id="updateUrl" 
-                            type="text" 
-                            class="form-input" 
-                            placeholder="Enter update URL"
-                            formControlName="updateUrl" 
+                        <label for="updateUrl">{{ 'Update URL' | translate }}</label>
+                        <input
+                            id="updateUrl"
+                            type="text"
+                            class="form-input"
+                            placeholder="{{ 'Enter update URL' | translate }}"
+                            formControlName="updateUrl"
                         />
                     </div>
                     <div class="mb-5">
-                        <label for="updateInterval">Update Interval (hours)</label>
-                        <input 
-                            id="updateInterval" 
-                            type="number" 
-                            class="form-input" 
-                            placeholder="Enter interval in hours"
-                            formControlName="updateInterval" 
+                        <label for="updateInterval">{{ 'Update Interval (hours)' | translate }}</label>
+                        <input
+                            id="updateInterval"
+                            type="number"
+                            class="form-input"
+                            placeholder="{{ 'Enter interval in hours' | translate }}"
+                            formControlName="updateInterval"
                         />
                     </div>
                     <div class="mb-5">
-                        <label for="username">Username</label>
-                        <input 
-                            id="username" 
-                            type="text" 
-                            class="form-input" 
-                            placeholder="Enter username"
-                            formControlName="username" 
+                        <label for="username">{{ 'Username' | translate }}</label>
+                        <input
+                            id="username"
+                            type="text"
+                            class="form-input"
+                            placeholder="{{ 'Enter username' | translate }}"
+                            formControlName="username"
                         />
                     </div>
                     <div class="mb-5">
-                        <label for="password">Password</label>
-                        <input 
-                            id="password" 
-                            type="password" 
-                            class="form-input" 
-                            placeholder="Enter password"
-                            formControlName="password" 
+                        <label for="password">{{ 'Password' | translate }}</label>
+                        <input
+                            id="password"
+                            type="password"
+                            class="form-input"
+                            placeholder="{{ 'Enter password' | translate }}"
+                            formControlName="password"
                         />
                     </div>
                 </div>
 
                 <!-- Manual模式的字段 -->
                 <div *ngIf="!isAutomaticMode" class="mb-5">
-                    <label for="ruleFile">Upload Rule File</label>
+                    <label for="ruleFile">{{ 'Upload Rule File' | translate }}</label>
                     <div class="custom-file-container" data-upload-id="ruleFileUpload"></div>
                 </div>
 
                 <div class="mt-8 flex items-center justify-end">
                     <button type="button" class="btn btn-outline-danger" (click)="updateModal.close()">
-                        Cancel
+                        {{ 'Cancel' | translate }}
                     </button>
                     <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                        Save
+                        {{ 'Save' | translate }}
                     </button>
                 </div>
             </form>
         </ng-template>
     </ngx-custom-modal>
-</div> 
+</div>

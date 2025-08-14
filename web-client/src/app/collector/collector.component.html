@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Collector</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.collector' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Collector</span>
+            <span>{{ 'navigation.collector' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -14,19 +14,19 @@
                 <a href="javascript:;"
                     class="-mb-[1px] block rounded p-3.5 py-2 !outline-none transition duration-300 hover:bg-primary hover:text-white ltr:mr-2 rtl:ml-2"
                     [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'home' }" (click)="tab2 = 'home'">
-                    Collector Analyzer
+                    {{ 'Collector Analyzer' | translate }}
                 </a>
 
                 <a href="javascript:;"
                     class="-mb-[1px] block rounded p-3.5 py-2 !outline-none transition duration-300 hover:bg-primary hover:text-white ltr:mr-2 rtl:ml-2"
                     [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'profile' }" (click)="tab2 = 'profile'">
-                    Storage Strategy
+                    {{ 'Storage Strategy' | translate }}
                 </a>
 
                 <a href="javascript:;"
                     class="-mb-[1px] block rounded p-3.5 py-2 !outline-none transition duration-300 hover:bg-primary hover:text-white ltr:mr-2 rtl:ml-2"
                     [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'contact' }" (click)="tab2 = 'contact'">
-                    Decode
+                    {{ 'Decode' | translate }}
                 </a>
 
             </div>
@@ -41,7 +41,7 @@
                                         <button type="button" class="btn btn-primary" (click)="editUser()">
                                             <icon-plus class="ltr:mr-2 rtl:ml-2" />
 
-                                            Add
+                                            {{ 'Add' | translate }}
                                         </button>
                                     </div>
                                     <div>
@@ -61,7 +61,7 @@
                                 </div>
 
                                 <div class="relative">
-                                    <input type="text" placeholder="Search Contacts"
+                                    <input type="text" placeholder="{{ 'Search Contacts' | translate }}"
                                         class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchUser"
                                         name="searchUser" (ngModelChange)="searchContacts()" />
                                     <div
@@ -77,14 +77,14 @@
                                     <table class="table-striped table-hover">
                                         <thead>
                                             <tr>
-                                                <th>Collector Name</th>
-                                                <th>Creation Time</th>
-                                                <th>Adapter</th>
-                                                <th>Storage Strategy</th>
-                                                <th>Filter Strategy</th>
-                                                <th>Protocol Analysis Enabled</th>
-                                                <th>IDS Enabled</th>
-                                                <th class="!text-center">Actions</th>
+                                                <th>{{ 'Collector Name' | translate }}</th>
+                                                <th>{{ 'Creation Time' | translate }}</th>
+                                                <th>{{ 'Adapter' | translate }}</th>
+                                                <th>{{ 'Storage Strategy' | translate }}</th>
+                                                <th>{{ 'Filter Strategy' | translate }}</th>
+                                                <th>{{ 'Protocol Analysis Enabled' | translate }}</th>
+                                                <th>{{ 'IDS Enabled' | translate }}</th>
+                                                <th class="!text-center">{{ 'Actions' | translate }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -102,7 +102,7 @@
                                                     <td class="whitespace-nowrap">{{ contact.filterStrategy }}</td>
                                                     <td class="whitespace-nowrap">
                                                         <label class="w-12 h-6 relative">
-                                                            <input type="checkbox" 
+                                                            <input type="checkbox"
                                                                 [checked]="contact.protocolAnalysisEnabled"
                                                                 (change)="onProtocolAnalysisChange(contact, $event)"
                                                                 class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
@@ -124,30 +124,30 @@
                                                     </td>
                                                     <td>
                                                         <div class="flex items-center justify-center gap-4">
-                                                            <button type="button" 
+                                                            <button type="button"
                                                                     class="btn btn-sm btn-outline-primary"
                                                                     (click)="editUser(contact)"
                                                                     [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
-                                                                Edit
+                                                                {{ 'Edit' | translate }}
                                                             </button>
-                                                            
-                                                            <button type="button" 
+
+                                                            <button type="button"
                                                                     class="btn btn-sm btn-outline-danger"
                                                                     (click)="deleteUser(contact)"
                                                                     [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
-                                                                Delete
+                                                                {{ 'Delete' | translate }}
                                                             </button>
-                                                            
+
                                                             <!-- 使用 ngIf 来切换显示 Start 按钮或 Animation 按钮 -->
                                                             <ng-container *ngIf="contact.status !== 'running' && contact.status !== 'STATUS_STARTED'; else analyzingButton">
-                                                                <button type="button" 
-                                                                        class="btn btn-sm btn-outline-success" 
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-outline-success"
                                                                         (click)="startCapture(contact)">
-                                                                    Start
+                                                                    {{ 'Start' | translate }}
                                                                 </button>
                                                             </ng-container>
                                                             <ng-template #analyzingButton>
-                                                                <button type="button" 
+                                                                <button type="button"
                                                                         class="btn btn-sm btn-outline-success"
                                                                         (click)="confirmStopCapture(contact)">
                                                                     <app-analyze-animation></app-analyze-animation>
@@ -194,15 +194,15 @@
                                                 <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
                                                     <div class="flex-auto">
                                                         <div class="text-info">{{ contact.posts }}</div>
-                                                        <div>Duration</div>
+                                                        <div>{{ 'Duration' | translate }}</div>
                                                     </div>
                                                     <div class="flex-auto">
                                                         <div class="text-info">{{ contact.following }}</div>
-                                                        <div>Event</div>
+                                                        <div>{{ 'Event' | translate }}</div>
                                                     </div>
                                                     <div class="flex-auto">
                                                         <div class="text-info">{{ contact.followers }}</div>
-                                                        <div>Logs</div>
+                                                        <div>{{ 'Logs' | translate }}</div>
                                                     </div>
                                                 </div>
                                                 <!-- <div class="mt-4">
@@ -237,15 +237,15 @@
                                             </div>
                                             <div class="mt-6 grid grid-cols-1 gap-4 ltr:text-left rtl:text-right">
                                                 <div class="flex items-center">
-                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Creation Time :</div>
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'Creation Time :' | translate }}</div>
                                                     <div class="truncate text-white-dark">{{ formatDate(contact.creationTime) }}</div>
                                                 </div>
                                                 <div class="flex items-center">
-                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Adapter :</div>
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'Adapter :' | translate }}</div>
                                                     <div class="text-white-dark">DPDK</div>
                                                 </div>
                                                 <div class="flex items-center">
-                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Filter Strategy :</div>
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'Filter Strategy :' | translate }}</div>
                                                     <div class="text-white-dark">bbbb</div>
                                                 </div>
                                             </div>
@@ -253,9 +253,9 @@
                                         <div
                                             class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
                                             <button type="button" class="btn btn-outline-primary w-1/2"
-                                                (click)="editUser(contact)">Edit</button>
+                                                (click)="editUser(contact)">{{ 'Edit' | translate }}</button>
                                             <button type="button" class="btn btn-outline-danger w-1/2"
-                                                (click)="deleteUser(contact)">Delete</button>
+                                                (click)="deleteUser(contact)">{{ 'Delete' | translate }}</button>
                                         </div>
                                     </div>
                                 </ng-container>
@@ -265,56 +265,56 @@
                         <!-- add contact modal -->
                         <ngx-custom-modal #addContactModal class="no-footer">
                             <ng-template #modalHeader>
-                                <div class="!font-medium">{{ params.controls['id'].value ? 'Edit' : 'Add' }}
+                                <div class="!font-medium">{{ params.controls['id'].value ? ('Edit' | translate) : ('Add' | translate) }}
                                 </div>
                             </ng-template>
                             <ng-template #modalBody>
                                 <form [formGroup]="params" class="text-sm" (ngSubmit)="saveUser()" ngNativeValidate>
                                     <div class="mb-5">
-                                        <label for="name">Collector Name</label>
-                                        <input id="name" type="text" placeholder="Enter Name" class="form-input"
+                                        <label for="name">{{ 'Collector Name' | translate }}</label>
+                                        <input id="name" type="text" placeholder="{{ 'Enter Name' | translate }}" class="form-input"
                                             formControlName="name" />
                                     </div>
                                     <div class="mb-5">
-                                        <label for="email">Adapter List</label>
+                                        <label for="email">{{ 'Adapter List' | translate }}</label>
                                         <ng-select [items]="options" formControlName="interfaceName"  [clearable]="false"
-                                            placeholder="Select an option" class="custom-multiselect" (change)="onAdapterChange($event)">
+                                            placeholder="{{ 'Select an option' | translate }}" class="custom-multiselect" (change)="onAdapterChange($event)">
                                         </ng-select>
-                                        
+
                                     </div>
 
                                     <div class="mb-5" *ngIf="showChannels">
-                                        <label for="ctnFile">Channel</label>
+                                        <label for="ctnFile">{{ 'Channel' | translate }}</label>
                                         <label class="inline-flex mr-5">
                                             <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
-                                            <span>Channel 1</span>
+                                            <span>{{ 'Channel 1' | translate }}</span>
                                         </label>
                                         <label class="inline-flex mr-5">
                                             <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
-                                            <span>Channel 2</span>
+                                            <span>{{ 'Channel 2' | translate }}</span>
                                         </label>
                                         <label class="inline-flex mr-5">
                                             <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
-                                            <span>Channel 3</span>
+                                            <span>{{ 'Channel 3' | translate }}</span>
                                         </label>
                                         <label class="inline-flex mr-5">
                                             <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
-                                            <span>Channel 4</span>
+                                            <span>{{ 'Channel 4' | translate }}</span>
                                         </label>
                                     </div>
 
                                     <div class="mb-5"  *ngIf="showUpload">
                                         <div class="custom-file-container" data-upload-id="myFirstImage"></div>
                                     </div>
-                                
+
                                     <div class="mb-5">
-                                        <label for="storageStrategy">Storage Strategy</label>
-                                        <ng-select [items]="storageStrategies" 
-                                                   formControlName="storageStrategy" 
+                                        <label for="storageStrategy">{{ 'Storage Strategy' | translate }}</label>
+                                        <ng-select [items]="storageStrategies"
+                                                   formControlName="storageStrategy"
                                                    [clearable]="false"
                                                    bindLabel="name"
                                                    bindValue="name"
-                                                   placeholder="Select storage strategy" 
+                                                   placeholder="{{ 'Select storage strategy' | translate }}"
                                                    class="custom-multiselect">
                                             <ng-template ng-option-tmp let-item="item">
                                                 {{ item.name }} ({{ item.fileSize }}, {{ item.fileType }})
@@ -322,15 +322,15 @@
                                         </ng-select>
                                     </div>
                                     <div class="mb-5">
-                                        <label for="occupation">Filter Strategy</label>
+                                        <label for="occupation">{{ 'Filter Strategy' | translate }}</label>
                                         <ng-select [items]="options" formControlName="filterStrategy" [clearable]="false"
-                                            placeholder="Select an option" class="custom-multiselect">
+                                            placeholder="{{ 'Select an option' | translate }}" class="custom-multiselect">
                                         </ng-select>
                                     </div>
                                     <div class="mb-5">
-                                        <label for="protocolAnalysisEnabled">Protocol Analysis Enabled</label>
+                                        <label for="protocolAnalysisEnabled">{{ 'Protocol Analysis Enabled' | translate }}</label>
                                         <label class="w-12 h-6 relative">
-                                            <input type="checkbox" 
+                                            <input type="checkbox"
                                                    formControlName="protocolAnalysisEnabled"
                                                    class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" />
                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
@@ -338,9 +338,9 @@
                                         </label>
                                     </div>
                                     <div class="mb-5">
-                                        <label for="idsEnabled">IDS Enabled</label>
+                                        <label for="idsEnabled">{{ 'IDS Enabled' | translate }}</label>
                                         <label class="w-12 h-6 relative">
-                                            <input type="checkbox" 
+                                            <input type="checkbox"
                                                    formControlName="idsEnabled"
                                                    class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" />
                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
@@ -349,9 +349,9 @@
                                     </div>
                                     <div class="mt-8 flex items-center justify-end">
                                         <button type="button" class="btn btn-outline-danger"
-                                            (click)="addContactModal.close()">Cancel</button>
+                                            (click)="addContactModal.close()">{{ 'general.cancel' | translate }}</button>
                                         <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">{{
-                                            params.controls['id'].value ? 'Update' : 'Add' }}</button>
+                                            params.controls['id'].value ? ('general.update' | translate) : ('general.add' | translate) }}</button>
                                     </div>
                                 </form>
                             </ng-template>
@@ -368,7 +368,7 @@
                                     <div>
                                         <button type="button" class="btn btn-primary" (click)="editStorageStrategy()">
                                             <icon-plus class="ltr:mr-2 rtl:ml-2" />
-                                            Add
+                                            {{ 'general.add' | translate }}
                                         </button>
                                     </div>
                                     <div>
@@ -388,7 +388,7 @@
                                 </div>
 
                                 <div class="relative">
-                                    <input type="text" placeholder="Search Strategies"
+                                    <input type="text" placeholder="{{ 'collector.searchStrategies' | translate }}"
                                         class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchUser"
                                         name="searchUser" (ngModelChange)="searchContacts()" />
                                     <div
@@ -404,14 +404,14 @@
                                     <table class="table-striped table-hover">
                                         <thead>
                                             <tr>
-                                                <th>Name</th>
-                                                <th>Creation Time</th>
-                                                <th>File Size</th>
-                                                <th>File Count</th>
-                                                <th>Out of Disk Action</th>
-                                                <th>File Type</th>
-                                                <th>Trigger Type</th>
-                                                <th class="!text-center">Actions</th>
+                                                <th>{{ 'Name' | translate }}</th>
+                                                <th>{{ 'Creation Time' | translate }}</th>
+                                                <th>{{ 'File Size' | translate }}</th>
+                                                <th>{{ 'File Count' | translate }}</th>
+                                                <th>{{ 'Out of Disk Action' | translate }}</th>
+                                                <th>{{ 'File Type' | translate }}</th>
+                                                <th>{{ 'Trigger Type' | translate }}</th>
+                                                <th class="!text-center">{{ 'Actions' | translate }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -426,9 +426,9 @@
                                                 <td>
                                                     <div class="flex items-center justify-center gap-4">
                                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                                            (click)="editStorageStrategy(strategy)">Edit</button>
+                                                            (click)="editStorageStrategy(strategy)">{{ 'Edit' | translate }}</button>
                                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                                            (click)="deleteStorageStrategy(strategy)">Delete</button>
+                                                            (click)="deleteStorageStrategy(strategy)">{{ 'Delete' | translate }}</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -459,38 +459,38 @@
                                                 <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
                                                     <div class="flex-auto">
                                                         <div class="text-info">{{ strategy.fileSize }}</div>
-                                                        <div>File Size</div>
+                                                        <div>{{ 'collector.fileSize' | translate }}</div>
                                                     </div>
                                                     <div class="flex-auto">
                                                         <div class="text-info">{{ strategy.fileCount }}</div>
-                                                        <div>File Count</div>
+                                                        <div>{{ 'collector.fileCount' | translate }}</div>
                                                     </div>
                                                     <div class="flex-auto">
                                                         <div class="text-info">{{ strategy.fileType }}</div>
-                                                        <div>File Type</div>
+                                                        <div>{{ 'collector.fileType' | translate }}</div>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="mt-6 grid grid-cols-1 gap-4 ltr:text-left rtl:text-right">
                                                 <div class="flex items-center">
-                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Creation Time:</div>
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'collector.creationTime' | translate }}:</div>
                                                     <div class="truncate text-white-dark">{{ formatDate(strategy.creationTime) }}</div>
                                                 </div>
                                                 <div class="flex items-center">
-                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Trigger Type:</div>
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'collector.triggerType' | translate }}:</div>
                                                     <div class="text-white-dark">{{ strategy.triggerType }}</div>
                                                 </div>
                                                 <div class="flex items-center">
-                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">Out of Disk Action:</div>
+                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'collector.outOfDiskAction' | translate }}:</div>
                                                     <div class="text-white-dark">{{ strategy.outOfDiskAction }}</div>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
                                             <button type="button" class="btn btn-outline-primary w-1/2"
-                                                (click)="editStorageStrategy(strategy)">Edit</button>
+                                                (click)="editStorageStrategy(strategy)">{{ 'general.edit' | translate }}</button>
                                             <button type="button" class="btn btn-outline-danger w-1/2"
-                                                (click)="deleteStorageStrategy(strategy)">Delete</button>
+                                                (click)="deleteStorageStrategy(strategy)">{{ 'general.delete' | translate }}</button>
                                         </div>
                                     </div>
                                 </div>
@@ -516,18 +516,18 @@
                                 </button>
                                 <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
                                     <li>
-                                        <a href="javascript:;" *hlMenuItem="let menuItem">View</a>
+                                        <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'general.view' | translate }}</a>
                                     </li>
                                     <li>
-                                        <a href="javascript:;" *hlMenuItem="let menuItem">Update</a>
+                                        <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'general.update' | translate }}</a>
                                     </li>
                                     <li>
-                                        <a href="javascript:;" *hlMenuItem="let menuItem">Download</a>
+                                        <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'general.download' | translate }}</a>
                                     </li>
                                 </ul>
                             </div>
                         </div>
-            
+
                         <div class="overflow-hidden">
                             <iframe src="assets/decode/index.html" width="100%" height="800px"></iframe>
                         </div>
@@ -541,32 +541,32 @@
 <!-- 在现有模态框后面添加 Storage Strategy Modal -->
 <ngx-custom-modal #storageStrategyModal class="no-footer">
     <ng-template #modalHeader>
-        <div class="!font-medium">{{ storageParams.controls['id'].value ? 'Edit' : 'Add' }} Storage Strategy</div>
+        <div class="!font-medium">{{ storageParams.controls['id'].value ? ('general.edit' | translate) : ('general.add' | translate) }} {{ 'collector.storageStrategy' | translate }}</div>
     </ng-template>
     <ng-template #modalBody>
         <form [formGroup]="storageParams" class="text-sm" (ngSubmit)="saveStorageStrategy()" ngNativeValidate>
             <div class="mb-5">
-                <label for="name">Strategy Name</label>
-                <input id="name" type="text" placeholder="Enter Name" class="form-input" formControlName="name" />
+                <label for="name">{{ 'collector.strategyName' | translate }}</label>
+                <input id="name" type="text" placeholder="{{ 'collector.enterName' | translate }}" class="form-input" formControlName="name" />
             </div>
             <div class="mb-5">
-                <label for="fileSize">File Size</label>
+                <label for="fileSize">{{ 'collector.fileSize' | translate }}</label>
                 <ng-select [items]="optionsFileSize" formControlName="fileSize" [clearable]="false"
-                    placeholder="Select file size" class="custom-multiselect">
+                    placeholder="{{ 'collector.selectFileSize' | translate }}" class="custom-multiselect">
                 </ng-select>
             </div>
             <div class="mb-5">
-                <label for="fileCount">File Count</label>
+                <label for="fileCount">{{ 'collector.fileCount' | translate }}</label>
                 <input id="fileCount" type="number" class="form-input" formControlName="fileCount" min="1" />
             </div>
             <div class="mb-5">
-                <label for="outOfDiskAction">Out of Disk Action</label>
+                <label for="outOfDiskAction">{{ 'collector.outOfDiskAction' | translate }}</label>
                 <ng-select [items]="['Wrap', 'Stop']" formControlName="outOfDiskAction" [clearable]="false"
-                    placeholder="Select action" class="custom-multiselect">
+                    placeholder="{{ 'collector.selectAction' | translate }}" class="custom-multiselect">
                 </ng-select>
             </div>
             <div class="mb-5">
-                <label for="fileType">File Type</label>
+                <label for="fileType">{{ 'collector.fileType' | translate }}</label>
                 <div class="flex gap-4">
                     <label class="inline-flex">
                         <input type="radio" formControlName="fileType" value="PCAP" class="form-radio outline-primary" />
@@ -579,35 +579,35 @@
                 </div>
             </div>
             <div class="mb-5">
-                <label for="triggerType">Trigger Type</label>
+                <label for="triggerType">{{ 'collector.triggerType' | translate }}</label>
                 <ng-select [items]="optionsTrigger" formControlName="triggerType" [clearable]="false"
-                    placeholder="Select trigger type" class="custom-multiselect" (change)="onTriggerChange($event)">
+                    placeholder="{{ 'collector.selectTriggerType' | translate }}" class="custom-multiselect" (change)="onTriggerChange($event)">
                 </ng-select>
             </div>
 
             <div class="mb-5" *ngIf="showTimeRange">
-                <label for="timeRange">Time Range</label>
+                <label for="timeRange">{{ 'collector.timeRange' | translate }}</label>
                 <input type="text" mwlFlatpickr formControlName="timeRange" [options]="rangeCalendar" class="form-input" />
             </div>
 
             <div class="mb-5" *ngIf="showAlarm">
-                <label for="alarmType">Alarm Type</label>
+                <label for="alarmType">{{ 'collector.alarmType' | translate }}</label>
                 <ng-select [items]="optionsAlarm" formControlName="alarmType" [clearable]="false"
-                    placeholder="Select alarm type" class="custom-multiselect">
+                    placeholder="{{ 'collector.selectAlarmType' | translate }}" class="custom-multiselect">
                 </ng-select>
             </div>
 
             <div class="mb-5" *ngIf="showAlarm">
-                <label for="duration">Duration (seconds)</label>
+                <label for="duration">{{ 'collector.durationSeconds' | translate }}</label>
                 <input id="duration" type="number" class="form-input" formControlName="duration" min="1" />
             </div>
 
             <div class="mt-8 flex items-center justify-end">
                 <button type="button" class="btn btn-outline-danger" (click)="storageStrategyModal.close()">
-                    Cancel
+                    {{ 'general.cancel' | translate }}
                 </button>
                 <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                    {{ storageParams.controls['id'].value ? 'Update' : 'Add' }}
+                    {{ storageParams.controls['id'].value ? ('general.update' | translate) : ('general.add' | translate) }}
                 </button>
             </div>
         </form>

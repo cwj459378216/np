@@ -4,6 +4,7 @@ import { GridsterConfig, GridsterItem } from 'angular-gridster2';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { TemplateService } from '../../../services/template.service';
+import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
 
 interface CustomGridsterItem extends GridsterItem {
@@ -50,7 +51,8 @@ export class PreviewComponent implements OnInit {
         private route: ActivatedRoute,
         private router: Router,
         private http: HttpClient,
-        private templateService: TemplateService
+        private templateService: TemplateService,
+        private translate: TranslateService
     ) {
         this.initOptions();
         this.isStandalone = this.router.url.includes('standalone/preview');
@@ -158,7 +160,9 @@ export class PreviewComponent implements OnInit {
             },
             error => {
                 console.error('Error loading template:', error);
-                this.showMessage('Error loading template', 'error');
+                this.translate.get('Error loading template').subscribe(message => {
+                    this.showMessage(message, 'error');
+                });
             }
         );
     }
@@ -247,11 +251,15 @@ export class PreviewComponent implements OnInit {
                     window.URL.revokeObjectURL(url);
 
                     Swal.close();
-                    this.showMessage('PDF已成功生成', 'success');
+                    this.translate.get('PDF generated successfully').subscribe(message => {
+                        this.showMessage(message, 'success');
+                    });
                 },
                 error: (error) => {
                     Swal.close();
-                    this.showMessage('生成PDF时出错', 'error');
+                    this.translate.get('Error generating PDF').subscribe(message => {
+                        this.showMessage(message, 'error');
+                    });
                     console.error('PDF generation error:', error);
                 }
             });

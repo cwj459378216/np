@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Threat Management</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'Threat Management' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Rules Policy</span>
+            <span>{{ 'Rules Policy' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -15,13 +15,13 @@
                     <div class="flex gap-3">
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editRule()">
-                                Add 
+                                {{ 'general.add' | translate }}
                             </button>
                         </div>
                     </div>
                     <div class="relative">
-                        <input type="text" placeholder="Search Rules"
-                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchTerm" 
+                        <input type="text" placeholder="{{ 'Search Rules' | translate }}"
+                            class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchTerm"
                             (ngModelChange)="searchRules()" />
                         <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
                             <icon-search class="mx-auto" />
@@ -34,11 +34,11 @@
                     <table class="table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Included Rules</th>
-                                <th>Enable</th>
-                                <th class="!text-center">Actions</th>
+                                <th>{{ 'Name' | translate }}</th>
+                                <th>{{ 'Description' | translate }}</th>
+                                <th>{{ 'Included Rules' | translate }}</th>
+                                <th>{{ 'Enable' | translate }}</th>
+                                <th class="!text-center">{{ 'Actions' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -46,7 +46,7 @@
                                 <td>{{policy.name}}</td>
                                 <td>{{policy.description}}</td>
                                 <td>
-                                    <span ngxTippy 
+                                    <span ngxTippy
                                         [tippyProps]="{
                                             allowHTML: true,
                                             interactive: true,
@@ -72,9 +72,9 @@
                                                     }
                                                 ]
                                             }
-                                        }" 
+                                        }"
                                         class="text-primary hover:text-blue-600 cursor-pointer">
-                                        {{(policy.rules || []).length}} Rules
+                                        {{(policy.rules || []).length}} {{ 'Rules' | translate }}
                                     </span>
                                 </td>
                                 <td>
@@ -88,9 +88,9 @@
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="editRule(policy)">Edit</button>
+                                            (click)="editRule(policy)">{{ 'Edit' | translate }}</button>
                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                            (click)="deleteRule(policy.id!)">Delete</button>
+                                            (click)="deleteRule(policy.id!)">{{ 'Delete' | translate }}</button>
                                     </div>
                                 </td>
                             </tr>
@@ -100,27 +100,27 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
 
 <!-- add rule modal -->
 <ngx-custom-modal #addRuleModal class="no-footer extra-large-modal">
     <ng-template #modalHeader>
-        <div class="!font-medium">{{ policyForm.get('id')?.value ? 'Edit' : 'Add' }} Policy</div>
+        <div class="!font-medium">{{ policyForm.get('id')?.value ? ('Edit' | translate) : ('Add' | translate) }} {{ 'Policy' | translate }}</div>
     </ng-template>
     <ng-template #modalBody>
         <form [formGroup]="policyForm" class="text-sm" (ngSubmit)="savePolicy()" ngNativeValidate>
             <div class="mb-5">
-                <label for="name">Policy Name</label>
-                <input id="name" type="text" placeholder="Enter Policy Name" class="form-input"
+                <label for="name">{{ 'Policy Name' | translate }}</label>
+                <input id="name" type="text" placeholder="{{ 'Enter Policy Name' | translate }}" class="form-input"
                     formControlName="name" />
             </div>
             <div class="mb-5">
-                <label for="description">Policy Description</label>
-                <input id="description" type="text" placeholder="Enter Description" class="form-input"
+                <label for="description">{{ 'Policy Description' | translate }}</label>
+                <input id="description" type="text" placeholder="{{ 'Enter Description' | translate }}" class="form-input"
                     formControlName="description" />
             </div>
             <div class="mb-5">
-                <label>Available Rules</label>
+                <label>{{ 'Available Rules' | translate }}</label>
                 <div class="datatable">
                     <ng-datatable
                         #datatable
@@ -142,12 +142,12 @@
             </div>
             <div class="mt-8 flex items-center justify-end">
                 <button type="button" class="btn btn-outline-danger" (click)="addRuleModal.close()">
-                    Cancel
+                    {{ 'Cancel' | translate }}
                 </button>
                 <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                    {{ policyForm.get('id')?.value ? 'Update' : 'Add' }}
+                    {{ policyForm.get('id')?.value ? ('Update' | translate) : ('Add' | translate) }}
                 </button>
             </div>
         </form>
     </ng-template>
-</ngx-custom-modal> 
+</ngx-custom-modal>

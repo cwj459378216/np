@@ -2,17 +2,17 @@
     <!-- 面包屑 -->
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Event Alarm</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'Event Alarm' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Event</span>
+            <span>{{ 'Event' | translate }}</span>
         </li>
     </ul>
 
     <!-- 图表面板 -->
     <div class="panel h-full mt-6">
         <div class="mb-5 flex items-center justify-between dark:text-white-light">
-            <h5 class="text-lg font-semibold">Event Trending</h5>
+            <h5 class="text-lg font-semibold">{{ 'Event Trending' | translate }}</h5>
             <div class="dropdown ltr:ml-auto rtl:mr-auto">
                 <div hlMenu>
                     <a hlMenuButton href="javascript:;" class="align-middle">
@@ -20,33 +20,33 @@
                     </a>
                     <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
                         <li>
-                            <a href="javascript:;" *hlMenuItem="let menuItem">Weekly</a>
+                            <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Weekly' | translate }}</a>
                         </li>
                         <li>
-                            <a href="javascript:;" *hlMenuItem="let menuItem">Monthly</a>
+                            <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Monthly' | translate }}</a>
                         </li>
                         <li>
-                            <a href="javascript:;" *hlMenuItem="let menuItem">Yearly</a>
+                            <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Yearly' | translate }}</a>
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
         <div class="relative overflow-hidden">
-            <apx-chart 
-                [series]="revenueChart.series" 
-                [chart]="revenueChart.chart" 
+            <apx-chart
+                [series]="revenueChart.series"
+                [chart]="revenueChart.chart"
                 [dataLabels]="revenueChart.dataLabels"
-                [stroke]="revenueChart.stroke" 
-                [colors]="revenueChart.colors" 
+                [stroke]="revenueChart.stroke"
+                [colors]="revenueChart.colors"
                 [markers]="revenueChart.markers"
-                [labels]="revenueChart.labels" 
-                [xaxis]="revenueChart.xaxis" 
+                [labels]="revenueChart.labels"
+                [xaxis]="revenueChart.xaxis"
                 [yaxis]="revenueChart.yaxis"
-                [grid]="revenueChart.grid" 
-                [legend]="revenueChart.legend" 
+                [grid]="revenueChart.grid"
+                [legend]="revenueChart.legend"
                 [tooltip]="revenueChart.tooltip"
-                [fill]="revenueChart.fill" 
+                [fill]="revenueChart.fill"
                 class="rounded-lg bg-white dark:bg-black">
             </apx-chart>
         </div>
@@ -58,15 +58,15 @@
             <div class="flex flex-wrap items-center">
                 <button type="button" class="btn btn-primary btn-sm m-1" (click)="exportTable('csv')">
                     <icon-file class="h-5 w-5 ltr:mr-2 rtl:ml-2" />
-                    CSV
+                    {{ 'CSV' | translate }}
                 </button>
                 <button type="button" class="btn btn-primary btn-sm m-1" (click)="exportTable('txt')">
                     <icon-txt-file class="h-5 w-5 ltr:mr-2 rtl:ml-2" />
-                    TXT
+                    {{ 'TXT' | translate }}
                 </button>
                 <button type="button" class="btn btn-primary btn-sm m-1" (click)="exportTable('print')">
                     <icon-printer class="ltr:mr-2 rtl:ml-2" />
-                    PRINT
+                    {{ 'PRINT' | translate }}
                 </button>
             </div>
 
@@ -77,7 +77,7 @@
                         type="button"
                         class="flex items-center rounded-md border border-[#e0e6ed] px-4 py-2 text-sm font-semibold dark:border-[#253b5c] dark:bg-[#1b2e4b] dark:text-white-dark"
                     >
-                        <span class="ltr:mr-1 rtl:ml-1">Columns</span>
+                        <span class="ltr:mr-1 rtl:ml-1">{{ 'Columns' | translate }}</span>
                         <icon-caret-down class="h-5 w-5" />
                     </button>
                     <ul *hlMenuItems @toggleAnimation class="w-max ltr:left-0 rtl:right-0">
@@ -101,7 +101,7 @@
                     </ul>
                 </div>
                 <div>
-                    <input [(ngModel)]="search" type="text" class="form-input" placeholder="Search..." />
+                    <input [(ngModel)]="search" type="text" class="form-input" placeholder="{{ 'Search...' | translate }}" />
                 </div>
             </div>
         </div>
@@ -121,4 +121,4 @@
             </ng-datatable>
         </div>
     </div>
-</div> 
+</div>

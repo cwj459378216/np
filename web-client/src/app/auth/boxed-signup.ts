@@ -1,6 +1,6 @@
 import { toggleAnimation } from 'src/app/shared/animations';
 import { Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { AppService } from 'src/app/service/app.service';
 import { IconModule } from 'src/app/shared/icon/icon.module';
 import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -14,7 +14,8 @@ import { Router, RouterModule } from '@angular/router';
         CommonModule,
         FormsModule,
         RouterModule,
-        IconModule
+        IconModule,
+        TranslateModule
     ],
     animations: [toggleAnimation],
 })

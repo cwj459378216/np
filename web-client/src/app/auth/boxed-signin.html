@@ -61,24 +61,24 @@
                 </div>
                 <div class="mx-auto w-full max-w-[440px]">
                     <div class="mb-10">
-                        <h1 class="text-3xl font-extrabold uppercase !leading-snug text-primary md:text-4xl">Sign in</h1>
-                        <p class="text-base font-bold leading-normal text-white-dark">Enter your email and password to login</p>
+                        <h1 class="text-3xl font-extrabold uppercase !leading-snug text-primary md:text-4xl">{{ 'auth.signIn' | translate }}</h1>
+                        <p class="text-base font-bold leading-normal text-white-dark">{{ 'auth.enterEmailPassword' | translate }}</p>
                     </div>
                     <form class="space-y-5 dark:text-white" >
                         <!-- <form class="space-y-5 dark:text-white" (submit)="router.navigate(['/'])"> -->
                         <div>
-                            <label for="Email">Name</label>
+                            <label for="Email">{{ 'auth.email' | translate }}</label>
                             <div class="relative text-white-dark">
-                                <input id="Email" [(ngModel)]="inputEmail" name="user" type="email" placeholder="Enter Email" class="form-input ps-10 placeholder:text-white-dark" />
+                                <input id="Email" [(ngModel)]="inputEmail" name="user" type="email" placeholder="{{ 'auth.enterEmail' | translate }}" class="form-input ps-10 placeholder:text-white-dark" />
                                 <span class="absolute start-4 top-1/2 -translate-y-1/2">
                                     <icon-user [fill]="true" />
                                 </span>
                             </div>
                         </div>
                         <div>
-                            <label for="Password">Password</label>
+                            <label for="Password">{{ 'auth.password' | translate }}</label>
                             <div class="relative text-white-dark">
-                                <input id="Password" type="password" [(ngModel)]="inputPassword" name="password" placeholder="Enter Password" class="form-input ps-10 placeholder:text-white-dark" />
+                                <input id="Password" type="password" [(ngModel)]="inputPassword" name="password" placeholder="{{ 'auth.enterPassword' | translate }}" class="form-input ps-10 placeholder:text-white-dark" />
                                 <span class="absolute start-4 top-1/2 -translate-y-1/2">
                                     <icon-lock-dots [fill]="true" />
                                 </span>
@@ -87,16 +87,16 @@
                         <div>
                             <label class="flex cursor-pointer items-center">
                                 <input type="checkbox" class="form-checkbox bg-white dark:bg-black" />
-                                <span class="text-white-dark">Subscribe to weekly newsletter</span>
+                                <span class="text-white-dark">{{ 'auth.subscribeNewsletter' | translate }}</span>
                             </label>
                         </div>
                         <button type="submit" (click)="submit()" class="btn btn-gradient !mt-6 w-full border-0 uppercase shadow-[0_10px_20px_-10px_rgba(67,97,238,0.44)]">
-                            Sign in
+                            {{ 'auth.signIn' | translate }}
                         </button>
                     </form>
                     <div class="relative my-7 text-center md:mb-9">
                         <span class="absolute inset-x-0 top-1/2 h-px w-full -translate-y-1/2 bg-white-light dark:bg-white-dark"></span>
-                        <span class="relative bg-white px-2 font-bold uppercase text-white-dark dark:bg-dark dark:text-white-light">or</span>
+                        <span class="relative bg-white px-2 font-bold uppercase text-white-dark dark:bg-dark dark:text-white-light">{{ 'auth.or' | translate }}</span>
                     </div>
                     <div class="mb-10 md:mb-[60px]">
                         <ul class="flex justify-center gap-3.5 text-white">
@@ -139,9 +139,9 @@
                         </ul>
                     </div>
                     <div class="text-center dark:text-white">
-                        Don't have an account ?
+                        {{ 'auth.dontHaveAccount' | translate }}
                         <a routerLink="/auth/boxed-signup" class="uppercase text-primary underline transition hover:text-black dark:hover:text-white">
-                            SIGN UP
+                            {{ 'auth.signUpButton' | translate }}
                         </a>
                     </div>
                 </div>

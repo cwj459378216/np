@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import Swal from 'sweetalert2';
 import { TemplateService } from '../../../services/template.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-list',
@@ -15,22 +16,36 @@ export class ListComponent implements OnInit {
     items: any = [];
     search = '';
 
-    cols = [
-        { field: 'name', title: 'Name' },
-        { field: 'description', title: 'Description' },
-        { field: 'createdAt', title: 'Creation Time' },
-        { field: 'creator', title: 'Creator' },
-        { field: 'actions', title: 'Actions', sort: false, headerClass: 'justify-center' },
-    ];
+    cols: any[] = [];
 
     constructor(
         private router: Router,
         private http: HttpClient,
-        private templateService: TemplateService
+        private templateService: TemplateService,
+        private translate: TranslateService
     ) {}
 
     ngOnInit() {
+        this.initializeColumns();
         this.loadTemplates();
+
+        // 监听语言变化，重新初始化列标题
+        this.translate.onLangChange.subscribe(() => {
+            this.initializeColumns();
+        });
+    }
+
+    initializeColumns() {
+        this.translate.get(['Name', 'Description', 'Creation Time', 'Creator', 'Actions']).subscribe(translations => {
+            this.cols = [
+                { field: 'name', title: translations['Name'] },
+                { field: 'description', title: translations['Description'] },
+                { field: 'createdAt', title: translations['Creation Time'] },
+                { field: 'creator', title: translations['Creator'] },
+                { field: 'actions', title: translations['Actions'], sort: false, headerClass: 'justify-center' },
+            ];
+            console.log(this.cols);
+        });
     }
 
     loadTemplates() {
@@ -45,44 +60,47 @@ export class ListComponent implements OnInit {
     }
 
     deleteRow(id: number | null = null) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            padding: '2em'
-        }).then((result) => {
-            if (result.value) {
-                if (id) {
-                    this.http.delete(`${environment.apiUrl}/templates/${id}`).subscribe(
-                        () => {
+        this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Template has been deleted successfully', 'Templates have been deleted successfully', 'Error deleting template', 'Error deleting templates'])
+        .subscribe(translations => {
+            Swal.fire({
+                title: translations['Are you sure?'],
+                text: translations["You won't be able to revert this!"],
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: translations['Yes, delete it!'],
+                padding: '2em'
+            }).then((result) => {
+                if (result.value) {
+                    if (id) {
+                        this.http.delete(`${environment.apiUrl}/templates/${id}`).subscribe(
+                            () => {
+                                this.loadTemplates();
+                                this.datatable?.clearSelectedRows();
+                                this.showMessage(translations['Template has been deleted successfully']);
+                            },
+                            error => {
+                                console.error('Error deleting template:', error);
+                                this.showMessage(translations['Error deleting template'], 'error');
+                            }
+                        );
+                    } else {
+                        let selectedRows = this.datatable.getSelectedRows();
+                        const ids: number[] = selectedRows.map((d: any) => d.id);
+                        // 批量删除
+                        Promise.all(
+                            ids.map((id: number) =>
+                                this.http.delete(`${environment.apiUrl}/templates/${id}`).toPromise()
+                            )
+                        ).then(() => {
                             this.loadTemplates();
-                            this.datatable?.clearSelectedRows();
-                            this.showMessage('Template has been deleted successfully');
-                        },
-                        error => {
-                            console.error('Error deleting template:', error);
-                            this.showMessage('Error deleting template', 'error');
-                        }
-                    );
-                } else {
-                    let selectedRows = this.datatable.getSelectedRows();
-                    const ids: number[] = selectedRows.map((d: any) => d.id);
-                    // 批量删除
-                    Promise.all(
-                        ids.map((id: number) =>
-                            this.http.delete(`${environment.apiUrl}/templates/${id}`).toPromise()
-                        )
-                    ).then(() => {
-                        this.loadTemplates();
-                        this.datatable.clearSelectedRows();
-                        this.showMessage('Templates have been deleted successfully');
-                    }).catch(() => {
-                        this.showMessage('Error deleting templates', 'error');
-                    });
+                            this.datatable.clearSelectedRows();
+                            this.showMessage(translations['Templates have been deleted successfully']);
+                        }).catch(() => {
+                            this.showMessage(translations['Error deleting templates'], 'error');
+                        });
+                    }
                 }
-            }
+            });
         });
     }
 
@@ -142,11 +160,15 @@ export class ListComponent implements OnInit {
                     window.URL.revokeObjectURL(url);
 
                     Swal.close();
-                    this.showMessage('PDF已成功生成', 'success');
+                    this.translate.get('PDF generated successfully').subscribe(message => {
+                        this.showMessage(message, 'success');
+                    });
                 },
                 error: (error) => {
                     Swal.close();
-                    this.showMessage('生成PDF时出错', 'error');
+                    this.translate.get('Error generating PDF').subscribe(message => {
+                        this.showMessage(message, 'error');
+                    });
                     console.error('PDF generation error:', error);
                 }
             });

@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.systemSettings' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Role Management</span>
+            <span>{{ 'navigation.roleManagement' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -16,7 +16,7 @@
                         <div>
                             <button type="button" class="btn btn-primary" (click)="editRole()">
                                 <icon-user-plus class="ltr:mr-2 rtl:ml-2" />
-                                Add
+                                {{ 'roles.addRole' | translate }}
                             </button>
                         </div>
                         <div>
@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="relative">
-                        <input type="text" placeholder="Search Roles"
+                        <input type="text" placeholder="{{ 'roles.searchRoles' | translate }}"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchText"
                             (ngModelChange)="searchRoles()" />
                         <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
@@ -51,11 +51,11 @@
                         <table class="table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Create Time</th>
-                                    <th>Description</th>
-                                    <th>Enable</th>
-                                    <th class="!text-center">Actions</th>
+                                    <th>{{ 'roles.name' | translate }}</th>
+                                    <th>{{ 'roles.createTime' | translate }}</th>
+                                    <th>{{ 'roles.description' | translate }}</th>
+                                    <th>{{ 'roles.enable' | translate }}</th>
+                                    <th class="!text-center">{{ 'roles.actions' | translate }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -80,9 +80,9 @@
                                         <td>
                                             <div class="flex items-center justify-center gap-4">
                                                 <button type="button" class="btn btn-sm btn-outline-primary"
-                                                    (click)="editRole(role)">Edit</button>
+                                                    (click)="editRole(role)">{{ 'general.edit' | translate }}</button>
                                                 <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    (click)="deleteRole(role)">Delete</button>
+                                                    (click)="deleteRole(role)">{{ 'general.delete' | translate }}</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -103,16 +103,16 @@
                                 </div>
                                 <div class="mt-6 grid grid-cols-1 gap-4 ltr:text-left rtl:text-right">
                                     <div class="flex items-center">
-                                        <div class="flex-none ltr:mr-2 rtl:ml-2">Created At:</div>
+                                        <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'roles.createdAt' | translate }}:</div>
                                         <div class="text-white-dark">{{ role.createdAt }}</div>
                                     </div>
                                 </div>
                             </div>
                             <div class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
                                 <button type="button" class="btn btn-outline-primary w-1/2"
-                                    (click)="editRole(role)">Edit</button>
+                                    (click)="editRole(role)">{{ 'general.edit' | translate }}</button>
                                 <button type="button" class="btn btn-outline-danger w-1/2"
-                                    (click)="deleteRole(role)">Delete</button>
+                                    (click)="deleteRole(role)">{{ 'general.delete' | translate }}</button>
                             </div>
                         </div>
                     </ng-container>
@@ -122,18 +122,18 @@
             <!-- add/edit role modal -->
             <ngx-custom-modal #addContactModal class="no-footer extra-large-modal">
                 <ng-template #modalHeader>
-                    <div class="!font-medium">{{ params.controls['id'].value ? 'Edit Role' : 'Add Role' }}</div>
+                    <div class="!font-medium">{{ params.controls['id'].value ? ('roles.editRole' | translate) : ('roles.addRole' | translate) }}</div>
                 </ng-template>
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveRole()" ngNativeValidate>
                         <div class="mb-5">
-                            <label for="name">Name</label>
-                            <input id="name" type="text" placeholder="Enter Name" class="form-input"
+                            <label for="name">{{ 'roles.name' | translate }}</label>
+                            <input id="name" type="text" placeholder="{{ 'roles.enterName' | translate }}" class="form-input"
                                 formControlName="name" />
                         </div>
                         <div class="mb-5">
-                            <label for="description">Description</label>
-                            <input id="description" type="text" placeholder="Enter Description" class="form-input"
+                            <label for="description">{{ 'roles.description' | translate }}</label>
+                            <input id="description" type="text" placeholder="{{ 'roles.enterDescription' | translate }}" class="form-input"
                                 formControlName="description" />
                         </div>
 
@@ -149,9 +149,9 @@
                         </div>
                         <div class="mt-8 flex items-center justify-end">
                             <button type="button" class="btn btn-outline-danger"
-                                (click)="addContactModal.close()">Cancel</button>
+                                (click)="addContactModal.close()">{{ 'general.cancel' | translate }}</button>
                             <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">{{
-                                params.controls['id'].value ? 'Update' : 'Add' }}</button>
+                                params.controls['id'].value ? ('general.update' | translate) : ('general.add' | translate) }}</button>
                         </div>
                     </form>
                 </ng-template>
@@ -179,7 +179,7 @@
                     </div>
                     <div class="flex items-center gap-8">
                         <div class="flex items-center gap-2 min-w-[120px]">
-                            <span class="text-sm">Read/Write</span>
+                            <span class="text-sm">{{ 'roles.readWrite' | translate }}</span>
                             <div class="w-12 h-6 relative">
                                 <input type="checkbox" [checked]="node.readWrite"
                                     class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
@@ -188,7 +188,7 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2 min-w-[120px]">
-                            <span class="text-sm">Read Only</span>
+                            <span class="text-sm">{{ 'roles.readOnly' | translate }}</span>
                             <div class="w-12 h-6 relative">
                                 <input type="checkbox" [checked]="node.readOnly"
                                     class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"

@@ -4,6 +4,7 @@ import { environment } from 'src/environments/environment';
 import Swal from 'sweetalert2';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-report-list',
@@ -19,20 +20,32 @@ export class ReportListComponent implements OnInit, OnDestroy {
     items: any = [];
     search = '';
 
-    cols = [
-        { field: 'name', title: 'Name' },
-        { field: 'description', title: 'Description' },
-        { field: 'createTime', title: 'Creation Time' },
-        { field: 'creator', title: 'Creator' },
-        { field: 'triggerMode', title: 'Trigger Mode' },
-        { field: 'actions', title: 'Actions', sort: false, headerClass: 'justify-center' }
-    ];
+    cols: any[] = [];
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient, private translate: TranslateService) {}
 
     ngOnInit() {
+        this.initializeColumns();
         this.loadReports();
         this.startPolling();
+
+        // 监听语言变化，重新初始化列标题
+        this.translate.onLangChange.subscribe(() => {
+            this.initializeColumns();
+        });
+    }
+
+    initializeColumns() {
+        this.translate.get(['Name', 'Description', 'Creation Time', 'Creator', 'Trigger Mode', 'Actions']).subscribe(translations => {
+            this.cols = [
+                { field: 'name', title: translations['Name'] },
+                { field: 'description', title: translations['Description'] },
+                { field: 'createTime', title: translations['Creation Time'] },
+                { field: 'creator', title: translations['Creator'] },
+                { field: 'triggerMode', title: translations['Trigger Mode'] },
+                { field: 'actions', title: translations['Actions'], sort: false, headerClass: 'justify-center' }
+            ];
+        });
     }
 
     ngOnDestroy() {
@@ -84,44 +97,48 @@ export class ReportListComponent implements OnInit, OnDestroy {
             );
     }
 
-    deleteRow(item?: any) {
-        Swal.fire({
-            title: 'Delete Report',
-            text: 'Are you sure you want to delete this report?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Delete',
-            cancelButtonText: 'Cancel',
-            padding: '2em'
-        }).then((result) => {
-            if (result.value) {
-                if (item) {
-                    this.http.delete(`${environment.apiUrl}/reports/${item}`).subscribe(
-                        () => {
+    deleteRow(id: number | null = null) {
+        this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Report has been deleted successfully', 'Reports have been deleted successfully', 'Error deleting report', 'Error deleting reports'])
+        .subscribe(translations => {
+            Swal.fire({
+                title: translations['Are you sure?'],
+                text: translations["You won't be able to revert this!"],
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: translations['Yes, delete it!'],
+                padding: '2em'
+            }).then((result) => {
+                if (result.value) {
+                    if (id) {
+                        this.http.delete(`${environment.apiUrl}/reports/${id}`).subscribe(
+                            () => {
+                                this.loadReports();
+                                this.datatable?.clearSelectedRows();
+                                this.showMessage(translations['Report has been deleted successfully']);
+                            },
+                            error => {
+                                console.error('Error deleting report:', error);
+                                this.showMessage(translations['Error deleting report'], 'error');
+                            }
+                        );
+                    } else {
+                        let selectedRows = this.datatable.getSelectedRows();
+                        const ids: number[] = selectedRows.map((d: any) => d.id);
+                        // 批量删除
+                        Promise.all(
+                            ids.map((id: number) =>
+                                this.http.delete(`${environment.apiUrl}/reports/${id}`).toPromise()
+                            )
+                        ).then(() => {
                             this.loadReports();
-                            this.showMessage('Report has been deleted successfully.');
-                        },
-                        error => {
-                            console.error('Error deleting report:', error);
-                            this.showMessage('Error deleting report', 'error');
-                        }
-                    );
-                } else {
-                    let selectedRows = this.datatable.getSelectedRows();
-                    const ids = selectedRows.map((d: any) => d.id);
-
-                    this.http.delete(`${environment.apiUrl}/reports`, { body: ids }).subscribe(
-                        () => {
-                            this.loadReports();
-                            this.showMessage('Reports have been deleted successfully.');
-                        },
-                        error => {
-                            console.error('Error deleting reports:', error);
-                            this.showMessage('Error deleting reports', 'error');
-                        }
-                    );
+                            this.datatable.clearSelectedRows();
+                            this.showMessage(translations['Reports have been deleted successfully']);
+                        }).catch(() => {
+                            this.showMessage(translations['Error deleting reports'], 'error');
+                        });
+                    }
                 }
-            }
+            });
         });
     }
 

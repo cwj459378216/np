@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Alarm</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'Alarm' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Settings</span>
+            <span>{{ 'Settings' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -20,7 +20,7 @@
                             <div class="shrink-0">
                                 <icon-bell />
                             </div>
-                            <h3 class="text-lg font-semibold ltr:ml-3 rtl:mr-3">Alarm Settings</h3>
+                            <h3 class="text-lg font-semibold ltr:ml-3 rtl:mr-3">{{ 'Alarm Settings' | translate }}</h3>
                         </div>
                         <div class="my-4 h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b]"></div>
                         <ng-scrollbar class="relative h-full grow ltr:pr-3.5 rtl:pl-3.5" appearance="compact">
@@ -31,7 +31,7 @@
                                     (click)="tabChanged('all')">
                                     <div class="flex items-center">
                                         <icon-bell class="shrink-0" />
-                                        <div class="ltr:ml-3 rtl:mr-3">All Alarms</div>
+                                        <div class="ltr:ml-3 rtl:mr-3">{{ 'All Alarms' | translate }}</div>
                                     </div>
                                 </button>
                                 <button type="button"
@@ -40,7 +40,7 @@
                                     (click)="tabChanged('enabled')">
                                     <div class="flex items-center">
                                         <icon-circle-check class="shrink-0" />
-                                        <div class="ltr:ml-3 rtl:mr-3">Enabled Alarms</div>
+                                        <div class="ltr:ml-3 rtl:mr-3">{{ 'Enabled Alarms' | translate }}</div>
                                     </div>
                                 </button>
                                 <button type="button"
@@ -49,31 +49,31 @@
                                     (click)="tabChanged('disabled')">
                                     <div class="flex items-center">
                                         <icon-x-circle class="shrink-0" />
-                                        <div class="ltr:ml-3 rtl:mr-3">Disabled Alarms</div>
+                                        <div class="ltr:ml-3 rtl:mr-3">{{ 'Disabled Alarms' | translate }}</div>
                                     </div>
                                 </button>
                                 <div class="h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b]"></div>
-                                <div class="px-1 py-3 text-white-dark">Priority</div>
+                                <div class="px-1 py-3 text-white-dark">{{ 'Priority' | translate }}</div>
                                 <button type="button"
                                     class="flex h-10 w-full items-center rounded-md p-1 font-medium text-danger duration-300 hover:bg-white-dark/10 ltr:hover:pl-3 rtl:hover:pr-3 dark:hover:bg-[#181F32]"
                                     [ngClass]="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'high' }"
                                     (click)="tabChanged('high')">
                                     <icon-square-rotated class="shrink-0 fill-danger" />
-                                    <div class="ltr:ml-3 rtl:mr-3">High</div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ 'High' | translate }}</div>
                                 </button>
                                 <button type="button"
                                     class="flex h-10 w-full items-center rounded-md p-1 font-medium text-warning duration-300 hover:bg-white-dark/10 ltr:hover:pl-3 rtl:hover:pr-3 dark:hover:bg-[#181F32]"
                                     [ngClass]="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'medium' }"
                                     (click)="tabChanged('medium')">
                                     <icon-square-rotated class="shrink-0 fill-warning" />
-                                    <div class="ltr:ml-3 rtl:mr-3">Medium</div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ 'Medium' | translate }}</div>
                                 </button>
                                 <button type="button"
                                     class="flex h-10 w-full items-center rounded-md p-1 font-medium text-primary duration-300 hover:bg-white-dark/10 ltr:hover:pl-3 rtl:hover:pr-3 dark:hover:bg-[#181F32]"
                                     [ngClass]="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'low' }"
                                     (click)="tabChanged('low')">
                                     <icon-square-rotated class="shrink-0 fill-primary" />
-                                    <div class="ltr:ml-3 rtl:mr-3">Low</div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ 'Low' | translate }}</div>
                                 </button>
                             </div>
                         </ng-scrollbar>
@@ -91,7 +91,7 @@
 
                     <ng-container *ngIf="filterdAlarmList.length">
                         <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                            <div class="panel transition-all duration-300 hover:shadow-[0_0_15px_1px_rgba(113,106,202,0.20)]" 
+                            <div class="panel transition-all duration-300 hover:shadow-[0_0_15px_1px_rgba(113,106,202,0.20)]"
                                 [ngClass]="{'shadow-[0_0_15px_1px_rgba(113,106,202,0.40)] dark:shadow-[0_0_15px_1px_rgba(113,106,202,0.20)]': selectedAlarm.id === alarm.id}"
                                 (click)="selectAlarm(alarm)"
                                 *ngFor="let alarm of filterdAlarmList">
@@ -109,7 +109,7 @@
                                             <li>
                                                 <a href="javascript:;" *hlMenuItem="let menuItem" (click)="editAlarm(alarm)">
                                                     <icon-pencil class="h-4 w-4 shrink-0 ltr:mr-3 rtl:ml-3" />
-                                                    Edit
+                                                    {{ 'Edit' | translate }}
                                                 </a>
                                             </li>
                                         </ul>
@@ -117,7 +117,7 @@
                                 </div>
                                 <div>
                                     <h4 class="mb-4 font-semibold">{{ alarm.description }}</h4>
-                                    <p class="text-white-dark">Threshold: {{ alarm.threshold }}</p>
+                                    <p class="text-white-dark">{{ 'Threshold' | translate }}: {{ alarm.threshold }}</p>
                                 </div>
                                 <div class="mt-6 flex items-center justify-between">
                                     <div class="flex items-center">
@@ -136,19 +136,19 @@
                                                 <li>
                                                     <a href="javascript:;" *hlMenuItem="let menuItem" (click)="setPriority(alarm, 'high')">
                                                         <icon-square-rotated class="fill-danger text-danger ltr:mr-2 rtl:ml-2" />
-                                                        High
+                                                        {{ 'High' | translate }}
                                                     </a>
                                                 </li>
                                                 <li>
                                                     <a href="javascript:;" *hlMenuItem="let menuItem" (click)="setPriority(alarm, 'medium')">
                                                         <icon-square-rotated class="fill-warning text-warning ltr:mr-2 rtl:ml-2" />
-                                                        Medium
+                                                        {{ 'Medium' | translate }}
                                                     </a>
                                                 </li>
                                                 <li>
                                                     <a href="javascript:;" *hlMenuItem="let menuItem" (click)="setPriority(alarm, 'low')">
                                                         <icon-square-rotated class="fill-primary text-primary ltr:mr-2 rtl:ml-2" />
-                                                        Low
+                                                        {{ 'Low' | translate }}
                                                     </a>
                                                 </li>
                                             </ul>
@@ -156,7 +156,7 @@
                                     </div>
                                     <div class="flex items-center">
                                         <label class="w-12 h-6 relative">
-                                            <input type="checkbox" class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer" 
+                                            <input type="checkbox" class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
                                                 [checked]="alarm.isEnabled"
                                                 (change)="toggleAlarm(alarm)"/>
                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
@@ -170,46 +170,46 @@
                     <!-- 添加/编辑告警的模态框 -->
                     <ngx-custom-modal #alarmModal class="no-footer">
                         <ng-template #modalHeader>
-                            <div class="!font-medium">{{ selectedAlarm.id ? 'Edit Alarm' : 'Add Alarm' }}</div>
+                            <div class="!font-medium">{{ selectedAlarm.id ? ('Edit Alarm' | translate) : ('Add Alarm' | translate) }}</div>
                         </ng-template>
                         <ng-template #modalBody>
                             <form [formGroup]="params" (submit)="saveAlarm()" class="text-sm">
                                 <div class="mb-5">
-                                    <label for="name">Name</label>
-                                    <input id="name" type="text" placeholder="Enter Alarm Name" class="form-input"
+                                    <label for="name">{{ 'Name' | translate }}</label>
+                                    <input id="name" type="text" placeholder="{{ 'Enter Alarm Name' | translate }}" class="form-input"
                                         formControlName="name" />
                                 </div>
                                 <div class="mb-5">
-                                    <label for="type">Type</label>
+                                    <label for="type">{{ 'Type' | translate }}</label>
                                     <select id="type" class="form-select" formControlName="type">
-                                        <option value="threshold">Threshold</option>
-                                        <option value="pattern">Pattern</option>
-                                        <option value="anomaly">Anomaly</option>
+                                        <option value="threshold">{{ 'Threshold' | translate }}</option>
+                                        <option value="pattern">{{ 'Pattern' | translate }}</option>
+                                        <option value="anomaly">{{ 'Anomaly' | translate }}</option>
                                     </select>
                                 </div>
                                 <div class="mb-5">
-                                    <label for="priority">Priority</label>
+                                    <label for="priority">{{ 'Priority' | translate }}</label>
                                     <select id="priority" class="form-select" formControlName="priority">
-                                        <option value="high">High</option>
-                                        <option value="medium">Medium</option>
-                                        <option value="low">Low</option>
+                                        <option value="high">{{ 'High' | translate }}</option>
+                                        <option value="medium">{{ 'Medium' | translate }}</option>
+                                        <option value="low">{{ 'Low' | translate }}</option>
                                     </select>
                                 </div>
                                 <div class="mb-5">
-                                    <label for="threshold">Threshold</label>
-                                    <input id="threshold" type="number" placeholder="Enter Threshold" class="form-input"
+                                    <label for="threshold">{{ 'Threshold' | translate }}</label>
+                                    <input id="threshold" type="number" placeholder="{{ 'Enter Threshold' | translate }}" class="form-input"
                                         formControlName="threshold" />
                                 </div>
                                 <div class="mb-5">
-                                    <label for="description">Description</label>
+                                    <label for="description">{{ 'Description' | translate }}</label>
                                     <textarea id="description" rows="3" class="form-textarea min-h-[130px] resize-none"
-                                        placeholder="Enter Description" formControlName="description"></textarea>
+                                        placeholder="{{ 'Enter Description' | translate }}" formControlName="description"></textarea>
                                 </div>
                                 <div class="mt-8 flex items-center justify-end">
                                     <button type="button" class="btn btn-outline-danger gap-2"
-                                        (click)="alarmModal.close()">Cancel</button>
+                                        (click)="alarmModal.close()">{{ 'Cancel' | translate }}</button>
                                     <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                                        {{ selectedAlarm.id ? 'Update' : 'Add' }}
+                                        {{ selectedAlarm.id ? ('Update' | translate) : ('Add' | translate) }}
                                     </button>
                                 </div>
                             </form>
@@ -219,4 +219,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

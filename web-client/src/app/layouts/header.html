@@ -57,7 +57,7 @@
                         <input
                             type="text"
                             class="peer form-input bg-gray-100 placeholder:tracking-widest sm:bg-transparent ltr:pl-9 ltr:pr-9 ltr:sm:pr-4 rtl:pl-9 rtl:pr-9 rtl:sm:pl-4"
-                            placeholder="Search..."
+                            placeholder="{{ 'Search...' | translate }}"
                         />
                         <button type="button" class="absolute inset-0 h-9 w-9 appearance-none peer-focus:text-primary ltr:right-auto rtl:left-auto">
                             <icon-search class="mx-auto" />
@@ -154,7 +154,7 @@
                         <li class="mb-5">
                             <div class="relative overflow-hidden rounded-t-md !p-5 text-white">
                                 <div class="absolute inset-0 h-full w-full bg-[url('/assets/images/menu-heade.jpg')] bg-cover bg-center bg-no-repeat"></div>
-                                <h4 class="relative z-10 text-lg font-semibold">Messages</h4>
+                                <h4 class="relative z-10 text-lg font-semibold">{{ 'header.messages' | translate }}</h4>
                             </div>
                         </li>
                         <li *ngFor="let msg of messages">
@@ -178,7 +178,7 @@
                                 class="group flex cursor-pointer items-center justify-center px-5 py-4 font-semibold text-primary dark:text-gray-400"
                                 *hlMenuItem="let menuItem"
                             >
-                                <span class="group-hover:underline ltr:mr-1 rtl:ml-1">VIEW ALL ACTIVITIES</span>
+                                <span class="group-hover:underline ltr:mr-1 rtl:ml-1">{{ 'header.viewAllActivities' | translate }}</span>
 
                                 <icon-arrow-left class="transition duration-300 group-hover:translate-x-1 ltr:ml-1 rtl:mr-1" />
                             </div>
@@ -188,7 +188,7 @@
                                 <div class="mx-auto mb-4 rounded-full text-primary ring-4 ring-primary/30">
                                     <icon-info-circle [fill]="true" class="h-10 w-10" />
                                 </div>
-                                No data available.
+                                {{ 'header.noDataAvailable' | translate }}
                             </div>
                         </li>
                     </ul>
@@ -218,8 +218,8 @@
                     >
                         <li>
                             <div class="flex items-center justify-between px-4 py-2 font-semibold">
-                                <h4 class="text-lg">Notification</h4>
-                                <span *ngIf="notifications.length" class="badge bg-primary/80">{{notifications.length + 'New'}}</span>
+                                <h4 class="text-lg">{{ 'header.notification' | translate }}</h4>
+                                <span *ngIf="notifications.length" class="badge bg-primary/80">{{notifications.length}} {{ 'header.new' | translate }}</span>
                             </div>
                         </li>
                         <li *ngFor="let notification of notifications" class="dark:text-white-light/90">
@@ -247,7 +247,7 @@
                         </li>
                         <li *ngIf="notifications.length">
                             <div class="p-4">
-                                <button type="button" class="btn btn-primary btn-small block w-full" *hlMenuItem="let menuItem">Read All Notifications</button>
+                                <button type="button" class="btn btn-primary btn-small block w-full" *hlMenuItem="let menuItem">{{ 'header.readAllNotifications' | translate }}</button>
                             </div>
                         </li>
                         <li *ngIf="!notifications.length">
@@ -255,7 +255,7 @@
                                 <div class="mx-auto mb-4 rounded-full text-primary ring-4 ring-primary/30">
                                     <icon-info-circle [fill]="true" class="h-10 w-10" />
                                 </div>
-                                No data available.
+                                {{ 'header.noDataAvailable' | translate }}
                             </div>
                         </li>
                     </ul>
@@ -291,28 +291,28 @@
                             <a routerLink="/users/profile" *hlMenuItem="let menuItem" class="dark:hover:text-white">
                                 <icon-user class="h-4.5 w-4.5 shrink-0 ltr:mr-2 rtl:ml-2" />
 
-                                Profile
+                                {{ 'header.profile' | translate }}
                             </a>
                         </li>
                         <li>
                             <a routerLink="/apps/mailbox" *hlMenuItem="let menuItem" class="dark:hover:text-white">
                                 <icon-mail class="h-4.5 w-4.5 shrink-0 ltr:mr-2 rtl:ml-2" />
 
-                                Inbox
+                                {{ 'header.inbox' | translate }}
                             </a>
                         </li>
                         <li>
                             <a routerLink="/auth/boxed-lockscreen" *hlMenuItem="let menuItem" class="dark:hover:text-white">
                                 <icon-lock-dots class="h-4.5 w-4.5 shrink-0 ltr:mr-2 rtl:ml-2" />
 
-                                Lock Screen
+                                {{ 'header.lockScreen' | translate }}
                             </a>
                         </li>
                         <li class="border-t border-white-light dark:border-white-light/10">
                             <a routerLink="/auth/boxed-signin" *hlMenuItem="let menuItem" class="!py-3 text-danger">
                                 <icon-logout class="h-4.5 w-4.5 shrink-0 rotate-90 ltr:mr-2 rtl:ml-2" />
 
-                                Sign Out
+                                {{ 'header.signOut' | translate }}
                             </a>
                         </li>
                     </ul>

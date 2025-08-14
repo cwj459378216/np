@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">System Settings</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.systemSettings' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>Interface Management</span>
+            <span>{{ 'navigation.interfaceManagement' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -30,7 +30,7 @@
                     </div>
 
                     <div class="relative">
-                        <input type="text" placeholder="Search Interfaces"
+                        <input type="text" placeholder="{{ 'interface.searchInterfaces' | translate }}"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchText" name="searchText"
                             (ngModelChange)="searchInterfaces()" />
                         <div
@@ -46,12 +46,12 @@
                         <table class="table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Interface Name</th>
-                                    <th>Method</th>
-                                    <th>IP Address</th>
-                                    <th>Netmask</th>
-                                    <th>Default Gateway</th>
-                                    <th class="!text-center">Actions</th>
+                                    <th>{{ 'interface.interfaceName' | translate }}</th>
+                                    <th>{{ 'interface.method' | translate }}</th>
+                                    <th>{{ 'interface.ipAddress' | translate }}</th>
+                                    <th>{{ 'interface.netmask' | translate }}</th>
+                                    <th>{{ 'interface.defaultGateway' | translate }}</th>
+                                    <th class="!text-center">{{ 'interface.actions' | translate }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -67,7 +67,7 @@
                                         <div class="flex items-center justify-center gap-4">
                                             <button type="button" class="btn btn-sm btn-outline-primary"
                                                 (click)="editInterface(iface)">
-                                                Edit
+                                                {{ 'interface.edit' | translate }}
                                             </button>
                                         </div>
                                     </td>
@@ -81,57 +81,57 @@
             <!-- edit interface modal -->
             <ngx-custom-modal #editInterfaceModal class="no-footer">
                 <ng-template #modalHeader>
-                    <div class="!font-medium">Edit Interface</div>
+                    <div class="!font-medium">{{ 'interface.editInterface' | translate }}</div>
                 </ng-template>
                 <ng-template #modalBody>
                     <form [formGroup]="params" class="text-sm" (ngSubmit)="saveInterface()" ngNativeValidate>
                         <div class="mb-5">
-                            <label for="interface_name">Interface Name</label>
+                            <label for="interface_name">{{ 'interface.interfaceName' | translate }}</label>
                             <input id="interface_name" type="text" formControlName="interface_name" class="form-input" readonly />
                         </div>
                         <div class="mb-5">
-                            <label for="Method">Method</label>
-                            <ng-select id="Method" formControlName="method" [items]="optionsMethod" [clearable]="false" 
-                                placeholder="Select an option" class="custom-multiselect flex-1" 
+                            <label for="Method">{{ 'interface.method' | translate }}</label>
+                            <ng-select id="Method" formControlName="method" [items]="optionsMethod" [clearable]="false"
+                                placeholder="{{ 'interface.selectMethod' | translate }}" class="custom-multiselect flex-1"
                                 (change)="onAdapterChange($event)">
                             </ng-select>
                         </div>
                         <div class="mb-5" *ngIf="!showDHCP">
-                            <label for="ip_address">IP Address</label>
-                            <input id="ip_address" type="text" 
-                                formControlName="ip_address" 
-                                class="form-input" 
-                                placeholder="e.g., 192.168.1.1" />
+                            <label for="ip_address">{{ 'interface.ipAddress' | translate }}</label>
+                            <input id="ip_address" type="text"
+                                formControlName="ip_address"
+                                class="form-input"
+                                placeholder="{{ 'interface.ipAddressPlaceholder' | translate }}" />
                             <div *ngIf="params.get('ip_address')?.errors?.['pattern']" class="text-danger mt-1">
-                                Please enter a valid IP address
+                                {{ 'interface.pleaseEnterValidIP' | translate }}
                             </div>
                         </div>
                         <div class="mb-5" *ngIf="!showDHCP">
-                            <label for="netmask">Netmask</label>
-                            <input id="netmask" type="text" 
-                                formControlName="netmask" 
-                                class="form-input" 
-                                placeholder="e.g., 255.255.255.0" />
+                            <label for="netmask">{{ 'interface.netmask' | translate }}</label>
+                            <input id="netmask" type="text"
+                                formControlName="netmask"
+                                class="form-input"
+                                placeholder="{{ 'interface.netmaskPlaceholder' | translate }}" />
                             <div *ngIf="params.get('netmask')?.errors?.['pattern']" class="text-danger mt-1">
-                                Please enter a valid netmask
+                                {{ 'interface.pleaseEnterValidNetmask' | translate }}
                             </div>
                         </div>
                         <div class="mb-5" *ngIf="!showDHCP">
-                            <label for="gateway">Default Gateway</label>
-                            <input id="gateway" type="text" 
-                                formControlName="gateway" 
-                                class="form-input" 
-                                placeholder="e.g., 192.168.1.1" />
+                            <label for="gateway">{{ 'interface.defaultGateway' | translate }}</label>
+                            <input id="gateway" type="text"
+                                formControlName="gateway"
+                                class="form-input"
+                                placeholder="{{ 'interface.gatewayPlaceholder' | translate }}" />
                             <div *ngIf="params.get('gateway')?.errors?.['pattern']" class="text-danger mt-1">
-                                Please enter a valid IP address
+                                {{ 'interface.pleaseEnterValidIP' | translate }}
                             </div>
                         </div>
-                      
+
                         <div class="mt-8 flex items-center justify-end">
                             <button type="button" class="btn btn-outline-danger"
-                                (click)="editInterfaceModal.close()">Cancel</button>
+                                (click)="editInterfaceModal.close()">{{ 'general.cancel' | translate }}</button>
                             <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">
-                                Update
+                                {{ 'general.update' | translate }}
                             </button>
                         </div>
                     </form>

@@ -1,10 +1,10 @@
 <div>
     <ul class="flex space-x-2 rtl:space-x-reverse mb-6">
         <li>
-            <a href="javascript:;" class="text-primary hover:underline">Report</a>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'Report' | translate }}</a>
         </li>
         <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-            <span>Reports</span>
+            <span>{{ 'Reports' | translate }}</span>
         </li>
     </ul>
 
@@ -14,11 +14,11 @@
                 <div class="flex items-center gap-2">
                     <button type="button" class="btn btn-danger gap-2" (click)="deleteRow()">
                         <icon-trash-lines />
-                        Delete
+                        {{ 'Delete' | translate }}
                     </button>
                 </div>
                 <div class="ltr:ml-auto rtl:mr-auto">
-                    <input [(ngModel)]="search" type="text" class="form-input" placeholder="Search..." />
+                    <input [(ngModel)]="search" type="text" class="form-input" placeholder="{{ 'Search...' | translate }}" />
                 </div>
             </div>
 
@@ -68,4 +68,4 @@
             </ng-datatable>
         </div>
     </div>
-</div> 
+</div>
