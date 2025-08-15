@@ -43,7 +43,7 @@ export class EventComponent implements OnInit {
         // 初始化表格列
         this.cols = [
             { title: 'Time', field: 'time' },
-            { title: 'Event Type', field: 'eventType' },
+            { title: 'Event', field: 'eventType' },
             { title: 'Source IP', field: 'sourceIp' },
             { title: 'Destination IP', field: 'destinationIp' },
             { title: 'Protocol', field: 'protocol' },
@@ -59,11 +59,42 @@ export class EventComponent implements OnInit {
         this.rows = [
             {
                 time: '2024-03-20 10:30:15',
-                eventType: 'Security Alert',
+                eventType: 'Executable code was detected',
                 sourceIp: '192.168.1.100',
                 destinationIp: '10.0.0.50',
                 protocol: 'TCP',
                 status: 'Critical'
+            },
+            {
+                time: '2024-03-20 11:00:00',
+                eventType: 'Misc Attack',
+                sourceIp: '192.168.1.1',
+                destinationIp: '192.168.1.100',
+                protocol: 'UDP',
+                status: 'Warning'
+            },
+            {
+                time: '2024-03-20 11:15:30',
+                eventType: 'Attempted Information Leak',
+                sourceIp: '192.168.1.1',
+                destinationIp: '192.168.1.100',
+                protocol: 'TCP',
+                status: 'Critical'
+            },
+            {
+                time: '2024-03-20 12:00:00',
+                eventType: 'Information Leak',
+                sourceIp: '192.168.1.1',
+                destinationIp: '192.168.1.100',
+                protocol: 'TCP',
+                status: 'Critical'
+            },
+            {   time: '2024-03-20 12:30:00',
+                eventType: 'Detection of a Network Scan',
+                sourceIp: '192.168.1.1',
+                destinationIp: '192.168.1.100',
+                protocol: 'TCP',
+                status: 'High'
             },
             // ... 添加更多数据
         ];
@@ -145,7 +176,7 @@ export class EventComponent implements OnInit {
         if (column) {
             // 更新列的隐藏状态
             // column.hide = !column.hide;
-            
+
             // 重新构建列数组以触发变更检测
             this.cols = [...this.cols];
         }
@@ -159,4 +190,4 @@ export class EventComponent implements OnInit {
     get visibleColumns(): TableColumn[] {
         return this.cols.filter(col => !col.hide);
     }
-} 
+}

@@ -27,7 +27,7 @@
     "roleManagement": "角色管理",
     "notificationSettings": "通知设置",
     "systemTime": "系统时间",
-    "interfaceManagement": "接口管理",
+    "interfaceManagement": "网络控制",
     "assetBook": "资产簿",
     "log": "日志",
     "authentication": "身份验证",
@@ -127,7 +127,9 @@
     "alarmType": "告警类型",
     "selectTriggerType": "选择触发类型",
     "selectAlarmType": "选择告警类型",
-    "durationSeconds": "持续时间（秒）"
+    "durationSeconds": "持续时间（秒）",
+    "edit": "设置",
+    "start": "分析"
   },
   "users": {
     "username": "用户名",

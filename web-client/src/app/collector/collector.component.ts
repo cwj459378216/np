@@ -70,8 +70,8 @@ export class CollectorComponent implements OnInit {
       action: "",
     },
   ];
-  options: string[] = ['File'];
-  optionsFileSize = ['64M', '128M', '256M'];
+  options: string[] = ['File','Adapter'];
+  optionsFileSize = ['256M','512M', '1G','2G', '4G'];
   optionsTrigger = ['Timer', 'Alarm'];
   optionsAlarm = ['Alarm1', 'Alarm2']
   input5: string | undefined;
@@ -83,21 +83,21 @@ export class CollectorComponent implements OnInit {
   storageStrategies: StorageStrategy[] = [];
   private statusPollingMap = new Map<number, any>(); // 存储轮询定时器
   constructor(
-    private http: HttpClient, 
-    public fb: FormBuilder, 
+    private http: HttpClient,
+    public fb: FormBuilder,
     public storeData: Store<any>,
     private collectorService: CollectorService
   ) {
     this.initStore();
     this.isLoading = false;
     this.form3 = this.fb.group({
-      date3: ['2022-07-05 00:00:00 to 2022-07-10 23:59:59'], 
+      date3: ['2022-07-05 00:00:00 to 2022-07-10 23:59:59'],
   });
     this.rangeCalendar = {
       dateFormat: 'Y-m-d H:i:S',
-      enableTime: true,   
-      enableSeconds: true, 
-      time24hr: true, 
+      enableTime: true,
+      enableSeconds: true,
+      time24hr: true,
       mode: 'range',
       // position: this.store.rtlClass === 'rtl' ? 'auto right' : 'auto left',
       monthSelectorType: 'dropdown',
@@ -338,7 +338,7 @@ export class CollectorComponent implements OnInit {
     this.storageParams = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      fileSize: ['64M', Validators.required],
+      fileSize: ['256M', Validators.required],
       fileCount: [1, [Validators.required, Validators.min(1)]],
       outOfDiskAction: ['Wrap', Validators.required],
       fileType: ['PCAP', Validators.required],
@@ -363,7 +363,7 @@ export class CollectorComponent implements OnInit {
   editUser(user: ContactList | null = null) {
     this.addContactModal.open();
     this.initForm();
-    
+
     if (!this.storageStrategies.length) {
       this.loadStorageStrategies();
     }
@@ -515,7 +515,7 @@ export class CollectorComponent implements OnInit {
           action: '',
           creationTime: this.formatDate(collector.creationTime)
         }));
-        
+
         // 检查并为正在运行的抓包任务启动状态轮询
         this.contactList.forEach(collector => {
           // 检查 status 为 running 或 STATUS_STARTED 的情况
@@ -541,7 +541,7 @@ export class CollectorComponent implements OnInit {
             );
           }
         });
-        
+
         this.searchContacts();
       },
       error => {
@@ -774,7 +774,7 @@ export class CollectorComponent implements OnInit {
         this.showMessage('Capture started successfully');
         collector.status = 'running';
         collector.sessionId = response.uuid;
-        
+
         // 保存 sessionId 到数据库
         this.collectorService.updateCollectorSessionId(collector.id, response.uuid).subscribe(
           () => {
@@ -796,10 +796,10 @@ export class CollectorComponent implements OnInit {
   // 添加辅助方法来解析文件大小字符串
   private parseFileSize(size: string | undefined): number {
     if (!size) return 0;
-    
+
     const match = size.match(/(\d+)M/);
     if (!match) return 0;
-    
+
     return parseInt(match[1]) * 1024 * 1024; // 转换为字节
   }
 
@@ -813,7 +813,7 @@ export class CollectorComponent implements OnInit {
           (response: CaptureResponse) => {
             // 更新状态
             collector.status = response.status;
-            
+
             // 只有当状态不是 STATUS_STARTED 时才停止轮询
             if (response.status !== 'STATUS_STARTED') {
               this.stopStatusPolling(collector.id);
@@ -854,10 +854,10 @@ export class CollectorComponent implements OnInit {
         if (response.error === 0) {
           // 立即停止状态轮询
           this.stopStatusPolling(collector.id);
-          
+
           this.showMessage('Capture stopped successfully');
           collector.status = 'stopped';
-          
+
           // 清除数据库中的 sessionId
           this.collectorService.updateCollectorSessionId(collector.id, '').subscribe(
             () => {

@@ -15,7 +15,7 @@ export class MailboxComponent {
     ) {}
     defaultData = {
         id: null,
-        from: 'vristo@mail.com',
+        from: 'WaveSight@mail.com',
         to: '',
         cc: '',
         title: '',
@@ -887,7 +887,7 @@ export class MailboxComponent {
         this.params = this.fb.group({
             id: [null],
             selected: false,
-            from: ['vristo@mail.com'],
+            from: ['WaveSight@mail.com'],
             to: ['', Validators.required],
             cc: [''],
             title: ['', Validators.required],

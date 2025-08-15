@@ -638,7 +638,7 @@ export class DashboardComponent implements OnInit {
         width: 25,
         colors: isDark ? '#0e1726' : '#fff',
       },
-      colors: isDark ? ['#5c1ac3', '#e2a03f', '#e7515a', '#00ab55'] : ['#e2a03f', '#5c1ac3', '#e7515a', '#00ab55'],
+      colors: isDark ? ['#5c1ac3', '#e2a03f', '#e7515a', '#00ab55', '#e2a03f', '#4361ee'] : ['#e2a03f', '#5c1ac3', '#e7515a', '#00ab55', '#4361ee', '#e2a03f'],
       legend: {
         position: 'bottom',
         horizontalAlign: 'center',
@@ -687,7 +687,7 @@ export class DashboardComponent implements OnInit {
           },
         },
       },
-      labels: ['TLS', 'RDP', 'Microsoft', 'Others'],
+      labels: ['HTTP', 'DNS', 'DHCP', 'Others'],
       states: {
         hover: {
           filter: {

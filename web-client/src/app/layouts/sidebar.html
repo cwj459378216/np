@@ -4,7 +4,7 @@
             <div class="flex items-center justify-between px-4 py-3">
                 <a routerLink="/" class="main-logo flex shrink-0 items-center">
                     <img class="ml-[5px] w-8 flex-none" src="/assets/images/logo.svg" alt="" />
-                    <span class="align-middle text-2xl font-semibold dark:text-white-light lg:inline ltr:ml-1.5 rtl:mr-1.5">VRISTO</span>
+                    <span class="align-middle text-2xl font-semibold dark:text-white-light lg:inline ltr:ml-1.5 rtl:mr-1.5">WaveSight</span>
                 </a>
                 <a
                     href="javascript:;"
@@ -130,9 +130,9 @@
                                         <li>
                                             <a routerLink="/alarm/event" routerLinkActive="active" (click)="toggleMobileMenu()">{{ 'navigation.event' | translate }}</a>
                                         </li>
-                                        <li>
+                                        <!-- <li>
                                             <a routerLink="/alarm/settings" routerLinkActive="active" (click)="toggleMobileMenu()">{{ 'navigation.alarmSettings' | translate }}</a>
-                                        </li>
+                                        </li> -->
                                     </ul>
                                 </div>
                             </li>
@@ -295,6 +295,15 @@
                                                 {{ 'navigation.templates' | translate }}
                                             </a>
                                         </li>
+                                           <li>
+                                            <a
+                                                routerLink="/report/scheduler"
+                                                routerLinkActive="active"
+                                                (click)="toggleMobileMenu()"
+                                            >
+                                                {{ 'navigation.reportScheduler' | translate }}
+                                            </a>
+                                        </li>
                                         <li>
                                             <a
                                                 routerLink="/report/list"
@@ -313,15 +322,7 @@
                                                 {{ 'navigation.notificationRule' | translate }}
                                             </a>
                                         </li>
-                                        <li>
-                                            <a
-                                                routerLink="/report/scheduler"
-                                                routerLinkActive="active"
-                                                (click)="toggleMobileMenu()"
-                                            >
-                                                {{ 'navigation.reportScheduler' | translate }}
-                                            </a>
-                                        </li>
+
                                     </ul>
                                 </div>
                             </li>
