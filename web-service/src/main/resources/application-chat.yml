@@ -1,0 +1,21 @@
+# 聊天服务配置示例
+# 将此配置添加到 application.yml 或 application.properties 中
+
+# AI服务配置
+ai:
+  base-url: http://192.168.0.66:11434  # AI服务的基础URL
+  default-model: deepseek-r1:7b         # 默认AI模型
+
+# 聊天服务配置
+chat:
+  session:
+    timeout: 3600                        # 会话超时时间（秒）
+    max-messages: 1000                   # 每个会话最大消息数
+  storage:
+    type: memory                         # 存储类型：memory（内存）或 database（数据库）
+  
+# 日志配置
+logging:
+  level:
+    com.example.web_service.service.impl.ChatServiceImpl: DEBUG
+    com.example.web_service.service.impl.AiServiceImpl: DEBUG
