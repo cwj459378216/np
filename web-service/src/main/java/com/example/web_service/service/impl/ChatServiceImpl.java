@@ -325,17 +325,15 @@ public class ChatServiceImpl implements ChatService {
                         Map<String, Object> data = objectMapper.readValue(line, Map.class);
                         if (data.containsKey("response")) {
                             String responseContent = (String) data.get("response");
-                            // 过滤掉<think>标签内容
-                            String cleanedContent = filterThinkTags(responseContent);
-                            responseBuilder.append(cleanedContent);
+                            // 直接添加原始内容，让前端处理过滤
+                            responseBuilder.append(responseContent);
                         } else if (data.containsKey("error")) {
                             throw new RuntimeException("AI service error: " + data.get("error"));
                         }
                     } catch (Exception e) {
-                        // 如果不是JSON格式，直接添加内容（也要过滤<think>标签）
+                        // 如果不是JSON格式，直接添加内容
                         log.debug("Non-JSON response line: {}", line);
-                        String cleanedLine = filterThinkTags(line);
-                        responseBuilder.append(cleanedLine).append("\n");
+                        responseBuilder.append(line).append("\n");
                     }
                 }
             }
@@ -478,12 +476,11 @@ public class ChatServiceImpl implements ChatService {
                         Map<String, Object> data = objectMapper.readValue(line, Map.class);
                         if (data.containsKey("response")) {
                             String responseContent = (String) data.get("response");
-                            // 过滤掉<think>标签内容
-                            String cleanedContent = filterThinkTags(responseContent);
-                            if (cleanedContent != null && !cleanedContent.isEmpty()) {
-                                fullResponse.append(cleanedContent);
+                            // 直接发送原始内容到前端，让前端处理过滤
+                            if (responseContent != null && !responseContent.isEmpty()) {
+                                fullResponse.append(responseContent);
                                 // 发送单个字符到前端
-                                String charResponse = "data: {\"content\": \"" + cleanedContent + "\"}\n\n";
+                                String charResponse = "data: {\"content\": \"" + responseContent + "\"}\n\n";
                                 outputStream.write(charResponse.getBytes("UTF-8"));
                                 outputStream.flush();
                             }
@@ -494,12 +491,11 @@ public class ChatServiceImpl implements ChatService {
                             return;
                         }
                     } catch (Exception e) {
-                        // 如果不是JSON格式，直接添加内容（也要过滤<think>标签）
+                        // 如果不是JSON格式，直接添加内容
                         log.debug("Non-JSON stream response line: {}", line);
-                        String cleanedLine = filterThinkTags(line);
-                        if (cleanedLine != null && !cleanedLine.isEmpty()) {
-                            fullResponse.append(cleanedLine);
-                            String charResponse = "data: {\"content\": \"" + cleanedLine + "\"}\n\n";
+                        if (line != null && !line.trim().isEmpty()) {
+                            fullResponse.append(line);
+                            String charResponse = "data: {\"content\": \"" + line + "\"}\n\n";
                             outputStream.write(charResponse.getBytes("UTF-8"));
                             outputStream.flush();
                         }
@@ -551,14 +547,5 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
-    /**
-     * 过滤掉AI响应中的<think>标签及其包含的所有内容
-     */
-    private String filterThinkTags(String content) {
-        if (content == null) {
-            return null;
-        }
-        // 移除<think>标签及其包含的所有内容
-        return content.replaceAll("<think>.*?</think>", "").trim();
-    }
+
 }

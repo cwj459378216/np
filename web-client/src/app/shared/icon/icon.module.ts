@@ -61,6 +61,7 @@ import { IconCodeComponent } from './icon-code';
 import { IconCoffeeComponent } from './icon-coffee';
 import { IconCopyComponent } from './icon-copy';
 import { IconCpuBoltComponent } from './icon-cpu-bolt';
+import { IconRobotComponent } from './icon-robot';
 import { IconCreditCardComponent } from './icon-credit-card';
 import { IconDesktopComponent } from './icon-desktop';
 import { IconDollarSignComponent } from './icon-dollar-sign';
@@ -227,6 +228,7 @@ import { IconCodeFileComponent } from 'src/app/shared/icon/icon-code-file';
         IconCoffeeComponent,
         IconCopyComponent,
         IconCpuBoltComponent,
+        IconRobotComponent,
         IconCreditCardComponent,
         IconDesktopComponent,
         IconDollarSignComponent,
@@ -392,6 +394,7 @@ import { IconCodeFileComponent } from 'src/app/shared/icon/icon-code-file';
         IconCoffeeComponent,
         IconCopyComponent,
         IconCpuBoltComponent,
+        IconRobotComponent,
         IconCreditCardComponent,
         IconDesktopComponent,
         IconDollarSignComponent,

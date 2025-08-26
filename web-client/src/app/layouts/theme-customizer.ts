@@ -180,6 +180,10 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
 
             const decoder = new TextDecoder();
             let buffer = '';
+            let accumulatedContent = ''; // 累积完整的响应内容
+            let visibleContent = ''; // 当前应该显示的内容
+            let isInThinkTag = false; // 是否在<think>标签内
+            let thinkStartIndex = -1; // <think>标签开始位置
 
             try {
                 while (true) {
@@ -199,10 +203,37 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
                                 const data = JSON.parse(line.slice(6));
 
                                 if (data.content) {
-                                    // 逐字符显示效果
-                                    await this.typeText(aiMessageIndex, data.content);
+                                    // 累积内容
+                                    accumulatedContent += data.content;
+
+                                    // 智能处理内容显示
+                                    const { newVisibleContent, newIsInThinkTag, newThinkStartIndex } =
+                                        this.processContentForDisplay(accumulatedContent, visibleContent, isInThinkTag, thinkStartIndex);
+
+                                    // 更新状态
+                                    isInThinkTag = newIsInThinkTag;
+                                    thinkStartIndex = newThinkStartIndex;
+
+                                    // 如果有新的可见内容，逐字符显示
+                                    if (newVisibleContent !== visibleContent) {
+                                        const newChars = newVisibleContent.substring(visibleContent.length);
+                                        if (newChars) {
+                                            await this.typeText(aiMessageIndex, newChars);
+                                            visibleContent = newVisibleContent;
+                                        }
+                                    }
                                 } else if (data.done) {
                                     this.isLoading = false;
+
+                                    // 最终处理，确保显示所有非<think>标签的内容
+                                    const finalVisibleContent = this.extractVisibleContent(accumulatedContent);
+                                    if (finalVisibleContent !== visibleContent) {
+                                        const remainingChars = finalVisibleContent.substring(visibleContent.length);
+                                        if (remainingChars) {
+                                            await this.typeText(aiMessageIndex, remainingChars);
+                                        }
+                                    }
+
                                     break;
                                 } else if (data.error) {
                                     this.chatMessages[aiMessageIndex].content = `错误: ${data.error}`;
@@ -235,7 +266,9 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
 
         // 逐字符添加到消息内容
         for (let i = currentContent.length; i < targetContent.length; i++) {
-            this.chatMessages[messageIndex].content = targetContent.substring(0, i + 1);
+            const partialContent = targetContent.substring(0, i + 1);
+            // 每次更新后都过滤掉<think>标签，确保即使标签被分割也能正确过滤
+            this.chatMessages[messageIndex].content = this.filterThinkTags(partialContent);
             this.shouldScrollToBottom = true;
 
             // 控制打字速度（毫秒）
@@ -257,8 +290,117 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
         if (!content) {
             return content;
         }
-        // 移除<think>标签及其包含的所有内容
-        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
+        let filteredContent = content;
+
+        // 使用更精确的正则表达式来匹配<think>标签及其内容
+        // 匹配 <think> 开始标签，然后是任意字符（包括换行符），直到 </think> 结束标签
+        const thinkTagRegex = /<think[^>]*>[\s\S]*?<\/think>/gi;
+
+        // 移除所有完整的<think>标签及其内容
+        filteredContent = filteredContent.replace(thinkTagRegex, '');
+
+        // 移除不完整的开始标签（开始标签但没有结束标签）
+        filteredContent = filteredContent.replace(/<think[^>]*>[\s\S]*$/gi, '');
+
+        // 移除不完整的结束标签（结束标签但没有开始标签）
+        filteredContent = filteredContent.replace(/^[\s\S]*<\/think>/gi, '');
+
+        // 移除任何残留的think标签（大小写变化）
+        filteredContent = filteredContent.replace(/<think[^>]*>/gi, '');
+        filteredContent = filteredContent.replace(/<\/think>/gi, '');
+
+        // 清理多余的空行和空格
+        filteredContent = filteredContent.replace(/\n\s*\n/g, '\n');
+        filteredContent = filteredContent.replace(/^\s+|\s+$/g, '');
+
+        return filteredContent;
+    }
+
+    /**
+     * 智能处理内容显示，确保只有在<think>标签结束后才显示后续内容
+     */
+    private processContentForDisplay(
+        accumulatedContent: string,
+        currentVisibleContent: string,
+        isInThinkTag: boolean,
+        thinkStartIndex: number
+    ): { newVisibleContent: string; newIsInThinkTag: boolean; newThinkStartIndex: number } {
+        let newIsInThinkTag = isInThinkTag;
+        let newThinkStartIndex = thinkStartIndex;
+        let newVisibleContent = currentVisibleContent;
+
+        // 检查是否有新的<think>标签开始
+        if (!isInThinkTag) {
+            const thinkStartMatch = accumulatedContent.match(/<think[^>]*>/i);
+            if (thinkStartMatch) {
+                newIsInThinkTag = true;
+                newThinkStartIndex = thinkStartMatch.index!;
+                // 只显示<think>标签之前的内容
+                newVisibleContent = accumulatedContent.substring(0, newThinkStartIndex);
+            } else {
+                // 没有<think>标签，显示所有内容
+                newVisibleContent = accumulatedContent;
+            }
+        } else {
+            // 当前在<think>标签内，检查是否有结束标签
+            const thinkEndMatch = accumulatedContent.substring(thinkStartIndex).match(/<\/think>/i);
+            if (thinkEndMatch) {
+                // <think>标签结束
+                newIsInThinkTag = false;
+                const thinkEndIndex = thinkStartIndex + thinkEndMatch.index! + thinkEndMatch[0].length;
+
+                // 显示<think>标签之前的内容 + <think>标签之后的内容
+                const beforeThink = accumulatedContent.substring(0, thinkStartIndex);
+                const afterThink = accumulatedContent.substring(thinkEndIndex);
+                newVisibleContent = beforeThink + afterThink;
+            } else {
+                // 仍在<think>标签内，只显示标签之前的内容
+                newVisibleContent = accumulatedContent.substring(0, thinkStartIndex);
+            }
+        }
+
+        return { newVisibleContent, newIsInThinkTag, newThinkStartIndex };
+    }
+
+    /**
+     * 提取可见内容，移除所有<think>标签及其内容
+     */
+    private extractVisibleContent(content: string): string {
+        return this.filterThinkTags(content);
+    }
+
+    /**
+     * 测试filterThinkTags方法（可在控制台调用）
+     */
+    testFilterThinkTags() {
+        const testCases = [
+            '正常文本<think>思考内容</think>更多文本',
+            '<think>只有思考内容</think>',
+            '开始文本<think>思考内容',
+            '结束文本</think>',
+            '<THINK>大写标签</THINK>',
+            '<Think>混合大小写</think>',
+            '文本1<think>思考1</think>文本2<think>思考2</think>文本3',
+            '<think>多行\n思考\n内容</think>',
+            '<think>包含特殊字符的思考内容：!@#$%^&*()</think>',
+            '混合内容<think>思考</think>和<think>更多思考</think>',
+            '<think>只有开始标签',
+            '只有结束标签</think>',
+            '<think>空标签</think>',
+            '正常文本，没有标签'
+        ];
+
+        console.log('=== 测试 filterThinkTags 方法 ===');
+        testCases.forEach((testCase, index) => {
+            const filtered = this.filterThinkTags(testCase);
+            console.log(`测试 ${index + 1}:`);
+            console.log(`  原始: "${testCase}"`);
+            console.log(`  过滤后: "${filtered}"`);
+            console.log(`  是否包含<think>: ${/<think/i.test(filtered)}`);
+            console.log(`  是否包含</think>: ${/<\/think>/i.test(filtered)}`);
+            console.log('---');
+        });
     }
 
     private addErrorMessage() {
@@ -278,7 +420,7 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
             const response = await this.http.get(`${environment.apiUrl}/chat/history/${this.currentSessionId}`).toPromise();
             const history = Array.isArray(response) ? response : [];
             this.chatMessages = history.map((msg: any) => ({
-                content: msg.content,
+                content: this.filterThinkTags(msg.content),
                 isUser: msg.isUser,
                 timestamp: new Date(msg.timestamp)
             }));
@@ -327,5 +469,80 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
         } catch (error) {
             console.error('Failed to scroll to bottom:', error);
         }
+    }
+
+    /**
+     * 测试智能内容处理功能（可在控制台调用）
+     */
+    testSmartContentProcessing() {
+        console.log('=== 测试智能内容处理功能 ===');
+
+        // 模拟流式响应的累积过程
+        const testScenarios = [
+            {
+                name: '简单<think>标签',
+                steps: [
+                    'Hello',
+                    ' <think>',
+                    '思考内容',
+                    '</think>',
+                    ' World!'
+                ]
+            },
+            {
+                name: '嵌套<think>标签',
+                steps: [
+                    '开始',
+                    ' <think>',
+                    '思考1',
+                    ' <think>',
+                    '思考2',
+                    '</think>',
+                    '继续思考1',
+                    '</think>',
+                    ' 结束'
+                ]
+            },
+            {
+                name: '不完整的<think>标签',
+                steps: [
+                    '正常文本',
+                    ' <think>',
+                    '思考内容',
+                    ' 更多思考'
+                ]
+            }
+        ];
+
+        testScenarios.forEach((scenario, scenarioIndex) => {
+            console.log(`\n--- 测试场景 ${scenarioIndex + 1}: ${scenario.name} ---`);
+
+            let accumulatedContent = '';
+            let visibleContent = '';
+            let isInThinkTag = false;
+            let thinkStartIndex = -1;
+
+            scenario.steps.forEach((step, stepIndex) => {
+                accumulatedContent += step;
+
+                const result = this.processContentForDisplay(
+                    accumulatedContent,
+                    visibleContent,
+                    isInThinkTag,
+                    thinkStartIndex
+                );
+
+                isInThinkTag = result.newIsInThinkTag;
+                thinkStartIndex = result.newThinkStartIndex;
+                visibleContent = result.newVisibleContent;
+
+                console.log(`步骤 ${stepIndex + 1}: "${step}"`);
+                console.log(`  累积内容: "${accumulatedContent}"`);
+                console.log(`  可见内容: "${visibleContent}"`);
+                console.log(`  在<think>标签内: ${isInThinkTag}`);
+                console.log(`  <think>开始位置: ${thinkStartIndex}`);
+                console.log('  ---');
+            });
+        });
     }
 }
