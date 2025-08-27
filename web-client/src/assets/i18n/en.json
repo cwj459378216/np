@@ -127,7 +127,9 @@
     "alarmType": "Alarm Type",
     "selectTriggerType": "Select trigger type",
     "selectAlarmType": "Select alarm type",
-    "durationSeconds": "Duration (seconds)"
+    "durationSeconds": "Duration (seconds)",
+    "edit": "Edit",
+    "start": "Start"
   },
   "users": {
     "username": "Username",
