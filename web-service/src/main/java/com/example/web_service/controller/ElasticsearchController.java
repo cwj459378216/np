@@ -7,6 +7,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.json.JsonData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,8 @@ import java.util.Map;
 @RequestMapping("/es")
 @Tag(name = "Elasticsearch接口", description = "用于查询ES数据")
 public class ElasticsearchController {
+
+    private static final Logger log = LoggerFactory.getLogger(ElasticsearchController.class);
 
     @Autowired
     private ElasticsearchSyncService elasticsearchSyncService;
@@ -60,6 +64,19 @@ public class ElasticsearchController {
             @RequestParam(defaultValue = "1h") String interval
     ) throws IOException {
         return elasticsearchSyncService.getProtocolTrends(startTime, endTime, interval);
+    }
+
+    @GetMapping("/bandwidth-trends")
+    @Operation(summary = "查询带宽趋势", description = "获取所有可用Channel的带宽利用率趋势数据，时间参数使用毫秒时间戳")
+    public Map<String, List<TrendingData>> getBandwidthTrends(
+            @RequestParam Long startTime,
+            @RequestParam Long endTime,
+            @RequestParam(defaultValue = "1h") String interval
+    ) throws IOException {
+        log.info("Received bandwidth trends request - startTime: {}, endTime: {}, interval: {}", startTime, endTime, interval);
+        Map<String, List<TrendingData>> result = elasticsearchSyncService.getBandwidthTrends(startTime, endTime, interval);
+        log.info("Returning bandwidth trends with {} channels", result.size());
+        return result;
     }
 
     @GetMapping("/query")

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { an } from '@fullcalendar/core/internal-common';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { DashboardDataService, ProtocolTrendsResponse, TrendingData } from '../services/dashboard-data.service';
+import { DashboardDataService, ProtocolTrendsResponse, TrendingData, BandwidthTrendsResponse } from '../services/dashboard-data.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -27,6 +27,7 @@ export class DashboardComponent implements OnInit {
   tcpTrending: any;
   udpTrending: any;
   totalFlowCount: number = 0; // 新增属性存储总流量计数
+  averageBandwidth: number = 0; // 新增属性存储平均带宽利用率
 
   constructor(public storeData: Store<any>, private dashboardDataService: DashboardDataService, private translate: TranslateService) {
     this.initStore();
@@ -35,6 +36,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProtocolTrendsData();
+    this.loadBandwidthData();
   }
 
   async initStore() {
@@ -76,6 +78,27 @@ export class DashboardComponent implements OnInit {
         error: (error) => {
           console.error('Error loading protocol trends data:', error);
           // 如果API调用失败，设置默认值并使用模拟数据
+          this.initCharts();
+        }
+      });
+  }
+
+  loadBandwidthData() {
+    // 获取最近24小时的数据
+    const endTime = new Date();
+    const startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // 24小时前
+
+    const startTimeTimestamp = startTime.getTime();
+    const endTimeTimestamp = endTime.getTime();
+
+    this.dashboardDataService.getBandwidthTrends(startTimeTimestamp, endTimeTimestamp, '1h')
+      .subscribe({
+        next: (data: BandwidthTrendsResponse) => {
+          this.updateBandwidthChart(data);
+        },
+        error: (error) => {
+          console.error('Error loading bandwidth data:', error);
+          // 如果API调用失败，使用默认数据
           this.initCharts();
         }
       });
@@ -250,6 +273,186 @@ export class DashboardComponent implements OnInit {
 
     // 如果数据加载成功，初始化其他图表
     this.initCharts();
+  }
+
+  private generateColors(count: number, isDark: boolean): string[] {
+    const lightColors = ['#1b55e2', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#5c1ac3', '#2196f3', '#ffbb44'];
+    const darkColors = ['#2196f3', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#5c1ac3', '#1b55e2', '#ffbb44'];
+    
+    const colors = isDark ? darkColors : lightColors;
+    const result: string[] = [];
+    
+    for (let i = 0; i < count; i++) {
+      result.push(colors[i % colors.length]);
+    }
+    
+    return result;
+  }
+
+  updateBandwidthChart(data: BandwidthTrendsResponse) {
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+    const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
+
+    // 获取所有channel的键并排序
+    const channelKeys = Object.keys(data).sort((a, b) => {
+      const aNum = parseInt(a.replace('channel', ''));
+      const bNum = parseInt(b.replace('channel', ''));
+      return aNum - bNum;
+    });
+
+    // 转换数据格式为ApexCharts需要的格式
+    const series = channelKeys.map(channelKey => {
+      const channelData = data[channelKey].map(item => [item.timestamp, item.count / 100]); // 转换回小数
+      return {
+        name: `Channel ${channelKey.replace('channel', '')} Utilization`,
+        data: channelData
+      };
+    });
+
+    // 计算平均带宽利用率
+    const allUtilizations = Object.values(data).flat().map(item => item.count);
+    this.averageBandwidth = allUtilizations.length > 0 
+      ? allUtilizations.reduce((sum, util) => sum + util, 0) / allUtilizations.length 
+      : 0;
+
+    this.revenueChart = {
+      chart: {
+        height: 200,
+        type: 'area',
+        fontFamily: 'Nunito, sans-serif',
+        zoom: {
+          enabled: false,
+        },
+        toolbar: {
+          show: false,
+        },
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      stroke: {
+        show: true,
+        curve: 'smooth',
+        width: 2,
+        lineCap: 'square',
+      },
+      dropShadow: {
+        enabled: true,
+        opacity: 0.2,
+        blur: 10,
+        left: -7,
+        top: 22,
+      },
+      colors: this.generateColors(channelKeys.length, isDark),
+      markers: {
+        size: 6,
+        colors: ['#1b55e2', '#e7515a'],
+        strokeColor: '#fff',
+        strokeWidth: 2,
+        shape: 'circle',
+        hover: {
+          size: 8,
+          sizeOffset: 3,
+        },
+      },
+      xaxis: {
+        type: 'datetime',
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+        crosshairs: {
+          show: true,
+        },
+        labels: {
+          offsetX: isRtl ? 2 : 0,
+          offsetY: 5,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-xaxis-title',
+          },
+          formatter: (value: number) => {
+            const date = new Date(value);
+            const formatter = new Intl.DateTimeFormat('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric'
+            });
+            return formatter.format(date);
+          },
+        },
+      },
+      yaxis: {
+        tickAmount: 5,
+        labels: {
+          formatter: (value: number) => {
+            return parseInt(value * 100 + "") + '%';
+          },
+          offsetX: isRtl ? -30 : -10,
+          offsetY: 0,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-yaxis-title',
+          },
+        },
+        opposite: isRtl ? true : false,
+      },
+      grid: {
+        borderColor: isDark ? '#191e3a' : '#e0e6ed',
+        strokeDashArray: 5,
+        xaxis: {
+          lines: {
+            show: true,
+          },
+        },
+        yaxis: {
+          lines: {
+            show: false,
+          },
+        },
+        padding: {
+          top: 0,
+          right: 20,
+          bottom: 0,
+          left: 0,
+        },
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        fontSize: '16px',
+        markers: {
+          width: 10,
+          height: 10,
+          offsetX: -2,
+        },
+        itemMargin: {
+          horizontal: 10,
+          vertical: 5,
+        },
+      },
+      tooltip: {
+        marker: {
+          show: true,
+        },
+        x: {
+          show: false,
+        },
+      },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          inverseColors: !1,
+          opacityFrom: isDark ? 0.19 : 0.28,
+          opacityTo: 0.05,
+          stops: isDark ? [100, 100] : [45, 100],
+        },
+      },
+      series: series,
+    };
   }
 
   initCharts() {

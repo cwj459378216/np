@@ -14,6 +14,26 @@ export interface ProtocolTrendsResponse {
   Others: TrendingData[];
 }
 
+export interface BandwidthData {
+  timestamp: number;
+  bps: number;
+  pps: number;
+  util: number;
+  channelIndex: number;
+  totalBytes: number;
+  totalPackets: number;
+  dropPackets: number;
+  errorPackets: number;
+  port: number;
+  tag: string;
+  tage: string;
+  filePath: string;
+}
+
+export interface BandwidthTrendsResponse {
+  [key: string]: TrendingData[]; // 动态的channel，如 channel0, channel1, channel2 等
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -21,6 +41,23 @@ export class DashboardDataService {
   private apiUrl = `${environment.apiUrl}/es`;
 
   constructor(private http: HttpClient) { }
+
+  /**
+   * 获取带宽趋势数据
+   * @param startTime 开始时间戳（毫秒）
+   * @param endTime 结束时间戳（毫秒）
+   * @param interval 时间间隔 (默认: 1h)
+   * @returns Observable<BandwidthTrendsResponse>
+   */
+  getBandwidthTrends(startTime: number, endTime: number, interval: string = '1h'): Observable<BandwidthTrendsResponse> {
+    const params = new HttpParams()
+      .set('startTime', startTime.toString())
+      .set('endTime', endTime.toString())
+      .set('interval', interval);
+
+    console.log('Fetching bandwidth trends with params:', { startTime, endTime, interval });
+    return this.http.get<BandwidthTrendsResponse>(`${this.apiUrl}/bandwidth-trends`, { params });
+  }
 
   /**
    * 获取协议交易趋势数据
