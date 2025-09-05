@@ -1,5 +1,4 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { an } from '@fullcalendar/core/internal-common';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { DashboardDataService, ProtocolTrendsResponse, TrendingData, BandwidthTrendsResponse, SystemInfo, ServiceNameAggregationResponse } from '../services/dashboard-data.service';
@@ -28,6 +27,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   udpTrending: any;
   totalFlowCount: number = 0; // 新增属性存储总流量计数
   averageBandwidth: number = 0; // 新增属性存储平均带宽利用率
+  networkProtocolFlowCount: number = 0; // 新增：网络协议趋势总流量计数
 
   // 系统信息属性
   systemInfo: SystemInfo | null = null;
@@ -50,7 +50,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadProtocolTrendsData();
+  this.loadProtocolTrendsData();
+  this.loadNetworkProtocolTrends();
     this.loadBandwidthData();
     this.loadSystemInfo();
     this.loadServiceNameData();
@@ -59,6 +60,59 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.systemInfoInterval = setInterval(() => {
       this.loadSystemInfo();
     }, 30000);
+  }
+
+  private loadNetworkProtocolTrends() {
+    const endTime = new Date();
+    const startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
+    const startTimeTimestamp = startTime.getTime();
+    const endTimeTimestamp = endTime.getTime();
+
+    this.dashboardDataService.getNetworkProtocolTrends(startTimeTimestamp, endTimeTimestamp, '1h')
+      .subscribe({
+        next: (data) => {
+          // 将返回的多协议数据映射为 series
+          const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+          const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
+          const colors = isDark ? ['#1b55e2', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#5c1ac3'] : ['#2196f3', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#5c1ac3'];
+
+          const series = Object.keys(data).map((key, idx) => ({
+            name: key.toUpperCase(),
+            data: (data as any)[key].map((item: any) => [item.timestamp, item.count])
+          }));
+
+          // 统计该时段内所有协议的总流量计数
+          try {
+            const total = Object.values(data as any)
+              .flat()
+              .reduce((acc: number, item: any) => acc + (typeof item?.count === 'number' ? item.count : 0), 0);
+            this.networkProtocolFlowCount = total;
+          } catch (e) {
+            console.warn('Failed to compute networkProtocolFlowCount:', e);
+            this.networkProtocolFlowCount = 0;
+          }
+
+          // 复用 tcpTrending 配置渲染该大图
+          this.tcpTrending = {
+            chart: { height: 350, type: 'area', fontFamily: 'Nunito, sans-serif', zoom: { enabled: false }, toolbar: { show: false } },
+            dataLabels: { enabled: false },
+            stroke: { show: true, curve: 'smooth', width: 2, lineCap: 'square' },
+            dropShadow: { enabled: true, opacity: 0.2, blur: 10, left: -7, top: 22 },
+            colors: colors.slice(0, series.length),
+            markers: { size: 0, colors, strokeColor: '#fff', strokeWidth: 2, shape: 'circle', hover: { size: 6, sizeOffset: 3 } },
+            xaxis: { type: 'datetime', axisBorder: { show: false }, axisTicks: { show: false }, crosshairs: { show: true }, labels: { offsetX: isRtl ? 2 : 0, offsetY: 5, style: { fontSize: '12px', cssClass: 'apexcharts-xaxis-title' }, formatter: (value: number) => { const date = new Date(value); const f = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); return f.format(date); } } },
+            yaxis: { tickAmount: 5, labels: { formatter: (v: number) => v.toString(), offsetX: isRtl ? -30 : -10, offsetY: 0, style: { fontSize: '12px', cssClass: 'apexcharts-yaxis-title' } }, opposite: isRtl ? true : false },
+            grid: { borderColor: isDark ? '#191e3a' : '#e0e6ed', strokeDashArray: 5, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } }, padding: { top: 0, right: 20, bottom: 0, left: 0 } },
+            legend: { position: 'top', horizontalAlign: 'right', fontSize: '16px', markers: { width: 10, height: 10, offsetX: -2 }, itemMargin: { horizontal: 10, vertical: 5 } },
+            tooltip: { marker: { show: true }, x: { show: false } },
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, inverseColors: false, opacityFrom: isDark ? 0.19 : 0.28, opacityTo: 0.05, stops: isDark ? [100, 100] : [45, 100] } },
+            series
+          };
+        },
+        error: (err) => {
+          console.error('Error loading network protocol trends:', err);
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -618,70 +672,90 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     this.salesByCategory = {
-        chart: {
-            type: 'donut',
-            height: 520,
-            fontFamily: 'Nunito, sans-serif',
-        },
-        dataLabels: { enabled: false },
-        stroke: {
-            show: true,
-            width: 2,
-            colors: [isDark ? '#0e1726' : '#fff'], // ✅ 改成数组
-        },
-        legend: {
-            position: 'bottom',
-            horizontalAlign: 'center',
-            fontSize: '14px',
-            markers: { width: 5, height: 5, offsetX: -2 },
-            height: 80,
-            offsetY: 10,
-            itemMargin: { horizontal: 10, vertical: 8 },
-        },
-        plotOptions: {
-            pie: {
-            donut: {
-                size: '65%',
-                background: 'transparent',
-                labels: {
+      chart: {
+        type: 'donut',
+        height: 520,
+        fontFamily: 'Nunito, sans-serif',
+      },
+      dataLabels: { enabled: false },
+      stroke: {
+        show: true,
+        width: 2,
+        colors: [isDark ? '#0e1726' : '#fff'],
+      },
+      legend: {
+        position: 'bottom',
+        horizontalAlign: 'center',
+        fontSize: '14px',
+        markers: { width: 5, height: 5, offsetX: -2 },
+        height: 80,
+        offsetY: 10,
+        itemMargin: { horizontal: 10, vertical: 8 },
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '65%',
+            background: 'transparent',
+            labels: {
+              show: true,
+              name: { show: true, fontSize: '29px', offsetY: -10 },
+              value: {
                 show: true,
-                name: { show: true, fontSize: '29px', offsetY: -10 },
-                value: {
-                    show: true,
-                    fontSize: '26px',
-                    color: isDark ? '#bfc9d4' : undefined,
-                    offsetY: 16,
-                    formatter: (val: any) => val,
-                },
-                total: {
-                    show: true,
-                    label: this.translate.instant('Total'),
-                    color: '#888ea8',
-                    fontSize: '29px',
-                    formatter: (w: any) =>
-                    w.globals.seriesTotals.reduce((a: any, b: any) => a + b, 0),
-                },
-                },
+                fontSize: '26px',
+                color: isDark ? '#bfc9d4' : undefined,
+                offsetY: 16,
+                formatter: (val: number) => String(val),
+              },
+              total: {
+                show: true,
+                label: this.translate.instant('Total'),
+                color: '#888ea8',
+                fontSize: '29px',
+                formatter: (w: any) => w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0),
+              },
             },
-            },
+          },
         },
-        states: {
-            hover: { filter: { type: 'none', value: 0.15 } },
-            active: { filter: { type: 'none', value: 0.15 } },
-        },
-        labels: labels,
-        colors: isDark ? ['#5c1ac3', '#e2a03f', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f']
-            : ['#e2a03f', '#5c1ac3', '#e7515a', '#00ab55', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f'],
-        series: series,
-        };
+      },
+      states: {
+        hover: { filter: { type: 'none', value: 0.15 } },
+        active: { filter: { type: 'none', value: 0.15 } },
+      },
+      labels: labels,
+      colors: isDark ? [
+      '#5c1ac3', // 紫
+      '#e2a03f', // 橙
+      '#e7515a', // 红
+      '#00ab55', // 绿
+      '#4361ee', // 蓝
+      '#f59e0b', // 金黄
+      '#10b981', // 青绿
+      '#ef4444', // 深红
+      '#3b82f6', // 浅蓝
+      '#9333ea', // 深紫
+    ] : [
+      '#e2a03f', // 橙
+      '#5c1ac3', // 紫
+      '#e7515a', // 红
+      '#00ab55', // 绿
+      '#4361ee', // 蓝
+      '#f97316', // 深橙
+      '#14b8a6', // 青绿
+      '#dc2626', // 深红
+      '#2563eb', // 蓝
+      '#7c3aed', // 紫
+    ],
+      series: series,
+    };
 
     // 验证最终的配置对象
-    console.log('Final chart config labels:', this.salesByCategory.labels);
-    console.log('Final chart config series:', this.salesByCategory.series);
+  console.log('Final chart config labels:', this.salesByCategory.labels);
+  console.log('Final chart config series:', this.salesByCategory.series);
 
     // 确保 series 是数字数组
-    if (!Array.isArray(this.salesByCategory.series) ||
-        this.salesByCategory.series.some((val: any) => typeof val !== 'number')) {
+  if (!Array.isArray(this.salesByCategory.series) ||
+    this.salesByCategory.series.some((val: number) => typeof val !== 'number')) {
       console.error('Invalid series data for ApexCharts:', this.salesByCategory.series);
       // 使用默认数据
       this.initDefaultServiceNameChart();
@@ -689,8 +763,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     // 确保 labels 是字符串数组
-    if (!Array.isArray(this.salesByCategory.labels) ||
-        this.salesByCategory.labels.some((val: any) => typeof val !== 'string')) {
+  if (!Array.isArray(this.salesByCategory.labels) ||
+    this.salesByCategory.labels.some((val: string) => typeof val !== 'string')) {
       console.error('Invalid labels data for ApexCharts:', this.salesByCategory.labels);
       // 使用默认数据
       this.initDefaultServiceNameChart();
@@ -705,62 +779,62 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const defaultSeries = [2803, 1900, 1245, 850, 750, 650, 1100, 950, 400, 300];
 
     this.salesByCategory = {
-        chart: {
-            type: 'donut',
-            height: 460,
-            fontFamily: 'Nunito, sans-serif',
-        },
-        dataLabels: { enabled: false },
-        stroke: {
-            show: true,
-            width: 2,
-            colors: [isDark ? '#0e1726' : '#fff'], // ✅ 改成数组
-        },
-        legend: {
-            position: 'bottom',
-            horizontalAlign: 'center',
-            fontSize: '14px',
-            markers: { width: 5, height: 5, offsetX: -2 },
-            height: 80,
-            offsetY: 10,
-            itemMargin: { horizontal: 10, vertical: 8 },
-        },
-        plotOptions: {
-            pie: {
-            donut: {
-                size: '65%',
-                background: 'transparent',
-                labels: {
+      chart: {
+        type: 'donut',
+        height: 460,
+        fontFamily: 'Nunito, sans-serif',
+      },
+      dataLabels: { enabled: false },
+      stroke: {
+        show: true,
+        width: 2,
+        colors: [isDark ? '#0e1726' : '#fff'],
+      },
+      legend: {
+        position: 'bottom',
+        horizontalAlign: 'center',
+        fontSize: '14px',
+        markers: { width: 5, height: 5, offsetX: -2 },
+        height: 80,
+        offsetY: 10,
+        itemMargin: { horizontal: 10, vertical: 8 },
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '65%',
+            background: 'transparent',
+            labels: {
+              show: true,
+              name: { show: true, fontSize: '29px', offsetY: -10 },
+              value: {
                 show: true,
-                name: { show: true, fontSize: '29px', offsetY: -10 },
-                value: {
-                    show: true,
-                    fontSize: '26px',
-                    color: isDark ? '#bfc9d4' : undefined,
-                    offsetY: 16,
-                    formatter: (val: any) => val,
-                },
-                total: {
-                    show: true,
-                    label: this.translate.instant('Total'),
-                    color: '#888ea8',
-                    fontSize: '29px',
-                    formatter: (w: any) =>
-                    w.globals.seriesTotals.reduce((a: any, b: any) => a + b, 0),
-                },
-                },
+                fontSize: '26px',
+                color: isDark ? '#bfc9d4' : undefined,
+                offsetY: 16,
+                formatter: (val: number) => String(val),
+              },
+              total: {
+                show: true,
+                label: this.translate.instant('Total'),
+                color: '#888ea8',
+                fontSize: '29px',
+                formatter: (w: any) => w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0),
+              },
             },
-            },
+          },
         },
-        states: {
-            hover: { filter: { type: 'none', value: 0.15 } },
-            active: { filter: { type: 'none', value: 0.15 } },
-        },
-        labels: defaultLabels,
-        colors: isDark ? ['#5c1ac3', '#e2a03f', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f']
-            : ['#e2a03f', '#5c1ac3', '#e7515a', '#00ab55', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f'],
-        series: defaultSeries,
-        };
+      },
+      states: {
+        hover: { filter: { type: 'none', value: 0.15 } },
+        active: { filter: { type: 'none', value: 0.15 } },
+      },
+      labels: defaultLabels,
+      colors: isDark
+        ? ['#5c1ac3', '#e2a03f', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f']
+        : ['#e2a03f', '#5c1ac3', '#e7515a', '#00ab55', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f'],
+      series: defaultSeries,
+    };
   }
 
   updateBandwidthChartTheme() {
@@ -987,8 +1061,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   initCharts() {
-    const isDark = this.store.theme === 'dark' || this.store.isDarkMode ? true : false;
-    const isRtl = this.store.rtlClass === 'rtl' ? true : false;
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+    const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
 
     // 如果还没有 revenueChart 数据（即带宽数据），则初始化默认的带宽图表
     if (!this.revenueChart) {
@@ -2004,7 +2078,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       ],
     };
 
-    this.tcpTrending = {
+    if (!this.tcpTrending) {
+      this.tcpTrending = {
       chart: {
         height: 350,
         type: 'area',
@@ -2196,6 +2271,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         },
       ],
     };
+    }
   }
 
 }

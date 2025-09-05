@@ -79,6 +79,19 @@ public class ElasticsearchController {
         return result;
     }
 
+    @GetMapping("/network-protocol-trends")
+    @Operation(summary = "查询网络协议趋势", description = "从conn-realtime索引根据protoName统计时间序列趋势，时间参数使用毫秒时间戳")
+    public Map<String, List<TrendingData>> getNetworkProtocolTrends(
+            @RequestParam Long startTime,
+            @RequestParam Long endTime,
+            @RequestParam(defaultValue = "1h") String interval
+    ) throws IOException {
+        log.info("Received network protocol trends request - startTime: {}, endTime: {}, interval: {}", startTime, endTime, interval);
+        Map<String, List<TrendingData>> result = elasticsearchSyncService.getConnProtocolNameTrends(startTime, endTime, interval);
+        log.info("Returning network protocol trends with {} protocols", result.size());
+        return result;
+    }
+
     @GetMapping("/service-name-aggregation")
     @Operation(summary = "查询服务名称聚合数据", description = "获取conn-realtime索引中serviceName字段的Top N聚合统计数据")
     public Map<String, Object> getServiceNameAggregation(

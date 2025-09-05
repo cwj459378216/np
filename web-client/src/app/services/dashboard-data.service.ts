@@ -14,6 +14,10 @@ export interface ProtocolTrendsResponse {
   Others: TrendingData[];
 }
 
+export interface NetworkProtocolTrendsResponse {
+  [proto: string]: TrendingData[];
+}
+
 export interface BandwidthData {
   timestamp: number;
   bps: number;
@@ -125,6 +129,19 @@ export class DashboardDataService {
 
     console.log('Fetching protocol trends with params:', { startTime, endTime, interval });
     return this.http.get<ProtocolTrendsResponse>(`${this.apiUrl}/protocol-trends`, { params });
+  }
+
+  /**
+   * 获取基于 conn-realtime 按 protoName 聚合的网络协议趋势
+   */
+  getNetworkProtocolTrends(startTime: number, endTime: number, interval: string = '1h'): Observable<NetworkProtocolTrendsResponse> {
+    const params = new HttpParams()
+      .set('startTime', startTime.toString())
+      .set('endTime', endTime.toString())
+      .set('interval', interval);
+
+    console.log('Fetching network protocol trends with params:', { startTime, endTime, interval });
+    return this.http.get<NetworkProtocolTrendsResponse>(`${this.apiUrl}/network-protocol-trends`, { params });
   }
 
   /**

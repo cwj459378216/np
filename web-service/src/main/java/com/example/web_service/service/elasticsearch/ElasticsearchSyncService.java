@@ -5,8 +5,6 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval;
-import co.elastic.clients.elasticsearch._types.aggregations.StringTermsAggregate;
-import co.elastic.clients.elasticsearch._types.aggregations.LongTermsAggregate;
 import co.elastic.clients.util.NamedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -379,6 +377,87 @@ public class ElasticsearchSyncService {
         }
         
         log.info("Bandwidth trends result contains {} channels", result.size());
+        return result;
+    }
+
+    /**
+     * 从 conn-realtime 索引聚合 protoName 的时间序列趋势
+     */
+    public Map<String, List<TrendingData>> getConnProtocolNameTrends(Long startTime, Long endTime, String interval) throws IOException {
+        // 将时间戳转换为ISO字符串格式
+        String startTimeStr = java.time.Instant.ofEpochMilli(startTime).toString();
+        String endTimeStr = java.time.Instant.ofEpochMilli(endTime).toString();
+
+        // 仅时间范围过滤
+        var rangeQuery = new Query.Builder()
+            .range(r -> r
+                .field("timestamp")
+                .gte(JsonData.of(startTimeStr))
+                .lte(JsonData.of(endTimeStr))
+            );
+
+        var query = Query.of(q -> q
+            .bool(b -> b
+                .must(rangeQuery.build())
+            )
+        );
+
+        // 构建 date_histogram + terms 子聚合
+        var searchRequest = SearchRequest.of(s -> s
+            .index("conn-realtime")
+            .size(0)
+            .query(query)
+            .aggregations("trend", a -> a
+                .dateHistogram(h -> h
+                    .field("timestamp")
+                    .calendarInterval(parseInterval(interval))
+                    .format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+                )
+                .aggregations("by_proto", t -> t
+                    .terms(tt -> tt
+                        .field("protoName")
+                        .size(20)
+                    )
+                )
+            )
+        );
+
+        log.info("Conn protocol trends request: start={}, end={}, interval={}", startTimeStr, endTimeStr, interval);
+        var response = esClient.search(searchRequest, Void.class);
+
+        Map<String, java.util.Map<Long, Long>> seriesMap = new java.util.HashMap<>();
+
+        var trendAgg = response.aggregations().get("trend");
+        if (trendAgg == null || trendAgg.dateHistogram() == null) {
+            return java.util.Collections.emptyMap();
+        }
+
+        var buckets = trendAgg.dateHistogram().buckets().array();
+
+        for (var bucket : buckets) {
+            long ts = bucket.key();
+            var protoAgg = bucket.aggregations().get("by_proto");
+            if (protoAgg == null || protoAgg.sterms() == null) continue;
+            var protoBuckets = protoAgg.sterms().buckets().array();
+            for (var pb : protoBuckets) {
+                String proto = pb.key().stringValue();
+                long count = pb.docCount();
+                seriesMap.computeIfAbsent(proto, k -> new java.util.HashMap<>()).put(ts, count);
+            }
+        }
+
+        // 转换为 Map<String, List<TrendingData>> 并按时间排序
+        Map<String, List<TrendingData>> result = new java.util.HashMap<>();
+        for (var entry : seriesMap.entrySet()) {
+            String proto = entry.getKey();
+            var tsMap = entry.getValue();
+            var list = tsMap.entrySet().stream()
+                .sorted(java.util.Map.Entry.comparingByKey())
+                .map(e -> new TrendingData(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
+            result.put(proto.toUpperCase(), list);
+        }
+
         return result;
     }
 

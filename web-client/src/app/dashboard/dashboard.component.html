@@ -302,7 +302,7 @@
             </div>
           </div>
         </div>
-        <p class="text-lg dark:text-white-light/90">{{ 'Flow Count' | translate }}<span class="ml-2 text-primary">1,532,000</span></p>
+  <p class="text-lg dark:text-white-light/90">{{ 'Flow Count' | translate }}<span class="ml-2 text-primary">{{ networkProtocolFlowCount | number }}</span></p>
         <div class="relative overflow-hidden">
           <apx-chart [series]="tcpTrending.series" [chart]="tcpTrending.chart"
             [dataLabels]="tcpTrending.dataLabels" [stroke]="tcpTrending.stroke"
