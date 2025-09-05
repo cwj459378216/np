@@ -82,16 +82,31 @@ public class ElasticsearchSyncService {
     }
 
     private CalendarInterval parseInterval(String interval) {
-        return switch (interval.toUpperCase()) {
-            case "MINUTE", "1MIN" -> CalendarInterval.Minute;
-            case "HOUR", "1H" -> CalendarInterval.Hour;
-            case "DAY", "1D" -> CalendarInterval.Day;
-            case "WEEK", "1W" -> CalendarInterval.Week;
-            case "MONTH", "1MON" -> CalendarInterval.Month;
-            case "QUARTER", "1Q" -> CalendarInterval.Quarter;
-            case "YEAR", "1Y" -> CalendarInterval.Year;
-            default -> CalendarInterval.Hour;  // 默认使用小时
-        };
+        switch (interval.toUpperCase()) {
+            case "MINUTE":
+            case "1MIN":
+                return CalendarInterval.Minute;
+            case "HOUR":
+            case "1H":
+                return CalendarInterval.Hour;
+            case "DAY":
+            case "1D":
+                return CalendarInterval.Day;
+            case "WEEK":
+            case "1W":
+                return CalendarInterval.Week;
+            case "MONTH":
+            case "1MON":
+                return CalendarInterval.Month;
+            case "QUARTER":
+            case "1Q":
+                return CalendarInterval.Quarter;
+            case "YEAR":
+            case "1Y":
+                return CalendarInterval.Year;
+            default:
+                return CalendarInterval.Hour;  // 默认使用小时
+        }
     }
 
     public List<TrendingData> getTrending(String startTime, String endTime, String filePath, String index, String interval) throws IOException {

@@ -24,14 +24,14 @@
             <div class="w-full flex-initial px-3">
               <div class="w-summary-info mb-1 flex justify-between font-semibold text-white-dark">
                 <h6>{{ 'CPU' | translate }}</h6>
-                <p class="text-xs ltr:ml-auto rtl:mr-auto">65%</p>
+                <p class="text-xs ltr:ml-auto rtl:mr-auto">{{ cpuUsage | number:'1.0-0' }}%</p>
               </div>
               <div>
                 <div
                   class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
                   <div
                     class="relative h-full w-full rounded-full bg-gradient-to-r from-[#009ffd] to-[#2a2a72] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
-                    style="width: 65%"></div>
+                    [style.width.%]="cpuUsage"></div>
                 </div>
               </div>
             </div>
@@ -46,14 +46,14 @@
             <div class="w-full flex-initial px-3">
               <div class="w-summary-info mb-1 flex justify-between font-semibold text-white-dark">
                 <h6>{{ 'Memory' | translate }}</h6>
-                <p class="text-xs ltr:ml-auto rtl:mr-auto">40%</p>
+                <p class="text-xs ltr:ml-auto rtl:mr-auto">{{ memoryUsage | number:'1.0-0' }}%</p>
               </div>
               <div>
                 <div
                   class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
                   <div
                     class="relative h-full w-full rounded-full bg-gradient-to-r from-[#a71d31] to-[#3f0d12] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
-                    style="width: 40%"></div>
+                    [style.width.%]="memoryUsage"></div>
                 </div>
               </div>
             </div>
@@ -68,14 +68,14 @@
             <div class="w-full flex-initial px-3">
               <div class="w-summary-info mb-1 flex justify-between font-semibold text-white-dark">
                 <h6>{{ 'Disk' | translate }}</h6>
-                <p class="text-xs ltr:ml-auto rtl:mr-auto">25%</p>
+                <p class="text-xs ltr:ml-auto rtl:mr-auto">{{ diskUsage | number:'1.0-0' }}%</p>
               </div>
               <div>
                 <div
                   class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
                   <div
                     class="relative h-full w-full rounded-full bg-gradient-to-r from-[#fe5f75] to-[#fc9842] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
-                    style="width: 25%"></div>
+                    [style.width.%]="diskUsage"></div>
                 </div>
               </div>
             </div>
@@ -106,17 +106,17 @@
         </div>
         <p class="text-lg dark:text-white-light/90"> {{ 'Average bandwidth' | translate }}<span class="ml-2 text-primary">{{ averageBandwidth | number:'1.0-1' }}%</span></p>
         <div class="relative overflow-hidden">
-          <apx-chart [series]="revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
+          <apx-chart *ngIf="revenueChart" [series]="revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
             [stroke]="revenueChart.stroke" [colors]="revenueChart.colors" [markers]="revenueChart.markers"
             [labels]="revenueChart.labels" [xaxis]="revenueChart.xaxis" [yaxis]="revenueChart.yaxis"
             [grid]="revenueChart.grid" [legend]="revenueChart.legend" [tooltip]="revenueChart.tooltip"
             [fill]="revenueChart.fill" class="rounded-lg bg-white dark:bg-black">
-            <!-- loader -->
-            <div class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
-              <span
-                class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
-            </div>
           </apx-chart>
+          <!-- loader -->
+          <div *ngIf="!revenueChart" class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+            <span
+              class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+          </div>
         </div>
       </div>
     </div>

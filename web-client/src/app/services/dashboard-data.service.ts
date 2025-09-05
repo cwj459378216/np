@@ -34,11 +34,50 @@ export interface BandwidthTrendsResponse {
   [key: string]: TrendingData[]; // 动态的channel，如 channel0, channel1, channel2 等
 }
 
+export interface SystemInfo {
+  cpu: {
+    usage: number; // CPU使用率百分比
+    cores: number; // CPU核心数
+    model: string; // CPU型号
+  };
+  memory: {
+    usage: number; // 内存使用率百分比
+    total: number; // 总内存 (GB)
+    used: number; // 已使用内存 (GB)
+    free: number; // 空闲内存 (GB)
+  };
+  disk: {
+    usage: number; // 磁盘使用率百分比
+    total: number; // 总磁盘空间 (GB)
+    used: number; // 已使用磁盘空间 (GB)
+    free: number; // 空闲磁盘空间 (GB)
+  };
+  network: {
+    interfaces: NetworkInterface[];
+  };
+  system: {
+    hostname: string;
+    platform: string;
+    release: string;
+    uptime: number; // 系统运行时间（秒）
+  };
+}
+
+export interface NetworkInterface {
+  name: string;
+  address: string;
+  netmask: string;
+  family: string;
+  mac: string;
+  internal: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardDataService {
   private apiUrl = `${environment.apiUrl}/es`;
+  private systemApiUrl = `${environment.apiUrl}/system`;
 
   constructor(private http: HttpClient) { }
 
@@ -153,5 +192,13 @@ export class DashboardDataService {
 
     console.log('Searching ES data with keyword:', keyword);
     return this.http.get<any[]>(`${this.apiUrl}/search`, { params });
+  }
+
+  /**
+   * 获取系统信息
+   * @returns Observable<SystemInfo>
+   */
+  getSystemInfo(): Observable<SystemInfo> {
+    return this.http.get<SystemInfo>(`${this.systemApiUrl}/info`);
   }
 }

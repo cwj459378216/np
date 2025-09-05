@@ -1,15 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { an } from '@fullcalendar/core/internal-common';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { DashboardDataService, ProtocolTrendsResponse, TrendingData, BandwidthTrendsResponse } from '../services/dashboard-data.service';
+import { DashboardDataService, ProtocolTrendsResponse, TrendingData, BandwidthTrendsResponse, SystemInfo } from '../services/dashboard-data.service';
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   store: any;
   totalVisit: any;
   paidVisit: any;
@@ -29,6 +29,15 @@ export class DashboardComponent implements OnInit {
   totalFlowCount: number = 0; // 新增属性存储总流量计数
   averageBandwidth: number = 0; // 新增属性存储平均带宽利用率
 
+  // 系统信息属性
+  systemInfo: SystemInfo | null = null;
+  cpuUsage: number = 0;
+  memoryUsage: number = 0;
+  diskUsage: number = 0;
+
+  // 定时器
+  private systemInfoInterval: any;
+
   constructor(public storeData: Store<any>, private dashboardDataService: DashboardDataService, private translate: TranslateService) {
     this.initStore();
     this.isLoading = false;
@@ -37,6 +46,18 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loadProtocolTrendsData();
     this.loadBandwidthData();
+    this.loadSystemInfo();
+
+    // 每30秒更新一次系统信息
+    this.systemInfoInterval = setInterval(() => {
+      this.loadSystemInfo();
+    }, 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.systemInfoInterval) {
+      clearInterval(this.systemInfoInterval);
+    }
   }
 
   async initStore() {
@@ -53,11 +74,38 @@ export class DashboardComponent implements OnInit {
         if (hasChangeTheme || hasChangeLayout || hasChangeMenu || hasChangeSidebar) {
           if (this.isLoading || hasChangeTheme) {
             this.initCharts(); //init charts
+            // 如果已有带宽数据，在主题切换时重新应用样式
+            if (hasChangeTheme && this.revenueChart && this.revenueChart.series) {
+              this.updateBandwidthChartTheme();
+            }
           } else {
             setTimeout(() => {
               this.initCharts(); // refresh charts
+              // 如果已有带宽数据，在主题切换时重新应用样式
+              if (hasChangeTheme && this.revenueChart && this.revenueChart.series) {
+                this.updateBandwidthChartTheme();
+              }
             }, 300);
           }
+        }
+      });
+  }
+
+  loadSystemInfo() {
+    this.dashboardDataService.getSystemInfo()
+      .subscribe({
+        next: (data: SystemInfo) => {
+          this.systemInfo = data;
+          this.cpuUsage = data.cpu.usage;
+          this.memoryUsage = data.memory.usage;
+          this.diskUsage = data.disk.usage;
+        },
+        error: (error) => {
+          console.error('Error loading system info:', error);
+          // 设置默认值
+          this.cpuUsage = 65;
+          this.memoryUsage = 40;
+          this.diskUsage = 25;
         }
       });
   }
@@ -98,8 +146,8 @@ export class DashboardComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error loading bandwidth data:', error);
-          // 如果API调用失败，使用默认数据
-          this.initCharts();
+          // 如果API调用失败，使用默认带宽数据
+          this.initDefaultBandwidthChart();
         }
       });
   }
@@ -275,18 +323,239 @@ export class DashboardComponent implements OnInit {
     this.initCharts();
   }
 
+  initDefaultBandwidthChart() {
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+    const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
+
+    this.revenueChart = {
+      chart: {
+        height: 200,
+        type: 'area',
+        fontFamily: 'Nunito, sans-serif',
+        zoom: {
+          enabled: false,
+        },
+        toolbar: {
+          show: false,
+        },
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      stroke: {
+        show: true,
+        curve: 'smooth',
+        width: 2,
+        lineCap: 'square',
+      },
+      dropShadow: {
+        enabled: true,
+        opacity: 0.2,
+        blur: 10,
+        left: -7,
+        top: 22,
+      },
+      colors: isDark ? ['#2196f3', '#e7515a'] : ['#1b55e2', '#e7515a'],
+      markers: {
+        size: 6,
+        colors: ['#1b55e2', '#e7515a'],
+        strokeColor: '#fff',
+        strokeWidth: 2,
+        shape: 'circle',
+        hover: {
+          size: 8,
+          sizeOffset: 3,
+        },
+      },
+      xaxis: {
+        type: 'datetime',
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+        crosshairs: {
+          show: true,
+        },
+        labels: {
+          offsetX: isRtl ? 2 : 0,
+          offsetY: 5,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-xaxis-title',
+          },
+          formatter: (value: number) => {
+            const date = new Date(value);
+            const formatter = new Intl.DateTimeFormat('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric'
+            });
+            return formatter.format(date);
+          },
+        },
+      },
+      yaxis: {
+        tickAmount: 5,
+        labels: {
+          formatter: (value: number) => {
+            return parseInt(value * 100 + "") + '%';
+          },
+          offsetX: isRtl ? -30 : -10,
+          offsetY: 0,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-yaxis-title',
+          },
+        },
+        opposite: isRtl ? true : false,
+      },
+      grid: {
+        borderColor: isDark ? '#191e3a' : '#e0e6ed',
+        strokeDashArray: 5,
+        xaxis: {
+          lines: {
+            show: true,
+          },
+        },
+        yaxis: {
+          lines: {
+            show: false,
+          },
+        },
+        padding: {
+          top: 0,
+          right: 20,
+          bottom: 0,
+          left: 0,
+        },
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        fontSize: '16px',
+        markers: {
+          width: 10,
+          height: 10,
+          offsetX: -2,
+        },
+        itemMargin: {
+          horizontal: 10,
+          vertical: 5,
+        },
+      },
+      tooltip: {
+        marker: {
+          show: true,
+        },
+        x: {
+          show: false,
+        },
+      },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          inverseColors: !1,
+          opacityFrom: isDark ? 0.19 : 0.28,
+          opacityTo: 0.05,
+          stops: isDark ? [100, 100] : [45, 100],
+        },
+      },
+      series: [
+        {
+          name: 'Channel 0 Utilization',
+          data: [
+            [1609459200000, 0.1],
+            [1612137600000, 0.2],
+            [1614556800000, 0.5],
+            [1617235200000, 0.8],
+            [1619827200000, 0.3],
+            [1622505600000, 0.6],
+            [1625097600000, 0.5],
+            [1627776000000, 0.9],
+            [1630454400000, 0.7],
+            [1633046400000, 0.4],
+            [1635724800000, 0.8],
+            [1638316800000, 0.6],
+          ],
+        },
+        {
+          name: 'Channel 1 Utilization',
+          data: [
+            [1609459200000, 0.2],
+            [1612137600000, 0.3],
+            [1614556800000, 0.1],
+            [1617235200000, 0.5],
+            [1619827200000, 0.2],
+            [1622505600000, 0.7],
+            [1625097600000, 0.8],
+            [1627776000000, 0.5],
+            [1630454400000, 0.1],
+            [1633046400000, 0.4],
+            [1635724800000, 0.3],
+            [1638316800000, 0.8],
+          ],
+        },
+      ],
+    };
+    // 设置默认平均带宽
+    this.averageBandwidth = 45.5;
+  }
+
   private generateColors(count: number, isDark: boolean): string[] {
     const lightColors = ['#1b55e2', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#5c1ac3', '#2196f3', '#ffbb44'];
     const darkColors = ['#2196f3', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#5c1ac3', '#1b55e2', '#ffbb44'];
-    
+
     const colors = isDark ? darkColors : lightColors;
     const result: string[] = [];
-    
+
     for (let i = 0; i < count; i++) {
       result.push(colors[i % colors.length]);
     }
-    
+
     return result;
+  }
+
+  updateBandwidthChartTheme() {
+    if (!this.revenueChart) return;
+
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+    const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
+
+    // 更新主题相关的配置
+    this.revenueChart = {
+      ...this.revenueChart,
+      colors: this.generateColors(this.revenueChart.series?.length || 2, isDark),
+      grid: {
+        ...this.revenueChart.grid,
+        borderColor: isDark ? '#191e3a' : '#e0e6ed',
+      },
+      fill: {
+        ...this.revenueChart.fill,
+        gradient: {
+          ...this.revenueChart.fill.gradient,
+          opacityFrom: isDark ? 0.19 : 0.28,
+          stops: isDark ? [100, 100] : [45, 100],
+        }
+      },
+      yaxis: {
+        ...this.revenueChart.yaxis,
+        opposite: isRtl ? true : false,
+        labels: {
+          ...this.revenueChart.yaxis.labels,
+          offsetX: isRtl ? -30 : -10,
+        }
+      },
+      xaxis: {
+        ...this.revenueChart.xaxis,
+        labels: {
+          ...this.revenueChart.xaxis.labels,
+          offsetX: isRtl ? 2 : 0,
+        }
+      }
+    };
   }
 
   updateBandwidthChart(data: BandwidthTrendsResponse) {
@@ -311,8 +580,8 @@ export class DashboardComponent implements OnInit {
 
     // 计算平均带宽利用率
     const allUtilizations = Object.values(data).flat().map(item => item.count);
-    this.averageBandwidth = allUtilizations.length > 0 
-      ? allUtilizations.reduce((sum, util) => sum + util, 0) / allUtilizations.length 
+    this.averageBandwidth = allUtilizations.length > 0
+      ? allUtilizations.reduce((sum, util) => sum + util, 0) / allUtilizations.length
       : 0;
 
     this.revenueChart = {
@@ -458,182 +727,12 @@ export class DashboardComponent implements OnInit {
   initCharts() {
     const isDark = this.store.theme === 'dark' || this.store.isDarkMode ? true : false;
     const isRtl = this.store.rtlClass === 'rtl' ? true : false;
-    // revenue
-    this.revenueChart = {
-      chart: {
-        height: 200,
-        type: 'area',
-        fontFamily: 'Nunito, sans-serif',
-        zoom: {
-          enabled: false,
-        },
-        toolbar: {
-          show: false,
-        },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      stroke: {
-        show: true,
-        curve: 'smooth',
-        width: 2,
-        lineCap: 'square',
-      },
-      dropShadow: {
-        enabled: true,
-        opacity: 0.2,
-        blur: 10,
-        left: -7,
-        top: 22,
-      },
-      colors: isDark ? ['#2196f3', '#e7515a'] : ['#1b55e2', '#e7515a'],
-      markers: {
-        size: 6,  // 设置标记的大小
-        colors: ['#1b55e2', '#e7515a'],  // 设置标记的颜色，可以设置为不同的颜色数组
-        strokeColor: '#fff',  // 设置标记的边框颜色
-        strokeWidth: 2,  // 设置边框宽度
-        shape: 'circle',  // 设置标记的形状为圆形
-        hover: {
-          size: 8,  // 鼠标悬停时标记的大小
-          sizeOffset: 3,  // 鼠标悬停时标记的大小偏移
-        },
-      },
-      // labels: ['Jan', 'Feb', 'M  ar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      xaxis: {
-        type: 'datetime',
-        axisBorder: {
-          show: false,
-        },
-        axisTicks: {
-          show: false,
-        },
-        crosshairs: {
-          show: true,
-        },
-        labels: {
-          offsetX: isRtl ? 2 : 0,
-          offsetY: 5,
-          style: {
-            fontSize: '12px',
-            cssClass: 'apexcharts-xaxis-title',
-          },
-          formatter: (value: number) => {
-            // 使用固定格式化的日期
-            const date = new Date(value);
-            const formatter = new Intl.DateTimeFormat('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            });
-            return formatter.format(date); // 返回固定格式
-          },
-        },
-      },
-      yaxis: {
-        tickAmount: 5,
-        labels: {
-          formatter: (value: number) => {
-            return parseInt(value * 100 + "") + '%';
-          },
-          offsetX: isRtl ? -30 : -10,
-          offsetY: 0,
-          style: {
-            fontSize: '12px',
-            cssClass: 'apexcharts-yaxis-title',
-          },
-        },
-        opposite: isRtl ? true : false,
-      },
-      grid: {
-        borderColor: isDark ? '#191e3a' : '#e0e6ed',
-        strokeDashArray: 5,
-        xaxis: {
-          lines: {
-            show: true,
-          },
-        },
-        yaxis: {
-          lines: {
-            show: false,
-          },
-        },
-        padding: {
-          top: 0,
-          right: 20,
-          bottom: 0,
-          left: 0,
-        },
-      },
-      legend: {
-        position: 'top',
-        horizontalAlign: 'right',
-        fontSize: '16px',
-        markers: {
-          width: 10,
-          height: 10,
-          offsetX: -2,
-        },
-        itemMargin: {
-          horizontal: 10,
-          vertical: 5,
-        },
-      },
-      tooltip: {
-        marker: {
-          show: true,
-        },
-        x: {
-          show: false,
-        },
-      },
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shadeIntensity: 1,
-          inverseColors: !1,
-          opacityFrom: isDark ? 0.19 : 0.28,
-          opacityTo: 0.05,
-          stops: isDark ? [100, 100] : [45, 100],
-        },
-      },
-      series: [
-        {
-          name: 'Channel 0 Utilization',
-          data: [
-            [1609459200000, 0.1], // 时间戳，收入
-            [1612137600000, 0.2],
-            [1614556800000, 0.5],
-            [1617235200000, 0.8],
-            [1619827200000, 0.3],
-            [1622505600000, 0.6],
-            [1625097600000, 0.5],
-            [1627776000000, 0.9],
-            [1630454400000, 0.7],
-            [1633046400000, 0.4],
-            [1635724800000, 0.8],
-            [1638316800000, 0.6],
-          ],
-        },
-        {
-          name: 'Channel 1 Utilization',
-          data: [
-            [1609459200000, 0.2], // 时间戳，支出
-            [1612137600000, 0.3],
-            [1614556800000, 0.1],
-            [1617235200000, 0.5],
-            [1619827200000, 0.2],
-            [1622505600000, 0.7],
-            [1625097600000, 0.8],
-            [1627776000000, 0.5],
-            [1630454400000, 0.1],
-            [1633046400000, 0.4],
-            [1635724800000, 0.3],
-            [1638316800000, 0.8],
-          ],
-        },
-      ],
-    };
+
+    // 如果还没有 revenueChart 数据（即带宽数据），则初始化默认的带宽图表
+    if (!this.revenueChart) {
+      this.initDefaultBandwidthChart();
+    }
+
     // statistics
     this.totalVisit = {
       chart: {
