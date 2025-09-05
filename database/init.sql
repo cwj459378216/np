@@ -1,8 +1,3 @@
--- 创建数据库
-CREATE DATABASE data;
-
--- 连接到数据库
-\c data;
 
 -- 创建日志表
 CREATE TABLE system_logs (
@@ -299,7 +294,7 @@ CREATE TABLE rules_policy (
 );
 
 -- 创建 Snort 规则表（替代原 rules 表）
-CREATE TABLE IF NOT EXISTS snort_rules (
+CREATE TABLE IF NOT EXISTS suricata_rules (
     id SERIAL PRIMARY KEY,
     sid INTEGER UNIQUE,
     protocol TEXT,
@@ -317,7 +312,7 @@ CREATE TABLE IF NOT EXISTS snort_rules (
 
 CREATE TABLE policy_rules (
     policy_id INTEGER REFERENCES rules_policy(id),
-    rule_id INTEGER REFERENCES snort_rules(id),
+    rule_id INTEGER REFERENCES suricata_rules(id),
     created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (policy_id, rule_id)
 );
@@ -328,19 +323,19 @@ INSERT INTO rules_policy (name, description, enabled) VALUES
 ('Web Security', 'Web application security policy', true);
 
 -- 示例 Snort 规则数据
-INSERT INTO snort_rules (sid, protocol, direction, src_port, dst_port, msg, classtype, priority, cve, rule, filename)
+INSERT INTO suricata_rules (sid, protocol, direction, src_port, dst_port, msg, classtype, priority, cve, rule, filename)
 VALUES
 (1000001, 'tcp', '->', 'any', '80', 'Custom Web Attack', 'web-application-attack', 1, 'CVE-2023-1234', 'alert tcp any any -> 192.168.1.0/24 80 (msg:"Custom Web Attack"; sid:1000001; classtype:web-application-attack; priority:1;)', 'local.rules'),
 (1000002, 'udp', '->', '53', 'any', 'Attempted Recon', 'attempted-recon', 2, 'CVE-2023-5678', 'alert udp 10.0.0.0/8 53 -> any any (msg:"Attempted Recon"; sid:1000002; classtype:attempted-recon; priority:2;)', 'local.rules');
 
 -- 若不存在则插入示例规则
-INSERT INTO snort_rules (sid, protocol, direction, src_port, dst_port, msg, classtype, priority, cve, rule, filename)
+INSERT INTO suricata_rules (sid, protocol, direction, src_port, dst_port, msg, classtype, priority, cve, rule, filename)
 SELECT 1000001, 'tcp', '->', 'any', '80', 'Custom Web Attack', 'web-application-attack', 1, 'CVE-2023-1234', 'alert tcp any any -> 192.168.1.0/24 80 (msg:"Custom Web Attack"; sid:1000001; classtype:web-application-attack; priority:1;)', 'local.rules'
-WHERE NOT EXISTS (SELECT 1 FROM snort_rules WHERE sid = 1000001);
+WHERE NOT EXISTS (SELECT 1 FROM suricata_rules WHERE sid = 1000001);
 
-INSERT INTO snort_rules (sid, protocol, direction, src_port, dst_port, msg, classtype, priority, cve, rule, filename)
+INSERT INTO suricata_rules (sid, protocol, direction, src_port, dst_port, msg, classtype, priority, cve, rule, filename)
 SELECT 1000002, 'udp', '->', '53', 'any', 'Attempted Recon', 'attempted-recon', 2, 'CVE-2023-5678', 'alert udp 10.0.0.0/8 53 -> any any (msg:"Attempted Recon"; sid:1000002; classtype:attempted-recon; priority:2;)', 'local.rules'
-WHERE NOT EXISTS (SELECT 1 FROM snort_rules WHERE sid = 1000002);
+WHERE NOT EXISTS (SELECT 1 FROM suricata_rules WHERE sid = 1000002);
 
 -- 创建规则更新配置表
 CREATE TABLE rule_update_config (

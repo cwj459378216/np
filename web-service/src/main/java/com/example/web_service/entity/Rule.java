@@ -5,13 +5,13 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "snort_rules")
+@Table(name = "suricata_rules")
 public class Rule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    // New schema mapping for snort_rules
+    // New schema mapping for suricata_rules
     private Integer sid;                 // unique in DB
     private String protocol;            // TEXT
 

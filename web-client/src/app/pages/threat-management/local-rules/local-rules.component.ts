@@ -25,7 +25,7 @@ export class LocalRulesComponent implements OnInit {
     params!: FormGroup;
     filteredRulesList: LocalRule[] = [];
     searchTerm = '';
-    
+
     categories = ['Custom', 'System', 'Network', 'Security'];
     localRules: LocalRule[] = [];
 
@@ -75,12 +75,12 @@ export class LocalRulesComponent implements OnInit {
 
         this.filteredRulesList = this.localRules.filter((rule) => {
             if (!rule) return false;
-            
+
             const ruleContent = (rule.rule_content || '').toLowerCase();
             const category = (rule.category || '').toLowerCase();
             const searchTerm = (this.searchTerm || '').toLowerCase();
-            
-            return ruleContent.includes(searchTerm) || 
+
+            return ruleContent.includes(searchTerm) ||
                    category.includes(searchTerm);
         });
     }
@@ -107,7 +107,7 @@ export class LocalRulesComponent implements OnInit {
         }
 
         const rule = this.params.value;
-        
+
         if (rule.id) {
             this.localRuleService.updateRule(rule.id, rule).subscribe({
                 next: (updatedRule: LocalRule) => {
@@ -158,6 +158,31 @@ export class LocalRulesComponent implements OnInit {
                         this.showMessage('Failed to delete rule', 'error');
                     }
                 );
+            }
+        });
+    }
+
+    toggleRuleStatus(rule: LocalRule, event: Event) {
+        const input = event.target as HTMLInputElement;
+        const nextStatus: 'Enabled' | 'Disabled' = input.checked ? 'Enabled' : 'Disabled';
+        const prevStatus = rule.status as 'Enabled' | 'Disabled';
+
+        // optimistic UI
+        rule.status = nextStatus;
+
+        this.localRuleService.updateRule(rule.id, { ...rule, status: nextStatus }).subscribe({
+            next: (updatedRule: LocalRule) => {
+                const index = this.localRules.findIndex(r => r.id === updatedRule.id);
+                if (index !== -1) this.localRules[index] = updatedRule;
+                this.searchRules();
+                this.showMessage(
+                    nextStatus === 'Enabled' ? 'Rule enabled successfully.' : 'Rule disabled successfully.'
+                );
+            },
+            error: () => {
+                // rollback
+                rule.status = prevStatus;
+                this.showMessage('Failed to update rule status', 'error');
             }
         });
     }
@@ -220,4 +245,4 @@ export class LocalRulesComponent implements OnInit {
             }
         });
     }
-} 
+}
