@@ -19,7 +19,7 @@
 
                 <a href="javascript:;"
                     class="-mb-[1px] block rounded p-3.5 py-2 !outline-none transition duration-300 hover:bg-primary hover:text-white ltr:mr-2 rtl:ml-2"
-                    [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'profile' }" (click)="tab2 = 'profile'">
+                    [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'profile' }" (click)="setTab('profile')">
                     {{ 'Storage Strategy' | translate }}
                 </a>
 
@@ -495,6 +495,36 @@
                                     </div>
                                 </div>
                             </ng-container>
+                        </div>
+                        <!-- 新增：抓包文件列表表格，显示 /datastore/neteyez/datastore/pcap/capture/ 下的文件 -->
+                        <div class="panel mt-5 overflow-hidden border-0 p-0">
+                            <div class="table-responsive">
+                                <table class="table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ 'File Name' | translate }}</th>
+                                            <th>{{ 'Size' | translate }}</th>
+                                            <th>{{ 'Creation Time' | translate }}</th>
+                                            <th class="!text-center">{{ 'Actions' | translate }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let f of captureFiles">
+                                            <td class="whitespace-nowrap">{{ f.name }}</td>
+                                            <td>{{ f.size | number }}</td>
+                                            <td>{{ f.creationTime | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                                            <td class="!text-center">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" (click)="downloadFile(f)">
+                                                    {{ 'Download' | translate }}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr *ngIf="!captureFiles.length">
+                                            <td colspan="4" class="text-center text-white-dark py-4">{{ 'No Data' | translate }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

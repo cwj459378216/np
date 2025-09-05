@@ -8,7 +8,7 @@ import { Store } from '@ngrx/store';
 import { FileUploadWithPreview } from 'file-upload-with-preview';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
 import { CollectorService } from 'src/app/services/collector.service';
-import { Collector, StorageStrategy, CaptureRequest, CaptureResponse } from '../services/collector.service';
+import { Collector, StorageStrategy, CaptureRequest, CaptureResponse, CaptureFileItem } from '../services/collector.service';
 
 interface ContactList extends Collector {
   role?: string;
@@ -82,6 +82,9 @@ export class CollectorComponent implements OnInit {
   storageParams!: FormGroup;
   storageStrategies: StorageStrategy[] = [];
   private statusPollingMap = new Map<number, any>(); // 存储轮询定时器
+  // 文件列表相关
+  captureFiles: CaptureFileItem[] = [];
+  readonly captureBasePath = '/datastore/neteyez/datastore/pcap/capture/';
   constructor(
     private http: HttpClient,
     public fb: FormBuilder,
@@ -113,6 +116,46 @@ export class CollectorComponent implements OnInit {
 
     this.searchContacts();
     this.loadNetworkInterfaces();
+    // 若默认打开 Storage Strategy 也可触发加载，这里在切换时加载
+  }
+
+  // 处理 tab 切换（模板中直接赋值 tab2，这里监听并在切到 profile 时加载文件）
+  setTab(tab: string) {
+    this.tab2 = tab;
+    if (this.tab2.toLowerCase() === 'profile') {
+      this.loadCaptureFiles();
+    }
+  }
+
+  loadCaptureFiles() {
+    this.collectorService.listCaptureFiles(this.captureBasePath).subscribe({
+      next: (files) => {
+        this.captureFiles = files;
+      },
+      error: (err) => {
+        console.error('Error loading capture files:', err);
+        this.showMessage('Error loading capture files', 'error');
+      }
+    });
+  }
+
+  downloadFile(item: CaptureFileItem) {
+    this.collectorService.downloadCaptureFile(item.name, this.captureBasePath).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = item.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Download failed:', err);
+        this.showMessage('Download failed', 'error');
+      }
+    });
   }
   async initStore() {
     this.storeData

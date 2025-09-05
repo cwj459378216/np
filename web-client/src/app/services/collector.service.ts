@@ -87,6 +87,12 @@ export interface CaptureResponse {
   options: string;
 }
 
+export interface CaptureFileItem {
+  name: string;
+  size: number;
+  creationTime: string; // ISO string from backend
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -173,5 +179,21 @@ export class CollectorService {
 
   updateCollectorSessionId(id: number, sessionId: string): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/collectors/${id}/session`, { sessionId });
+  }
+
+  // Capture files APIs
+  listCaptureFiles(path?: string): Observable<CaptureFileItem[]> {
+    const params: any = {};
+    if (path) params.path = path;
+    return this.http.get<CaptureFileItem[]>(`${this.apiUrl}/capture-files`, { params });
+  }
+
+  downloadCaptureFile(name: string, path?: string): Observable<Blob> {
+    const params: any = {};
+    if (path) params.path = path;
+    return this.http.get(`${this.apiUrl}/capture-files/download/${encodeURIComponent(name)}`, {
+      params,
+      responseType: 'blob'
+    });
   }
 }
