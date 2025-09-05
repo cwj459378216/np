@@ -298,25 +298,26 @@ CREATE TABLE rules_policy (
     updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
--- 创建规则表
-CREATE TABLE rules (
+-- 创建 Snort 规则表（替代原 rules 表）
+CREATE TABLE IF NOT EXISTS snort_rules (
     id SERIAL PRIMARY KEY,
-    sid VARCHAR(50) NOT NULL,
-    protocol VARCHAR(20),
-    source_address VARCHAR(100),
-    source_port VARCHAR(50),
-    destination_address VARCHAR(100),
-    destination_port VARCHAR(50),
-    class_type VARCHAR(100),
-    cve VARCHAR(50),
-    reference TEXT,
-    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+    sid INTEGER UNIQUE,
+    protocol TEXT,
+    direction TEXT,
+    src_port TEXT,
+    dst_port TEXT,
+    msg TEXT,
+    classtype TEXT,
+    priority INTEGER,
+    cve TEXT,
+    rule TEXT,
+    filename TEXT,
+    last_update TIMESTAMP DEFAULT now()
 );
 
--- 创建策略规则关联表
 CREATE TABLE policy_rules (
     policy_id INTEGER REFERENCES rules_policy(id),
-    rule_id INTEGER REFERENCES rules(id),
+    rule_id INTEGER REFERENCES snort_rules(id),
     created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (policy_id, rule_id)
 );
@@ -326,22 +327,20 @@ INSERT INTO rules_policy (name, description, enabled) VALUES
 ('Default Policy', 'Default security policy configuration', true),
 ('Web Security', 'Web application security policy', true);
 
-INSERT INTO rules (sid, protocol, source_address, source_port, destination_address, destination_port, class_type, cve, reference) VALUES
-('1000001', 'TCP', 'any', 'any', '192.168.1.0/24', '80', 'web-application-attack', 'CVE-2023-1234', 'bugtraq,1234'),
-('1000002', 'UDP', '10.0.0.0/8', '53', 'any', 'any', 'attempted-recon', 'CVE-2023-5678', 'url,example.com');
+-- 示例 Snort 规则数据
+INSERT INTO snort_rules (sid, protocol, direction, src_port, dst_port, msg, classtype, priority, cve, rule, filename)
+VALUES
+(1000001, 'tcp', '->', 'any', '80', 'Custom Web Attack', 'web-application-attack', 1, 'CVE-2023-1234', 'alert tcp any any -> 192.168.1.0/24 80 (msg:"Custom Web Attack"; sid:1000001; classtype:web-application-attack; priority:1;)', 'local.rules'),
+(1000002, 'udp', '->', '53', 'any', 'Attempted Recon', 'attempted-recon', 2, 'CVE-2023-5678', 'alert udp 10.0.0.0/8 53 -> any any (msg:"Attempted Recon"; sid:1000002; classtype:attempted-recon; priority:2;)', 'local.rules');
 
--- 检查是否已存在规则
-INSERT INTO rules (sid, protocol, source_address, source_port, destination_address, destination_port, class_type, cve, reference) 
-SELECT '1000001', 'TCP', 'any', 'any', '192.168.1.0/24', '80', 'web-application-attack', 'CVE-2023-1234', 'bugtraq,1234'
-WHERE NOT EXISTS (
-    SELECT 1 FROM rules WHERE sid = '1000001'
-);
+-- 若不存在则插入示例规则
+INSERT INTO snort_rules (sid, protocol, direction, src_port, dst_port, msg, classtype, priority, cve, rule, filename)
+SELECT 1000001, 'tcp', '->', 'any', '80', 'Custom Web Attack', 'web-application-attack', 1, 'CVE-2023-1234', 'alert tcp any any -> 192.168.1.0/24 80 (msg:"Custom Web Attack"; sid:1000001; classtype:web-application-attack; priority:1;)', 'local.rules'
+WHERE NOT EXISTS (SELECT 1 FROM snort_rules WHERE sid = 1000001);
 
-INSERT INTO rules (sid, protocol, source_address, source_port, destination_address, destination_port, class_type, cve, reference)
-SELECT '1000002', 'UDP', '10.0.0.0/8', '53', 'any', 'any', 'attempted-recon', 'CVE-2023-5678', 'url,example.com'
-WHERE NOT EXISTS (
-    SELECT 1 FROM rules WHERE sid = '1000002'
-);
+INSERT INTO snort_rules (sid, protocol, direction, src_port, dst_port, msg, classtype, priority, cve, rule, filename)
+SELECT 1000002, 'udp', '->', '53', 'any', 'Attempted Recon', 'attempted-recon', 2, 'CVE-2023-5678', 'alert udp 10.0.0.0/8 53 -> any any (msg:"Attempted Recon"; sid:1000002; classtype:attempted-recon; priority:2;)', 'local.rules'
+WHERE NOT EXISTS (SELECT 1 FROM snort_rules WHERE sid = 1000002);
 
 -- 创建规则更新配置表
 CREATE TABLE rule_update_config (

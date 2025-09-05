@@ -5,30 +5,38 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "rules")
+@Table(name = "snort_rules")
 public class Rule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    private String sid;
-    private String protocol;
-    
-    @Column(name = "source_address")
-    private String sourceAddress;
-    
-    @Column(name = "source_port")
-    private String sourcePort;
-    
-    @Column(name = "destination_address")
-    private String destinationAddress;
-    
-    @Column(name = "destination_port")
-    private String destinationPort;
-    
-    @Column(name = "class_type")
-    private String classType;
-    
-    private String cve;
-    private String reference;
+    // New schema mapping for snort_rules
+    private Integer sid;                 // unique in DB
+    private String protocol;            // TEXT
+
+    private String direction;           // TEXT, e.g., "->" or "<->"
+
+    @Column(name = "src_port")
+    private String srcPort;             // TEXT
+
+    @Column(name = "dst_port")
+    private String dstPort;             // TEXT
+
+    private String msg;                 // TEXT
+
+    @Column(name = "classtype")
+    private String classType;           // TEXT
+
+    private Integer priority;           // INTEGER
+
+    private String cve;                 // TEXT
+
+    @Column(name = "rule")
+    private String rule;                // TEXT (full snort rule)
+
+    private String filename;            // TEXT
+
+    @Column(name = "last_update")
+    private java.time.LocalDateTime lastUpdate; // TIMESTAMP
 } 

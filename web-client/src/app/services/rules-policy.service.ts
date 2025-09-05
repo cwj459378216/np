@@ -27,13 +27,16 @@ export class RulesPolicyService {
             id: rule.id,
             sid: rule.sid,
             protocol: rule.protocol,
-            sourceAddress: rule.sourceAddress,
-            sourcePort: rule.sourcePort,
-            destinationAddress: rule.destinationAddress,
-            destinationPort: rule.destinationPort,
+            direction: rule.direction,
+            srcPort: rule.srcPort,
+            dstPort: rule.dstPort,
+            msg: rule.msg,
             classType: rule.classType,
+            priority: rule.priority,
             cve: rule.cve,
-            reference: rule.reference
+            rule: rule.rule,
+            filename: rule.filename,
+            lastUpdate: rule.lastUpdate
         }))
     };
     console.log('Creating policy with data:', payload);
@@ -55,4 +58,4 @@ export class RulesPolicyService {
   updatePolicyStatus(id: number, enabled: boolean): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/${id}/status`, { enabled });
   }
-} 
+}

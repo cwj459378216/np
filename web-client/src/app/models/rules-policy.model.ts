@@ -1,14 +1,17 @@
 export interface Rule {
   id: number;
-  sid: string;
+  sid: number;
   protocol: string;
-  sourceAddress: string;
-  sourcePort: string;
-  destinationAddress: string;
-  destinationPort: string;
-  classType: string;
+  direction: string;
+  srcPort: string;
+  dstPort: string;
+  msg: string;
+  classType: string; // maps to classtype in DB
+  priority: number;
   cve: string;
-  reference: string;
+  rule: string;      // full snort rule text
+  filename: string;
+  lastUpdate?: string;
 }
 
 export interface RulesPolicy {
@@ -17,4 +20,4 @@ export interface RulesPolicy {
   description?: string;
   enabled: boolean;
   rules: Rule[];
-} 
+}

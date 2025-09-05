@@ -16,7 +16,7 @@ export class RulesPolicyComponent implements AfterViewInit {
     if (dt) {
       console.log('Datatable initialized:', dt);
       this._datatable = dt;
-      
+
       if (this.pendingEditPolicy) {
         console.log('Processing pending edit policy:', this.pendingEditPolicy);
         this.initDatatableSelection(this.pendingEditPolicy);
@@ -28,27 +28,28 @@ export class RulesPolicyComponent implements AfterViewInit {
   private pendingEditPolicy: RulesPolicy | undefined;
   private isInitializing: boolean = false;
   selectedAll: boolean = false;
-  
+
   searchTerm = '';
   policyForm: FormGroup;
   selectedRules: Rule[] = [];
   availableRules: Rule[] = [];
   policies: RulesPolicy[] = [];
-  
+
   // 修改表格列配置
   ruleColumns = [
     { field: 'id', title: 'ID', visible: false },
     { field: 'sid', title: 'SID' },
     { field: 'protocol', title: 'Protocol' },
-    { field: 'sourceAddress', title: 'Src.IP' },
-    { field: 'sourcePort', title: 'Src.Port' },
-    { field: 'destinationAddress', title: 'Dst.IP' },
-    { field: 'destinationPort', title: 'Dst.Port' },
+    { field: 'direction', title: 'Direction' },
+    { field: 'srcPort', title: 'Src.Port' },
+    { field: 'dstPort', title: 'Dst.Port' },
+    { field: 'msg', title: 'Message' },
     { field: 'classType', title: 'ClassType' },
+    { field: 'priority', title: 'Priority' },
     { field: 'cve', title: 'CVE' },
-    { field: 'reference', title: 'Reference' }
+    { field: 'filename', title: 'File' }
   ];
-  
+
   // 添加策略规则数据
   /*
   policyRules = [
@@ -198,8 +199,8 @@ export class RulesPolicyComponent implements AfterViewInit {
     if (policy) {
       console.log('Handling edit mode with policy:', policy);
       const rows = this._datatable.rows;
-      
-      this.selectedRules = this.selectedRules.filter(selected => 
+
+      this.selectedRules = this.selectedRules.filter(selected =>
         rows.some((row: Rule) => row.id === selected.id)
       );
 
@@ -258,7 +259,7 @@ export class RulesPolicyComponent implements AfterViewInit {
   toggleStatus(id: number, event: Event): void {
     const target = event.target as HTMLInputElement;
     const checked = target.checked;
-    
+
     // 找到要更新的策略
     const policyToUpdate = this.policies.find(p => p.id === id);
     if (!policyToUpdate) {
@@ -298,7 +299,7 @@ export class RulesPolicyComponent implements AfterViewInit {
   onSelectedRulesChange(event: any): void {
     console.log('Selected rows:', event);
     this.selectedRules = event;
-    
+
     if (this._datatable) {
       const totalRows = this._datatable.rows?.length || this.availableRules.length;
       this._datatable.selectedAll = this.selectedRules.length === totalRows;
@@ -310,18 +311,18 @@ export class RulesPolicyComponent implements AfterViewInit {
       const formData = this.policyForm.value;
       console.log('Form data before save:', formData);
       console.log('Selected rules before save:', this.selectedRules);
-      
-      const policy = {
+
+    const policy = {
         ...formData,
         enabled: false,
         rules: this.selectedRules.map(rule => ({
-          id: rule.id,
-          sid: rule.sid
+      id: rule.id,
+      sid: rule.sid
         }))
       };
-      
+
       console.log('Final policy data:', policy);
-      
+
       this.rulesPolicyService.createPolicy(policy).subscribe(
         (response) => {
           console.log('Created policy:', response);
@@ -351,27 +352,29 @@ export class RulesPolicyComponent implements AfterViewInit {
                     <tr>
                         <th>SID</th>
                         <th>Protocol</th>
-                        <th>Src.IP</th>
+                        <th>Direction</th>
                         <th>Src.Port</th>
-                        <th>Dst.IP</th>
                         <th>Dst.Port</th>
+                        <th>Message</th>
                         <th>ClassType</th>
+                        <th>Priority</th>
                         <th>CVE</th>
-                        <th>Reference</th>
+                        <th>File</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${rules.map(rule => `
                         <tr>
-                            <td>${rule.sid || ''}</td>
-                            <td>${rule.protocol || ''}</td>
-                            <td>${rule.sourceAddress || ''}</td>
-                            <td>${rule.sourcePort || ''}</td>
-                            <td>${rule.destinationAddress || ''}</td>
-                            <td>${rule.destinationPort || ''}</td>
-                            <td>${rule.classType || ''}</td>
-                            <td>${rule.cve || ''}</td>
-                            <td>${rule.reference || ''}</td>
+                            <td>${rule.sid ?? ''}</td>
+                            <td>${rule.protocol ?? ''}</td>
+                            <td>${rule.direction ?? ''}</td>
+                            <td>${rule.srcPort ?? ''}</td>
+                            <td>${rule.dstPort ?? ''}</td>
+                            <td>${rule.msg ?? ''}</td>
+                            <td>${rule.classType ?? ''}</td>
+                            <td>${rule.priority ?? ''}</td>
+                            <td>${rule.cve ?? ''}</td>
+                            <td>${rule.filename ?? ''}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -398,7 +401,7 @@ export class RulesPolicyComponent implements AfterViewInit {
         enabled: [false]
     });
     this.selectedRules = [];
-    
+
     // 清除所有选中状态
     this.availableRules = this.availableRules.map(rule => ({
         ...rule,
@@ -426,4 +429,4 @@ export class RulesPolicyComponent implements AfterViewInit {
       padding: '10px 20px',
     });
   }
-} 
+}
