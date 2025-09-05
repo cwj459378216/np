@@ -34,6 +34,18 @@ export interface BandwidthTrendsResponse {
   [key: string]: TrendingData[]; // 动态的channel，如 channel0, channel1, channel2 等
 }
 
+export interface ServiceNameAggregationItem {
+  serviceName: string;
+  count: number;
+  rank: number;
+}
+
+export interface ServiceNameAggregationResponse {
+  data: ServiceNameAggregationItem[];
+  total: number;
+  field?: string;
+}
+
 export interface SystemInfo {
   cpu: {
     usage: number; // CPU使用率百分比
@@ -200,5 +212,18 @@ export class DashboardDataService {
    */
   getSystemInfo(): Observable<SystemInfo> {
     return this.http.get<SystemInfo>(`${this.systemApiUrl}/info`);
+  }
+
+  /**
+   * 获取serviceName聚合统计数据
+   * @param topN 返回Top N的数据条数 (默认: 10)
+   * @returns Observable<ServiceNameAggregationResponse>
+   */
+  getServiceNameAggregation(topN: number = 10): Observable<ServiceNameAggregationResponse> {
+    const params = new HttpParams()
+      .set('topN', topN.toString());
+
+    console.log('Fetching serviceName aggregation with topN:', topN);
+    return this.http.get<ServiceNameAggregationResponse>(`${this.apiUrl}/service-name-aggregation`, { params });
   }
 }

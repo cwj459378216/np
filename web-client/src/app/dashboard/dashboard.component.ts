@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { an } from '@fullcalendar/core/internal-common';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { DashboardDataService, ProtocolTrendsResponse, TrendingData, BandwidthTrendsResponse, SystemInfo } from '../services/dashboard-data.service';
+import { DashboardDataService, ProtocolTrendsResponse, TrendingData, BandwidthTrendsResponse, SystemInfo, ServiceNameAggregationResponse } from '../services/dashboard-data.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -35,6 +35,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   memoryUsage: number = 0;
   diskUsage: number = 0;
 
+  // ServiceName聚合数据属性
+  serviceNameData: ServiceNameAggregationResponse | null = null;
+
+  // 缓存带宽数据属性
+  private cachedBandwidthData: BandwidthTrendsResponse | null = null;
+
   // 定时器
   private systemInfoInterval: any;
 
@@ -47,6 +53,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadProtocolTrendsData();
     this.loadBandwidthData();
     this.loadSystemInfo();
+    this.loadServiceNameData();
 
     // 每30秒更新一次系统信息
     this.systemInfoInterval = setInterval(() => {
@@ -75,15 +82,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
           if (this.isLoading || hasChangeTheme) {
             this.initCharts(); //init charts
             // 如果已有带宽数据，在主题切换时重新应用样式
-            if (hasChangeTheme && this.revenueChart && this.revenueChart.series) {
-              this.updateBandwidthChartTheme();
+            if (hasChangeTheme && this.cachedBandwidthData) {
+              this.updateBandwidthChart(this.cachedBandwidthData);
+            }
+            // 如果已有ServiceName数据，在主题切换时重新应用样式
+            if (hasChangeTheme && this.serviceNameData) {
+              this.updateServiceNameChart(this.serviceNameData);
             }
           } else {
             setTimeout(() => {
               this.initCharts(); // refresh charts
               // 如果已有带宽数据，在主题切换时重新应用样式
-              if (hasChangeTheme && this.revenueChart && this.revenueChart.series) {
-                this.updateBandwidthChartTheme();
+              if (hasChangeTheme && this.cachedBandwidthData) {
+                this.updateBandwidthChart(this.cachedBandwidthData);
+              }
+              // 如果已有ServiceName数据，在主题切换时重新应用样式
+              if (hasChangeTheme && this.serviceNameData) {
+                this.updateServiceNameChart(this.serviceNameData);
               }
             }, 300);
           }
@@ -142,12 +157,37 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dashboardDataService.getBandwidthTrends(startTimeTimestamp, endTimeTimestamp, '1h')
       .subscribe({
         next: (data: BandwidthTrendsResponse) => {
+          this.cachedBandwidthData = data; // 缓存数据
           this.updateBandwidthChart(data);
         },
         error: (error) => {
           console.error('Error loading bandwidth data:', error);
           // 如果API调用失败，使用默认带宽数据
           this.initDefaultBandwidthChart();
+        }
+      });
+  }
+
+  loadServiceNameData() {
+    console.log('Loading service name data...');
+    this.dashboardDataService.getServiceNameAggregation(10)
+      .subscribe({
+        next: (data: ServiceNameAggregationResponse) => {
+          console.log('Service name data received:', data);
+          this.serviceNameData = data;
+          try {
+            this.updateServiceNameChart(data);
+            console.log('Service name chart updated');
+          } catch (error) {
+            console.error('Error updating service name chart:', error);
+            // 如果图表更新失败，使用默认数据
+            this.initDefaultServiceNameChart();
+          }
+        },
+        error: (error) => {
+          console.error('Error loading service name data:', error);
+          // 如果API调用失败，使用默认数据
+          this.initDefaultServiceNameChart();
         }
       });
   }
@@ -518,6 +558,211 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return result;
   }
 
+  updateServiceNameChart(data: ServiceNameAggregationResponse) {
+    console.log('Updating service name chart with data:', data);
+
+    // 数据验证
+    if (!data || !data.data || !Array.isArray(data.data)) {
+      console.error('Invalid service name data:', data);
+      this.initDefaultServiceNameChart();
+      return;
+    }
+
+    // 检查数据是否为空
+    if (data.data.length === 0) {
+      console.warn('Empty service name data received, using default chart');
+      this.initDefaultServiceNameChart();
+      return;
+    }
+
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+
+    // 提取数据为ApexCharts格式
+    const labels = data.data.map(item => {
+      if (!item || typeof item.serviceName !== 'string') {
+        console.warn('Invalid service name item:', item);
+        return 'Unknown';
+      }
+      return item.serviceName;
+    });
+
+    const series = data.data.map(item => {
+      if (!item || typeof item.count !== 'number') {
+        console.warn('Invalid count item:', item);
+        return 0;
+      }
+      // 确保返回的是数字类型
+      return Number(item.count);
+    });
+
+    console.log('Chart labels:', labels);
+    console.log('Chart series:', series);
+
+    // 验证数据长度匹配
+    if (labels.length !== series.length) {
+      console.error('Labels and series length mismatch:', {
+        labelsLength: labels.length,
+        seriesLength: series.length,
+        labels,
+        series
+      });
+      this.initDefaultServiceNameChart();
+      return;
+    }
+
+    // 验证数据不为空
+    if (labels.length === 0 || series.length === 0) {
+      console.warn('Empty data received, using default chart');
+      this.initDefaultServiceNameChart();
+      return;
+    }
+
+    this.salesByCategory = {
+        chart: {
+            type: 'donut',
+            height: 520,
+            fontFamily: 'Nunito, sans-serif',
+        },
+        dataLabels: { enabled: false },
+        stroke: {
+            show: true,
+            width: 2,
+            colors: [isDark ? '#0e1726' : '#fff'], // ✅ 改成数组
+        },
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            fontSize: '14px',
+            markers: { width: 5, height: 5, offsetX: -2 },
+            height: 80,
+            offsetY: 10,
+            itemMargin: { horizontal: 10, vertical: 8 },
+        },
+        plotOptions: {
+            pie: {
+            donut: {
+                size: '65%',
+                background: 'transparent',
+                labels: {
+                show: true,
+                name: { show: true, fontSize: '29px', offsetY: -10 },
+                value: {
+                    show: true,
+                    fontSize: '26px',
+                    color: isDark ? '#bfc9d4' : undefined,
+                    offsetY: 16,
+                    formatter: (val: any) => val,
+                },
+                total: {
+                    show: true,
+                    label: this.translate.instant('Total'),
+                    color: '#888ea8',
+                    fontSize: '29px',
+                    formatter: (w: any) =>
+                    w.globals.seriesTotals.reduce((a: any, b: any) => a + b, 0),
+                },
+                },
+            },
+            },
+        },
+        states: {
+            hover: { filter: { type: 'none', value: 0.15 } },
+            active: { filter: { type: 'none', value: 0.15 } },
+        },
+        labels: labels,
+        colors: isDark ? ['#5c1ac3', '#e2a03f', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f']
+            : ['#e2a03f', '#5c1ac3', '#e7515a', '#00ab55', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f'],
+        series: series,
+        };
+
+    // 验证最终的配置对象
+    console.log('Final chart config labels:', this.salesByCategory.labels);
+    console.log('Final chart config series:', this.salesByCategory.series);
+
+    // 确保 series 是数字数组
+    if (!Array.isArray(this.salesByCategory.series) ||
+        this.salesByCategory.series.some((val: any) => typeof val !== 'number')) {
+      console.error('Invalid series data for ApexCharts:', this.salesByCategory.series);
+      // 使用默认数据
+      this.initDefaultServiceNameChart();
+      return;
+    }
+
+    // 确保 labels 是字符串数组
+    if (!Array.isArray(this.salesByCategory.labels) ||
+        this.salesByCategory.labels.some((val: any) => typeof val !== 'string')) {
+      console.error('Invalid labels data for ApexCharts:', this.salesByCategory.labels);
+      // 使用默认数据
+      this.initDefaultServiceNameChart();
+      return;
+    }
+  }
+
+  initDefaultServiceNameChart() {
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+    // 默认数据
+    const defaultLabels = ['HTTP', 'HTTPS', 'DNS', 'FTP', 'SMTP', 'SSH', 'TCP', 'UDP', 'ICMP', 'Other'];
+    const defaultSeries = [2803, 1900, 1245, 850, 750, 650, 1100, 950, 400, 300];
+
+    this.salesByCategory = {
+        chart: {
+            type: 'donut',
+            height: 460,
+            fontFamily: 'Nunito, sans-serif',
+        },
+        dataLabels: { enabled: false },
+        stroke: {
+            show: true,
+            width: 2,
+            colors: [isDark ? '#0e1726' : '#fff'], // ✅ 改成数组
+        },
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            fontSize: '14px',
+            markers: { width: 5, height: 5, offsetX: -2 },
+            height: 80,
+            offsetY: 10,
+            itemMargin: { horizontal: 10, vertical: 8 },
+        },
+        plotOptions: {
+            pie: {
+            donut: {
+                size: '65%',
+                background: 'transparent',
+                labels: {
+                show: true,
+                name: { show: true, fontSize: '29px', offsetY: -10 },
+                value: {
+                    show: true,
+                    fontSize: '26px',
+                    color: isDark ? '#bfc9d4' : undefined,
+                    offsetY: 16,
+                    formatter: (val: any) => val,
+                },
+                total: {
+                    show: true,
+                    label: this.translate.instant('Total'),
+                    color: '#888ea8',
+                    fontSize: '29px',
+                    formatter: (w: any) =>
+                    w.globals.seriesTotals.reduce((a: any, b: any) => a + b, 0),
+                },
+                },
+            },
+            },
+        },
+        states: {
+            hover: { filter: { type: 'none', value: 0.15 } },
+            active: { filter: { type: 'none', value: 0.15 } },
+        },
+        labels: defaultLabels,
+        colors: isDark ? ['#5c1ac3', '#e2a03f', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f']
+            : ['#e2a03f', '#5c1ac3', '#e7515a', '#00ab55', '#4361ee', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f', '#e2a03f'],
+        series: defaultSeries,
+        };
+  }
+
   updateBandwidthChartTheme() {
     if (!this.revenueChart) return;
 
@@ -559,6 +804,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   updateBandwidthChart(data: BandwidthTrendsResponse) {
+    // 数据验证：确保data是正确的格式
+    if (!data || typeof data !== 'object') {
+      console.error('Invalid bandwidth data format:', data);
+      return;
+    }
+
     const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
     const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
 
@@ -571,10 +822,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // 转换数据格式为ApexCharts需要的格式
     const series = channelKeys.map(channelKey => {
-      const channelData = data[channelKey].map(item => [item.timestamp, item.count / 100]); // 转换回小数
+      const channelData = data[channelKey];
+
+      // 验证channelData是数组
+      if (!Array.isArray(channelData)) {
+        console.error(`Channel data for ${channelKey} is not an array:`, channelData);
+        return {
+          name: `Channel ${channelKey.replace('channel', '')} Utilization`,
+          data: []
+        };
+      }
+
+      const processedData = channelData.map(item => [item.timestamp, item.count / 100]); // 转换回小数
       return {
         name: `Channel ${channelKey.replace('channel', '')} Utilization`,
-        data: channelData
+        data: processedData
       };
     });
 
@@ -925,87 +1187,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       ],
     };
 
-    // sales by category
-    this.salesByCategory = {
-      chart: {
-        type: 'donut',
-        height: 460,
-        fontFamily: 'Nunito, sans-serif',
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      stroke: {
-        show: true,
-        width: 25,
-        colors: isDark ? '#0e1726' : '#fff',
-      },
-      colors: isDark ? ['#5c1ac3', '#e2a03f', '#e7515a', '#00ab55', '#e2a03f', '#4361ee'] : ['#e2a03f', '#5c1ac3', '#e7515a', '#00ab55', '#4361ee', '#e2a03f'],
-      legend: {
-        position: 'bottom',
-        horizontalAlign: 'center',
-        fontSize: '14px',
-        markers: {
-          width: 10,
-          height: 10,
-          offsetX: -2,
-        },
-        height: 50,
-        offsetY: 20,
-      },
-      plotOptions: {
-        pie: {
-          donut: {
-            size: '65%',
-            background: 'transparent',
-            labels: {
-              show: true,
-              name: {
-                show: true,
-                fontSize: '29px',
-                offsetY: -10,
-              },
-              value: {
-                show: true,
-                fontSize: '26px',
-                color: isDark ? '#bfc9d4' : undefined,
-                offsetY: 16,
-                formatter: (val: any) => {
-                  return val;
-                },
-              },
-              total: {
-                show: true,
-                label: this.translate.instant('Total'),
-                color: '#888ea8',
-                fontSize: '29px',
-                formatter: (w: any) => {
-                  return w.globals.seriesTotals.reduce(function (a: any, b: any) {
-                    return a + b;
-                  }, 0);
-                },
-              },
-            },
-          },
-        },
-      },
-      labels: ['HTTP', 'DNS', 'DHCP', 'Others'],
-      states: {
-        hover: {
-          filter: {
-            type: 'none',
-            value: 0.15,
-          },
-        },
-        active: {
-          filter: {
-            type: 'none',
-            value: 0.15,
-          },
-        },
-      },
-      series: [985, 737, 270, 300],
-    };
+    // sales by category - 只有在没有真实数据时才初始化默认图表
+    if (!this.salesByCategory || !this.serviceNameData) {
+      this.initDefaultServiceNameChart();
+    }
 
     // followers
     this.followers = {

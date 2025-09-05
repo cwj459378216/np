@@ -163,23 +163,23 @@
 
 
 
-      <div class="panel h-full">
+  <div class="panel h-full overflow-visible">
         <div class="mb-5 flex items-center">
           <h5 class="text-lg font-semibold dark:text-white-light">{{ 'Application Protocol' | translate }}</h5>
         </div>
         <div class="overflow-hidden">
-          <apx-chart [series]="salesByCategory.series" [chart]="salesByCategory.chart"
+          <apx-chart *ngIf="salesByCategory" [series]="salesByCategory.series" [chart]="salesByCategory.chart"
             [dataLabels]="salesByCategory.dataLabels" [stroke]="salesByCategory.stroke"
             [colors]="salesByCategory.colors" [legend]="salesByCategory.legend"
             [plotOptions]="salesByCategory.plotOptions" [labels]="salesByCategory.labels"
-            [states]="salesByCategory.states" class="rounded-lg bg-white dark:bg-black">
-
-            <!-- loader -->
-            <div class="grid min-h-[460px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
-              <span
-                class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
-            </div>
+            [states]="salesByCategory.states" class="rounded-lg bg-white dark:bg-black" style="height: 100%;">
           </apx-chart>
+
+          <!-- loader -->
+          <div *ngIf="!salesByCategory" class="grid min-h-[520px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+            <span
+              class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+          </div>
         </div>
       </div>
     </div>
