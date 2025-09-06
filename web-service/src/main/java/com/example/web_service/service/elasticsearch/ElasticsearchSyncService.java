@@ -838,20 +838,16 @@ public class ElasticsearchSyncService {
      */
     public Map<String, Object> getServiceNameAggregation(Integer topN, Long startTime, Long endTime) throws IOException {
         log.info("Getting serviceName aggregation with topN: {}, startTime: {}, endTime: {}", topN, startTime, endTime);
-        
-        // 根据conn-realtime索引的映射，优先使用确定存在的字段
         String[] possibleFields = {"serviceName", "protoName", "serviceName.keyword", "protoName.keyword"};
-        
         for (String field : possibleFields) {
             try {
                 log.info("Trying field: {}", field);
-                
                 SearchRequest.Builder searchRequestBuilder = new SearchRequest.Builder()
                     .index("conn-realtime")
-                    .size(0); // 不返回文档，只返回聚合结果
-                
-                // 如果提供了时间范围，添加时间过滤
+                    .size(0);
+                boolean hasTimeRange = false;
                 if (startTime != null && endTime != null) {
+                    hasTimeRange = true;
                     log.info("Adding time range filter: {} to {}", startTime, endTime);
                     searchRequestBuilder.query(q -> q
                         .range(r -> r
@@ -861,7 +857,6 @@ public class ElasticsearchSyncService {
                         )
                     );
                 }
-                
                 var searchRequest = searchRequestBuilder
                     .aggregations("service_names", a -> a
                         .terms(t -> t
@@ -872,157 +867,111 @@ public class ElasticsearchSyncService {
                     )
                     .build();
 
-                // 打印查询语句用于Kibana验证
-                log.info("=== Kibana Query for ServiceName Aggregation ===");
-                log.info("GET /conn-realtime/_search");
-                log.info("Content-Type: application/json");
-                log.info("");
-                log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
-                    "size", 0,
-                    "aggs", Map.of(
-                        "service_names", Map.of(
-                            "terms", Map.of(
-                                "field", field,
-                                "size", topN,
-                                "order", Map.of("_count", "desc")
+                // 打印完整查询（便于直接在 Kibana Console 中粘贴执行）
+                java.util.Map<String, Object> kibanaQuery = new java.util.HashMap<>();
+                kibanaQuery.put("size", 0);
+                if (hasTimeRange) {
+                    kibanaQuery.put("query", java.util.Map.of(
+                        "range", java.util.Map.of(
+                            "timestamp", java.util.Map.of(
+                                "gte", startTime,
+                                "lte", endTime
                             )
                         )
+                    ));
+                }
+                kibanaQuery.put("aggs", java.util.Map.of(
+                    "service_names", java.util.Map.of(
+                        "terms", java.util.Map.of(
+                            "field", field,
+                            "size", topN,
+                            "order", java.util.Map.of("_count", "desc")
+                        )
                     )
-                )));
-                log.info("=== End Kibana Query ===");
+                ));
+                log.info("=== Full ES Query (Kibana Console) ===");
+                log.info("GET /conn-realtime/_search");
+                // 修复日志输出的字符串格式
+                log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(kibanaQuery));
+                log.info("=== End ES Query ===");
 
                 var response = esClient.search(searchRequest, Map.class);
                 log.info("ServiceName aggregation search completed for field: {}", field);
-
                 if (response.aggregations() == null) {
                     log.warn("No aggregations in serviceName response for field: {}", field);
                     continue;
                 }
-
-                // 处理聚合结果
-                var aggs = response.aggregations();
-                var serviceNamesAgg = aggs.get("service_names");
-                
-                if (serviceNamesAgg == null) {
+                var serviceNamesAgg = response.aggregations().get("service_names");
+                if (serviceNamesAgg == null || serviceNamesAgg.sterms() == null) {
                     log.warn("No service_names aggregation found for field: {}", field);
                     continue;
                 }
-
                 var buckets = serviceNamesAgg.sterms().buckets().array();
                 log.info("Found {} buckets in serviceName aggregation for field: {}", buckets.size(), field);
-
-                if (buckets.size() == 0) {
+                if (buckets.isEmpty()) {
                     log.warn("No buckets found for field: {}, trying next field", field);
                     continue;
                 }
-
-                // 构建返回结果
                 Map<String, Object> result = new java.util.HashMap<>();
                 List<Map<String, Object>> data = new java.util.ArrayList<>();
-                
-                // 定义主要协议
-                Set<String> majorProtocols = Set.of("http", "https", "dns", "ssl", "tls", "ftp", "smtp", "ssh", "tcp", "udp");
-                long othersCount = 0;
-
                 for (int i = 0; i < buckets.size(); i++) {
                     var bucket = buckets.get(i);
-                    // 正确获取字段值 - 处理FieldValue对象
                     String serviceName;
                     var keyValue = bucket.key();
-                    
                     try {
-                        // 由于serviceName和protoName都是keyword类型，直接使用stringValue()
                         if (keyValue.isString()) {
                             serviceName = keyValue.stringValue();
+                        } else if (keyValue.isLong()) {
+                            serviceName = String.valueOf(keyValue.longValue());
+                        } else if (keyValue.isDouble()) {
+                            serviceName = String.valueOf(keyValue.doubleValue());
+                        } else if (keyValue.isBoolean()) {
+                            serviceName = String.valueOf(keyValue.booleanValue());
                         } else {
-                            // 如果不是字符串类型，尝试其他类型
-                            if (keyValue.isLong()) {
-                                serviceName = String.valueOf(keyValue.longValue());
-                            } else if (keyValue.isDouble()) {
-                                serviceName = String.valueOf(keyValue.doubleValue());
-                            } else if (keyValue.isBoolean()) {
-                                serviceName = String.valueOf(keyValue.booleanValue());
+                            String jsonStr = objectMapper.writeValueAsString(keyValue);
+                            if (jsonStr.startsWith("\"") && jsonStr.endsWith("\"")) {
+                                serviceName = jsonStr.substring(1, jsonStr.length() - 1);
                             } else {
-                                // 最后尝试JSON序列化
-                                String jsonStr = objectMapper.writeValueAsString(keyValue);
-                                if (jsonStr.startsWith("\"") && jsonStr.endsWith("\"")) {
-                                    serviceName = jsonStr.substring(1, jsonStr.length() - 1);
-                                } else {
-                                    serviceName = jsonStr;
-                                }
+                                serviceName = jsonStr;
                             }
                         }
-                        
                         log.info("Extracted serviceName: '{}' from bucket key for field: {}", serviceName, field);
                     } catch (Exception e) {
-                        log.warn("Error extracting service name from bucket key for field {}: {}, fallback to toString", field, e.getMessage());
+                        log.warn("Error extracting service name from bucket key for field {}: {}", field, e.getMessage());
                         serviceName = keyValue.toString();
-                        // 如果toString包含对象引用，说明提取失败
                         if (serviceName.contains("@")) {
                             log.warn("Failed to extract meaningful value from FieldValue for field {}, skipping", field);
                             continue;
                         }
                     }
-                    
-                    // 跳过空值和无效值
-                    if (serviceName == null || serviceName.trim().isEmpty() || 
-                        "null".equals(serviceName) || serviceName.contains("@") ||
-                        "-".equals(serviceName.trim())) {
+                    if (serviceName == null || serviceName.trim().isEmpty() || "null".equals(serviceName) || serviceName.contains("@") || "-".equals(serviceName.trim())) {
                         log.warn("Skipping invalid service name: '{}' for field: {}", serviceName, field);
                         continue;
                     }
-                    
-                    String lowerServiceName = serviceName.toLowerCase();
-                    
-                    // 检查是否为主要协议
-                    if (majorProtocols.contains(lowerServiceName) || data.size() < 8) { // 保留前8个主要协议
-                        Map<String, Object> item = new java.util.HashMap<>();
-                        // 格式化协议名称 - 首字母大写
-                        String displayName = serviceName.substring(0, 1).toUpperCase() + serviceName.substring(1).toLowerCase();
-                        if ("ssl".equals(lowerServiceName)) {
-                            displayName = "HTTPS"; // SSL显示为HTTPS
-                        }
-                        item.put("serviceName", displayName);
-                        item.put("count", bucket.docCount());
-                        item.put("rank", data.size() + 1);
-                        data.add(item);
-                        
-                        log.info("ServiceName bucket {}: name='{}', count={}, field={}", data.size(), displayName, bucket.docCount(), field);
-                    } else {
-                        // 其他协议归入Others
-                        othersCount += bucket.docCount();
-                        log.info("Adding '{}' to Others category, count={}", serviceName, bucket.docCount());
+                    Map<String, Object> item = new java.util.HashMap<>();
+                    item.put("serviceName", serviceName); // 直接使用聚合结果原值
+                    item.put("count", bucket.docCount());
+                    item.put("rank", data.size() + 1);
+                    data.add(item);
+                    log.info("ServiceName bucket {}: name='{}', count={}, field={}", data.size(), serviceName, bucket.docCount(), field);
+                    if (data.size() >= topN) {
+                        break; // 已达到请求的数量
                     }
                 }
-                
-                // 如果有Others数据，添加到结果中
-                if (othersCount > 0) {
-                    Map<String, Object> othersItem = new java.util.HashMap<>();
-                    othersItem.put("serviceName", "Others");
-                    othersItem.put("count", othersCount);
-                    othersItem.put("rank", data.size() + 1);
-                    data.add(othersItem);
-                    log.info("Added Others category with count: {}", othersCount);
-                }
-
-                if (data.size() > 0) {
+                if (!data.isEmpty()) {
                     result.put("data", data);
                     result.put("total", data.size());
-                    result.put("field", field); // 记录使用的字段名称
-                    
+                    result.put("field", field);
                     log.info("ServiceName aggregation result: {} items using field: {}", data.size(), field);
                     return result;
                 } else {
                     log.warn("No valid data found for field: {}, trying next field", field);
                 }
-                
             } catch (Exception e) {
                 log.warn("Error querying field {}: {}, trying next field", field, e.getMessage());
                 e.printStackTrace();
             }
         }
-        
-        // 如果所有字段都失败，返回默认数据
         log.warn("All fields failed, returning default data");
         return getDefaultServiceNameData(topN);
     }
@@ -1031,26 +980,12 @@ public class ElasticsearchSyncService {
      * 返回默认的ServiceName数据
      */
     private Map<String, Object> getDefaultServiceNameData(Integer topN) {
+        // 不再返回模拟默认数据，直接返回空结果
         Map<String, Object> result = new java.util.HashMap<>();
-        List<Map<String, Object>> data = new java.util.ArrayList<>();
-        
-        String[] defaultServices = {"HTTP", "HTTPS", "DNS", "FTP", "SMTP", "SSH", "TCP", "UDP", "ICMP", "Others"};
-        long[] defaultCounts = {2803, 1900, 1245, 850, 750, 650, 1100, 950, 400, 300};
-        
-        int limit = Math.min(topN, defaultServices.length);
-        for (int i = 0; i < limit; i++) {
-            Map<String, Object> item = new java.util.HashMap<>();
-            item.put("serviceName", defaultServices[i]);
-            item.put("count", defaultCounts[i]);
-            item.put("rank", i + 1);
-            data.add(item);
-        }
-        
-        result.put("data", data);
-        result.put("total", data.size());
-        result.put("field", "default");
-        
-        log.info("Returning default ServiceName data: {} items", data.size());
+        result.put("data", java.util.Collections.emptyList());
+        result.put("total", 0);
+        result.put("field", "none");
+        log.info("No serviceName aggregation available, returning empty data");
         return result;
     }
-} 
+}
