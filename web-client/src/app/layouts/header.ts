@@ -5,6 +5,9 @@ import { Router, NavigationEnd } from '@angular/router';
 import { AppService } from '../service/app.service';
 import { DomSanitizer } from '@angular/platform-browser';
 import { TranslateService } from '@ngx-translate/core';
+import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
+import { environment } from 'src/environments/environment';
+import { CollectorService, Collector } from 'src/app/services/collector.service';
 
 @Component({
     selector: 'header',
@@ -73,12 +76,40 @@ export class HeaderComponent {
         },
     ];
 
+    // 新增: 数据源与时间范围选择相关属性
+    dataSources: { label: string; value: string }[] = [];
+    timeRanges = [
+        { label: this.translate.instant('Last 1 Hour') || '最近1小时', value: '1h' },
+        { label: this.translate.instant('Last 6 Hours') || '最近6小时', value: '6h' },
+        { label: this.translate.instant('Last 12 Hours') || '最近12小时', value: '12h' },
+        { label: this.translate.instant('Last 24 Hours') || '最近24小时', value: '24h' },
+        { label: this.translate.instant('Last 7 Days') || '最近7天', value: '7d' },
+    ];
+    selectedDataSource = { label: '', value: '' };
+    selectedTimeRange = this.timeRanges[3].value; // 默认24小时
+    selectedQuickRange = this.timeRanges[3].value;
+    
+    // 时间选择器配置
+    dateTimePickerOptions: FlatpickrDefaultsInterface = {
+        enableTime: true,
+        dateFormat: 'Y-m-d H:i',
+        time24hr: true,
+        maxDate: new Date(),
+        allowInput: true,
+    };
+    
+    // 自定义时间范围
+    customStartTime: string = '';
+    customEndTime: string = '';
+    isCustomTimeRange: boolean = false;
+
     constructor(
         public translate: TranslateService,
         public storeData: Store<any>,
         public router: Router,
         private appSetting: AppService,
         private sanitizer: DomSanitizer,
+        private collectorService: CollectorService,
     ) {
         this.initStore();
     }
@@ -97,6 +128,91 @@ export class HeaderComponent {
                 this.setActiveDropdown();
             }
         });
+        
+        // 初始化时间范围标签
+        this.updateTimeRangeLabels();
+        
+        // 加载collectors数据
+        this.loadCollectors();
+    }
+
+    loadCollectors() {
+        this.collectorService.getAllCollectors().subscribe({
+            next: (collectors: Collector[]) => {
+                // 将collectors转换为dataSources选项，name作为label，sessionId作为value
+                this.dataSources = collectors.map(collector => ({
+                    label: collector.name,
+                    value: (collector as any).sessionId || (collector as any).id || ''
+                }));
+                
+                // 始终选择第一个作为默认值（如果有数据的话）
+                if (this.dataSources.length > 0) {
+                    this.selectedDataSource = this.dataSources[0];
+                } else {
+                    this.selectedDataSource = { label: '', value: '' };
+                }
+                
+                console.log('Collectors loaded, default selected:', this.selectedDataSource);
+            },
+            error: (error) => {
+                console.error('Error loading collectors for data sources:', error);
+                // 发生错误时设置为空
+                this.dataSources = [];
+                this.selectedDataSource = { label: '', value: '' };
+            }
+        });
+    }
+
+    shouldShowDataSourceAndTimeRange(): boolean {
+        const currentUrl = this.router.url;
+        
+        // Dashboard相关页面
+        const dashboardRoutes = [
+            '/',           // 首页dashboard
+            '/dashboard',  // dashboard页面
+            '/analytics',  // analytics页面
+            '/finance',    // finance页面
+            '/crypto',     // crypto页面
+        ];
+        
+        // 检查是否是dashboard页面
+        const isDashboardPage = dashboardRoutes.some(route => {
+            if (route === '/') {
+                return currentUrl === '/' || currentUrl === '';
+            }
+            return currentUrl.startsWith(route);
+        });
+        
+        // 检查是否是protocol-analysis相关页面
+        const isProtocolAnalysisPage = currentUrl.startsWith('/protocol-analysis');
+        
+        // 检查是否是event页面
+        const isEventPage = currentUrl.startsWith('/alarm/event');
+        
+        const shouldShow = isDashboardPage || isProtocolAnalysisPage || isEventPage;
+        
+        // 开发环境下的调试信息
+        if (!environment.production) {
+            console.log('Header visibility check:', {
+                currentUrl,
+                isDashboardPage,
+                isProtocolAnalysisPage,
+                isEventPage,
+                shouldShow
+            });
+        }
+        
+        return shouldShow;
+    }
+
+    updateTimeRangeLabels() {
+        this.timeRanges = [
+            { label: this.translate.instant('Last 1 Hour') || '最近1小时', value: '1h' },
+            { label: this.translate.instant('Last 6 Hours') || '最近6小时', value: '6h' },
+            { label: this.translate.instant('Last 12 Hours') || '最近12小时', value: '12h' },
+            { label: this.translate.instant('Last 24 Hours') || '最近24小时', value: '24h' },
+            { label: this.translate.instant('Last 7 Days') || '最近7天', value: '7d' },
+        ];
     }
 
     setActiveDropdown() {
@@ -137,5 +253,116 @@ export class HeaderComponent {
             this.storeData.dispatch({ type: 'toggleRTL', payload: 'ltr' });
         }
         window.location.reload();
+    }
+
+    // 新增: 选择变化事件
+    onDataSourceChange(dataSource?: any) {
+        if (dataSource) {
+            this.selectedDataSource = dataSource;
+        }
+        // TODO: 根据实际需求触发数据刷新或状态更新
+        console.log('Data source changed:', this.selectedDataSource);
+    }
+
+    onTimeRangeChange() {
+        // TODO: 根据实际需求触发数据刷新或状态更新
+        console.log('Time range changed:', this.selectedTimeRange);
+    }
+
+    getTimeRangeDisplay(): string {
+        if (this.isCustomTimeRange && this.customStartTime && this.customEndTime) {
+            const start = new Date(this.customStartTime).toLocaleDateString();
+            const end = new Date(this.customEndTime).toLocaleDateString();
+            return `${start} - ${end}`;
+        }
+        const range = this.timeRanges.find(tr => tr.value === this.selectedQuickRange);
+        return range ? range.label : this.translate.instant('Select Time') || '选择时间';
+    }
+
+    onQuickTimeSelect(timeRange: any) {
+        this.selectedQuickRange = timeRange.value;
+        this.selectedTimeRange = timeRange.value;
+        this.isCustomTimeRange = false;
+        this.customStartTime = '';
+        this.customEndTime = '';
+        
+        // 计算实际的时间范围
+        const endTime = new Date();
+        const startTime = this.calculateStartTime(timeRange.value, endTime);
+        
+        console.log('Quick time selected:', {
+            range: timeRange.label,
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString()
+        });
+        
+        // TODO: 触发数据刷新
+        this.onTimeRangeApplied(startTime, endTime);
+    }
+
+    calculateStartTime(rangeValue: string, endTime: Date): Date {
+        const startTime = new Date(endTime);
+        
+        switch (rangeValue) {
+            case '1h':
+                startTime.setHours(startTime.getHours() - 1);
+                break;
+            case '6h':
+                startTime.setHours(startTime.getHours() - 6);
+                break;
+            case '12h':
+                startTime.setHours(startTime.getHours() - 12);
+                break;
+            case '24h':
+                startTime.setDate(startTime.getDate() - 1);
+                break;
+            case '7d':
+                startTime.setDate(startTime.getDate() - 7);
+                break;
+            default:
+                startTime.setHours(startTime.getHours() - 1);
+        }
+        
+        return startTime;
+    }
+
+    onTimeRangeApplied(startTime: Date, endTime: Date) {
+        // 这个方法可以被其他组件监听，或者直接调用服务刷新数据
+        console.log('Time range applied:', { startTime, endTime });
+        // TODO: 实现实际的数据刷新逻辑
+    }
+
+    onCustomTimeChange() {
+        this.isCustomTimeRange = true;
+        this.selectedQuickRange = '';
+    }
+
+    applyCustomTimeRange() {
+        if (this.customStartTime && this.customEndTime) {
+            const startTime = new Date(this.customStartTime);
+            const endTime = new Date(this.customEndTime);
+            
+            // 验证时间范围
+            if (startTime >= endTime) {
+                alert(this.translate.instant('Start time must be before end time') || '开始时间必须早于结束时间');
+                return;
+            }
+            
+            if (endTime > new Date()) {
+                alert(this.translate.instant('End time cannot be in the future') || '结束时间不能是未来时间');
+                return;
+            }
+            
+            this.selectedTimeRange = `${this.customStartTime} to ${this.customEndTime}`;
+            this.isCustomTimeRange = true;
+            this.selectedQuickRange = '';
+            
+            console.log('Custom time range applied:', {
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString()
+            });
+            
+            this.onTimeRangeApplied(startTime, endTime);
+        }
     }
 }
