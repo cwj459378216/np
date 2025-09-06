@@ -3,6 +3,7 @@ import { BaseProtocolComponent } from '../base-protocol/base-protocol.component'
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef } from '@angular/core';
 import { ZeekConfigService } from '../../services/zeek-config.service';
+import { TimeRangeService } from 'src/app/services/time-range.service';
 
 @Component({
     selector: 'app-test-protocol',
@@ -35,8 +36,8 @@ export class TestProtocolComponent extends BaseProtocolComponent {
         }
     ];
 
-    constructor(http: HttpClient, cdr: ChangeDetectorRef, zeekConfigService: ZeekConfigService) {
-        super(http, cdr, zeekConfigService);
+    constructor(http: HttpClient, cdr: ChangeDetectorRef, zeekConfigService: ZeekConfigService, private timeRangeService2: TimeRangeService) {
+        super(http, cdr, zeekConfigService, timeRangeService2);
         this.protocolName = 'TEST';
         this.indexName = 'test-realtime';
         this.cols = this.testCols;

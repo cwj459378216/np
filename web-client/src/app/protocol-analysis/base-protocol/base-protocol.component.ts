@@ -8,7 +8,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { SharedModule } from 'src/shared.module';
 import { ZeekConfigService, ZeekLogType } from 'src/app/services/zeek-config.service';
 import { co } from '@fullcalendar/core/internal-common';
-
+import { TimeRangeService, TimeRange } from 'src/app/services/time-range.service';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-base-protocol',
@@ -145,11 +146,57 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         }
     };
 
+    private timeRangeSubscription?: Subscription;
+    private currentTimeRange?: TimeRange;
+    // 图表选择的时间范围（通过拖拽或缩放）
+    private selectedStartTime?: number;
+    private selectedEndTime?: number;
+
     constructor(
         protected http: HttpClient,
         protected cdr: ChangeDetectorRef,
-        protected zeekConfigService: ZeekConfigService
-    ) {}
+        protected zeekConfigService: ZeekConfigService,
+        private timeRangeService: TimeRangeService
+    ) {
+        // 初始化图表事件，用于捕获用户在趋势图上的拖拽选择和缩放
+        // 使用 any 避免类型约束问题
+        (this.revenueChart.chart as any).events = {
+            selection: (_chart: any, ctx: any) => {
+                const xaxis = ctx?.xaxis;
+                if (xaxis?.min != null && xaxis?.max != null) {
+                    this.onChartRangeSelected(Math.round(xaxis.min), Math.round(xaxis.max));
+                }
+            },
+            zoomed: (_chart: any, ctx: any) => {
+                const xaxis = ctx?.xaxis;
+                if (xaxis?.min != null && xaxis?.max != null) {
+                    this.onChartRangeSelected(Math.round(xaxis.min), Math.round(xaxis.max));
+                }
+            },
+            beforeResetZoom: () => {
+                this.clearChartRangeSelection();
+            }
+        };
+    }
+
+    // 处理趋势图选择的时间范围
+    private onChartRangeSelected(start: number, end: number) {
+        if (end <= start) return;
+        this.selectedStartTime = start;
+        this.selectedEndTime = end;
+        // 重新加载表格数据（不重新加载趋势图，保持当前视图）
+        this.loadData();
+    }
+
+    // 清除图表自定义选择范围
+    private clearChartRangeSelection() {
+        if (this.selectedStartTime || this.selectedEndTime) {
+            this.selectedStartTime = undefined;
+            this.selectedEndTime = undefined;
+            // 恢复到全局时间范围
+            this.loadData();
+        }
+    }
 
     ngOnChanges(changes: SimpleChanges) {
         // 当 protocolName 或 indexName 变化时重新加载数据
@@ -180,6 +227,18 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         // 如果没有字段描述信息，添加默认的字段描述
         this.addDefaultFieldDescriptions();
 
+        // 订阅全局时间范围变化
+        this.timeRangeSubscription = this.timeRangeService.timeRange$.subscribe(tr => {
+            this.currentTimeRange = tr;
+            if (this.protocolName && this.indexName) {
+                // 时间范围变化后重新加载趋势与表格数据
+                this.loadTrendingData();
+                this.loadData();
+            }
+        });
+
+        // 初始加载（如果已经有值）
+        this.currentTimeRange = this.timeRangeService.getCurrentTimeRange();
         if (this.protocolName && this.indexName) {
             this.loadTrendingData();
             this.loadData();
@@ -188,6 +247,13 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
                 this.loadTrendingData();
             }, 60000);
         }
+    }
+
+    ngOnDestroy() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+        this.timeRangeSubscription?.unsubscribe();
     }
 
     private addDefaultFieldDescriptions() {
@@ -281,59 +347,58 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         }
     }
 
-    ngOnDestroy() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-        }
-    }
-
+    // 使用当前选择的时间范围加载趋势数据
     protected loadTrendingData() {
+        if (!this.indexName) return;
         this.chartLoading = true;
-        const endTime = Date.now();
-        const startTime = endTime - ( 100 * 24 * 60 * 60 * 10);
+
+        const endTime = this.currentTimeRange?.endTime?.getTime() || Date.now();
+        const startTime = this.currentTimeRange?.startTime?.getTime() || (endTime - 24 * 60 * 60 * 1000);
+        const interval = this.getTrendingInterval(this.currentTimeRange?.value || '24h');
 
         this.http.get<any[]>(`${environment.apiUrl}/es/trending`, {
             params: {
                 startTime: startTime.toString(),
                 endTime: endTime.toString(),
                 index: this.indexName,
-                interval: '1h'
+                interval: interval
             }
         }).subscribe({
             next: (data) => {
                 if (Array.isArray(data) && data.length > 0) {
                     const chartData = {
                         series: [{
-                            name: `${this.protocolName} Sessions`,
-                            data: data.map(item => ({
-                                x: item.timestamp,
-                                y: item.count
-                            }))
+                            name: `${this.protocolName} Sessions` ,
+                            data: data.map(item => ({ x: item.timestamp, y: item.count }))
                         }]
                     };
                     Object.assign(this.revenueChart, chartData);
+                } else {
+                    // 清空数据以显示 noData
+                    this.revenueChart.series = [{ name: `${this.protocolName} Sessions`, data: [] }];
                 }
                 this.chartLoading = false;
                 this.cdr.detectChanges();
             },
             error: (error) => {
                 console.error('Error loading trending data:', error);
-                // 图表加载失败时保持空状态
                 this.chartLoading = false;
                 this.cdr.detectChanges();
             }
         });
     }
 
+    // 使用当前时间范围加载表格数据
     protected loadData() {
+        if (!this.indexName) return;
         this.loading = true;
-        const endTime = Date.now();
-        const startTime = endTime - (365 * 7 * 24 * 60 * 60 * 1000);
+        const rangeEnd = this.selectedEndTime ?? this.currentTimeRange?.endTime?.getTime() ?? Date.now();
+        const rangeStart = this.selectedStartTime ?? this.currentTimeRange?.startTime?.getTime() ?? (rangeEnd - 24 * 60 * 60 * 1000);
 
         this.http.get<any>(`${environment.apiUrl}/es/query`, {
             params: {
-                startTime: startTime.toString(),
-                endTime: endTime.toString(),
+                startTime: rangeStart.toString(),
+                endTime: rangeEnd.toString(),
                 index: this.indexName,
                 size: this.pageSize.toString(),
                 from: ((this.currentPage - 1) * this.pageSize).toString()
@@ -346,11 +411,28 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
             },
             error: (error) => {
                 console.error('Error loading data:', error);
-                // 数据加载失败
                 this.loading = false;
                 this.cdr.detectChanges();
             }
         });
+    }
+
+    // 根据选择的时间范围值决定聚合间隔
+    private getTrendingInterval(rangeValue: string): string {
+        switch (rangeValue) {
+            case '1h':
+                return '5m';
+            case '6h':
+                return '15m';
+            case '12h':
+                return '30m';
+            case '24h':
+                return '1h';
+            case '7d':
+                return '6h';
+            default:
+                return '1h';
+        }
     }
 
     protected processQueryResponse(response: any): void {

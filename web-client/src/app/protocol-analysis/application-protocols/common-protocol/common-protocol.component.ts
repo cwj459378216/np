@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { ZeekLogAttribute, ZeekLogType, ZeekConfigService } from '../../../services/zeek-config.service';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { TimeRangeService } from 'src/app/services/time-range.service';
 
 @Component({
     selector: 'app-common-protocol',
@@ -38,9 +39,10 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
         http: HttpClient,
         cdr: ChangeDetectorRef,
         private route: ActivatedRoute,
-        protected override zeekConfigService: ZeekConfigService
+        protected override zeekConfigService: ZeekConfigService,
+        private timeRangeService2: TimeRangeService
     ) {
-        super(http, cdr, zeekConfigService);
+        super(http, cdr, zeekConfigService, timeRangeService2);
 
         // 监听路由参数变化
         this.routeSubscription = this.route.params.subscribe(params => {

@@ -240,15 +240,15 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         const shouldShow = isDashboardPage || isProtocolAnalysisPage || isEventPage;
         
         // 开发环境下的调试信息
-        if (!environment.production) {
-            console.log('Header visibility check:', {
-                currentUrl,
-                isDashboardPage,
-                isProtocolAnalysisPage,
-                isEventPage,
-                shouldShow
-            });
-        }
+        // if (!environment.production) {
+        //     console.log('Header visibility check:', {
+        //         currentUrl,
+        //         isDashboardPage,
+        //         isProtocolAnalysisPage,
+        //         isEventPage,
+        //         shouldShow
+        //     });
+        // }
         
         return shouldShow;
     }
