@@ -66,9 +66,11 @@
                                     <td>{{ user.role.name }}</td>
                                     <td>{{ user.description }}</td>
                                     <td>
-                                        <span [class]="user.status ? 'badge badge-outline-success' : 'badge badge-outline-danger'">
-                                            {{ user.status ? ('users.active' | translate) : ('users.inactive' | translate) }}
-                                        </span>
+                                        <label class="w-12 h-6 relative inline-block">
+                                            <input type="checkbox" class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
+                                                [checked]="user.status" (change)="toggleUserStatus(user, $event)" />
+                                            <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                        </label>
                                     </td>
                                     <td>
                                         <div class="flex items-center justify-center gap-4">

@@ -160,6 +160,23 @@ export class AssetBookComponent {
         });
     }
 
+    toggleAssetStatus(asset: Asset, event: Event) {
+        const input = event.target as HTMLInputElement;
+        const nextStatus = input.checked ? 'Active' : 'Inactive';
+        const prevStatus = asset.status;
+        asset.status = nextStatus; // optimistic
+        const url = `${environment.apiUrl}/assets/${asset.id}`;
+        this.http.put(url, { ...asset, status: nextStatus }).subscribe({
+            next: () => {
+                this.showMessage(nextStatus === 'Active' ? 'Asset enabled successfully.' : 'Asset disabled successfully.');
+            },
+            error: () => {
+                asset.status = prevStatus; // rollback
+                this.showMessage('Failed to update asset status', 'error');
+            }
+        });
+    }
+
     showMessage(msg = '', type = 'success') {
         const toast: any = Swal.mixin({
             toast: true,

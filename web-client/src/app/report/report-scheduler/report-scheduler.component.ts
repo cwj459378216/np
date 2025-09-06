@@ -262,4 +262,20 @@ export class ReportSchedulerComponent implements OnInit {
             padding: '10px 20px',
         });
     }
+
+    toggleSchedulerStatus(scheduler: any, event: Event) {
+        const input = event.target as HTMLInputElement;
+        const nextStatus = input.checked ? 'Active' : 'Inactive';
+        const prevStatus = scheduler.status;
+        scheduler.status = nextStatus; // optimistic
+        this.reportSchedulerService.updateScheduler(scheduler.id, { ...scheduler, status: nextStatus }).subscribe({
+            next: () => {
+                this.showMessage(nextStatus === 'Active' ? 'Scheduler enabled successfully.' : 'Scheduler disabled successfully.');
+            },
+            error: () => {
+                scheduler.status = prevStatus; // rollback
+                this.showMessage('Failed to update scheduler status', 'error');
+            }
+        });
+    }
 }

@@ -54,7 +54,6 @@
                                     <th>{{ 'roles.name' | translate }}</th>
                                     <th>{{ 'roles.createTime' | translate }}</th>
                                     <th>{{ 'roles.description' | translate }}</th>
-                                    <th>{{ 'roles.enable' | translate }}</th>
                                     <th class="!text-center">{{ 'roles.actions' | translate }}</th>
                                 </tr>
                             </thead>
@@ -68,15 +67,6 @@
                                         </td>
                                         <td>{{ role.createdAt }}</td>
                                         <td class="whitespace-nowrap">{{ role.description }}</td>
-                                        <td class="whitespace-nowrap">
-                                            <label class="w-12 h-6 relative">
-                                                <input type="checkbox" checked
-                                                    class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
-                                                    id="custom_switch_checkbox2" />
-                                                <span for="custom_switch_checkbox2"
-                                                    class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
-                                            </label>
-                                        </td>
                                         <td>
                                             <div class="flex items-center justify-center gap-4">
                                                 <button type="button" class="btn btn-sm btn-outline-primary"

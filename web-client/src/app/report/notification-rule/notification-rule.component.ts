@@ -232,15 +232,35 @@ export class NotificationRuleComponent implements OnInit {
         );
     }
 
-    showMessage(message: string, type: 'success' | 'error') {
-        this.translate.get([type === 'success' ? 'Success' : 'Error']).subscribe(translations => {
-            const title = Object.values(translations)[0] as string;
-            Swal.fire({
-                title: title,
-                text: message,
-                icon: type === 'success' ? 'success' : 'error',
-                padding: '2em'
-            });
+    showMessage(message: string = '', type: 'success' | 'error' = 'success') {
+        const toast: any = Swal.mixin({
+            toast: true,
+            position: 'top',
+            showConfirmButton: false,
+            timer: 3000,
+            customClass: { container: 'toast' },
+        });
+        toast.fire({
+            icon: type,
+            title: message,
+            padding: '10px 20px',
+        });
+    }
+
+    toggleRuleStatus(rule: any, event: Event) {
+        const input = event.target as HTMLInputElement;
+        const nextStatus = input.checked ? 'Active' : 'Inactive';
+        const prevStatus = rule.status;
+        rule.status = nextStatus; // optimistic
+        const url = `${environment.apiUrl}/notification-rules/${rule.id}`;
+        this.http.put(url, { ...rule, status: nextStatus }).subscribe({
+            next: () => {
+                this.showMessage(nextStatus === 'Active' ? 'Rule enabled successfully' : 'Rule disabled successfully', 'success');
+            },
+            error: () => {
+                rule.status = prevStatus; // rollback
+                this.showMessage('Failed to update rule status', 'error');
+            }
         });
     }
 }

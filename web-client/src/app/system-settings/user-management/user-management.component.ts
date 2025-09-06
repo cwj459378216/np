@@ -168,6 +168,24 @@ export class UserManagementComponent implements OnInit {
         });
     }
 
+    toggleUserStatus(user: User, event: Event) {
+        const input = event.target as HTMLInputElement;
+        const nextStatus = input.checked;
+        const prevStatus = user.status;
+        user.status = nextStatus; // optimistic
+        const payload: any = { ...user, role: { id: user.role.id }, status: nextStatus };
+        if (!payload.password) delete payload.password;
+        this.http.put(`${environment.apiUrl}/users/${user.id}`, payload).subscribe({
+            next: () => {
+                this.showMessage(nextStatus ? 'User enabled successfully.' : 'User disabled successfully.');
+            },
+            error: () => {
+                user.status = prevStatus; // rollback
+                this.showMessage('Failed to update user status', 'error');
+            }
+        });
+    }
+
     showMessage(msg = '', type = 'success') {
         const toast: any = Swal.mixin({
             toast: true,

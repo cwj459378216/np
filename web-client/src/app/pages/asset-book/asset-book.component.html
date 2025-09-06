@@ -67,10 +67,16 @@
                                     <td>{{ asset.mac_address }}</td>
                                     <td>{{ asset.type }}</td>
                                     <td>
-                                        <span [ngClass]="{
-                                            'badge badge-outline-success': asset.status === 'Active',
-                                            'badge badge-outline-danger': asset.status === 'Inactive'
-                                        }">{{ asset.status === 'Active' ? ('assetBook.active' | translate) : ('assetBook.inactive' | translate) }}</span>
+                                        <!-- Toggle switch replacing badge -->
+                                        <label class="w-12 h-6 relative inline-block">
+                                            <input
+                                                type="checkbox"
+                                                class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
+                                                [checked]="asset.status === 'Active'"
+                                                (change)="toggleAssetStatus(asset, $event)"
+                                            />
+                                            <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
+                                        </label>
                                     </td>
                                     <td>{{ asset.last_updated }}</td>
                                     <td>
