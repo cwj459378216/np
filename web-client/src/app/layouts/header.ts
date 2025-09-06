@@ -1,4 +1,4 @@
-﻿import { Component } from '@angular/core';
+﻿import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { toggleAnimation } from 'src/app/shared/animations';
 import { Store } from '@ngrx/store';
 import { Router, NavigationEnd } from '@angular/router';
@@ -15,7 +15,7 @@ import { TimeRangeService } from 'src/app/services/time-range.service';
     templateUrl: './header.html',
     animations: [toggleAnimation],
 })
-export class HeaderComponent {
+export class HeaderComponent implements AfterViewInit, OnDestroy {
     store: any;
     search = false;
     notifications: { id: number; profile?: string; message?: string; time?: string }[] = [
@@ -90,21 +90,30 @@ export class HeaderComponent {
     selectedTimeRange = this.timeRanges[3].value; // 默认24小时
     selectedQuickRange = this.timeRanges[3].value;
     
-    // 时间选择器配置
+    @ViewChild('customRangeBox', { static: false }) customRangeBox?: ElementRef<HTMLLIElement>;
+
+    // 时间选择器配置 (加入 inline 防止关闭，closeOnSelect=false)
     dateTimePickerOptions: any = {
         enableTime: true,
         dateFormat: 'Y-m-d H:i',
         time24hr: true,
         maxDate: new Date(),
-        allowInput: true,
-        closeOnSelect: false, // 选择日期后不自动关闭下拉框
+        allowInput: false, // 禁止手动输入，避免 blur 触发关闭
+        closeOnSelect: false,
         enableSeconds: false,
+        mode: 'range',
+        static: true, // 始终固定在容器内
+        // appendTo 会在 ngAfterViewInit 中绑定到 customRangeBox
+        onChange: (selectedDates: Date[], dateStr: string) => this.handleRangeSelection(selectedDates, dateStr),
+        onValueUpdate: (selectedDates: Date[], dateStr: string) => this.handleRangeSelection(selectedDates, dateStr)
     };
     
-    // 自定义时间范围
-    customStartTime: string = '';
-    customEndTime: string = '';
+    // 自定义时间范围 (range 模式单输入)
+    customRangeValue: string = '';
     isCustomTimeRange: boolean = false;
+    lastAppliedRange: string = '';
+
+    private _flatpickrGuardsAdded = false;
 
     constructor(
         public translate: TranslateService,
@@ -141,6 +150,31 @@ export class HeaderComponent {
         
         // 初始化默认时间范围（24小时）
         this.initializeDefaultTimeRange();
+    }
+
+    ngAfterViewInit(): void {
+        // 绑定 flatpickr 容器
+        if (this.customRangeBox) {
+            this.dateTimePickerOptions = {
+                ...this.dateTimePickerOptions,
+                appendTo: this.customRangeBox.nativeElement
+            };
+        }
+        this.addFlatpickrGuards();
+    }
+
+    private addFlatpickrGuards() {
+        if (this._flatpickrGuardsAdded) return;
+        const events = ['mousedown','mouseup','click','pointerdown','pointerup','touchstart','touchend','focusin'];
+        const guard = (e: Event) => {
+            const target = e.target as HTMLElement;
+            if (target && target.closest('.flatpickr-calendar')) {
+                // 在冒泡阶段阻断，允许 flatpickr 自己先处理
+                e.stopPropagation();
+            }
+        };
+        events.forEach(ev => document.addEventListener(ev, guard, false)); // 改为冒泡阶段
+        this._flatpickrGuardsAdded = true;
     }
 
     private initializeDefaultTimeRange() {
@@ -283,11 +317,14 @@ export class HeaderComponent {
         console.log('Time range changed:', this.selectedTimeRange);
     }
 
+    onCustomTimeChange() {
+        // 标记进入自定义模式（模板仍引用）
+        this.isCustomTimeRange = true;
+    }
+
     getTimeRangeDisplay(): string {
-        if (this.isCustomTimeRange && this.customStartTime && this.customEndTime) {
-            const start = new Date(this.customStartTime).toLocaleDateString();
-            const end = new Date(this.customEndTime).toLocaleDateString();
-            return `${start} - ${end}`;
+        if (this.isCustomTimeRange && this.customRangeValue) {
+            return this.customRangeValue.replace(' to ', ' - ');
         }
         const range = this.timeRanges.find(tr => tr.value === this.selectedQuickRange);
         return range ? range.label : this.translate.instant('Select Time') || '选择时间';
@@ -297,8 +334,7 @@ export class HeaderComponent {
         this.selectedQuickRange = timeRange.value;
         this.selectedTimeRange = timeRange.value;
         this.isCustomTimeRange = false;
-        this.customStartTime = '';
-        this.customEndTime = '';
+        this.customRangeValue = '';
         
         // 计算实际的时间范围
         const endTime = new Date();
@@ -329,37 +365,69 @@ export class HeaderComponent {
         console.log('Time range applied:', { startTime, endTime, label: currentRange.label });
     }
 
-    onCustomTimeChange() {
-        this.isCustomTimeRange = true;
-        this.selectedQuickRange = '';
+    ngOnDestroy(): void {
+        // 不移除监听（菜单生命周期内复用），如需严格清理可记录并移除
     }
 
-    applyCustomTimeRange() {
-        if (this.customStartTime && this.customEndTime) {
-            const startTime = new Date(this.customStartTime);
-            const endTime = new Date(this.customEndTime);
-            
-            // 验证时间范围
-            if (startTime >= endTime) {
-                alert(this.translate.instant('Start time must be before end time') || '开始时间必须早于结束时间');
-                return;
-            }
-            
-            if (endTime > new Date()) {
-                alert(this.translate.instant('End time cannot be in the future') || '结束时间不能是未来时间');
-                return;
-            }
-            
-            this.selectedTimeRange = `${this.customStartTime} to ${this.customEndTime}`;
+    // 保留 handleRangeSelection / applyCustomTimeRange / formatDate 等原有方法
+    private formatDate(d: Date): string {
+        const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    private handleRangeSelection(selectedDates: Date[], dateStr: string) {
+        if (!selectedDates || selectedDates.length < 1) return;
+        // 更新模型字符串（flatpickr 已写入 input, 但确保同步对象）
+        this.customRangeValue = dateStr;
+        if (selectedDates.length === 2) {
+            let [start, end] = selectedDates;
+            if (start > end) { const t = start; start = end; end = t; }
+            const now = new Date();
+            if (end > now) end = now;
+            // 生成标准格式字符串
+            const formatted = this.formatDate(start) + ' to ' + this.formatDate(end);
+            this.customRangeValue = formatted;
+            if (formatted === this.lastAppliedRange) return; // 避免重复
             this.isCustomTimeRange = true;
             this.selectedQuickRange = '';
-            
-            console.log('Custom time range applied:', {
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString()
-            });
-            
-            this.onTimeRangeApplied(startTime, endTime);
+            this.lastAppliedRange = formatted;
+            this.onTimeRangeApplied(start, end);
         }
+    }
+
+    private parseRangeString(range: string): { start: Date; end: Date } | null {
+        if (!range || !range.includes(' to ')) return null;
+        const [s, e] = range.split(' to ');
+        const start = new Date(s.trim());
+        const end = new Date(e.trim());
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+        return { start, end };
+    }
+
+    applyCustomTimeRange(event?: Event) {
+        if (event) event.stopPropagation();
+        if (!this.customRangeValue) return;
+        const parsed = this.parseRangeString(this.customRangeValue);
+        if (!parsed) return;
+        if (parsed.start >= parsed.end) {
+            alert(this.translate.instant('Start time must be before end time') || '开始时间必须早于结束时间');
+            return;
+        }
+        const now = new Date();
+        if (parsed.end > now) parsed.end = now;
+        const formatted = this.formatDate(parsed.start) + ' to ' + this.formatDate(parsed.end);
+        this.customRangeValue = formatted;
+        this.isCustomTimeRange = true;
+        this.selectedQuickRange = '';
+        if (formatted !== this.lastAppliedRange) {
+            this.lastAppliedRange = formatted;
+            this.onTimeRangeApplied(parsed.start, parsed.end);
+        }
+        // 关闭菜单: 触发一次 body click (hlMenu OutsideClick) 或使用更安全方式
+        try {
+            setTimeout(() => {
+                document.body.click();
+            }, 0);
+        } catch {}
     }
 }

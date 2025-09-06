@@ -9,3 +9,12 @@
 @import 'flatpickr/dist/flatpickr.min.css';
 @import 'nouislider/dist/nouislider.min.css';
 @import 'tailwind.css';
+
+
+
+/* Stronger width enforcement */
+.custom-range-wrapper .flatpickr-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
