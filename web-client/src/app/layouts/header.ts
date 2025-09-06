@@ -8,6 +8,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
 import { environment } from 'src/environments/environment';
 import { CollectorService, Collector } from 'src/app/services/collector.service';
+import { TimeRangeService } from 'src/app/services/time-range.service';
 
 @Component({
     selector: 'header',
@@ -90,12 +91,14 @@ export class HeaderComponent {
     selectedQuickRange = this.timeRanges[3].value;
     
     // 时间选择器配置
-    dateTimePickerOptions: FlatpickrDefaultsInterface = {
+    dateTimePickerOptions: any = {
         enableTime: true,
         dateFormat: 'Y-m-d H:i',
         time24hr: true,
         maxDate: new Date(),
         allowInput: true,
+        closeOnSelect: false, // 选择日期后不自动关闭下拉框
+        enableSeconds: false,
     };
     
     // 自定义时间范围
@@ -110,6 +113,7 @@ export class HeaderComponent {
         private appSetting: AppService,
         private sanitizer: DomSanitizer,
         private collectorService: CollectorService,
+        private timeRangeService: TimeRangeService,
     ) {
         this.initStore();
     }
@@ -134,6 +138,16 @@ export class HeaderComponent {
         
         // 加载collectors数据
         this.loadCollectors();
+        
+        // 初始化默认时间范围（24小时）
+        this.initializeDefaultTimeRange();
+    }
+
+    private initializeDefaultTimeRange() {
+        const endTime = new Date();
+        const startTime = this.calculateStartTime('24h', endTime);
+        console.log('Header initializing default time range:', { startTime, endTime });
+        this.timeRangeService.updateTimeRange(startTime, endTime, 'Last 24 Hours', '24h');
     }
 
     loadCollectors() {
@@ -301,35 +315,18 @@ export class HeaderComponent {
     }
 
     calculateStartTime(rangeValue: string, endTime: Date): Date {
-        const startTime = new Date(endTime);
-        
-        switch (rangeValue) {
-            case '1h':
-                startTime.setHours(startTime.getHours() - 1);
-                break;
-            case '6h':
-                startTime.setHours(startTime.getHours() - 6);
-                break;
-            case '12h':
-                startTime.setHours(startTime.getHours() - 12);
-                break;
-            case '24h':
-                startTime.setDate(startTime.getDate() - 1);
-                break;
-            case '7d':
-                startTime.setDate(startTime.getDate() - 7);
-                break;
-            default:
-                startTime.setHours(startTime.getHours() - 1);
-        }
-        
-        return startTime;
+        return this.timeRangeService.calculateStartTime(rangeValue, endTime);
     }
 
     onTimeRangeApplied(startTime: Date, endTime: Date) {
-        // 这个方法可以被其他组件监听，或者直接调用服务刷新数据
-        console.log('Time range applied:', { startTime, endTime });
-        // TODO: 实现实际的数据刷新逻辑
+        // 更新时间范围服务的状态
+        const currentRange = this.isCustomTimeRange 
+            ? { label: 'Custom Range', value: 'custom' }
+            : this.timeRanges.find(tr => tr.value === this.selectedQuickRange) || { label: 'Custom', value: 'custom' };
+        
+        this.timeRangeService.updateTimeRange(startTime, endTime, currentRange.label, currentRange.value);
+        
+        console.log('Time range applied:', { startTime, endTime, label: currentRange.label });
     }
 
     onCustomTimeChange() {

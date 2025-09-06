@@ -825,7 +825,19 @@ public class ElasticsearchSyncService {
      * @throws IOException
      */
     public Map<String, Object> getServiceNameAggregation(Integer topN) throws IOException {
-        log.info("Getting serviceName aggregation with topN: {}", topN);
+        return getServiceNameAggregation(topN, null, null);
+    }
+
+    /**
+     * 获取serviceName字段的聚合统计数据（支持时间范围过滤）
+     * @param topN 返回Top N的数据条数
+     * @param startTime 开始时间戳（毫秒）
+     * @param endTime 结束时间戳（毫秒）
+     * @return 聚合结果
+     * @throws IOException
+     */
+    public Map<String, Object> getServiceNameAggregation(Integer topN, Long startTime, Long endTime) throws IOException {
+        log.info("Getting serviceName aggregation with topN: {}, startTime: {}, endTime: {}", topN, startTime, endTime);
         
         // 根据conn-realtime索引的映射，优先使用确定存在的字段
         String[] possibleFields = {"serviceName", "protoName", "serviceName.keyword", "protoName.keyword"};
@@ -834,9 +846,23 @@ public class ElasticsearchSyncService {
             try {
                 log.info("Trying field: {}", field);
                 
-                var searchRequest = SearchRequest.of(s -> s
+                SearchRequest.Builder searchRequestBuilder = new SearchRequest.Builder()
                     .index("conn-realtime")
-                    .size(0) // 不返回文档，只返回聚合结果
+                    .size(0); // 不返回文档，只返回聚合结果
+                
+                // 如果提供了时间范围，添加时间过滤
+                if (startTime != null && endTime != null) {
+                    log.info("Adding time range filter: {} to {}", startTime, endTime);
+                    searchRequestBuilder.query(q -> q
+                        .range(r -> r
+                            .field("timestamp")
+                            .gte(JsonData.of(startTime))
+                            .lte(JsonData.of(endTime))
+                        )
+                    );
+                }
+                
+                var searchRequest = searchRequestBuilder
                     .aggregations("service_names", a -> a
                         .terms(t -> t
                             .field(field)
@@ -844,7 +870,7 @@ public class ElasticsearchSyncService {
                             .order(List.of(NamedValue.of("_count", co.elastic.clients.elasticsearch._types.SortOrder.Desc)))
                         )
                     )
-                );
+                    .build();
 
                 // 打印查询语句用于Kibana验证
                 log.info("=== Kibana Query for ServiceName Aggregation ===");

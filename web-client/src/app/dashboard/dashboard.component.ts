@@ -1,7 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
+import { Subscription } from 'rxjs';
 import { DashboardDataService, ProtocolTrendsResponse, TrendingData, BandwidthTrendsResponse, SystemInfo, ServiceNameAggregationResponse } from '../services/dashboard-data.service';
+import { TimeRangeService, TimeRange } from '../services/time-range.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -43,18 +45,31 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // 定时器
   private systemInfoInterval: any;
+  
+  // 时间范围订阅
+  private timeRangeSubscription: Subscription = new Subscription();
+  private currentTimeRange: TimeRange | null = null;
 
-  constructor(public storeData: Store<any>, private dashboardDataService: DashboardDataService, private translate: TranslateService) {
+  constructor(public storeData: Store<any>, private dashboardDataService: DashboardDataService, private translate: TranslateService, private timeRangeService: TimeRangeService) {
     this.initStore();
     this.isLoading = false;
   }
 
   ngOnInit(): void {
-  this.loadProtocolTrendsData();
-  this.loadNetworkProtocolTrends();
-    this.loadBandwidthData();
+    console.log('Dashboard component initializing...');
+    
+    // 订阅时间范围变化
+    this.timeRangeSubscription = this.timeRangeService.timeRange$.subscribe(timeRange => {
+      console.log('Dashboard received time range update:', timeRange);
+      this.currentTimeRange = timeRange;
+      this.loadDataForTimeRange(timeRange);
+    });
+
+    // 初始化时间范围
+    this.currentTimeRange = this.timeRangeService.getCurrentTimeRange();
+    console.log('Dashboard initial time range:', this.currentTimeRange);
+    
     this.loadSystemInfo();
-    this.loadServiceNameData();
 
     // 每30秒更新一次系统信息
     this.systemInfoInterval = setInterval(() => {
@@ -62,13 +77,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }, 30000);
   }
 
-  private loadNetworkProtocolTrends() {
-    const endTime = new Date();
-    const startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
-    const startTimeTimestamp = startTime.getTime();
-    const endTimeTimestamp = endTime.getTime();
+  private loadNetworkProtocolTrends(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h') {
+    const endTime = endTimeTimestamp ? new Date(endTimeTimestamp) : new Date();
+    const startTime = startTimeTimestamp ? new Date(startTimeTimestamp) : new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
+    
+    const startTs = startTime.getTime();
+    const endTs = endTime.getTime();
 
-    this.dashboardDataService.getNetworkProtocolTrends(startTimeTimestamp, endTimeTimestamp, '1h')
+    this.dashboardDataService.getNetworkProtocolTrends(startTs, endTs, interval)
       .subscribe({
         next: (data) => {
           // 将返回的多协议数据映射为 series
@@ -119,6 +135,53 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.systemInfoInterval) {
       clearInterval(this.systemInfoInterval);
     }
+    if (this.timeRangeSubscription) {
+      this.timeRangeSubscription.unsubscribe();
+    }
+  }
+
+  // 根据时间范围加载数据
+  private loadDataForTimeRange(timeRange: TimeRange): void {
+    if (!timeRange) {
+      console.warn('No time range provided, skipping data load');
+      return;
+    }
+
+    const startTimeTimestamp = timeRange.startTime.getTime();
+    const endTimeTimestamp = timeRange.endTime.getTime();
+    
+    // 根据时间范围长度决定间隔
+    const timeSpan = endTimeTimestamp - startTimeTimestamp;
+    let interval = '1h';
+    
+    if (timeSpan <= 1000 * 60 * 60 * 6) { // 6小时内
+      interval = '15m';
+    } else if (timeSpan <= 1000 * 60 * 60 * 24) { // 24小时内
+      interval = '1h';
+    } else if (timeSpan <= 1000 * 60 * 60 * 24 * 7) { // 7天内
+      interval = '6h';
+    } else { // 7天以上
+      interval = '1d';
+    }
+
+    console.log('Loading data for time range:', { 
+      startTime: timeRange.startTime.toISOString(), 
+      endTime: timeRange.endTime.toISOString(),
+      interval,
+      timeSpan: timeSpan / (1000 * 60 * 60) + ' hours'
+    });
+
+    // 加载协议趋势数据
+    this.loadProtocolTrendsData(startTimeTimestamp, endTimeTimestamp, interval);
+    
+    // 加载网络协议趋势数据
+    this.loadNetworkProtocolTrends(startTimeTimestamp, endTimeTimestamp, interval);
+    
+    // 加载带宽数据
+    this.loadBandwidthData(startTimeTimestamp, endTimeTimestamp, interval);
+    
+    // 加载Application Protocol (Service Name)数据
+    this.loadServiceNameData(startTimeTimestamp, endTimeTimestamp);
   }
 
   async initStore() {
@@ -179,15 +242,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadProtocolTrendsData() {
-    // 获取最近24小时的数据
-    const endTime = new Date();
-    const startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // 24小时前
+  loadProtocolTrendsData(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h') {
+    // 使用传入的时间戳或默认获取最近24小时的数据
+    const endTime = endTimeTimestamp ? new Date(endTimeTimestamp) : new Date();
+    const startTime = startTimeTimestamp ? new Date(startTimeTimestamp) : new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
 
-    const startTimeTimestamp = startTime.getTime();
-    const endTimeTimestamp = endTime.getTime();
+    const startTs = startTime.getTime();
+    const endTs = endTime.getTime();
 
-    this.dashboardDataService.getProtocolTrends(startTimeTimestamp, endTimeTimestamp, '1h')
+    this.dashboardDataService.getProtocolTrends(startTs, endTs, interval)
       .subscribe({
         next: (data: ProtocolTrendsResponse) => {
           this.updateProtocolTrendingChart(data);
@@ -200,15 +263,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadBandwidthData() {
-    // 获取最近24小时的数据
-    const endTime = new Date();
-    const startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // 24小时前
+  loadBandwidthData(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h') {
+    // 使用传入的时间戳或默认获取最近24小时的数据
+    const endTime = endTimeTimestamp ? new Date(endTimeTimestamp) : new Date();
+    const startTime = startTimeTimestamp ? new Date(startTimeTimestamp) : new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
 
-    const startTimeTimestamp = startTime.getTime();
-    const endTimeTimestamp = endTime.getTime();
+    const startTs = startTime.getTime();
+    const endTs = endTime.getTime();
 
-    this.dashboardDataService.getBandwidthTrends(startTimeTimestamp, endTimeTimestamp, '1h')
+    this.dashboardDataService.getBandwidthTrends(startTs, endTs, interval)
       .subscribe({
         next: (data: BandwidthTrendsResponse) => {
           this.cachedBandwidthData = data; // 缓存数据
@@ -222,9 +285,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadServiceNameData() {
-    console.log('Loading service name data...');
-    this.dashboardDataService.getServiceNameAggregation(10)
+  loadServiceNameData(startTime?: number, endTime?: number) {
+    console.log('Loading service name data with time range...', startTime, endTime);
+    this.dashboardDataService.getServiceNameAggregation(10, startTime, endTime)
       .subscribe({
         next: (data: ServiceNameAggregationResponse) => {
           console.log('Service name data received:', data);

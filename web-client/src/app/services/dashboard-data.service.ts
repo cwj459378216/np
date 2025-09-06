@@ -234,13 +234,22 @@ export class DashboardDataService {
   /**
    * 获取serviceName聚合统计数据
    * @param topN 返回Top N的数据条数 (默认: 10)
+   * @param startTime 开始时间戳 (可选)
+   * @param endTime 结束时间戳 (可选)
    * @returns Observable<ServiceNameAggregationResponse>
    */
-  getServiceNameAggregation(topN: number = 10): Observable<ServiceNameAggregationResponse> {
-    const params = new HttpParams()
+  getServiceNameAggregation(topN: number = 10, startTime?: number, endTime?: number): Observable<ServiceNameAggregationResponse> {
+    let params = new HttpParams()
       .set('topN', topN.toString());
 
-    console.log('Fetching serviceName aggregation with topN:', topN);
+    if (startTime) {
+      params = params.set('startTime', startTime.toString());
+    }
+    if (endTime) {
+      params = params.set('endTime', endTime.toString());
+    }
+
+    console.log('Fetching serviceName aggregation with topN:', topN, 'startTime:', startTime, 'endTime:', endTime);
     return this.http.get<ServiceNameAggregationResponse>(`${this.apiUrl}/service-name-aggregation`, { params });
   }
 }

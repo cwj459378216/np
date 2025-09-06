@@ -93,12 +93,14 @@ public class ElasticsearchController {
     }
 
     @GetMapping("/service-name-aggregation")
-    @Operation(summary = "查询服务名称聚合数据", description = "获取conn-realtime索引中serviceName字段的Top N聚合统计数据")
+    @Operation(summary = "查询服务名称聚合数据", description = "获取conn-realtime索引中serviceName字段的Top N聚合统计数据，支持时间范围过滤")
     public Map<String, Object> getServiceNameAggregation(
-            @RequestParam(defaultValue = "10") Integer topN
+            @RequestParam(defaultValue = "10") Integer topN,
+            @RequestParam(required = false) Long startTime,
+            @RequestParam(required = false) Long endTime
     ) throws IOException {
-        log.info("Received service name aggregation request - topN: {}", topN);
-        Map<String, Object> result = elasticsearchSyncService.getServiceNameAggregation(topN);
+        log.info("Received service name aggregation request - topN: {}, startTime: {}, endTime: {}", topN, startTime, endTime);
+        Map<String, Object> result = elasticsearchSyncService.getServiceNameAggregation(topN, startTime, endTime);
         log.info("Returning service name aggregation with {} entries", result.size());
         return result;
     }
