@@ -1411,29 +1411,29 @@ public class ElasticsearchSyncService {
                 
                 if (docCountMode) {
                     // Simple terms aggregation for count
-                    srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20)));
+                    srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(10)));
                 } else {
                     // Terms aggregation with metric sub-aggregation
                     switch (aggType) {
                         case "sum":
-                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(10))
                                     .aggregations("metric", sub -> sub.sum(m -> m.field(metricField))));
                             break;
                         case "avg":
-                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(10))
                                     .aggregations("metric", sub -> sub.avg(m -> m.field(metricField))));
                             break;
                         case "min":
-                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(10))
                                     .aggregations("metric", sub -> sub.min(m -> m.field(metricField))));
                             break;
                         case "max":
-                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(10))
                                     .aggregations("metric", sub -> sub.max(m -> m.field(metricField))));
                             break;
                         case "count":
                         default:
-                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(10))
                                     .aggregations("metric", sub -> sub.valueCount(m -> m.field(metricField))));
                             break;
                     }
@@ -1448,7 +1448,7 @@ public class ElasticsearchSyncService {
                 Map<String, Object> pieAggDef = new java.util.HashMap<>();
                 pieAggDef.put("terms", Map.of(
                     "field", aggField,
-                    "size", 20
+                    "size", 10
                 ));
                 
                 if (!docCountMode) {
@@ -1697,29 +1697,29 @@ public class ElasticsearchSyncService {
                     return Map.of("error", "X Field is required for category-based chart");
                 }
                 
-                srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20)));
+                srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(10)));
 
                 if (!docCountMode) {
                     switch (aggType) {
                         case "sum":
-                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(10))
                                     .aggregations("metric", sub -> sub.sum(m -> m.field(aggField))));
                             break;
                         case "avg":
-                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(10))
                                     .aggregations("metric", sub -> sub.avg(m -> m.field(aggField))));
                             break;
                         case "min":
-                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(10))
                                     .aggregations("metric", sub -> sub.min(m -> m.field(aggField))));
                             break;
                         case "max":
-                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(10))
                                     .aggregations("metric", sub -> sub.max(m -> m.field(aggField))));
                             break;
                         case "count":
                         default:
-                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(10))
                                     .aggregations("metric", sub -> sub.valueCount(m -> m.field(aggField))));
                             break;
                     }
@@ -1733,7 +1733,7 @@ public class ElasticsearchSyncService {
                 Map<String, Object> categoriesAggDef = new java.util.HashMap<>();
                 categoriesAggDef.put("terms", Map.of(
                     "field", chartXField,
-                    "size", 20
+                    "size", 10
                 ));
                 
                 if (!docCountMode) {
@@ -1824,22 +1824,36 @@ public class ElasticsearchSyncService {
         log.info("GET /{}/_search", index);
         log.info("Content-Type: application/json");
         log.info("");
+        
+        // 处理表格参数
+        Integer tableSize = req.getTopN() != null ? req.getTopN() : 10;
+        String tableSortField = req.getSortField() != null && !req.getSortField().isEmpty() ? req.getSortField() : "timestamp";
+        String tableSortOrder = req.getSortOrder() != null && req.getSortOrder().equalsIgnoreCase("asc") ? "asc" : "desc";
+        
+        log.info("Table parameters: size={}, sortField={}, sortOrder={}", tableSize, tableSortField, tableSortOrder);
+        
         log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
-            "size", 100,
+            "size", tableSize,
             "query", finalQuery,
             "sort", List.of(Map.of(
-                "timestamp", Map.of(
-                    "order", "desc"
+                tableSortField, Map.of(
+                    "order", tableSortOrder
                 )
             ))
         )));
         log.info("=== End Kibana Query ===");
         
+        // 根据排序顺序设置 SortOrder
+        co.elastic.clients.elasticsearch._types.SortOrder esSortOrder = 
+            "asc".equalsIgnoreCase(tableSortOrder) ? 
+                co.elastic.clients.elasticsearch._types.SortOrder.Asc : 
+                co.elastic.clients.elasticsearch._types.SortOrder.Desc;
+        
         var tableResp = esClient.search(s -> s
                 .index(index)
                 .query(finalQuery)
-                .size(100)
-                .sort(so -> so.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)))
+                .size(tableSize)
+                .sort(so -> so.field(f -> f.field(tableSortField).order(esSortOrder)))
                 , JsonData.class);
         List<Map<String,Object>> docs = tableResp.hits().hits().stream()
                 .map(h -> h.source())

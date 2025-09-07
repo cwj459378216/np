@@ -21,4 +21,11 @@
             }
         }
     }
+}
+
+// 模态框宽度调整
+.modal-top {
+    .modal-dialog {
+        max-width: 60rem; // 加宽模态框
+    }
 } 

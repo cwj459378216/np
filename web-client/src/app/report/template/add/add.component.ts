@@ -44,6 +44,9 @@ interface FormData {
     metricField?: string; // For pie charts with non-count aggregations
     xField?: string; // metric (count / agg value)
     yField?: string; // dimension (time/date or category)
+    topN?: number; // For table: number of records to display
+    sortField?: string; // For table: field to sort by
+    sortOrder?: 'asc' | 'desc'; // For table: sort order
 }
 
 interface WidgetFilter {
@@ -80,12 +83,7 @@ export class AddComponent implements OnInit {
     dateFields: Array<{ value: string; label: string }> = [];
     yAxisCandidates: Array<{ value: string; label: string }> = [];
 
-    titleOptions = [
-        { value: 'id', label: 'Id' },
-        { value: 'email', label: 'Email' },
-        { value: 'lastName', label: 'LastName' },
-        { value: 'firstName', label: 'FirstName' }
-    ];
+    titleOptions: Array<{ value: string; label: string }> = [];  // 动态字段选项
 
     aggregationTypes = [
         { value: 'sum', label: 'Sum' },
@@ -108,7 +106,10 @@ export class AddComponent implements OnInit {
         aggregationField: '',
         aggregationType: '',
         xField: '',
-        yField: ''
+        yField: '',
+        topN: 10,  // 改为10条记录，符合新的选项
+        sortField: '',  // 默认使用timestamp排序
+        sortOrder: 'desc'  // 默认降序
     };
 
     filters: WidgetFilter[] = [];
@@ -153,6 +154,7 @@ export class AddComponent implements OnInit {
             this.categoryFields = [];
             this.dateFields = [];
             this.yAxisCandidates = [];
+            this.titleOptions = [];  // 也清空表格字段选项
             return;
         }
         
@@ -163,6 +165,9 @@ export class AddComponent implements OnInit {
                 const options = fields.map(f => ({ value: f.name, label: f.name, type: f.type }));
                 this.filterFields = options;
                 this.dateFields = options.filter(o => o.type === 'date');
+                // 设置表格字段选项（所有字段都可以作为表格列）
+                this.titleOptions = options.map(o => ({ value: o.value, label: o.label }));
+                console.log('titleOptions:', this.titleOptions);
                 // y-axis candidates: date fields first (time series) then keyword (category)
                 const keywordFields = options.filter(o => o.type === 'keyword');
                 this.yAxisCandidates = [...this.dateFields, ...keywordFields].map(o => ({ value: o.value, label: o.label }));
@@ -232,7 +237,10 @@ export class AddComponent implements OnInit {
             aggregationField: '',
             aggregationType: 'count',
             xField: 'count',
-            yField: ''
+            yField: '',
+            topN: 10,  // 改为10条记录，符合新的选项
+            sortField: '',  // 默认使用timestamp排序
+            sortOrder: 'desc'  // 默认降序
         };
         this.filters = [{ field: '', operator: 'eq', value: '' }];
         this.selectedTitles = [];
@@ -250,6 +258,14 @@ export class AddComponent implements OnInit {
         if ((this.formData.type === 'line' || this.formData.type === 'bar') && !this.formData.yField) {
             this.translate.get('Please select Y Axis Field').subscribe(msg => this.showMessage(msg, 'error'));
             return;
+        }
+        
+        // Validate table requirements
+        if (this.formData.type === 'table') {
+            if (!this.formData.index) {
+                this.translate.get('Please select data source index for table').subscribe(msg => this.showMessage(msg, 'error'));
+                return;
+            }
         }
         
         // Validate pie chart requirements
@@ -290,13 +306,21 @@ export class AddComponent implements OnInit {
                 break;
 
             case 'table':
+                // 如果没有选择列，默认选择前5个字段或所有字段（如果少于5个）
+                const defaultTitles = this.selectedTitles && this.selectedTitles.length > 0 
+                    ? this.selectedTitles 
+                    : this.titleOptions.slice(0, Math.min(5, this.titleOptions.length)).map(opt => opt.value);
+                
                 newItem = {
                     cols: 6, rows: 3, y: 0, x: 0,
                     type: 'table', uniqueId, id: uniqueId,
-                    titles: this.selectedTitles,
+                    titles: defaultTitles,
                     aggregation: { field: this.formData.aggregationField, type: this.formData.aggregationType },
                     filters: this.filters, index: this.formData.index,
-                    name: this.formData.name
+                    name: this.formData.name,
+                    topN: this.formData.topN || 10,  // 改为10条记录默认值
+                    sortField: this.formData.sortField || '',  // 添加排序字段
+                    sortOrder: this.formData.sortOrder || 'desc'  // 添加排序顺序
                 } as any;
                 break;
 
@@ -379,6 +403,9 @@ export class AddComponent implements OnInit {
                     }
                 } else if (item.type === 'table') {
                     (item as any).tableData = res.data || [];
+                    console.log('Table data loaded:', res.data);
+                    console.log('Table total records:', res.total);
+                    console.log('Table columns to display:', item.titles);
                 }
             },
             error: () => {
@@ -558,5 +585,80 @@ export class AddComponent implements OnInit {
         }
         
         return 'Select configuration';
+    }
+
+    // 格式化表格单元格值
+    formatTableCellValue(value: any, fieldName?: string): string {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        
+        // 特殊处理 timestamp 字段
+        if (fieldName && (fieldName.toLowerCase() === 'timestamp' || fieldName.toLowerCase().includes('time'))) {
+            // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
+            if (typeof value === 'number' && value > 946684800000) {
+                return new Date(value).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+            // 如果是 ISO 字符串格式
+            if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+                return new Date(value).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+        }
+        
+        // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
+        if (typeof value === 'number' && value > 946684800000) {
+            return new Date(value).toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // 如果是对象，转换为JSON字符串
+        if (typeof value === 'object') {
+            return JSON.stringify(value);
+        }
+        
+        return String(value);
+    }
+
+    // 格式化表格标题
+    formatTableHeader(header: string): string {
+        if (!header) {
+            return '';
+        }
+        
+        // 处理驼峰命名和下划线命名
+        let formatted = header
+            // 处理驼峰命名：在大写字母前添加空格
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            // 处理下划线：替换为空格
+            .replace(/_/g, ' ')
+            // 处理点号：替换为空格
+            .replace(/\./g, ' ')
+            // 首字母大写，其他单词首字母也大写
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        
+        return formatted;
     }
 }

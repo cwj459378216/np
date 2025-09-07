@@ -61,19 +61,30 @@
                                 <tr>
                                     <th *ngFor="let header of getTableHeaders(item)"
                                         class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a] text-left">
-                                        {{header.charAt(0).toUpperCase() + header.slice(1)}}
+                                        {{formatTableHeader(header)}}
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr *ngFor="let row of item['tableData']">
+                                <tr *ngFor="let row of item['tableData']" class="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td *ngFor="let header of getTableHeaders(item)"
                                         class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">
-                                        {{row[header]}}
+                                        {{formatTableCellValue(row[header], header)}}
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
+                        <!-- 显示表格信息 -->
+                        <div *ngIf="item['tableData'] && item['tableData'].length > 0" 
+                             class="text-sm text-gray-600 dark:text-gray-400 mt-2 p-2">
+                            {{ '显示' | translate }} {{item['tableData'].length}} {{ '条记录' | translate }}
+                            <span *ngIf="item['topN']">（{{ 'top' | translate }} {{item['topN']}}）</span>
+                        </div>
+                        <!-- 无数据提示 -->
+                        <div *ngIf="!item['tableData'] || item['tableData'].length === 0" 
+                             class="text-center text-gray-500 dark:text-gray-400 py-8">
+                            {{ '暂无数据' | translate }}
+                        </div>
                     </div>
                 </div>
             </div>

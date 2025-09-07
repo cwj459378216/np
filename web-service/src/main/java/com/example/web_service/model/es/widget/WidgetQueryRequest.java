@@ -31,6 +31,15 @@ public class WidgetQueryRequest {
     @JsonProperty("endTime")
     private Long endTime;   // epoch millis
 
+    @JsonProperty("topN")
+    private Integer topN;   // for table widget - number of records to return
+    
+    @JsonProperty("sortField")
+    private String sortField;  // for table widget - field to sort by
+    
+    @JsonProperty("sortOrder")
+    private String sortOrder;  // for table widget - sort order: asc or desc
+
     public String getIndex() { return index; }
     public void setIndex(String index) { this.index = index; }
 
@@ -58,6 +67,15 @@ public class WidgetQueryRequest {
     public Long getEndTime() { return endTime; }
     public void setEndTime(Long endTime) { this.endTime = endTime; }
 
+    public Integer getTopN() { return topN; }
+    public void setTopN(Integer topN) { this.topN = topN; }
+
+    public String getSortField() { return sortField; }
+    public void setSortField(String sortField) { this.sortField = sortField; }
+
+    public String getSortOrder() { return sortOrder; }
+    public void setSortOrder(String sortOrder) { this.sortOrder = sortOrder; }
+
     @Override
     public String toString() {
         return "WidgetQueryRequest{" +
@@ -70,6 +88,9 @@ public class WidgetQueryRequest {
                 ", filters=" + filters +
                 ", startTime=" + startTime +
                 ", endTime=" + endTime +
+                ", topN=" + topN +
+                ", sortField='" + sortField + '\'' +
+                ", sortOrder='" + sortOrder + '\'' +
                 '}';
     }
 }

@@ -42,6 +42,9 @@ interface FormData {
     aggregationField: string;
     aggregationType: string;
     yField?: string; // 添加 yField 属性
+    topN?: number;   // 添加topN参数
+    sortField?: string;  // 添加排序字段
+    sortOrder?: 'asc' | 'desc';  // 添加排序顺序
 }
 
 @Component({
@@ -74,7 +77,10 @@ export class EditComponent implements OnInit {
         filter: '',
         aggregationField: '',
         aggregationType: '',
-        yField: '' // 添加 yField 属性
+        yField: '', // 添加 yField 属性
+        topN: 10,  // 改为10条记录，符合新的选项
+        sortField: '',  // 添加排序字段
+        sortOrder: 'desc' as 'asc' | 'desc'  // 添加排序顺序，默认降序
     };
 
     // 下拉选项数据
@@ -438,8 +444,14 @@ export class EditComponent implements OnInit {
                     aggregation: {
                         field: this.formData.aggregationField,
                         type: this.formData.aggregationType
-                    }
-                };
+                    },
+                    filters: this.filters,
+                    index: this.formData.index,
+                    name: this.formData.name,
+                    topN: this.formData.topN || 10,
+                    sortField: this.formData.sortField || '',
+                    sortOrder: this.formData.sortOrder || 'desc'
+                } as any;
                 break;
 
             default:

@@ -134,6 +134,11 @@ export class PreviewComponent implements OnInit {
                         cols: item.cols,
                         rows: item.rows
                     }));
+
+                    // 为每个 widget 加载数据
+                    this.dashboard.forEach(item => {
+                        this.loadWidgetData(item);
+                    });
                 }
 
                 if (content.options) {
@@ -194,8 +199,80 @@ export class PreviewComponent implements OnInit {
             return item.titles;
         }
 
+        // 如果有表格数据，使用表格数据的字段作为标题
+        if ((item as any).tableData && (item as any).tableData.length > 0) {
+            return Object.keys((item as any).tableData[0]);
+        }
+
         // 默认列顺序
         return ['id', 'email', 'lastName', 'firstName'];
+    }
+
+    // 加载 widget 数据
+    private loadWidgetData(item: CustomGridsterItem) {
+        const req: any = {
+            index: (item as any).index,
+            widgetType: item.chartType || item.type,
+            aggregationField: (item as any).aggregation?.field || '',
+            aggregationType: (item as any).aggregation?.type || 'count',
+            metricField: (item as any).metricField || '',
+            filters: (item as any).filters || [],
+            yField: (item as any).yField || '',
+            topN: (item as any).topN || 100,
+            sortField: (item as any).sortField || '',
+            sortOrder: (item as any).sortOrder || 'desc'
+        };
+        
+        console.log('Sending widget query request:', req);
+        
+        this.http.post(`${environment.apiUrl}/es/widget/query`, req).subscribe({
+            next: (res: any) => {
+                if (item.type === 'chart') {
+                    if (item.chartType === 'line' || item.chartType === 'bar') {
+                        const x: any[] = res.x || [];
+                        const y: any[] = res.y || [];
+                        let categories: string[];
+                        
+                        if (res.chartType === 'category') {
+                            categories = x.map(v => String(v));
+                        } else {
+                            categories = x.map(v => new Date(v).toLocaleString());
+                        }
+                        
+                        item.chartConfig = {
+                            title: { text: (item as any).name || item.uniqueId },
+                            tooltip: { trigger: 'axis' },
+                            xAxis: { type: 'category', data: categories },
+                            yAxis: { type: 'value' },
+                            series: [{ name: req.aggregationType, type: item.chartType, data: y }]
+                        };
+                    } else if (item.chartType === 'pie') {
+                        const labels: string[] = res.labels || [];
+                        const values: number[] = res.values || [];
+                        item.chartConfig = {
+                            title: { text: (item as any).name || item.uniqueId },
+                            tooltip: { trigger: 'item' },
+                            legend: { orient: 'vertical', left: 'left' },
+                            series: [{
+                                type: 'pie',
+                                radius: '60%',
+                                data: labels.map((l, i) => ({ name: l, value: values[i] })),
+                                emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } }
+                            }]
+                        };
+                    }
+                } else if (item.type === 'table') {
+                    (item as any).tableData = res.data || [];
+                    console.log('Table data loaded:', res.data);
+                    console.log('Table total records:', res.total);
+                    console.log('Table columns to display:', item.titles);
+                }
+            },
+            error: (error) => {
+                console.error('Error loading widget data:', error);
+                this.translate.get('Load data failed').subscribe(msg => this.showMessage(msg, 'error'));
+            }
+        });
     }
 
     // 获取数据属性名
@@ -263,5 +340,80 @@ export class PreviewComponent implements OnInit {
                     console.error('PDF generation error:', error);
                 }
             });
+    }
+
+    // 格式化表格单元格值
+    formatTableCellValue(value: any, fieldName?: string): string {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        
+        // 特殊处理 timestamp 字段
+        if (fieldName && (fieldName.toLowerCase() === 'timestamp' || fieldName.toLowerCase().includes('time'))) {
+            // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
+            if (typeof value === 'number' && value > 946684800000) {
+                return new Date(value).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+            // 如果是 ISO 字符串格式
+            if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+                return new Date(value).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+        }
+        
+        // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
+        if (typeof value === 'number' && value > 946684800000) {
+            return new Date(value).toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // 如果是对象，转换为JSON字符串
+        if (typeof value === 'object') {
+            return JSON.stringify(value);
+        }
+        
+        return String(value);
+    }
+
+    // 格式化表格标题
+    formatTableHeader(header: string): string {
+        if (!header) {
+            return '';
+        }
+        
+        // 处理驼峰命名和下划线命名
+        let formatted = header
+            // 处理驼峰命名：在大写字母前添加空格
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            // 处理下划线：替换为空格
+            .replace(/_/g, ' ')
+            // 处理点号：替换为空格
+            .replace(/\./g, ' ')
+            // 首字母大写，其他单词首字母也大写
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        
+        return formatted;
     }
 }
