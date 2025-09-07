@@ -572,5 +572,19 @@
   "Calculation": "计算方式",
   "Values to display on Y-axis": "Y轴显示的数值",
   "Chart will show": "图表将显示",
-  "Select configuration": "选择配置"
+  "Select configuration": "选择配置",
+  
+  "Execute Scheduler": "执行调度器",
+  "Are you sure you want to execute this scheduler now?": "您确定要立即执行此调度器吗？",
+  "Yes, execute it!": "是的，执行它！",
+  "Scheduler executed successfully": "调度器执行成功",
+  "Error executing scheduler": "执行调度器出错",
+  
+  "validation": {
+    "required": "此字段为必填项",
+    "minLength": "最小长度为 {length} 个字符",
+    "maxLength": "最大长度为 {length} 个字符",
+    "email": "请输入有效的邮箱地址",
+    "pattern": "请输入有效的格式"
+  }
 }

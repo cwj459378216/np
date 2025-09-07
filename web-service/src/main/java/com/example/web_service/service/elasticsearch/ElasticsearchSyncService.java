@@ -1858,8 +1858,12 @@ public class ElasticsearchSyncService {
         List<Map<String,Object>> docs = tableResp.hits().hits().stream()
                 .map(h -> h.source())
                 .filter(s -> s != null)
-                .map(s -> s.to(Map.class))
-                .collect(Collectors.toList());
+                .map(s -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String,Object> result = s.to(Map.class);
+                    return result;
+                })
+                .toList();
         Long totalVal = null;
         if (tableResp.hits() != null) {
             var totalResult = tableResp.hits().total();

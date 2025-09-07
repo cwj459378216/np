@@ -64,7 +64,7 @@ public class NotificationSettingService {
                 
                 if ("ssl".equals(setting.getSecurity())) {
                     props.put("mail.smtp.ssl.enable", "true");
-                    props.put("mail.smtp.socketFactory.class", "jakarta.net.ssl.SSLSocketFactory");
+                    props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
                 } else if ("tls".equals(setting.getSecurity())) {
                     props.put("mail.smtp.starttls.enable", "true");
                 }

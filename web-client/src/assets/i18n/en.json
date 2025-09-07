@@ -574,5 +574,19 @@
   "Calculation": "Calculation",
   "Values to display on Y-axis": "Values to display on Y-axis",
   "Chart will show": "Chart will show",
-  "Select configuration": "Select configuration"
+  "Select configuration": "Select configuration",
+  
+  "Execute Scheduler": "Execute Scheduler",
+  "Are you sure you want to execute this scheduler now?": "Are you sure you want to execute this scheduler now?",
+  "Yes, execute it!": "Yes, execute it!",
+  "Scheduler executed successfully": "Scheduler executed successfully",
+  "Error executing scheduler": "Error executing scheduler",
+  
+  "validation": {
+    "required": "This field is required",
+    "minLength": "Minimum length is {length} characters",
+    "maxLength": "Maximum length is {length} characters",
+    "email": "Please enter a valid email address",
+    "pattern": "Please enter a valid format"
+  }
 }

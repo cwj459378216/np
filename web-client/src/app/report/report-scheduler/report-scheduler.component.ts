@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReportSchedulerService } from '../../services/report-scheduler.service';
 import { TemplateService } from '../../services/template.service';
 import { NotificationSettingService } from '../../services/notification-setting.service';
@@ -71,13 +71,13 @@ export class ReportSchedulerComponent implements OnInit {
     initForm() {
         this.params = this.fb.group({
             id: [null],
-            name: [''],
-            description: [''],
-            template: [''],
-            frequency: [''],
-            time: [''],
-            whereToSend: [''],
-            status: ['Active']
+            name: ['', [Validators.required, Validators.minLength(2)]],
+            description: ['', [Validators.required, Validators.minLength(5)]],
+            template: ['', Validators.required],
+            frequency: ['', Validators.required],
+            time: ['', Validators.required],
+            whereToSend: ['', Validators.required],
+            status: ['Active', Validators.required]
         });
     }
 
@@ -95,13 +95,33 @@ export class ReportSchedulerComponent implements OnInit {
 
     editScheduler(scheduler: any = null) {
         if (scheduler) {
+            // 确保时间格式正确 (HH:mm)
+            let timeValue = scheduler.time;
+            if (timeValue && typeof timeValue === 'string') {
+                // 如果时间是数组格式 [HH, mm] 或其他格式，转换为 HH:mm
+                if (timeValue.includes(',')) {
+                    const timeParts = timeValue.split(',');
+                    if (timeParts.length >= 2) {
+                        const hours = timeParts[0].trim().padStart(2, '0');
+                        const minutes = timeParts[1].trim().padStart(2, '0');
+                        timeValue = `${hours}:${minutes}`;
+                    }
+                } else if (timeValue.length === 8 && timeValue.includes(':')) {
+                    // 如果是 HH:mm:ss 格式，截取 HH:mm
+                    timeValue = timeValue.substring(0, 5);
+                }
+            }
+
+            console.log('Editing scheduler:', scheduler);
+            console.log('Time value:', timeValue);
+
             this.params.patchValue({
                 id: scheduler.id,
                 name: scheduler.name,
                 description: scheduler.description,
                 template: scheduler.template,
                 frequency: scheduler.frequency,
-                time: scheduler.time,
+                time: timeValue,
                 whereToSend: scheduler.whereToSend,
                 status: scheduler.status
             });
@@ -139,6 +159,39 @@ export class ReportSchedulerComponent implements OnInit {
         });
     }
 
+    executeScheduler(scheduler: any) {
+        this.translate.get(['Execute Scheduler', 'Are you sure you want to execute this scheduler now?', 'Yes, execute it!', 'Scheduler executed successfully', 'Error executing scheduler'])
+        .subscribe(translations => {
+            Swal.fire({
+                title: translations['Execute Scheduler'],
+                text: translations['Are you sure you want to execute this scheduler now?'],
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: translations['Yes, execute it!'],
+                padding: '2em'
+            }).then((result) => {
+                if (result.value) {
+                    this.reportSchedulerService.executeScheduler(scheduler.id).subscribe({
+                        next: (response: any) => {
+                            console.log('Scheduler execution response:', response);
+                            this.showMessage(translations['Scheduler executed successfully']);
+                        },
+                        error: (error: any) => {
+                            console.error('Error executing scheduler:', error);
+                            let errorMessage = translations['Error executing scheduler'];
+                            if (error.error && typeof error.error === 'string') {
+                                errorMessage += ': ' + error.error;
+                            } else if (error.message) {
+                                errorMessage += ': ' + error.message;
+                            }
+                            this.showMessage(errorMessage, 'error');
+                        }
+                    });
+                }
+            });
+        });
+    }
+
     saveScheduler() {
         if (!this.params.valid) {
             this.translate.get('Please fill all required fields.').subscribe(message => {
@@ -148,15 +201,33 @@ export class ReportSchedulerComponent implements OnInit {
         }
 
         const formValue = this.params.value;
-        const schedulerData = {
-            ...formValue,
-            time: formValue.time,
+        
+        // 确保时间格式正确 (HH:mm)
+        let timeValue = formValue.time;
+        if (timeValue && timeValue.length === 8) { // 如果是 HH:mm:ss 格式
+            timeValue = timeValue.substring(0, 5); // 截取 HH:mm 部分
+        }
+        
+        // 准备调度器数据，只包含需要更新的字段
+        const schedulerData: any = {
+            name: formValue.name,
+            description: formValue.description,
+            template: formValue.template,
+            frequency: formValue.frequency,
+            time: timeValue,
+            whereToSend: formValue.whereToSend,
             status: formValue.status || 'Active'
         };
 
+        console.log('Saving scheduler data:', schedulerData);
+
+        // 如果是更新操作，添加ID但不包含时间戳字段
         if (formValue.id) {
+            schedulerData.id = formValue.id;
+            
             this.reportSchedulerService.updateScheduler(formValue.id, schedulerData).subscribe({
-                next: () => {
+                next: (result) => {
+                    console.log('Update scheduler result:', result);
                     this.loadSchedulers();
                     this.translate.get('Scheduler has been updated successfully').subscribe(message => {
                         this.showMessage(message);
@@ -171,6 +242,7 @@ export class ReportSchedulerComponent implements OnInit {
                 }
             });
         } else {
+            // 创建新调度器
             this.reportSchedulerService.createScheduler(schedulerData).subscribe({
                 next: () => {
                     this.loadSchedulers();
@@ -246,6 +318,23 @@ export class ReportSchedulerComponent implements OnInit {
         }
         // 如果是其他格式，尝试转换
         return time;
+    }
+
+    formatDate(dateTime: string): string {
+        if (!dateTime) return '';
+        try {
+            const date = new Date(dateTime);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        } catch (error) {
+            return dateTime;
+        }
     }
 
     showMessage(msg = '', type = 'success') {

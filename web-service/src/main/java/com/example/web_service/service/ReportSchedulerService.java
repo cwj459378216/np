@@ -22,6 +22,15 @@ public class ReportSchedulerService {
     }
 
     public ReportScheduler save(ReportScheduler scheduler) {
+        // 如果是更新操作（有ID），需要保留原有的createdAt字段
+        if (scheduler.getId() != null) {
+            ReportScheduler existingScheduler = reportSchedulerRepository.findById(scheduler.getId())
+                .orElseThrow(() -> new RuntimeException("Report scheduler not found"));
+            
+            // 保留原有的createdAt时间
+            scheduler.setCreatedAt(existingScheduler.getCreatedAt());
+        }
+        
         return reportSchedulerRepository.save(scheduler);
     }
 

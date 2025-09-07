@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 @Data
 @Entity
@@ -28,6 +30,39 @@ public class ReportScheduler {
     @Column(name = "schedule_time", nullable = false)
     @JsonFormat(pattern = "HH:mm")
     private LocalTime time;
+
+    // 自定义setter方法来处理不同的时间格式
+    @JsonSetter("time")
+    public void setTimeFromString(String timeStr) {
+        if (timeStr != null && !timeStr.isEmpty()) {
+            try {
+                // 处理 HH:mm 格式
+                if (timeStr.matches("\\d{2}:\\d{2}")) {
+                    this.time = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
+                }
+                // 处理 HH:mm:ss 格式
+                else if (timeStr.matches("\\d{2}:\\d{2}:\\d{2}")) {
+                    this.time = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm:ss"));
+                }
+                // 其他格式尝试默认解析
+                else {
+                    this.time = LocalTime.parse(timeStr);
+                }
+            } catch (Exception e) {
+                // 如果解析失败，尝试直接设置
+                try {
+                    this.time = LocalTime.parse(timeStr);
+                } catch (Exception ex) {
+                    throw new IllegalArgumentException("Invalid time format: " + timeStr, ex);
+                }
+            }
+        }
+    }
+
+    // 标准的setter方法
+    public void setTime(LocalTime time) {
+        this.time = time;
+    }
 
     @Column(name = "where_to_send", nullable = false)
     private String whereToSend;
