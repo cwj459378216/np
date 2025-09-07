@@ -187,14 +187,9 @@ CREATE INDEX IF NOT EXISTS idx_template_id ON reports(template_id);
 CREATE INDEX IF NOT EXISTS idx_created_at ON reports(created_at);
 CREATE INDEX IF NOT EXISTS idx_creator ON reports(creator);
 
--- 添加外键约束（如果需要）
+-- 移除外键约束（Templates 不应该与已生成的 Reports 关联）
 ALTER TABLE reports 
 DROP CONSTRAINT IF EXISTS fk_reports_template;
-
-ALTER TABLE reports 
-ADD CONSTRAINT fk_reports_template 
-FOREIGN KEY (template_id) 
-REFERENCES templates(id);
 
 -- 插入报告数据（使用 SELECT 确保引用的模板存在）
 INSERT INTO reports (name, description, template_id, file_path, trigger_mode, creator, created_at) 
@@ -267,7 +262,7 @@ INSERT INTO report_schedulers (name, description, template, frequency, schedule_
 (
     'Daily System Report',
     'Generate system status report daily',
-    'System Status Template',
+    'Security Dashboard',
     'Daily',
     '00:00:00',
     'admin@example.com',
@@ -276,7 +271,7 @@ INSERT INTO report_schedulers (name, description, template, frequency, schedule_
 (
     'Weekly Security Report',
     'Generate security analysis report weekly',
-    'Security Alert Template',
+    'Security Dashboard',
     'Weekly',
     '08:00:00',
     'security@example.com',

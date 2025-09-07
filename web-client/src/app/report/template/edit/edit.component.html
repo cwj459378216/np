@@ -47,18 +47,24 @@
                                 <table class="w-full table-auto">
                                     <thead>
                                         <tr>
-                                            <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">#</th>
-                                            <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">First Name</th>
-                                            <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">Last Name</th>
-                                            <th class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">Email</th>
+                                            <th *ngFor="let title of item.titles || ['timestamp']" 
+                                                class="border-b border-[#e5e7eb] p-2 text-left dark:border-[#191e3a]">
+                                                {{formatTableHeader(title)}}
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr *ngFor="let row of tableData">
-                                            <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.id}}</td>
-                                            <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.firstName}}</td>
-                                            <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.lastName}}</td>
-                                            <td class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">{{row.email}}</td>
+                                        <tr *ngFor="let row of item['tableData']">
+                                            <td *ngFor="let title of item.titles || ['timestamp']" 
+                                                class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">
+                                                {{formatTableCellValue(row[title], title)}}
+                                            </td>
+                                        </tr>
+                                        <tr *ngIf="!item['tableData'] || item['tableData'].length === 0">
+                                            <td [attr.colspan]="(item.titles || ['timestamp']).length" 
+                                                class="border-b border-[#e5e7eb] p-4 text-center text-gray-500 dark:border-[#191e3a]">
+                                                {{ 'No data available' | translate }}
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -159,6 +165,7 @@
                     name="index"
                     class="form-select"
                     [(ngModel)]="formData.index"
+                    (change)="onIndexChange()"
                     required
                 >
                     <option value="">{{ 'Select Index' | translate }}</option>
@@ -213,23 +220,79 @@
                 </div>
             </div>
 
-            <!-- Table Titles (仅在选择 table 时显示) -->
+            <!-- Table Configuration (仅在选择 table 时显示) -->
             <div *ngIf="formData.type === 'table'">
-                <label for="tableTitles">{{ 'Table Titles' | translate }}</label>
-                <ng-select
-                    id="tableTitles"
-                    [items]="titleOptions"
-                    [(ngModel)]="selectedTitles"
-                    [multiple]="true"
-                    [clearable]="false"
-                    [dropdownPosition]="'top'"
-                    placeholder="{{ 'Select table titles' | translate }}"
-                    name="tableTitles"
-                    bindLabel="label"
-                    bindValue="value"
-                    class="custom-multiselect"
-                >
-                </ng-select>
+                <label class="text-base font-semibold text-primary">{{ 'Table Configuration' | translate }}</label>
+                
+                <div class="bg-gray-50 dark:bg-gray-900/20 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mt-3 space-y-3">
+                    <!-- Table Titles -->
+                    <div>
+                        <label for="tableTitles">{{ 'Table Columns' | translate }}</label>
+                        <ng-select
+                            id="tableTitles"
+                            [items]="titleOptions"
+                            [(ngModel)]="selectedTitles"
+                            [multiple]="true"
+                            [clearable]="false"
+                            [dropdownPosition]="'top'"
+                            placeholder="{{ 'Select table columns' | translate }}"
+                            name="tableTitles"
+                            bindLabel="label"
+                            bindValue="value"
+                            class="custom-multiselect"
+                        >
+                        </ng-select>
+                        <p class="text-xs text-gray-500 mt-1">{{ 'Choose which fields to display as table columns' | translate }}</p>
+                    </div>
+                    
+                    <!-- Top N Records -->
+                    <div>
+                        <label for="topN">{{ 'Number of Records' | translate }}</label>
+                        <select
+                            id="topN"
+                            name="topN"
+                            class="form-select"
+                            [(ngModel)]="formData.topN"
+                        >
+                            <option value="3">3</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">{{ 'Maximum number of records to display' | translate }}</p>
+                    </div>
+                    
+                    <!-- Sort Field -->
+                    <div>
+                        <label for="sortField">{{ 'Sort Field' | translate }}</label>
+                        <select
+                            id="sortField"
+                            name="sortField"
+                            class="form-select"
+                            [(ngModel)]="formData.sortField"
+                        >
+                            <option value="">{{ 'Default (timestamp desc)' | translate }}</option>
+                            <option *ngFor="let field of titleOptions" [value]="field.value">{{field.label}}</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">{{ 'Field to sort the table by' | translate }}</p>
+                    </div>
+                    
+                    <!-- Sort Order -->
+                    <div>
+                        <label for="sortOrder">{{ 'Sort Order' | translate }}</label>
+                        <select
+                            id="sortOrder"
+                            name="sortOrder"
+                            class="form-select"
+                            [(ngModel)]="formData.sortOrder"
+                        >
+                            <option value="desc">{{ 'Descending (Newest first)' | translate }}</option>
+                            <option value="asc">{{ 'Ascending (Oldest first)' | translate }}</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">{{ 'Order to sort the records' | translate }}</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Chart Configuration (仅在不选择 table 时显示) -->

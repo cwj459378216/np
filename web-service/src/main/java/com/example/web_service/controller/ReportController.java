@@ -60,8 +60,14 @@ public class ReportController {
         Report report = reportService.findById(id);
         Resource resource = reportService.loadReportFile(report.getFilePath());
         
+        // 确保文件名包含 .pdf 后缀
+        String fileName = report.getName();
+        if (!fileName.toLowerCase().endsWith(".pdf")) {
+            fileName += ".pdf";
+        }
+        
         return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + report.getName() + "\"")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
             .body(resource);
     }
 

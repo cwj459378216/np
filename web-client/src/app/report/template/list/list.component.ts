@@ -80,23 +80,55 @@ export class ListComponent implements OnInit {
                             },
                             error => {
                                 console.error('Error deleting template:', error);
-                                this.showMessage(translations['Error deleting template'], 'error');
+                                // 显示服务器返回的具体错误信息
+                                let errorMessage = translations['Error deleting template'];
+                                if (error.error && typeof error.error === 'string') {
+                                    errorMessage = error.error;
+                                } else if (error.message) {
+                                    errorMessage = error.message;
+                                }
+                                this.showMessage(errorMessage, 'error');
                             }
                         );
                     } else {
                         let selectedRows = this.datatable.getSelectedRows();
                         const ids: number[] = selectedRows.map((d: any) => d.id);
+                        
                         // 批量删除
-                        Promise.all(
+                        let hasErrors = false;
+                        let errorMessages: string[] = [];
+                        
+                        Promise.allSettled(
                             ids.map((id: number) =>
                                 this.http.delete(`${environment.apiUrl}/templates/${id}`).toPromise()
                             )
-                        ).then(() => {
+                        ).then((results) => {
+                            results.forEach((result, index) => {
+                                if (result.status === 'rejected') {
+                                    hasErrors = true;
+                                    const error = result.reason;
+                                    let errorMsg = `Template ID ${ids[index]}: `;
+                                    if (error.error && typeof error.error === 'string') {
+                                        errorMsg += error.error;
+                                    } else if (error.message) {
+                                        errorMsg += error.message;
+                                    } else {
+                                        errorMsg += 'Unknown error';
+                                    }
+                                    errorMessages.push(errorMsg);
+                                }
+                            });
+                            
                             this.loadTemplates();
                             this.datatable.clearSelectedRows();
-                            this.showMessage(translations['Templates have been deleted successfully']);
-                        }).catch(() => {
-                            this.showMessage(translations['Error deleting templates'], 'error');
+                            
+                            if (hasErrors) {
+                                // 显示详细的错误信息
+                                const detailedError = errorMessages.join('\n');
+                                this.showMessage(detailedError, 'error');
+                            } else {
+                                this.showMessage(translations['Templates have been deleted successfully']);
+                            }
                         });
                     }
                 }
@@ -109,14 +141,28 @@ export class ListComponent implements OnInit {
             toast: true,
             position: 'top',
             showConfirmButton: false,
-            timer: 3000,
+            timer: type === 'error' ? 5000 : 3000, // 错误消息显示更长时间
             customClass: { container: 'toast' },
         });
-        toast.fire({
-            icon: type,
-            title: msg,
-            padding: '10px 20px',
-        });
+        
+        // 如果是错误消息且包含多行，使用弹窗而不是toast
+        if (type === 'error' && msg.includes('\n')) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error Details',
+                text: msg,
+                confirmButtonText: 'OK',
+                customClass: {
+                    popup: 'error-popup'
+                }
+            });
+        } else {
+            toast.fire({
+                icon: type,
+                title: msg,
+                padding: '10px 20px',
+            });
+        }
     }
 
     downloadTemplate(id: number) {

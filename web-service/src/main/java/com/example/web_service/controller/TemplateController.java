@@ -51,8 +51,15 @@ public class TemplateController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除模板")
-    public void deleteTemplate(@PathVariable Long id) {
-        templateService.deleteById(id);
+    public ResponseEntity<?> deleteTemplate(@PathVariable Long id) {
+        try {
+            templateService.deleteById(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Internal server error: " + e.getMessage());
+        }
     }
 
     @GetMapping("/search")

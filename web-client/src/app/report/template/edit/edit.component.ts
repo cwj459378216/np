@@ -84,11 +84,7 @@ export class EditComponent implements OnInit {
     };
 
     // 下拉选项数据
-    indexList = [
-        { value: 'index1', label: 'Index 1' },
-        { value: 'index2', label: 'Index 2' },
-        { value: 'index3', label: 'Index 3' }
-    ];
+    indexList: Array<{value: string, label: string}> = [];
 
     // 添加 aggregationList
     aggregationList = [
@@ -145,6 +141,11 @@ export class EditComponent implements OnInit {
         { value: 'count', label: 'Count' }
     ];
 
+    // 添加缺失的字段属性
+    categoryFields: Array<{value: string, label: string, type?: string}> = [];
+    dateFields: Array<{value: string, label: string, type?: string}> = [];
+    yAxisCandidates: Array<{value: string, label: string, type?: string}> = [];
+
     originalTemplate: any = null;  // 添加这个属性
 
     constructor(
@@ -158,11 +159,21 @@ export class EditComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.loadIndices();
         this.route.queryParams.subscribe(params => {
             this.id = params['id'];
             if (this.id) {
                 this.loadTemplate();
             }
+        });
+    }
+
+    loadIndices() {
+        this.http.get<string[]>(`${environment.apiUrl}/es/indices`).subscribe({
+            next: (indices) => {
+                this.indexList = indices.map(i => ({ value: i, label: i }));
+            },
+            error: () => {}
         });
     }
 
@@ -399,6 +410,62 @@ export class EditComponent implements OnInit {
                 this.echartsInstances[item.uniqueId].resize();
             });
         }
+    }
+
+    onIndexChange() {
+        if (!this.formData.index) {
+            this.filterFields = [];
+            this.aggregationFields = [];
+            this.categoryFields = [];
+            this.dateFields = [];
+            this.yAxisCandidates = [];
+            this.titleOptions = [];  // 也清空表格字段选项
+            return;
+        }
+        
+        // Load all fields for filter fields and y-axis candidates
+        this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields`).subscribe({
+            next: (fields) => {
+                console.log('Loaded fields for index:', this.formData.index, fields);
+                const options = fields.map(f => ({ value: f.name, label: f.name, type: f.type }));
+                this.filterFields = options;
+                this.dateFields = options.filter(o => o.type === 'date');
+                // 设置表格字段选项（所有字段都可以作为表格列）
+                this.titleOptions = options.map(o => ({ value: o.value, label: o.label }));
+                console.log('titleOptions:', this.titleOptions);
+                
+                // 加载数值字段用于聚合
+                this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields?type=numeric`).subscribe({
+                    next: (numericFields) => {
+                        this.aggregationFields = numericFields.map(f => ({ value: f.name, label: f.name, type: f.type }));
+                        console.log('aggregationFields:', this.aggregationFields);
+                    },
+                    error: () => {
+                        console.error('Error loading numeric fields');
+                    }
+                });
+
+                // 加载文本字段用于分类
+                this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields?type=text`).subscribe({
+                    next: (textFields) => {
+                        this.categoryFields = textFields.map(f => ({ value: f.name, label: f.name, type: f.type }));
+                        console.log('categoryFields:', this.categoryFields);
+                    },
+                    error: () => {
+                        console.error('Error loading text fields');
+                    }
+                });
+
+                // 设置Y轴候选字段（包括时间字段和文本字段）
+                this.yAxisCandidates = [
+                    ...this.dateFields,
+                    ...options.filter(o => o.type === 'keyword' || o.type === 'text')
+                ];
+            },
+            error: () => {
+                console.error('Error loading fields for index');
+            }
+        });
     }
 
     openAddChartModal() {
@@ -659,5 +726,80 @@ export class EditComponent implements OnInit {
         }
         
         return 'Select configuration';
+    }
+
+    // 格式化表格单元格值
+    formatTableCellValue(value: any, fieldName?: string): string {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        
+        // 特殊处理 timestamp 字段
+        if (fieldName && (fieldName.toLowerCase() === 'timestamp' || fieldName.toLowerCase().includes('time'))) {
+            // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
+            if (typeof value === 'number' && value > 946684800000) {
+                return new Date(value).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+            // 如果是 ISO 字符串格式
+            if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+                return new Date(value).toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+        }
+        
+        // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
+        if (typeof value === 'number' && value > 946684800000) {
+            return new Date(value).toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // 如果是对象，转换为JSON字符串
+        if (typeof value === 'object') {
+            return JSON.stringify(value);
+        }
+        
+        return String(value);
+    }
+
+    // 格式化表格标题
+    formatTableHeader(header: string): string {
+        if (!header) {
+            return '';
+        }
+        
+        // 处理驼峰命名和下划线命名
+        let formatted = header
+            // 处理驼峰命名：在大写字母前添加空格
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            // 处理下划线：替换为空格
+            .replace(/_/g, ' ')
+            // 处理点号：替换为空格
+            .replace(/\./g, ' ')
+            // 首字母大写，其他单词首字母也大写
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        
+        return formatted;
     }
 }
