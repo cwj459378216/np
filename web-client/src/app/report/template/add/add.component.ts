@@ -41,6 +41,14 @@ interface FormData {
     filter: string;
     aggregationField: string;
     aggregationType: string;
+    xField?: string; // metric (count / agg value)
+    yField?: string; // dimension (time/date or category)
+}
+
+interface WidgetFilter {
+    field: string;
+    operator: 'exists' | 'not_exists' | 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte';
+    value?: string;
 }
 
 @Component({
@@ -64,17 +72,11 @@ export class AddComponent implements OnInit {
     ];
 
     // 下拉选项数据
-    indexList = [
-        { value: 'index1', label: 'Index 1' },
-        { value: 'index2', label: 'Index 2' },
-        { value: 'index3', label: 'Index 3' }
-    ];
-
-    filterFields = [
-        { value: 'field1', label: 'Field 1' },
-        { value: 'field2', label: 'Field 2' },
-        { value: 'field3', label: 'Field 3' }
-    ];
+    indexList: Array<{value: string; label: string}> = [];
+    filterFields: Array<{ value: string; label: string; type?: string }> = [];
+    aggregationFields: Array<{ value: string; label: string }> = [];
+    dateFields: Array<{ value: string; label: string }> = [];
+    yAxisCandidates: Array<{ value: string; label: string }> = [];
 
     titleOptions = [
         { value: 'id', label: 'Id' },
@@ -83,16 +85,12 @@ export class AddComponent implements OnInit {
         { value: 'firstName', label: 'FirstName' }
     ];
 
-    aggregationFields = [
-        { value: 'field1', label: 'Field 1' },
-        { value: 'field2', label: 'Field 2' },
-        { value: 'field3', label: 'Field 3' }
-    ];
-
     aggregationTypes = [
         { value: 'sum', label: 'Sum' },
         { value: 'avg', label: 'Average' },
-        { value: 'count', label: 'Count' }
+        { value: 'count', label: 'Count' },
+        { value: 'min', label: 'Min' },
+        { value: 'max', label: 'Max' }
     ];
 
     @ViewChild('addChartModal') addChartModal: any;
@@ -106,11 +104,24 @@ export class AddComponent implements OnInit {
         index: '',
         filter: '',
         aggregationField: '',
-        aggregationType: ''
+        aggregationType: '',
+        xField: '',
+        yField: ''
     };
 
-    filters: Array<{field: string, value: string}> = [];
+    filters: WidgetFilter[] = [];
     selectedTitles: string[] = [];
+
+    filterOperators = [
+        { value: 'exists', label: 'Exists' },
+        { value: 'not_exists', label: 'Not Exists' },
+        { value: 'eq', label: '=' },
+        { value: 'neq', label: '!=' },
+        { value: 'gt', label: '>' },
+        { value: 'gte', label: '>=' },
+        { value: 'lt', label: '<' },
+        { value: 'lte', label: '<=' }
+    ];
 
     constructor(
         private http: HttpClient,
@@ -121,6 +132,68 @@ export class AddComponent implements OnInit {
     ngOnInit() {
         this.dashboard = [];
         this.initializeGridsterOptions();
+        this.loadIndices();
+    }
+
+    loadIndices() {
+        this.http.get<string[]>(`${environment.apiUrl}/es/indices`).subscribe({
+            next: (indices) => {
+                this.indexList = indices.map(i => ({ value: i, label: i }));
+            },
+            error: () => {}
+        });
+    }
+
+    onIndexChange() {
+        if (!this.formData.index) {
+            this.filterFields = [];
+            this.aggregationFields = [];
+            this.dateFields = [];
+            this.yAxisCandidates = [];
+            return;
+        }
+        
+        // Load all fields for filter fields and y-axis candidates
+        this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields`).subscribe({
+            next: (fields) => {
+                console.log('Loaded fields for index:', this.formData.index, fields);
+                const options = fields.map(f => ({ value: f.name, label: f.name, type: f.type }));
+                this.filterFields = options;
+                this.dateFields = options.filter(o => o.type === 'date');
+                // y-axis candidates: date fields first (time series) then keyword (category)
+                const keywordFields = options.filter(o => o.type === 'keyword');
+                this.yAxisCandidates = [...this.dateFields, ...keywordFields].map(o => ({ value: o.value, label: o.label }));
+                console.log('yAxisCandidates:', this.yAxisCandidates);
+                
+                // default selections
+                if (!this.formData.yField && this.yAxisCandidates.length) {
+                    this.formData.yField = this.yAxisCandidates[0].value;
+                }
+                if (!this.formData.aggregationType) this.formData.aggregationType = 'count';
+            },
+            error: () => {}
+        });
+        
+        // Load numeric fields specifically for aggregation (Metric Field)
+        this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields/filtered?fieldType=numeric`).subscribe({
+            next: (numericFields) => {
+                console.log('Loaded numeric fields for aggregation:', numericFields);
+                this.aggregationFields = numericFields.map(f => ({ value: f.name, label: f.name }));
+                console.log('aggregationFields (numeric only):', this.aggregationFields);
+            },
+            error: (err) => {
+                console.error('Failed to load numeric fields:', err);
+                // Fallback to client-side filtering if the new API is not available
+                this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields`).subscribe({
+                    next: (fields) => {
+                        const aggAllowed = ['integer','long','short','byte','double','float','half_float','scaled_float','unsigned_long'];
+                        this.aggregationFields = fields.filter(f => aggAllowed.includes(f.type)).map(f => ({ value: f.name, label: f.name }));
+                        console.log('aggregationFields (fallback):', this.aggregationFields);
+                    },
+                    error: () => {}
+                });
+            }
+        });
     }
 
     // 添加新的图表或表格
@@ -133,9 +206,11 @@ export class AddComponent implements OnInit {
             index: '',
             filter: '',
             aggregationField: '',
-            aggregationType: ''
+            aggregationType: 'count',
+            xField: 'count',
+            yField: ''
         };
-        this.filters = [{ field: '', value: '' }];
+        this.filters = [{ field: '', operator: 'eq', value: '' }];
         this.selectedTitles = [];
         this.addChartModal.open();
     }
@@ -148,6 +223,15 @@ export class AddComponent implements OnInit {
             });
             return;
         }
+        if ((this.formData.type === 'line' || this.formData.type === 'bar') && !this.formData.yField) {
+            this.translate.get('Please select Y Axis Field').subscribe(msg => this.showMessage(msg, 'error'));
+            return;
+        }
+
+        // Debug log form data
+        console.log('Adding widget with formData:', this.formData);
+        console.log('aggregationField=', this.formData.aggregationField);
+        console.log('yField=', this.formData.yField);
 
         const uniqueId = `${this.formData.type}_${new Date().getTime()}`;
         let newItem: CustomGridsterItem;
@@ -157,33 +241,26 @@ export class AddComponent implements OnInit {
             case 'bar':
             case 'pie':
                 newItem = {
-                    cols: 3,
-                    rows: 3,
-                    y: 0,
-                    x: 0,
-                    type: 'chart',
-                    chartType: this.formData.type,
-                    uniqueId: uniqueId,
-                    id: uniqueId,
-                    chartConfig: this.generateChartConfig(this.formData.type)
-                };
+                    cols: 3, rows: 3, y: 0, x: 0,
+                    type: 'chart', chartType: this.formData.type,
+                    uniqueId, id: uniqueId,
+                    chartConfig: this.buildBaseChartConfig(this.formData.name || uniqueId),
+                    filters: this.filters, index: this.formData.index,
+                    aggregation: { field: this.formData.aggregationField, type: this.formData.aggregationType || 'count' },
+                    xField: this.formData.xField, yField: this.formData.yField,
+                    name: this.formData.name
+                } as any;
                 break;
 
             case 'table':
                 newItem = {
-                    cols: 6,
-                    rows: 3,
-                    y: 0,
-                    x: 0,
-                    type: 'table',
-                    uniqueId: uniqueId,
-                    id: uniqueId,
+                    cols: 6, rows: 3, y: 0, x: 0,
+                    type: 'table', uniqueId, id: uniqueId,
                     titles: this.selectedTitles,
-                    aggregation: {
-                        field: this.formData.aggregationField,
-                        type: this.formData.aggregationType
-                    }
-                };
+                    aggregation: { field: this.formData.aggregationField, type: this.formData.aggregationType },
+                    filters: this.filters, index: this.formData.index,
+                    name: this.formData.name
+                } as any;
                 break;
 
             default:
@@ -195,6 +272,81 @@ export class AddComponent implements OnInit {
 
         this.dashboard.push(newItem);
         this.addChartModal.close();
+        // load data from backend
+        this.loadWidgetData(newItem);
+    }
+
+    private buildBaseChartConfig(title: string) {
+        return {
+            title: { text: title },
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['Data'] },
+            xAxis: { type: 'category', data: [] },
+            yAxis: { type: 'value' },
+            series: [{ name: 'Data', type: 'line', data: [] }]
+        };
+    }
+
+    private loadWidgetData(item: CustomGridsterItem) {
+        const req: any = {
+            index: (item as any).index,
+            widgetType: item.chartType || item.type,
+            aggregationField: item.aggregation?.field || '',
+            aggregationType: item.aggregation?.type || 'count',
+            filters: (item as any).filters || [],
+            yField: (item as any).yField || ''  // Add yField to request
+        };
+        
+        // Debug log request
+        console.log('Sending widget query request:', req);
+        
+        this.http.post(`${environment.apiUrl}/es/widget/query`, req).subscribe({
+            next: (res: any) => {
+                if (item.type === 'chart') {
+                    if (item.chartType === 'line' || item.chartType === 'bar') {
+                        const x: any[] = res.x || [];
+                        const y: any[] = res.y || [];
+                        let categories: string[];
+                        
+                        // Check if this is a category-based chart or time-based chart
+                        if (res.chartType === 'category') {
+                            // For category charts, x contains category names directly
+                            categories = x.map(v => String(v));
+                        } else {
+                            // For time charts, x contains timestamps that need formatting
+                            categories = x.map(v => new Date(v).toLocaleString());
+                        }
+                        
+                        item.chartConfig = {
+                            title: { text: item['name'] || item.uniqueId },
+                            tooltip: { trigger: 'axis' },
+                            xAxis: { type: 'category', data: categories },
+                            yAxis: { type: 'value' },
+                            series: [{ name: req.aggregationType, type: item.chartType, data: y }]
+                        };
+                    } else if (item.chartType === 'pie') {
+                        const labels: string[] = res.labels || [];
+                        const values: number[] = res.values || [];
+                        item.chartConfig = {
+                            title: { text: item['name'] || item.uniqueId },
+                            tooltip: { trigger: 'item' },
+                            legend: { orient: 'vertical', left: 'left' },
+                            series: [{
+                                type: 'pie',
+                                radius: '60%',
+                                data: labels.map((l, i) => ({ name: l, value: values[i] })),
+                                emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } }
+                            }]
+                        };
+                    }
+                } else if (item.type === 'table') {
+                    (item as any).tableData = res.data || [];
+                }
+            },
+            error: () => {
+                this.translate.get('Load data failed').subscribe(msg => this.showMessage(msg, 'error'));
+            }
+        });
     }
 
     initializeGridsterOptions() {
@@ -236,82 +388,23 @@ export class AddComponent implements OnInit {
     }
 
     addFilter() {
-        this.filters.push({ field: '', value: '' });
+        this.filters.push({ field: '', operator: 'eq', value: '' });
+    }
+
+    requiresValue(op: string): boolean {
+        return !['exists', 'not_exists'].includes(op);
     }
 
     removeFilter(index: number) {
         this.filters.splice(index, 1);
+        if (this.filters.length === 0) {
+            this.filters.push({ field: '', operator: 'eq', value: '' });
+        }
     }
 
     private generateChartConfig(chartType: string) {
-        const config: any = {
-            title: {
-                text: this.formData.name || 'Chart'
-            },
-            tooltip: {
-                trigger: 'axis'
-            },
-            legend: {
-                data: ['Data']
-            }
-        };
-
-        switch (chartType) {
-            case 'line':
-                config.xAxis = {
-                    type: 'category',
-                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                };
-                config.yAxis = {
-                    type: 'value'
-                };
-                config.series = [{
-                    name: 'Data',
-                    data: [120, 200, 150, 80, 70, 110, 130],
-                    type: 'line',
-                    smooth: true
-                }];
-                break;
-
-            case 'bar':
-                config.xAxis = {
-                    type: 'category',
-                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                };
-                config.yAxis = {
-                    type: 'value'
-                };
-                config.series = [{
-                    name: 'Data',
-                    data: [120, 200, 150, 80, 70, 110, 130],
-                    type: 'bar'
-                }];
-                break;
-
-            case 'pie':
-                config.series = [{
-                    name: 'Access From',
-                    type: 'pie',
-                    radius: '50%',
-                    data: [
-                        { value: 1048, name: 'Search Engine' },
-                        { value: 735, name: 'Direct' },
-                        { value: 580, name: 'Email' },
-                        { value: 484, name: 'Union Ads' },
-                        { value: 300, name: 'Video Ads' }
-                    ],
-                    emphasis: {
-                        itemStyle: {
-                            shadowBlur: 10,
-                            shadowOffsetX: 0,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    }
-                }];
-                break;
-        }
-
-        return config;
+        // legacy placeholder no longer used for final rendering
+        return this.buildBaseChartConfig(this.formData.name || 'Chart');
     }
 
     saveTemplate() {
@@ -401,5 +494,31 @@ export class AddComponent implements OnInit {
         this.selectedTitles = this.selectedTitles.sort((a, b) =>
             orderedTitles.indexOf(a.toLowerCase()) - orderedTitles.indexOf(b.toLowerCase())
         );
+    }
+
+    onYFieldChange() {
+        console.log('Y Field changed to:', this.formData.yField);
+    }
+
+    onAggFieldChange() {
+        console.log('Aggregation Field changed to:', this.formData.aggregationField);
+    }
+
+    getAxisPreview(): string {
+        if (this.formData.type === 'pie') {
+            const field = this.formData.aggregationField || 'field';
+            const aggType = this.formData.aggregationType || 'count';
+            return `${aggType}(${field}) by categories`;
+        }
+        
+        if (this.formData.type === 'line' || this.formData.type === 'bar') {
+            const xAxis = this.formData.yField || 'time/category';
+            const yField = this.formData.aggregationField || 'count';
+            const yType = this.formData.aggregationType || 'count';
+            const yAxisLabel = this.formData.aggregationField ? `${yType}(${yField})` : 'count';
+            return `${xAxis} vs ${yAxisLabel}`;
+        }
+        
+        return 'Select configuration';
     }
 }

@@ -552,5 +552,25 @@
     "time": "时间",
     "systemStatusTemplate": "系统状态模板",
     "securityAlertTemplate": "安全警报模板"
-  }
+  },
+  "Chart Configuration": "图表配置",
+  "Pie Chart Settings": "饼图设置",
+  "Line Chart Axes": "折线图坐标轴",
+  "Bar Chart Axes": "柱状图坐标轴",
+  "Category Field (Pie Slices)": "分类字段（饼图扇形）",
+  "Select field to group by": "选择分组字段",
+  "Field to create pie slices": "用于创建饼图扇形的字段",
+  "Value Calculation": "数值计算",
+  "Count of Records": "记录计数",
+  "How to calculate slice sizes": "如何计算扇形大小",
+  "X-Axis (Horizontal)": "X轴（水平）",
+  "Y-Axis (Vertical)": "Y轴（垂直）",
+  "Select X-axis field": "选择X轴字段",
+  "Time series or categories": "时间序列或分类",
+  "Metric Field": "指标字段",
+  "Document Count": "文档计数",
+  "Calculation": "计算方式",
+  "Values to display on Y-axis": "Y轴显示的数值",
+  "Chart will show": "图表将显示",
+  "Select configuration": "选择配置"
 }

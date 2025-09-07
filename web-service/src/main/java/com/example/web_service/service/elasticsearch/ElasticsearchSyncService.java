@@ -16,10 +16,16 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import co.elastic.clients.json.JsonData;
+import co.elastic.clients.elasticsearch.cat.aliases.AliasesRecord;
+import co.elastic.clients.elasticsearch._types.mapping.Property;
 import com.example.web_service.model.es.ConnRecord;
 import com.example.web_service.model.es.TrendingData;
+import com.example.web_service.model.es.widget.WidgetQueryRequest;
+import com.example.web_service.model.es.widget.WidgetFilter;
 import java.util.Optional;
 
 @Service
@@ -987,5 +993,757 @@ public class ElasticsearchSyncService {
         result.put("field", "none");
         log.info("No serviceName aggregation available, returning empty data");
         return result;
+    }
+
+    // === New Methods: List indices and index fields ===
+    public List<String> listIndices() throws IOException {
+        // Return non-system aliases instead of raw index names
+        List<AliasesRecord> aliasRecords = esClient.cat().aliases(a -> a).valueBody();
+        List<String> aliases = aliasRecords.stream()
+                .map(AliasesRecord::alias)
+                .filter(Objects::nonNull)
+                // Exclude system / internal aliases
+                .filter(a -> !a.startsWith("."))
+                .filter(a -> !a.startsWith("kibana"))
+                .filter(a -> !a.startsWith("security"))
+                .filter(a -> !a.startsWith("logstash"))
+                .filter(a -> !a.startsWith("monitoring"))
+                .filter(a -> !a.startsWith("apm-"))
+                // Exclude aliases ending with 'pcap'
+                .filter(a -> !a.endsWith("pcap"))
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        if (!aliases.isEmpty()) {
+            return aliases;
+        }
+        // Fallback: if no aliases defined, return empty list (do not expose all indices)
+        return List.of();
+    }
+
+    public List<Map<String, String>> listIndexFields(String index) throws IOException {
+        return listIndexFields(index, null);
+    }
+
+    /**
+     * List fields for an index with optional type filtering
+     * @param index the index name
+     * @param fieldTypeFilter "numeric" to only return numeric fields, "all" or null for all fields
+     * @return list of field information
+     */
+    public List<Map<String, String>> listIndexFields(String index, String fieldTypeFilter) throws IOException {
+        var resp = esClient.indices().getMapping(g -> g.index(index));
+        var direct = resp.result().get(index);
+        List<Map<String, String>> fields = new java.util.ArrayList<>();
+        if (direct != null && direct.mappings() != null && direct.mappings().properties() != null) {
+            collectFields(direct.mappings().properties(), fields, "");
+        } else {
+            // Treat parameter as alias -> merge all concrete index mappings
+            resp.result().values().forEach(im -> {
+                if (im.mappings() != null && im.mappings().properties() != null) {
+                    collectFields(im.mappings().properties(), fields, "");
+                }
+            });
+        }
+        // Deduplicate by name keeping first occurrence
+        Map<String, Map<String, String>> dedup = new java.util.LinkedHashMap<>();
+        for (Map<String, String> f : fields) {
+            dedup.putIfAbsent(f.get("name"), f);
+        }
+        
+        Stream<Map<String, String>> fieldStream = dedup.values().stream()
+                .filter(f -> {
+                    String t = f.get("type");
+                    return t != null && !t.equals("object") && !t.equals("nested");
+                });
+        
+        // Apply field type filtering
+        if ("numeric".equalsIgnoreCase(fieldTypeFilter)) {
+            fieldStream = fieldStream.filter(f -> {
+                String fieldType = f.get("type");
+                return isNumericType(fieldType);
+            });
+        }
+        
+        return fieldStream
+                .sorted(java.util.Comparator.comparing(m -> m.get("name")))
+                .collect(Collectors.toList());
+    }
+
+    private void collectFields(Map<String, Property> props, List<Map<String, String>> out, String prefix) {
+        for (var entry : props.entrySet()) {
+            String fieldName = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
+            Property p = entry.getValue();
+            String type = p._kind().jsonValue();
+            if (p.isObject()) {
+                if (p.object().properties() != null) {
+                    collectFields(p.object().properties(), out, fieldName);
+                }
+            } else if (p.isNested()) {
+                if (p.nested().properties() != null) {
+                    collectFields(p.nested().properties(), out, fieldName);
+                }
+            } else {
+                out.add(Map.of("name", fieldName, "type", type));
+            }
+        }
+    }
+
+    /**
+     * Check if a field is a numeric type suitable for Y-axis aggregations
+     */
+    private boolean isNumericField(String index, String fieldName) throws IOException {
+        try {
+            var resp = esClient.indices().getMapping(g -> g.index(index));
+            // Check all index mappings (in case index is an alias)
+            for (var indexMapping : resp.result().values()) {
+                if (indexMapping.mappings() != null && indexMapping.mappings().properties() != null) {
+                    Property fieldProperty = findFieldProperty(indexMapping.mappings().properties(), fieldName);
+                    if (fieldProperty != null) {
+                        String fieldType = fieldProperty._kind().jsonValue();
+                        return isNumericType(fieldType);
+                    }
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log.warn("Error checking field type for field '{}' in index '{}': {}", fieldName, index, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Find a field property by name, supporting nested field names (e.g., "parent.child")
+     */
+    private Property findFieldProperty(Map<String, Property> properties, String fieldName) {
+        if (fieldName == null || fieldName.isBlank()) {
+            return null;
+        }
+        
+        String[] parts = fieldName.split("\\.");
+        Map<String, Property> currentProperties = properties;
+        
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            Property property = currentProperties.get(part);
+            
+            if (property == null) {
+                return null;
+            }
+            
+            if (i == parts.length - 1) {
+                // This is the final part, return the property
+                return property;
+            }
+            
+            // Navigate to nested properties
+            if (property.isObject() && property.object().properties() != null) {
+                currentProperties = property.object().properties();
+            } else if (property.isNested() && property.nested().properties() != null) {
+                currentProperties = property.nested().properties();
+            } else {
+                return null; // Can't navigate further
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Check if a field type is numeric
+     */
+    private boolean isNumericType(String fieldType) {
+        if (fieldType == null) {
+            return false;
+        }
+        
+        switch (fieldType.toLowerCase()) {
+            case "long":
+            case "integer":
+            case "short":
+            case "byte":
+            case "double":
+            case "float":
+            case "half_float":
+            case "scaled_float":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public Map<String,Object> executeWidgetQuery(WidgetQueryRequest req) throws IOException {
+        String index = req.getIndex();
+        long now = System.currentTimeMillis();
+        long sevenDaysMillis = 7L * 24 * 60 * 60 * 1000;
+        long start = req.getStartTime() != null ? req.getStartTime() : (now - sevenDaysMillis);
+        long end = req.getEndTime() != null ? req.getEndTime() : now;
+
+        // debug request with full object details
+        log.info("Execute widget query: index={}, widgetType={}, aggField={}, aggType={}, yField={}", 
+            req.getIndex(), req.getWidgetType(), req.getAggregationField(), req.getAggregationType(), req.getYField());
+        log.info("Request object details: req.toString()={}", req);
+        log.info("YField detailed check: yField='{}', isNull={}, isEmpty={}", 
+            req.getYField(), req.getYField() == null, req.getYField() != null ? req.getYField().isEmpty() : "null");
+        log.info("Time range: {} to {} (start={}, end={})", 
+            java.time.Instant.ofEpochMilli(start), java.time.Instant.ofEpochMilli(end), start, end);
+            
+        // Extract and validate axis configuration
+        // For now, we use yField as the primary axis field and timestamp as default x-axis
+        String yFieldParam = req.getYField();
+        String aggField = req.getAggregationField();
+        String aggType = req.getAggregationType();
+        if (aggType == null || aggType.isBlank()) aggType = "count";
+        
+        // Determine axis mapping based on widget type and field types
+        final String chartXField;
+        final String chartYField;
+        
+        // Smart axis detection: if yField is provided and is NOT a time field, use it for X-axis (categories)
+        if (yFieldParam != null && !yFieldParam.isBlank() && !"null".equals(yFieldParam)) {
+            boolean yFieldIsTime = yFieldParam.equals("timestamp") || yFieldParam.contains("time") || yFieldParam.contains("date");
+            log.info("Axis mapping decision: yFieldParam='{}', yFieldIsTime={}", yFieldParam, yFieldIsTime);
+            if (yFieldIsTime) {
+                // Y-field is a time field, use it for x-axis (time series)
+                chartXField = yFieldParam;
+                chartYField = aggField; // Use aggregation field for y-axis values
+                log.info("Using TIME-based mapping: chartXField='{}', chartYField='{}'", chartXField, chartYField);
+            } else {
+                // Y-field is categorical, use it for grouping (becomes x-axis in terms aggregation)
+                chartXField = yFieldParam; // Category field for terms aggregation
+                chartYField = aggField; // Metric field for y-axis values
+                log.info("Using CATEGORY-based mapping: chartXField='{}', chartYField='{}'", chartXField, chartYField);
+            }
+        } else {
+            // Default: use timestamp for x-axis time series
+            chartXField = "timestamp";
+            chartYField = null; // Will use document count
+            log.info("Using DEFAULT mapping: chartXField='{}', chartYField='{}' (yFieldParam was: '{}')", chartXField, chartYField, yFieldParam);
+        }
+        
+        log.info("Chart axis mapping: X-axis='{}', Y-axis='{}', aggField='{}', aggType='{}'", 
+            chartXField, chartYField, aggField, aggType);
+        if (req.getFilters() != null && !req.getFilters().isEmpty()) {
+            log.info("Applied filters:");
+            for (WidgetFilter f : req.getFilters()) {
+                log.info("  - field: {}, operator: {}, value: {}", f.getField(), f.getOperator(), f.getValue());
+            }
+        } else {
+            log.info("No filters applied");
+        }
+
+        var boolBuilder = new co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery.Builder();
+        boolBuilder.must(m -> m.range(r -> r.field("timestamp").gte(JsonData.of(start)).lte(JsonData.of(end))));
+        if (req.getFilters() != null) {
+            for (WidgetFilter f : req.getFilters()) {
+                if (f.getField() == null || f.getField().isBlank() || f.getOperator() == null) continue;
+                switch (f.getOperator()) {
+                    case "exists":
+                        boolBuilder.must(m -> m.exists(e -> e.field(f.getField())));
+                        break;
+                    case "not_exists":
+                        boolBuilder.must(m -> m.bool(b -> b.mustNot(n -> n.exists(e -> e.field(f.getField())))));
+                        break;
+                    case "eq":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            String v = f.getValue();
+                            boolBuilder.must(m -> m.term(t -> t.field(f.getField()).value(vb -> vb.stringValue(v))));
+                        }
+                        break;
+                    case "neq":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            String v = f.getValue();
+                            boolBuilder.must(m -> m.bool(b -> b.mustNot(n -> n.term(t -> t.field(f.getField()).value(vb -> vb.stringValue(v))))));
+                        }
+                        break;
+                    case "gt":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            String v = f.getValue();
+                            boolBuilder.must(m -> m.range(r -> r.field(f.getField()).gt(JsonData.of(v))));
+                        }
+                        break;
+                    case "gte":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            String v = f.getValue();
+                            boolBuilder.must(m -> m.range(r -> r.field(f.getField()).gte(JsonData.of(v))));
+                        }
+                        break;
+                    case "lt":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            String v = f.getValue();
+                            boolBuilder.must(m -> m.range(r -> r.field(f.getField()).lt(JsonData.of(v))));
+                        }
+                        break;
+                    case "lte":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            String v = f.getValue();
+                            boolBuilder.must(m -> m.range(r -> r.field(f.getField()).lte(JsonData.of(v))));
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        Query finalQuery = Query.of(q -> q.bool(boolBuilder.build()));
+        
+        // Log the final query structure with Kibana-compatible format
+        log.info("Final ES Query structure: {}", objectMapper.writeValueAsString(finalQuery));
+        
+        // Create a properly formatted Kibana query map for better readability
+        Map<String, Object> queryMap = new java.util.HashMap<>();
+        Map<String, Object> boolMap = new java.util.HashMap<>();
+        List<Map<String, Object>> mustClauses = new java.util.ArrayList<>();
+        
+        // Add time range
+        mustClauses.add(Map.of(
+            "range", Map.of(
+                "timestamp", Map.of(
+                    "gte", start,
+                    "lte", end
+                )
+            )
+        ));
+        
+        // Add filters
+        if (req.getFilters() != null) {
+            for (WidgetFilter f : req.getFilters()) {
+                if (f.getField() == null || f.getField().isBlank() || f.getOperator() == null) continue;
+                Map<String, Object> filterClause = new java.util.HashMap<>();
+                switch (f.getOperator()) {
+                    case "exists":
+                        filterClause.put("exists", Map.of("field", f.getField()));
+                        break;
+                    case "not_exists":
+                        filterClause.put("bool", Map.of("must_not", List.of(Map.of("exists", Map.of("field", f.getField())))));
+                        break;
+                    case "eq":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            filterClause.put("term", Map.of(f.getField(), Map.of("value", f.getValue())));
+                        }
+                        break;
+                    case "neq":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            filterClause.put("bool", Map.of("must_not", List.of(Map.of("term", Map.of(f.getField(), Map.of("value", f.getValue()))))));
+                        }
+                        break;
+                    case "gt":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            filterClause.put("range", Map.of(f.getField(), Map.of("gt", f.getValue())));
+                        }
+                        break;
+                    case "gte":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            filterClause.put("range", Map.of(f.getField(), Map.of("gte", f.getValue())));
+                        }
+                        break;
+                    case "lt":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            filterClause.put("range", Map.of(f.getField(), Map.of("lt", f.getValue())));
+                        }
+                        break;
+                    case "lte":
+                        if (f.getValue() != null && !f.getValue().isBlank()) {
+                            filterClause.put("range", Map.of(f.getField(), Map.of("lte", f.getValue())));
+                        }
+                        break;
+                }
+                if (!filterClause.isEmpty()) {
+                    mustClauses.add(filterClause);
+                }
+            }
+        }
+        
+        boolMap.put("must", mustClauses);
+        queryMap.put("bool", boolMap);
+        
+        log.info("=== Kibana Query Structure ===");
+        log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of("query", queryMap)));
+        log.info("=== End Query Structure ===");
+
+        String widgetType = req.getWidgetType();
+        if (widgetType != null && !"table".equalsIgnoreCase(widgetType)) {
+            // PIE chart separate logic (terms aggregation)
+            if ("pie".equalsIgnoreCase(widgetType)) {
+                if (aggField == null || aggField.isBlank()) {
+                    return Map.of("error", "Aggregation field required for pie widget");
+                }
+                if (aggType == null || aggType.isBlank()) aggType = "count";
+                var srb = new SearchRequest.Builder()
+                        .index(index)
+                        .size(0)
+                        .query(finalQuery)
+                        .aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20)));
+                
+                // Print Kibana query for PIE chart
+                log.info("=== Kibana Query for PIE Widget ===");
+                log.info("GET /{}/_search", index);
+                log.info("Content-Type: application/json");
+                log.info("");
+                log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
+                    "size", 0,
+                    "query", finalQuery,
+                    "aggs", Map.of(
+                        "pie", Map.of(
+                            "terms", Map.of(
+                                "field", aggField,
+                                "size", 20
+                            )
+                        )
+                    )
+                )));
+                log.info("=== End Kibana Query ===");
+                
+                var resp = esClient.search(srb.build(), Void.class);
+                var pieAgg = resp.aggregations().get("pie");
+                if (pieAgg == null || pieAgg.sterms() == null) {
+                    return Map.of("start", start, "end", end, "labels", List.of(), "values", List.of());
+                }
+                List<String> labels = new java.util.ArrayList<>();
+                List<Long> values = new java.util.ArrayList<>();
+                for (var b : pieAgg.sterms().buckets().array()) {
+                    String label = b.key().isString() ? b.key().stringValue() : b.key().toString();
+                    labels.add(label);
+                    values.add(b.docCount());
+                }
+                return Map.of(
+                        "start", start,
+                        "end", end,
+                        "labels", labels,
+                        "values", values,
+                        "aggregation", aggType,
+                        "field", aggField
+                );
+            }
+            // LINE / BAR: date_histogram or terms aggregation based on axis configuration
+            if (aggType == null || aggType.isBlank()) aggType = "count";
+
+            // For line/bar charts, determine the best axis mapping
+            // chartXField and chartYField were already determined above
+            
+            // Smart axis detection based on field types and user input
+
+            boolean docCountMode = (aggField == null || aggField.isBlank()) && "count".equalsIgnoreCase(aggType);
+            if (!docCountMode && (aggField == null || aggField.isBlank())) {
+                return Map.of("error", "Aggregation field required for chart widget");
+            }
+
+            // Validate Y-axis field type for line/bar charts
+            // For category-based charts (non-time X-axis), the aggregation field (Y-axis) must be numeric
+            boolean isDateField = chartXField != null && (chartXField.equals("timestamp") || chartXField.contains("time") || chartXField.contains("date"));
+            if (!isDateField && !docCountMode && aggField != null && !aggField.isBlank()) {
+                // Check if the aggregation field is numeric for category-based charts
+                boolean isAggFieldNumeric = isNumericField(index, aggField);
+                log.info("Y-axis field validation: aggField='{}', isNumeric={}, aggType='{}'", aggField, isAggFieldNumeric, aggType);
+                
+                if (!isAggFieldNumeric && !"count".equalsIgnoreCase(aggType)) {
+                    return Map.of("error", String.format("Y-axis field '%s' must be a numeric type for %s charts. Current field type is not numeric. Please select a numeric field or use 'count' aggregation.", aggField, isDateField ? "time-series" : "category"));
+                }
+            }
+
+            // Determine if chartXField is a date field or category field
+            
+            log.info("Chart configuration: xField='{}', yField='{}', isDateField={}, aggField='{}', aggType='{}', docCountMode={}", 
+                chartXField, chartYField, isDateField, aggField, aggType, docCountMode);
+            
+            var srb = new SearchRequest.Builder()
+                    .index(index)
+                    .size(0)
+                    .query(finalQuery);
+
+            if (isDateField) {
+                // Use date histogram for time-based charts
+                String timeField = (chartXField != null && !chartXField.isBlank()) ? chartXField : "timestamp";
+                srb.aggregations("time", a -> a.dateHistogram(d -> d.field(timeField).calendarInterval(CalendarInterval.Hour).minDocCount(0)));
+
+                if (!docCountMode) {
+                    // add metric sub agg only when a field provided
+                    switch (aggType) {
+                        case "sum":
+                            srb.aggregations("time", a -> a.dateHistogram(d -> d.field(timeField).calendarInterval(CalendarInterval.Hour).minDocCount(0))
+                                    .aggregations("metric", sub -> sub.sum(m -> m.field(aggField))));
+                            break;
+                        case "avg":
+                            srb.aggregations("time", a -> a.dateHistogram(d -> d.field(timeField).calendarInterval(CalendarInterval.Hour).minDocCount(0))
+                                    .aggregations("metric", sub -> sub.avg(m -> m.field(aggField))));
+                            break;
+                        case "min":
+                            srb.aggregations("time", a -> a.dateHistogram(d -> d.field(timeField).calendarInterval(CalendarInterval.Hour).minDocCount(0))
+                                    .aggregations("metric", sub -> sub.min(m -> m.field(aggField))));
+                            break;
+                        case "max":
+                            srb.aggregations("time", a -> a.dateHistogram(d -> d.field(timeField).calendarInterval(CalendarInterval.Hour).minDocCount(0))
+                                    .aggregations("metric", sub -> sub.max(m -> m.field(aggField))));
+                            break;
+                        case "count":
+                        default:
+                            srb.aggregations("time", a -> a.dateHistogram(d -> d.field(timeField).calendarInterval(CalendarInterval.Hour).minDocCount(0))
+                                    .aggregations("metric", sub -> sub.valueCount(m -> m.field(aggField))));
+                            break;
+                    }
+                }
+                
+                // Print Kibana query for TIME-based chart
+                Map<String, Object> kibanaQuery = new java.util.HashMap<>();
+                kibanaQuery.put("size", 0);
+                kibanaQuery.put("query", finalQuery);
+                
+                Map<String, Object> timeAggDef = new java.util.HashMap<>();
+                timeAggDef.put("date_histogram", Map.of(
+                    "field", timeField,
+                    "calendar_interval", "1h",
+                    "min_doc_count", 0
+                ));
+                
+                if (!docCountMode) {
+                    Map<String, Object> metricAggDef = new java.util.HashMap<>();
+                    switch (aggType) {
+                        case "sum":
+                            metricAggDef.put("sum", Map.of("field", aggField));
+                            break;
+                        case "avg":
+                            metricAggDef.put("avg", Map.of("field", aggField));
+                            break;
+                        case "min":
+                            metricAggDef.put("min", Map.of("field", aggField));
+                            break;
+                        case "max":
+                            metricAggDef.put("max", Map.of("field", aggField));
+                            break;
+                        case "count":
+                        default:
+                            metricAggDef.put("value_count", Map.of("field", aggField));
+                            break;
+                    }
+                    timeAggDef.put("aggs", Map.of("metric", metricAggDef));
+                }
+                
+                kibanaQuery.put("aggs", Map.of("time", timeAggDef));
+                
+                log.info("=== Kibana Query for TIME-based LINE/BAR Widget ===");
+                log.info("GET /{}/_search", index);
+                log.info("Content-Type: application/json");
+                log.info("");
+                log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(kibanaQuery));
+                log.info("=== End Kibana Query ===");
+                
+                var resp = esClient.search(srb.build(), Void.class);
+                var timeAgg = resp.aggregations().get("time");
+                if (timeAgg == null || timeAgg.dateHistogram() == null) {
+                    return Map.of("start", start, "end", end, "x", List.of(), "y", List.of());
+                }
+                List<Long> x = new java.util.ArrayList<>();
+                List<Double> y = new java.util.ArrayList<>();
+                for (var b : timeAgg.dateHistogram().buckets().array()) {
+                    x.add(b.key());
+                    Double val;
+                    if (!docCountMode && b.aggregations() != null && b.aggregations().get("metric") != null) {
+                        var metric = b.aggregations().get("metric");
+                        // Use aggType to determine which aggregation result to access
+                        switch (aggType) {
+                            case "sum":
+                                val = metric.sum() != null ? metric.sum().value() : 0d;
+                                break;
+                            case "avg":
+                                val = metric.avg() != null ? metric.avg().value() : 0d;
+                                break;
+                            case "min":
+                                val = metric.min() != null ? metric.min().value() : 0d;
+                                break;
+                            case "max":
+                                val = metric.max() != null ? metric.max().value() : 0d;
+                                break;
+                            case "count":
+                            default:
+                                val = metric.valueCount() != null ? (double) metric.valueCount().value() : 0d;
+                                break;
+                        }
+                    } else {
+                        val = (double) b.docCount();
+                    }
+                    y.add(val != null ? val : 0d);
+                }
+                return Map.of(
+                        "start", start,
+                        "end", end,
+                        "x", x,
+                        "y", y,
+                        "aggregation", aggType,
+                        "field", docCountMode ? "_doc_count" : aggField,
+                        "yField", timeField
+                );
+            } else {
+                // Use terms aggregation for category-based charts
+                log.info("Using category-based chart logic for xField='{}' (not null: {}, not blank: {})", 
+                    chartXField, chartXField != null, chartXField != null && !chartXField.isBlank());
+                    
+                if (chartXField == null || chartXField.isBlank()) {
+                    log.error("ERROR: chartXField validation failed - xField='{}', isNull={}, isBlank={}", 
+                        chartXField, chartXField == null, chartXField != null ? chartXField.isBlank() : "null");
+                    return Map.of("error", "X Field is required for category-based chart");
+                }
+                
+                srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20)));
+
+                if (!docCountMode) {
+                    switch (aggType) {
+                        case "sum":
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                                    .aggregations("metric", sub -> sub.sum(m -> m.field(aggField))));
+                            break;
+                        case "avg":
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                                    .aggregations("metric", sub -> sub.avg(m -> m.field(aggField))));
+                            break;
+                        case "min":
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                                    .aggregations("metric", sub -> sub.min(m -> m.field(aggField))));
+                            break;
+                        case "max":
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                                    .aggregations("metric", sub -> sub.max(m -> m.field(aggField))));
+                            break;
+                        case "count":
+                        default:
+                            srb.aggregations("categories", a -> a.terms(t -> t.field(chartXField).size(20))
+                                    .aggregations("metric", sub -> sub.valueCount(m -> m.field(aggField))));
+                            break;
+                    }
+                }
+                
+                // Print Kibana query for CATEGORY-based chart
+                Map<String, Object> kibanaQuery = new java.util.HashMap<>();
+                kibanaQuery.put("size", 0);
+                kibanaQuery.put("query", finalQuery);
+                
+                Map<String, Object> categoriesAggDef = new java.util.HashMap<>();
+                categoriesAggDef.put("terms", Map.of(
+                    "field", chartXField,
+                    "size", 20
+                ));
+                
+                if (!docCountMode) {
+                    Map<String, Object> metricAggDef = new java.util.HashMap<>();
+                    switch (aggType) {
+                        case "sum":
+                            metricAggDef.put("sum", Map.of("field", aggField));
+                            break;
+                        case "avg":
+                            metricAggDef.put("avg", Map.of("field", aggField));
+                            break;
+                        case "min":
+                            metricAggDef.put("min", Map.of("field", aggField));
+                            break;
+                        case "max":
+                            metricAggDef.put("max", Map.of("field", aggField));
+                            break;
+                        case "count":
+                        default:
+                            metricAggDef.put("value_count", Map.of("field", aggField));
+                            break;
+                    }
+                    categoriesAggDef.put("aggs", Map.of("metric", metricAggDef));
+                }
+                
+                kibanaQuery.put("aggs", Map.of("categories", categoriesAggDef));
+                
+                log.info("=== Kibana Query for CATEGORY-based LINE/BAR Widget ===");
+                log.info("GET /{}/_search", index);
+                log.info("Content-Type: application/json");
+                log.info("");
+                log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(kibanaQuery));
+                log.info("=== End Kibana Query ===");
+                
+                var resp = esClient.search(srb.build(), Void.class);
+                var catAgg = resp.aggregations().get("categories");
+                if (catAgg == null || catAgg.sterms() == null) {
+                    return Map.of("start", start, "end", end, "x", List.of(), "y", List.of());
+                }
+                List<String> x = new java.util.ArrayList<>();
+                List<Double> y = new java.util.ArrayList<>();
+                for (var b : catAgg.sterms().buckets().array()) {
+                    String categoryName = b.key().isString() ? b.key().stringValue() : b.key().toString();
+                    x.add(categoryName);
+                    Double val;
+                    if (!docCountMode && b.aggregations() != null && b.aggregations().get("metric") != null) {
+                        var metric = b.aggregations().get("metric");
+                        // Use aggType to determine which aggregation result to access
+                        switch (aggType) {
+                            case "sum":
+                                val = metric.sum() != null ? metric.sum().value() : 0d;
+                                break;
+                            case "avg":
+                                val = metric.avg() != null ? metric.avg().value() : 0d;
+                                break;
+                            case "min":
+                                val = metric.min() != null ? metric.min().value() : 0d;
+                                break;
+                            case "max":
+                                val = metric.max() != null ? metric.max().value() : 0d;
+                                break;
+                            case "count":
+                            default:
+                                val = metric.valueCount() != null ? (double) metric.valueCount().value() : 0d;
+                                break;
+                        }
+                    } else {
+                        val = (double) b.docCount();
+                    }
+                    y.add(val != null ? val : 0d);
+                }
+                return Map.of(
+                        "start", start,
+                        "end", end,
+                        "x", x,  // category names instead of timestamps
+                        "y", y,
+                        "aggregation", aggType,
+                        "field", docCountMode ? "_doc_count" : aggField,
+                        "xField", chartXField,
+                        "yField", chartYField,
+                        "chartType", "category"
+                );
+            }
+        }
+
+        // table widget
+        log.info("=== Kibana Query for TABLE Widget ===");
+        log.info("GET /{}/_search", index);
+        log.info("Content-Type: application/json");
+        log.info("");
+        log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
+            "size", 100,
+            "query", finalQuery,
+            "sort", List.of(Map.of(
+                "timestamp", Map.of(
+                    "order", "desc"
+                )
+            ))
+        )));
+        log.info("=== End Kibana Query ===");
+        
+        var tableResp = esClient.search(s -> s
+                .index(index)
+                .query(finalQuery)
+                .size(100)
+                .sort(so -> so.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)))
+                , JsonData.class);
+        List<Map<String,Object>> docs = tableResp.hits().hits().stream()
+                .map(h -> h.source())
+                .filter(s -> s != null)
+                .map(s -> s.to(Map.class))
+                .collect(Collectors.toList());
+        Long totalVal = null;
+        if (tableResp.hits() != null) {
+            var totalResult = tableResp.hits().total();
+            if (totalResult != null) {
+                totalVal = totalResult.value();
+            }
+        }
+        return Map.of(
+                "start", start,
+                "end", end,
+                "total", totalVal != null ? totalVal : docs.size(),
+                "data", docs
+        );
     }
 }

@@ -41,6 +41,7 @@ interface FormData {
     filter: string;
     aggregationField: string;
     aggregationType: string;
+    yField?: string; // 添加 yField 属性
 }
 
 @Component({
@@ -72,7 +73,8 @@ export class EditComponent implements OnInit {
         index: '',
         filter: '',
         aggregationField: '',
-        aggregationType: ''
+        aggregationType: '',
+        yField: '' // 添加 yField 属性
     };
 
     // 下拉选项数据
@@ -627,5 +629,23 @@ export class EditComponent implements OnInit {
         this.selectedTitles = this.selectedTitles.sort((a, b) =>
             orderedTitles.indexOf(a.toLowerCase()) - orderedTitles.indexOf(b.toLowerCase())
         );
+    }
+
+    getAxisPreview(): string {
+        if (this.formData.type === 'pie') {
+            const field = this.formData.aggregationField || 'field';
+            const aggType = this.formData.aggregationType || 'count';
+            return `${aggType}(${field}) by categories`;
+        }
+        
+        if (this.formData.type === 'line' || this.formData.type === 'bar') {
+            const xAxis = this.formData.yField || 'time/category';
+            const yField = this.formData.aggregationField || 'count';
+            const yType = this.formData.aggregationType || 'count';
+            const yAxisLabel = this.formData.aggregationField ? `${yType}(${yField})` : 'count';
+            return `${xAxis} vs ${yAxisLabel}`;
+        }
+        
+        return 'Select configuration';
     }
 }

@@ -2,6 +2,7 @@ package com.example.web_service.controller;
 
 import com.example.web_service.model.es.ConnRecord;
 import com.example.web_service.model.es.TrendingData;
+import com.example.web_service.model.es.widget.WidgetQueryRequest;
 import com.example.web_service.service.elasticsearch.ElasticsearchSyncService;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.json.JsonData;
@@ -144,4 +145,32 @@ public class ElasticsearchController {
 
         return elasticsearchSyncService.searchRawWithPagination(index, query, size, from);
     }
-} 
+
+    @GetMapping("/indices")
+    @Operation(summary = "获取所有索引名称", description = "列出当前集群中可用的索引名称")
+    public List<String> listIndices() throws IOException {
+        return elasticsearchSyncService.listIndices();
+    }
+
+    @GetMapping("/indices/{index}/fields")
+    @Operation(summary = "获取索引字段", description = "根据索引名称返回其可用字段列表")
+    public List<Map<String, String>> listIndexFields(@PathVariable String index) throws IOException {
+        return elasticsearchSyncService.listIndexFields(index);
+    }
+
+    @GetMapping("/indices/{index}/fields/filtered")
+    @Operation(summary = "获取过滤后的索引字段", description = "根据索引名称和字段类型过滤器返回字段列表。fieldType可选值: 'numeric'(仅数值字段), 'all'(所有字段)")
+    public List<Map<String, String>> listIndexFieldsFiltered(
+            @PathVariable String index,
+            @RequestParam(defaultValue = "all") String fieldType) throws IOException {
+        return elasticsearchSyncService.listIndexFields(index, fieldType);
+    }
+
+    @PostMapping("/widget/query")
+    @Operation(summary = "Widget数据查询", description = "根据Widget配置(索引/过滤/聚合)返回图表或表格数据, 默认最近7天")
+    public Map<String,Object> widgetQuery(@RequestBody WidgetQueryRequest req) throws IOException {
+        log.info("Controller received widget query request: {}", req);
+        log.info("Controller yField check: '{}'", req.getYField());
+        return elasticsearchSyncService.executeWidgetQuery(req);
+    }
+}

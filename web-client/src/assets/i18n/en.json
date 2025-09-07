@@ -554,5 +554,25 @@
     "time": "Time",
     "systemStatusTemplate": "System Status Template",
     "securityAlertTemplate": "Security Alert Template"
-  }
+  },
+  "Chart Configuration": "Chart Configuration",
+  "Pie Chart Settings": "Pie Chart Settings",
+  "Line Chart Axes": "Line Chart Axes",
+  "Bar Chart Axes": "Bar Chart Axes",
+  "Category Field (Pie Slices)": "Category Field (Pie Slices)",
+  "Select field to group by": "Select field to group by",
+  "Field to create pie slices": "Field to create pie slices",
+  "Value Calculation": "Value Calculation",
+  "Count of Records": "Count of Records",
+  "How to calculate slice sizes": "How to calculate slice sizes",
+  "X-Axis (Horizontal)": "X-Axis (Horizontal)",
+  "Y-Axis (Vertical)": "Y-Axis (Vertical)",
+  "Select X-axis field": "Select X-axis field",
+  "Time series or categories": "Time series or categories",
+  "Metric Field": "Metric Field",
+  "Document Count": "Document Count",
+  "Calculation": "Calculation",
+  "Values to display on Y-axis": "Values to display on Y-axis",
+  "Chart will show": "Chart will show",
+  "Select configuration": "Select configuration"
 }
