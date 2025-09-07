@@ -16,6 +16,9 @@ public class WidgetQueryRequest {
     @JsonProperty("aggregationType")
     private String aggregationType; // sum, avg, count, min, max
     
+    @JsonProperty("metricField")
+    private String metricField; // for pie charts with non-count aggregations
+    
     @JsonProperty("yField")
     private String yField; // Y axis field for line/bar charts (time or category dimension)
     
@@ -40,6 +43,9 @@ public class WidgetQueryRequest {
     public String getAggregationType() { return aggregationType; }
     public void setAggregationType(String aggregationType) { this.aggregationType = aggregationType; }
 
+    public String getMetricField() { return metricField; }
+    public void setMetricField(String metricField) { this.metricField = metricField; }
+
     public String getYField() { return yField; }
     public void setYField(String yField) { this.yField = yField; }
 
@@ -59,6 +65,7 @@ public class WidgetQueryRequest {
                 ", widgetType='" + widgetType + '\'' +
                 ", aggregationField='" + aggregationField + '\'' +
                 ", aggregationType='" + aggregationType + '\'' +
+                ", metricField='" + metricField + '\'' +
                 ", yField='" + yField + '\'' +
                 ", filters=" + filters +
                 ", startTime=" + startTime +

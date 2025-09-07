@@ -1028,7 +1028,7 @@ public class ElasticsearchSyncService {
     /**
      * List fields for an index with optional type filtering
      * @param index the index name
-     * @param fieldTypeFilter "numeric" to only return numeric fields, "all" or null for all fields
+     * @param fieldTypeFilter "numeric" to only return numeric fields, "text" to only return text fields, "all" or null for all fields
      * @return list of field information
      */
     public List<Map<String, String>> listIndexFields(String index, String fieldTypeFilter) throws IOException {
@@ -1062,6 +1062,11 @@ public class ElasticsearchSyncService {
             fieldStream = fieldStream.filter(f -> {
                 String fieldType = f.get("type");
                 return isNumericType(fieldType);
+            });
+        } else if ("text".equalsIgnoreCase(fieldTypeFilter)) {
+            fieldStream = fieldStream.filter(f -> {
+                String fieldType = f.get("type");
+                return isTextType(fieldType);
             });
         }
         
@@ -1166,6 +1171,25 @@ public class ElasticsearchSyncService {
             case "float":
             case "half_float":
             case "scaled_float":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Check if a field type is text-based (suitable for categories/grouping)
+     */
+    private boolean isTextType(String fieldType) {
+        if (fieldType == null) {
+            return false;
+        }
+        
+        switch (fieldType.toLowerCase()) {
+            case "text":
+            case "keyword":
+            case "constant_keyword":
+            case "wildcard":
                 return true;
             default:
                 return false;
@@ -1369,28 +1393,91 @@ public class ElasticsearchSyncService {
                     return Map.of("error", "Aggregation field required for pie widget");
                 }
                 if (aggType == null || aggType.isBlank()) aggType = "count";
+                
+                // For pie charts, aggField is the category field (text field)
+                // metricField is used for value calculation (numeric field)
+                boolean docCountMode = "count".equalsIgnoreCase(aggType);
+                String metricField = req.getMetricField();
+                
+                // Check if we have a metric field for non-count aggregations
+                if (!docCountMode && (metricField == null || metricField.isBlank())) {
+                    return Map.of("error", "Metric field is required for " + aggType + " aggregation in pie chart");
+                }
+                
                 var srb = new SearchRequest.Builder()
                         .index(index)
                         .size(0)
-                        .query(finalQuery)
-                        .aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20)));
+                        .query(finalQuery);
+                
+                if (docCountMode) {
+                    // Simple terms aggregation for count
+                    srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20)));
+                } else {
+                    // Terms aggregation with metric sub-aggregation
+                    switch (aggType) {
+                        case "sum":
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                                    .aggregations("metric", sub -> sub.sum(m -> m.field(metricField))));
+                            break;
+                        case "avg":
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                                    .aggregations("metric", sub -> sub.avg(m -> m.field(metricField))));
+                            break;
+                        case "min":
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                                    .aggregations("metric", sub -> sub.min(m -> m.field(metricField))));
+                            break;
+                        case "max":
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                                    .aggregations("metric", sub -> sub.max(m -> m.field(metricField))));
+                            break;
+                        case "count":
+                        default:
+                            srb.aggregations("pie", a -> a.terms(t -> t.field(aggField).size(20))
+                                    .aggregations("metric", sub -> sub.valueCount(m -> m.field(metricField))));
+                            break;
+                    }
+                }
                 
                 // Print Kibana query for PIE chart
                 log.info("=== Kibana Query for PIE Widget ===");
                 log.info("GET /{}/_search", index);
                 log.info("Content-Type: application/json");
                 log.info("");
+                
+                Map<String, Object> pieAggDef = new java.util.HashMap<>();
+                pieAggDef.put("terms", Map.of(
+                    "field", aggField,
+                    "size", 20
+                ));
+                
+                if (!docCountMode) {
+                    Map<String, Object> metricAggDef = new java.util.HashMap<>();
+                    switch (aggType) {
+                        case "sum":
+                            metricAggDef.put("sum", Map.of("field", metricField));
+                            break;
+                        case "avg":
+                            metricAggDef.put("avg", Map.of("field", metricField));
+                            break;
+                        case "min":
+                            metricAggDef.put("min", Map.of("field", metricField));
+                            break;
+                        case "max":
+                            metricAggDef.put("max", Map.of("field", metricField));
+                            break;
+                        case "count":
+                        default:
+                            metricAggDef.put("value_count", Map.of("field", metricField));
+                            break;
+                    }
+                    pieAggDef.put("aggs", Map.of("metric", metricAggDef));
+                }
+                
                 log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
                     "size", 0,
                     "query", finalQuery,
-                    "aggs", Map.of(
-                        "pie", Map.of(
-                            "terms", Map.of(
-                                "field", aggField,
-                                "size", 20
-                            )
-                        )
-                    )
+                    "aggs", Map.of("pie", pieAggDef)
                 )));
                 log.info("=== End Kibana Query ===");
                 
@@ -1400,11 +1487,37 @@ public class ElasticsearchSyncService {
                     return Map.of("start", start, "end", end, "labels", List.of(), "values", List.of());
                 }
                 List<String> labels = new java.util.ArrayList<>();
-                List<Long> values = new java.util.ArrayList<>();
+                List<Double> values = new java.util.ArrayList<>();
                 for (var b : pieAgg.sterms().buckets().array()) {
                     String label = b.key().isString() ? b.key().stringValue() : b.key().toString();
                     labels.add(label);
-                    values.add(b.docCount());
+                    
+                    Double val;
+                    if (!docCountMode && b.aggregations() != null && b.aggregations().get("metric") != null) {
+                        var metric = b.aggregations().get("metric");
+                        // Use aggType to determine which aggregation result to access
+                        switch (aggType) {
+                            case "sum":
+                                val = metric.sum() != null ? metric.sum().value() : 0d;
+                                break;
+                            case "avg":
+                                val = metric.avg() != null ? metric.avg().value() : 0d;
+                                break;
+                            case "min":
+                                val = metric.min() != null ? metric.min().value() : 0d;
+                                break;
+                            case "max":
+                                val = metric.max() != null ? metric.max().value() : 0d;
+                                break;
+                            case "count":
+                            default:
+                                val = metric.valueCount() != null ? (double) metric.valueCount().value() : 0d;
+                                break;
+                        }
+                    } else {
+                        val = (double) b.docCount();
+                    }
+                    values.add(val != null ? val : 0d);
                 }
                 return Map.of(
                         "start", start,
@@ -1412,7 +1525,8 @@ public class ElasticsearchSyncService {
                         "labels", labels,
                         "values", values,
                         "aggregation", aggType,
-                        "field", aggField
+                        "categoryField", aggField,
+                        "metricField", docCountMode ? "_doc_count" : metricField
                 );
             }
             // LINE / BAR: date_histogram or terms aggregation based on axis configuration

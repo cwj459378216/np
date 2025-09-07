@@ -41,6 +41,7 @@ interface FormData {
     filter: string;
     aggregationField: string;
     aggregationType: string;
+    metricField?: string; // For pie charts with non-count aggregations
     xField?: string; // metric (count / agg value)
     yField?: string; // dimension (time/date or category)
 }
@@ -75,6 +76,7 @@ export class AddComponent implements OnInit {
     indexList: Array<{value: string; label: string}> = [];
     filterFields: Array<{ value: string; label: string; type?: string }> = [];
     aggregationFields: Array<{ value: string; label: string }> = [];
+    categoryFields: Array<{ value: string; label: string }> = []; // For pie chart category fields (text types)
     dateFields: Array<{ value: string; label: string }> = [];
     yAxisCandidates: Array<{ value: string; label: string }> = [];
 
@@ -148,6 +150,7 @@ export class AddComponent implements OnInit {
         if (!this.formData.index) {
             this.filterFields = [];
             this.aggregationFields = [];
+            this.categoryFields = [];
             this.dateFields = [];
             this.yAxisCandidates = [];
             return;
@@ -194,6 +197,27 @@ export class AddComponent implements OnInit {
                 });
             }
         });
+        
+        // Load text fields specifically for pie chart categories
+        this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields/filtered?fieldType=text`).subscribe({
+            next: (textFields) => {
+                console.log('Loaded text fields for pie categories:', textFields);
+                this.categoryFields = textFields.map(f => ({ value: f.name, label: f.name }));
+                console.log('categoryFields (text only):', this.categoryFields);
+            },
+            error: (err) => {
+                console.error('Failed to load text fields:', err);
+                // Fallback to client-side filtering if the new API is not available
+                this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields`).subscribe({
+                    next: (fields) => {
+                        const textAllowed = ['text', 'keyword', 'constant_keyword', 'wildcard'];
+                        this.categoryFields = fields.filter(f => textAllowed.includes(f.type)).map(f => ({ value: f.name, label: f.name }));
+                        console.log('categoryFields (fallback):', this.categoryFields);
+                    },
+                    error: () => {}
+                });
+            }
+        });
     }
 
     // 添加新的图表或表格
@@ -227,6 +251,18 @@ export class AddComponent implements OnInit {
             this.translate.get('Please select Y Axis Field').subscribe(msg => this.showMessage(msg, 'error'));
             return;
         }
+        
+        // Validate pie chart requirements
+        if (this.formData.type === 'pie') {
+            if (!this.formData.aggregationField) {
+                this.translate.get('Please select Category Field for pie chart').subscribe(msg => this.showMessage(msg, 'error'));
+                return;
+            }
+            if (this.formData.aggregationType && this.formData.aggregationType !== 'count' && !this.formData.metricField) {
+                this.translate.get('Please select Metric Field for non-count aggregation').subscribe(msg => this.showMessage(msg, 'error'));
+                return;
+            }
+        }
 
         // Debug log form data
         console.log('Adding widget with formData:', this.formData);
@@ -247,6 +283,7 @@ export class AddComponent implements OnInit {
                     chartConfig: this.buildBaseChartConfig(this.formData.name || uniqueId),
                     filters: this.filters, index: this.formData.index,
                     aggregation: { field: this.formData.aggregationField, type: this.formData.aggregationType || 'count' },
+                    metricField: this.formData.metricField, // Add metricField for pie charts
                     xField: this.formData.xField, yField: this.formData.yField,
                     name: this.formData.name
                 } as any;
@@ -293,6 +330,7 @@ export class AddComponent implements OnInit {
             widgetType: item.chartType || item.type,
             aggregationField: item.aggregation?.field || '',
             aggregationType: item.aggregation?.type || 'count',
+            metricField: (item as any).metricField || '', // Add metricField for pie charts
             filters: (item as any).filters || [],
             yField: (item as any).yField || ''  // Add yField to request
         };

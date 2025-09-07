@@ -224,9 +224,9 @@
                             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Category Field (Pie Slices)' | translate }}</label>
                             <select class="form-select mt-1" name="aggregationField" [(ngModel)]="formData.aggregationField" required>
                                 <option value="">{{ 'Select field to group by' | translate }}</option>
-                                <option *ngFor="let af of aggregationFields" [value]="af.value">{{af.label}}</option>
+                                <option *ngFor="let cf of categoryFields" [value]="cf.value">{{cf.label}}</option>
                             </select>
-                            <p class="text-xs text-gray-500 mt-1">{{ 'Field to create pie slices' | translate }}</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ 'Field to create pie slices (text fields only)' | translate }}</p>
                         </div>
                         <div>
                             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Value Calculation' | translate }}</label>
@@ -237,6 +237,16 @@
                                 </ng-container>
                             </select>
                             <p class="text-xs text-gray-500 mt-1">{{ 'How to calculate slice sizes' | translate }}</p>
+                        </div>
+                        
+                        <!-- Metric Field for non-count aggregations -->
+                        <div *ngIf="formData.aggregationType && formData.aggregationType !== 'count'">
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Metric Field' | translate }}</label>
+                            <select class="form-select mt-1" name="metricField" [(ngModel)]="formData.metricField" required>
+                                <option value="">{{ 'Select numeric field for calculation' | translate }}</option>
+                                <option *ngFor="let af of aggregationFields" [value]="af.value">{{af.label}}</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">{{ 'Numeric field to apply' | translate }} {{formData.aggregationType}} {{ 'calculation on' | translate }}</p>
                         </div>
                     </div>
                 </div>

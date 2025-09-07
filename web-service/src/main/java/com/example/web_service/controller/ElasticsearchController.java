@@ -159,7 +159,7 @@ public class ElasticsearchController {
     }
 
     @GetMapping("/indices/{index}/fields/filtered")
-    @Operation(summary = "获取过滤后的索引字段", description = "根据索引名称和字段类型过滤器返回字段列表。fieldType可选值: 'numeric'(仅数值字段), 'all'(所有字段)")
+    @Operation(summary = "获取过滤后的索引字段", description = "根据索引名称和字段类型过滤器返回字段列表。fieldType可选值: 'numeric'(仅数值字段), 'text'(仅文本字段), 'all'(所有字段)")
     public List<Map<String, String>> listIndexFieldsFiltered(
             @PathVariable String index,
             @RequestParam(defaultValue = "all") String fieldType) throws IOException {
