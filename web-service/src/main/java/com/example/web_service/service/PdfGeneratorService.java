@@ -11,6 +11,9 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Image;
+
+import lombok.extern.slf4j.Slf4j;
+
 import com.itextpdf.io.image.ImageDataFactory;
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +25,7 @@ import com.example.web_service.entity.Report;
 import com.example.web_service.entity.Template;
 
 @Service
+@Slf4j
 public class PdfGeneratorService {
     
     @Autowired
@@ -54,14 +58,30 @@ public class PdfGeneratorService {
             
             // 访问预览页面
             String url = frontendUrl + "/standalone/preview/" + templateId;
+            // Note: this method called without explicit time range; if future need arises to inherit
+            // time params, a separate endpoint should pass them explicitly. Here we keep as-is.
             driver.get(url);
             
             // 等待页面加载完成（等待 gridster 元素出现）
-            new WebDriverWait(driver, Duration.ofSeconds(10))
+            new WebDriverWait(driver, Duration.ofSeconds(20))
                 .until(d -> d.findElement(By.tagName("gridster")));
-            
-            // 额外等待确保图表渲染完成
-            Thread.sleep(2000);
+
+            // 显式等待前端渲染完成标记
+            new WebDriverWait(driver, Duration.ofSeconds(30)).until(d -> {
+                try {
+                    Object ready = ((JavascriptExecutor) d).executeScript("return window.__reportReady__ === true;");
+                    return Boolean.TRUE.equals(ready);
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+            // 检查是否存在错误标记
+            try {
+                Object hasError = ((JavascriptExecutor) driver).executeScript("return window.__reportError__ === true;");
+                if (Boolean.TRUE.equals(hasError)) {
+                    throw new RuntimeException("Frontend reported error while loading template");
+                }
+            } catch (WebDriverException ignored) { }
             
             // 创建临���文件
             screenshot = File.createTempFile("template_", ".png");
@@ -159,14 +179,29 @@ public class PdfGeneratorService {
             // 访问预览页面，带时间范围参数
             String url = String.format("%s/standalone/preview/%d?startTime=%d&endTime=%d", 
                 frontendUrl, templateId, startTimeMillis, endTimeMillis);
+            log.info("url: {}", url);
             driver.get(url);
             
             // 等待页面加载完成
-            new WebDriverWait(driver, Duration.ofSeconds(10))
+            new WebDriverWait(driver, Duration.ofSeconds(20))
                 .until(d -> d.findElement(By.tagName("gridster")));
-            
-            // 额外等待确保图表渲染完成
-            Thread.sleep(2000);
+
+            // 显式等待前端渲染完成标记
+            new WebDriverWait(driver, Duration.ofSeconds(30)).until(d -> {
+                try {
+                    Object ready = ((JavascriptExecutor) d).executeScript("return window.__reportReady__ === true;");
+                    return Boolean.TRUE.equals(ready);
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+            // 检查是否存在错误标记
+            try {
+                Object hasError = ((JavascriptExecutor) driver).executeScript("return window.__reportError__ === true;");
+                if (Boolean.TRUE.equals(hasError)) {
+                    throw new RuntimeException("Frontend reported error while loading template");
+                }
+            } catch (WebDriverException ignored) { }
             
             // 创建临时文件
             screenshot = File.createTempFile("template_", ".png");

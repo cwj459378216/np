@@ -141,6 +141,9 @@ CREATE TABLE IF NOT EXISTS templates (
     created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 确保已存在的数据库也强制名称唯一
+CREATE UNIQUE INDEX IF NOT EXISTS idx_templates_name_unique ON templates(name);
+
 -- 先插入模板数据
 INSERT INTO templates (name, description, content, creator) VALUES
 (
@@ -169,6 +172,7 @@ INSERT INTO templates (name, description, content, creator) VALUES
     }',
     'System'
 ) ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (name) DO NOTHING;
 
 -- 然后创建 reports 表
 CREATE TABLE IF NOT EXISTS reports (

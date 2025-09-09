@@ -15,10 +15,12 @@ export class TemplateService {
         return this.http.get<any[]>(this.apiUrl);
     }
 
-    exportPdf(id: number): Observable<Blob> {
-        const url = `${this.apiUrl}/${id}/export-pdf`;
-        return this.http.get(url, {
-            responseType: 'blob'
-        });
+    exportPdf(id: number, startTime?: number, endTime?: number): Observable<Blob> {
+        let url = `${this.apiUrl}/${id}/export-pdf`;
+        const params: string[] = [];
+        if (startTime !== undefined && Number.isFinite(startTime)) params.push(`startTime=${startTime}`);
+        if (endTime !== undefined && Number.isFinite(endTime)) params.push(`endTime=${endTime}`);
+        if (params.length > 0) url += `?${params.join('&')}`;
+        return this.http.get(url, { responseType: 'blob' });
     }
 }

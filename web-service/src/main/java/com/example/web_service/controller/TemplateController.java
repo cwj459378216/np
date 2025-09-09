@@ -69,9 +69,17 @@ public class TemplateController {
     }
 
     @GetMapping("/{id}/export-pdf")
-    public ResponseEntity<byte[]> exportPdf(@PathVariable Long id) {
+    public ResponseEntity<byte[]> exportPdf(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long startTime,
+            @RequestParam(required = false) Long endTime) {
         try {
-            byte[] pdfContent = pdfGeneratorService.generatePdfFromTemplate(id);
+            byte[] pdfContent;
+            if (startTime != null && endTime != null) {
+                pdfContent = pdfGeneratorService.generatePdfFromTemplateWithTimeRange(id, startTime, endTime);
+            } else {
+                pdfContent = pdfGeneratorService.generatePdfFromTemplate(id);
+            }
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);

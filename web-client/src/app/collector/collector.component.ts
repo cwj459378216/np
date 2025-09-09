@@ -797,8 +797,8 @@ export class CollectorComponent implements OnInit {
           fileCount: storageStrategy.fileCount,
           fileName: storageStrategy.name, // 使用存储策略的名称作为文件名
           fileSize: this.parseFileSize(storageStrategy.fileSize),
-          fileType: storageStrategy.fileType === 'PCAP' ? 0 : 1,
-          performanceMode: "string",
+          fileType: storageStrategy.fileType === 'PCAP' ? 1 : 2,
+        //   performanceMode: "string",
           stopOnWrap: storageStrategy.outOfDiskAction === 'Stop'
         },
         snort: {
@@ -843,7 +843,8 @@ export class CollectorComponent implements OnInit {
     const match = size.match(/(\d+)M/);
     if (!match) return 0;
 
-    return parseInt(match[1]) * 1024 * 1024; // 转换为字节
+    // return parseInt(match[1]) * 1024 * 1024; // 转换为字节
+    return parseInt(match[1]); // M
   }
 
   // 添加开始轮询状态的方法

@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import { TranslateService } from '@ngx-translate/core';
 
 interface CustomGridsterItem extends GridsterItem {
     uniqueId: string;
@@ -20,6 +21,7 @@ interface CustomGridsterItem extends GridsterItem {
         type: string;
     };
     titles?: string[];
+    tableData?: any[];
 }
 
 interface EChartsInstance {
@@ -41,10 +43,18 @@ interface FormData {
     filter: string;
     aggregationField: string;
     aggregationType: string;
-    yField?: string; // 添加 yField 属性
-    topN?: number;   // 添加topN参数
-    sortField?: string;  // 添加排序字段
-    sortOrder?: 'asc' | 'desc';  // 添加排序顺序
+    metricField?: string; // For pie charts with non-count aggregations
+    xField?: string; // metric
+    yField?: string; // dimension (time/date or category)
+    topN?: number;   // table: number of records
+    sortField?: string;  // table: sort field
+    sortOrder?: 'asc' | 'desc';  // table: sort order
+}
+
+interface WidgetFilter {
+    field: string;
+    operator: 'exists' | 'not_exists' | 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte';
+    value?: string;
 }
 
 @Component({
@@ -54,6 +64,9 @@ interface FormData {
 })
 export class EditComponent implements OnInit {
     id?: string;
+    // 可选时间范围（毫秒时间戳）
+    private startTime?: number;
+    private endTime?: number;
     dashboard: Array<CustomGridsterItem> = [];
     options: GridsterConfig = {};
     lineChart: any;
@@ -70,17 +83,19 @@ export class EditComponent implements OnInit {
     @ViewChild('widgetFormRef') widgetFormRef: any;
 
     // 表单数据
-    formData = {
+    formData: FormData = {
         name: '',
         type: '',
+        chartType: '',
         index: '',
         filter: '',
         aggregationField: '',
         aggregationType: '',
-        yField: '', // 添加 yField 属性
-        topN: 10,  // 改为10条记录，符合新的选项
-        sortField: '',  // 添加排序字段
-        sortOrder: 'desc' as 'asc' | 'desc'  // 添加排序顺序，默认降序
+        xField: '',
+        yField: '',
+        topN: 10,
+        sortField: '',
+        sortOrder: 'desc'
     };
 
     // 下拉选项数据
@@ -95,9 +110,18 @@ export class EditComponent implements OnInit {
         { value: 'max', label: 'Max' }
     ];
 
-    // 修改 filter 相关的数据结构
-    filters: Array<{field: string, value: string}> = [
-        { field: '', value: '' }
+    // 过滤器（与 AddComponent 一致）
+    filters: WidgetFilter[] = [];
+
+    filterOperators = [
+        { value: 'exists', label: 'Exists' },
+        { value: 'not_exists', label: 'Not Exists' },
+        { value: 'eq', label: '=' },
+        { value: 'neq', label: '!=' },
+        { value: 'gt', label: '>' },
+        { value: 'gte', label: '>=' },
+        { value: 'lt', label: '<' },
+        { value: 'lte', label: '<=' }
     ];
 
     // 添加可选的字段列表
@@ -149,9 +173,10 @@ export class EditComponent implements OnInit {
     originalTemplate: any = null;  // 添加这个属性
 
     constructor(
-        private route: ActivatedRoute,
-        private http: HttpClient,
-        private router: Router
+    private route: ActivatedRoute,
+    private http: HttpClient,
+    private router: Router,
+    private translate: TranslateService
     ) {
         this.initCharts();
         this.initDashboard();
@@ -161,7 +186,14 @@ export class EditComponent implements OnInit {
     ngOnInit() {
         this.loadIndices();
         this.route.queryParams.subscribe(params => {
+            // 模板 id
             this.id = params['id'];
+            // 解析可选时间范围
+            const st = params['startTime'];
+            const et = params['endTime'];
+            this.startTime = (st !== undefined && st !== null && st !== '') ? Number(st) : undefined;
+            this.endTime = (et !== undefined && et !== null && et !== '') ? Number(et) : undefined;
+
             if (this.id) {
                 this.loadTemplate();
             }
@@ -190,6 +222,8 @@ export class EditComponent implements OnInit {
 
                 if (content.dashboard) {
                     this.dashboard = content.dashboard;
+                    // 加载每个 widget 数据，应用当前 URL 时间范围（未提供则后端默认近7天）
+                    this.dashboard.forEach(item => this.loadWidgetData(item));
                 }
 
                 if (content.options) {
@@ -325,60 +359,8 @@ export class EditComponent implements OnInit {
     }
 
     initDashboard() {
-        const generateUniqueId = () => `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-        this.dashboard = [
-            {
-                uniqueId: generateUniqueId(),
-                id: 'chart_1',
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 0,
-                type: 'chart',
-                chartType: 'line',
-                chartConfig: {...this.lineChart}
-            },
-            {
-                uniqueId: generateUniqueId(),
-                id: 'chart_2',
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 2,
-                type: 'chart',
-                chartType: 'bar',
-                chartConfig: {...this.barChart}
-            },
-            {
-                uniqueId: generateUniqueId(),
-                id: 'chart_3',
-                cols: 2,
-                rows: 2,
-                y: 0,
-                x: 4,
-                type: 'chart',
-                chartType: 'pie',
-                chartConfig: {...this.pieChart}
-            },
-            {
-                uniqueId: generateUniqueId(),
-                id: 'table_1',
-                cols: 3,
-                rows: 2,
-                y: 2,
-                x: 0,
-                type: 'table',
-                name: 'Default Table',
-                index: 'index1',
-                filter: {},
-                aggregation: {
-                    field: 'value',
-                    type: 'sum'
-                },
-                titles: ['title1', 'title2', 'title3']
-            }
-        ];
+        // 编辑页初始不强塞示例项，由加载模板或用户添加
+        this.dashboard = [];
     }
 
     initOptions() {
@@ -419,63 +401,108 @@ export class EditComponent implements OnInit {
             this.categoryFields = [];
             this.dateFields = [];
             this.yAxisCandidates = [];
-            this.titleOptions = [];  // 也清空表格字段选项
+            this.titleOptions = [];
             return;
         }
-        
-        // Load all fields for filter fields and y-axis candidates
+
+        // 与 AddComponent 一致的字段加载逻辑
         this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields`).subscribe({
             next: (fields) => {
-                console.log('Loaded fields for index:', this.formData.index, fields);
                 const options = fields.map(f => ({ value: f.name, label: f.name, type: f.type }));
                 this.filterFields = options;
                 this.dateFields = options.filter(o => o.type === 'date');
-                // 设置表格字段选项（所有字段都可以作为表格列）
                 this.titleOptions = options.map(o => ({ value: o.value, label: o.label }));
-                console.log('titleOptions:', this.titleOptions);
-                
-                // 加载数值字段用于聚合
-                this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields?type=numeric`).subscribe({
-                    next: (numericFields) => {
-                        this.aggregationFields = numericFields.map(f => ({ value: f.name, label: f.name, type: f.type }));
-                        console.log('aggregationFields:', this.aggregationFields);
-                    },
-                    error: () => {
-                        console.error('Error loading numeric fields');
-                    }
-                });
+                const keywordFields = options.filter(o => o.type === 'keyword');
+                this.yAxisCandidates = [...this.dateFields, ...keywordFields].map(o => ({ value: o.value, label: o.label, type: o.type }));
 
-                // 加载文本字段用于分类
-                this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields?type=text`).subscribe({
-                    next: (textFields) => {
-                        this.categoryFields = textFields.map(f => ({ value: f.name, label: f.name, type: f.type }));
-                        console.log('categoryFields:', this.categoryFields);
-                    },
-                    error: () => {
-                        console.error('Error loading text fields');
-                    }
-                });
+                if (!this.formData.yField && this.yAxisCandidates.length) {
+                    this.formData.yField = this.yAxisCandidates[0].value as string;
+                }
+                if (!this.formData.aggregationType) this.formData.aggregationType = 'count';
+            },
+            error: () => {}
+        });
 
-                // 设置Y轴候选字段（包括时间字段和文本字段）
-                this.yAxisCandidates = [
-                    ...this.dateFields,
-                    ...options.filter(o => o.type === 'keyword' || o.type === 'text')
-                ];
+        // 数值字段（度量）
+        this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields/filtered?fieldType=numeric`).subscribe({
+            next: (numericFields) => {
+                this.aggregationFields = numericFields.map(f => ({ value: f.name, label: f.name, type: f.type }));
             },
             error: () => {
-                console.error('Error loading fields for index');
+                // 回退
+                this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields`).subscribe({
+                    next: (fields) => {
+                        const aggAllowed = ['integer','long','short','byte','double','float','half_float','scaled_float','unsigned_long'];
+                        this.aggregationFields = fields.filter(f => aggAllowed.includes(f.type)).map(f => ({ value: f.name, label: f.name, type: f.type }));
+                    },
+                    error: () => {}
+                });
+            }
+        });
+
+        // 文本字段（饼图分类）
+        this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields/filtered?fieldType=text`).subscribe({
+            next: (textFields) => {
+                this.categoryFields = textFields.map(f => ({ value: f.name, label: f.name, type: f.type }));
+            },
+            error: () => {
+                // 回退
+                this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields`).subscribe({
+                    next: (fields) => {
+                        const textAllowed = ['text', 'keyword', 'constant_keyword', 'wildcard'];
+                        this.categoryFields = fields.filter(f => textAllowed.includes(f.type)).map(f => ({ value: f.name, label: f.name, type: f.type }));
+                    },
+                    error: () => {}
+                });
             }
         });
     }
 
     openAddChartModal() {
+        // 重置表单数据，保持与 AddComponent 一致
+        this.formData = {
+            name: '',
+            type: '',
+            chartType: '',
+            index: '',
+            filter: '',
+            aggregationField: '',
+            aggregationType: 'count',
+            xField: 'count',
+            yField: '',
+            topN: 10,
+            sortField: '',
+            sortOrder: 'desc'
+        };
+        this.filters = [{ field: '', operator: 'eq', value: '' }];
+        this.selectedTitles = [];
         this.addChartModal.open();
     }
 
     addWidget() {
         if (!this.formData.type) {
-            this.showMessage('Please select widget type', 'error');
+            this.translate.get('Please select widget type').subscribe(message => this.showMessage(message, 'error'));
             return;
+        }
+        if ((this.formData.type === 'line' || this.formData.type === 'bar') && !this.formData.yField) {
+            this.translate.get('Please select Y Axis Field').subscribe(msg => this.showMessage(msg, 'error'));
+            return;
+        }
+        if (this.formData.type === 'table') {
+            if (!this.formData.index) {
+                this.translate.get('Please select data source index for table').subscribe(msg => this.showMessage(msg, 'error'));
+                return;
+            }
+        }
+        if (this.formData.type === 'pie') {
+            if (!this.formData.aggregationField) {
+                this.translate.get('Please select Category Field for pie chart').subscribe(msg => this.showMessage(msg, 'error'));
+                return;
+            }
+            if (this.formData.aggregationType && this.formData.aggregationType !== 'count' && !this.formData.metricField) {
+                this.translate.get('Please select Metric Field for non-count aggregation').subscribe(msg => this.showMessage(msg, 'error'));
+                return;
+            }
         }
 
         const uniqueId = `${this.formData.type}_${new Date().getTime()}`;
@@ -486,48 +513,122 @@ export class EditComponent implements OnInit {
             case 'bar':
             case 'pie':
                 newItem = {
-                    cols: 3,
-                    rows: 3,
-                    y: 0,
-                    x: 0,
-                    type: 'chart',
-                    chartType: this.formData.type,
-                    uniqueId: uniqueId,
-                    id: uniqueId,
-                    chartConfig: this.generateChartConfig(this.formData.type)
-                };
+                    cols: 3, rows: 3, y: 0, x: 0,
+                    type: 'chart', chartType: this.formData.type,
+                    uniqueId, id: uniqueId,
+                    chartConfig: this.buildBaseChartConfig(this.formData.name || uniqueId),
+                    filters: this.filters, index: this.formData.index,
+                    aggregation: { field: this.formData.aggregationField, type: this.formData.aggregationType || 'count' },
+                    metricField: this.formData.metricField,
+                    xField: this.formData.xField, yField: this.formData.yField,
+                    name: this.formData.name
+                } as any;
                 break;
-
             case 'table':
+                const defaultTitles = this.selectedTitles && this.selectedTitles.length > 0
+                    ? this.selectedTitles
+                    : this.titleOptions.slice(0, Math.min(5, this.titleOptions.length)).map(opt => opt.value);
                 newItem = {
-                    cols: 6,
-                    rows: 3,
-                    y: 0,
-                    x: 0,
-                    type: 'table',
-                    uniqueId: uniqueId,
-                    id: uniqueId,
-                    titles: this.selectedTitles,
-                    aggregation: {
-                        field: this.formData.aggregationField,
-                        type: this.formData.aggregationType
-                    },
-                    filters: this.filters,
-                    index: this.formData.index,
+                    cols: 6, rows: 3, y: 0, x: 0,
+                    type: 'table', uniqueId, id: uniqueId,
+                    titles: defaultTitles,
+                    aggregation: { field: this.formData.aggregationField, type: this.formData.aggregationType },
+                    filters: this.filters, index: this.formData.index,
                     name: this.formData.name,
                     topN: this.formData.topN || 10,
                     sortField: this.formData.sortField || '',
                     sortOrder: this.formData.sortOrder || 'desc'
                 } as any;
                 break;
-
             default:
-                this.showMessage('Invalid widget type', 'error');
+                this.translate.get('Invalid widget type').subscribe(message => this.showMessage(message, 'error'));
                 return;
         }
 
         this.dashboard.push(newItem);
         this.addChartModal.close();
+        this.loadWidgetData(newItem);
+    }
+
+    private buildBaseChartConfig(title: string) {
+        return {
+            title: { text: title },
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['Data'] },
+            xAxis: { type: 'category', data: [] },
+            yAxis: { type: 'value' },
+            series: [{ name: 'Data', type: 'line', data: [] }]
+        };
+    }
+
+    private loadWidgetData(item: CustomGridsterItem) {
+        const req: any = {
+            index: (item as any).index,
+            widgetType: item.chartType || item.type,
+            aggregationField: item.aggregation?.field || '',
+            aggregationType: item.aggregation?.type || 'count',
+            metricField: (item as any).metricField || '',
+            filters: (item as any).filters || [],
+            yField: (item as any).yField || '',
+            // 表格参数（图表忽略）
+            topN: (item as any).topN || 100,
+            sortField: (item as any).sortField || '',
+            sortOrder: (item as any).sortOrder || 'desc'
+        };
+
+        // 透传可选时间范围，未提供则让后端按最近7天处理
+        if (this.startTime !== undefined) {
+            req.startTime = this.startTime;
+        }
+        if (this.endTime !== undefined) {
+            req.endTime = this.endTime;
+        }
+
+        console.log('Sending widget query request:', req);
+
+        this.http.post(`${environment.apiUrl}/es/widget/query`, req).subscribe({
+            next: (res: any) => {
+                if (item.type === 'chart') {
+                    if (item.chartType === 'line' || item.chartType === 'bar') {
+                        const x: any[] = res.x || [];
+                        const y: any[] = res.y || [];
+                        let categories: string[];
+                        if (res.chartType === 'category') {
+                            categories = x.map(v => String(v));
+                        } else {
+                            categories = x.map(v => new Date(v).toLocaleString());
+                        }
+                        item.chartConfig = {
+                            title: { text: (item as any)['name'] || item.uniqueId },
+                            tooltip: { trigger: 'axis' },
+                            xAxis: { type: 'category', data: categories },
+                            yAxis: { type: 'value' },
+                            series: [{ name: req.aggregationType, type: item.chartType, data: y }]
+                        };
+                    } else if (item.chartType === 'pie') {
+                        const labels: string[] = res.labels || [];
+                        const values: number[] = res.values || [];
+                        item.chartConfig = {
+                            title: { text: (item as any)['name'] || item.uniqueId },
+                            tooltip: { trigger: 'item' },
+                            legend: { orient: 'vertical', left: 'left' },
+                            series: [{
+                                type: 'pie',
+                                radius: '60%',
+                                data: labels.map((l, i) => ({ name: l, value: values[i] })),
+                                emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } }
+                            }]
+                        };
+                    }
+                } else if (item.type === 'table') {
+                    (item as any).tableData = res.data || [];
+                    console.log('Table data loaded:', res.data);
+                }
+            },
+            error: () => {
+                this.translate.get('Load data failed').subscribe(msg => this.showMessage(msg, 'error'));
+            }
+        });
     }
 
     private generateChartConfig(chartType: string) {
@@ -610,11 +711,18 @@ export class EditComponent implements OnInit {
     }
 
     addFilter() {
-        this.filters.push({ field: '', value: '' });
+        this.filters.push({ field: '', operator: 'eq', value: '' });
+    }
+
+    requiresValue(op: string): boolean {
+        return !['exists', 'not_exists'].includes(op);
     }
 
     removeFilter(index: number) {
         this.filters.splice(index, 1);
+        if (this.filters.length === 0) {
+            this.filters.push({ field: '', operator: 'eq', value: '' });
+        }
     }
 
     onChartInit(ec: any, item: CustomGridsterItem) {
@@ -622,7 +730,6 @@ export class EditComponent implements OnInit {
     }
 
     trackByFn(index: number, item: CustomGridsterItem): string {
-        // ... 复制 AddComponent 中的方法
         return `${item.uniqueId}_${item.type}_${item.chartType}`;
     }
 
@@ -710,13 +817,21 @@ export class EditComponent implements OnInit {
         );
     }
 
+    onYFieldChange() {
+        console.log('Y Field changed to:', this.formData.yField);
+    }
+
+    onAggFieldChange() {
+        console.log('Aggregation Field changed to:', this.formData.aggregationField);
+    }
+
     getAxisPreview(): string {
         if (this.formData.type === 'pie') {
             const field = this.formData.aggregationField || 'field';
             const aggType = this.formData.aggregationType || 'count';
             return `${aggType}(${field}) by categories`;
         }
-        
+
         if (this.formData.type === 'line' || this.formData.type === 'bar') {
             const xAxis = this.formData.yField || 'time/category';
             const yField = this.formData.aggregationField || 'count';
@@ -724,7 +839,7 @@ export class EditComponent implements OnInit {
             const yAxisLabel = this.formData.aggregationField ? `${yType}(${yField})` : 'count';
             return `${xAxis} vs ${yAxisLabel}`;
         }
-        
+
         return 'Select configuration';
     }
 
@@ -733,7 +848,7 @@ export class EditComponent implements OnInit {
         if (value === null || value === undefined) {
             return '';
         }
-        
+
         // 特殊处理 timestamp 字段
         if (fieldName && (fieldName.toLowerCase() === 'timestamp' || fieldName.toLowerCase().includes('time'))) {
             // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
@@ -759,7 +874,7 @@ export class EditComponent implements OnInit {
                 });
             }
         }
-        
+
         // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
         if (typeof value === 'number' && value > 946684800000) {
             return new Date(value).toLocaleString('zh-CN', {
@@ -771,12 +886,12 @@ export class EditComponent implements OnInit {
                 second: '2-digit'
             });
         }
-        
+
         // 如果是对象，转换为JSON字符串
         if (typeof value === 'object') {
             return JSON.stringify(value);
         }
-        
+
         return String(value);
     }
 
@@ -785,7 +900,7 @@ export class EditComponent implements OnInit {
         if (!header) {
             return '';
         }
-        
+
         // 处理驼峰命名和下划线命名
         let formatted = header
             // 处理驼峰命名：在大写字母前添加空格
@@ -799,7 +914,7 @@ export class EditComponent implements OnInit {
             .split(' ')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
-        
+
         return formatted;
     }
 }

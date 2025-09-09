@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { TemplateService } from '../../../services/template.service';
 import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
+import { combineLatest } from 'rxjs';
 
 interface CustomGridsterItem extends GridsterItem {
     uniqueId: string;
@@ -35,9 +36,12 @@ interface CustomGridsterItem extends GridsterItem {
 export class PreviewComponent implements OnInit {
     isStandalone = false;
     id?: string;
+    startTime?: number;
+    endTime?: number;
     dashboard: Array<CustomGridsterItem> = [];
     options: GridsterConfig = {};
     echartsInstances: {[key: string]: any} = {};
+    private pendingWidgets = 0;
 
     // 表格数据
     tableData = [
@@ -59,21 +63,36 @@ export class PreviewComponent implements OnInit {
     }
 
     ngOnInit() {
-        if (this.isStandalone) {
-            this.route.params.subscribe(params => {
-                this.id = params['id'];
-                if (this.id) {
-                    this.loadTemplate();
-                }
-            });
-        } else {
-            this.route.queryParams.subscribe(params => {
-                this.id = params['id'];
-                if (this.id) {
-                    this.loadTemplate();
-                }
-            });
-        }
+        combineLatest([this.route.params, this.route.queryParams]).subscribe(([params, query]) => {
+            const newId = params['id'] || query['id'];
+
+            // 解析可选时间范围（仅在值为有效数字时生效）
+            const stRaw = query['startTime'];
+            const etRaw = query['endTime'];
+            const stParsed = (stRaw !== undefined && stRaw !== null && stRaw !== '') ? parseInt(stRaw, 10) : undefined;
+            const etParsed = (etRaw !== undefined && etRaw !== null && etRaw !== '') ? parseInt(etRaw, 10) : undefined;
+            const newStart = (stParsed !== undefined && Number.isFinite(stParsed)) ? stParsed : undefined;
+            const newEnd = (etParsed !== undefined && Number.isFinite(etParsed)) ? etParsed : undefined;
+
+            const idChanged = newId !== this.id;
+            const timeChanged = newStart !== this.startTime || newEnd !== this.endTime;
+
+            this.id = newId;
+            this.startTime = newStart;
+            this.endTime = newEnd;
+
+            // 调试日志
+            console.debug('Preview params:', { id: this.id, startTime: this.startTime, endTime: this.endTime });
+
+            if (!this.id) return;
+
+            if (idChanged || this.dashboard.length === 0) {
+                this.loadTemplate();
+            } else if (timeChanged) {
+                // 仅时间变化时，重新加载每个 widget 的数据
+                this.dashboard.forEach(item => this.loadWidgetData(item));
+            }
+        });
     }
 
     initOptions() {
@@ -127,6 +146,7 @@ export class PreviewComponent implements OnInit {
                     : template.content;
 
                 if (content.dashboard) {
+                    (window as any).__reportError__ = false;
                     this.dashboard = content.dashboard.map((item: CustomGridsterItem) => ({
                         ...item,
                         x: item.x,
@@ -136,9 +156,19 @@ export class PreviewComponent implements OnInit {
                     }));
 
                     // 为每个 widget 加载数据
-                    this.dashboard.forEach(item => {
-                        this.loadWidgetData(item);
-                    });
+                    this.pendingWidgets = this.dashboard.length;
+                    (window as any).__reportReady__ = false;
+                    if (this.pendingWidgets === 0) {
+                        // 无控件，直接标记渲染完成
+                        setTimeout(() => {
+                            (window as any).__reportReady__ = true;
+                            console.debug('Preview render complete (no widgets)');
+                        }, 100);
+                    } else {
+                        this.dashboard.forEach(item => {
+                            this.loadWidgetData(item);
+                        });
+                    }
                 }
 
                 if (content.options) {
@@ -168,6 +198,12 @@ export class PreviewComponent implements OnInit {
                 this.translate.get('Error loading template').subscribe(message => {
                     this.showMessage(message, 'error');
                 });
+                // 避免 PDF 生成端无限等待
+                setTimeout(() => {
+                    (window as any).__reportError__ = true;
+                    (window as any).__reportReady__ = true;
+                    console.debug('Template load failed: __reportReady__=true');
+                }, 200);
             }
         );
     }
@@ -210,7 +246,7 @@ export class PreviewComponent implements OnInit {
 
     // 加载 widget 数据
     private loadWidgetData(item: CustomGridsterItem) {
-        const req: any = {
+    const req: any = {
             index: (item as any).index,
             widgetType: item.chartType || item.type,
             aggregationField: (item as any).aggregation?.field || '',
@@ -222,23 +258,31 @@ export class PreviewComponent implements OnInit {
             sortField: (item as any).sortField || '',
             sortOrder: (item as any).sortOrder || 'desc'
         };
-        
+
+        // 追加时间范围（可选）
+        if (this.startTime !== undefined && Number.isFinite(this.startTime)) {
+            req.startTime = this.startTime;
+        }
+        if (this.endTime !== undefined && Number.isFinite(this.endTime)) {
+            req.endTime = this.endTime;
+        }
+
         console.log('Sending widget query request:', req);
-        
-        this.http.post(`${environment.apiUrl}/es/widget/query`, req).subscribe({
+
+    this.http.post(`${environment.apiUrl}/es/widget/query`, req).subscribe({
             next: (res: any) => {
                 if (item.type === 'chart') {
                     if (item.chartType === 'line' || item.chartType === 'bar') {
                         const x: any[] = res.x || [];
                         const y: any[] = res.y || [];
                         let categories: string[];
-                        
+
                         if (res.chartType === 'category') {
                             categories = x.map(v => String(v));
                         } else {
                             categories = x.map(v => new Date(v).toLocaleString());
                         }
-                        
+
                         item.chartConfig = {
                             title: { text: (item as any).name || item.uniqueId },
                             tooltip: { trigger: 'axis' },
@@ -267,10 +311,27 @@ export class PreviewComponent implements OnInit {
                     console.log('Table total records:', res.total);
                     console.log('Table columns to display:', item.titles);
                 }
+                // 每个 widget 完成后递减计数
+                this.pendingWidgets = Math.max(0, this.pendingWidgets - 1);
+                if (this.pendingWidgets === 0) {
+                    // 略等一帧，确保 ECharts 完成渲染
+                    setTimeout(() => {
+                        (window as any).__reportReady__ = true;
+                        console.debug('Preview render complete: __reportReady__=true');
+                    }, 200);
+                }
             },
             error: (error) => {
                 console.error('Error loading widget data:', error);
                 this.translate.get('Load data failed').subscribe(msg => this.showMessage(msg, 'error'));
+                // 出错也要推进，避免永远不就绪
+                this.pendingWidgets = Math.max(0, this.pendingWidgets - 1);
+                if (this.pendingWidgets === 0) {
+                    setTimeout(() => {
+                        (window as any).__reportReady__ = true;
+                        console.debug('Preview render complete with errors: __reportReady__=true');
+                    }, 200);
+                }
             }
         });
     }
@@ -314,7 +375,7 @@ export class PreviewComponent implements OnInit {
             }
         });
 
-        this.templateService.exportPdf(Number(this.id))
+    this.templateService.exportPdf(Number(this.id), this.startTime, this.endTime)
             .subscribe({
                 next: (blob: Blob) => {
                     // 创建下载链接
@@ -347,7 +408,7 @@ export class PreviewComponent implements OnInit {
         if (value === null || value === undefined) {
             return '';
         }
-        
+
         // 特殊处理 timestamp 字段
         if (fieldName && (fieldName.toLowerCase() === 'timestamp' || fieldName.toLowerCase().includes('time'))) {
             // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
@@ -373,7 +434,7 @@ export class PreviewComponent implements OnInit {
                 });
             }
         }
-        
+
         // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
         if (typeof value === 'number' && value > 946684800000) {
             return new Date(value).toLocaleString('zh-CN', {
@@ -385,12 +446,12 @@ export class PreviewComponent implements OnInit {
                 second: '2-digit'
             });
         }
-        
+
         // 如果是对象，转换为JSON字符串
         if (typeof value === 'object') {
             return JSON.stringify(value);
         }
-        
+
         return String(value);
     }
 
@@ -399,7 +460,7 @@ export class PreviewComponent implements OnInit {
         if (!header) {
             return '';
         }
-        
+
         // 处理驼峰命名和下划线命名
         let formatted = header
             // 处理驼峰命名：在大写字母前添加空格
@@ -413,7 +474,7 @@ export class PreviewComponent implements OnInit {
             .split(' ')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
-        
+
         return formatted;
     }
 }

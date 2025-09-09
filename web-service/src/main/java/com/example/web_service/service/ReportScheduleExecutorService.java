@@ -3,10 +3,6 @@ package com.example.web_service.service;
 import com.example.web_service.entity.ReportScheduler;
 import com.example.web_service.entity.NotificationSetting;
 import com.example.web_service.entity.Report;
-import com.example.web_service.service.ReportSchedulerService;
-import com.example.web_service.service.NotificationSettingService;
-import com.example.web_service.service.PdfGeneratorService;
-import com.example.web_service.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -49,6 +45,9 @@ public class ReportScheduleExecutorService {
     
     @Autowired
     private ReportService reportService;
+    
+    @Autowired
+    private TemplateService templateService;
     
     @Value("${app.report.storage.path}")
     private String reportStoragePath;
@@ -143,26 +142,49 @@ public class ReportScheduleExecutorService {
         try {
             logger.info("Starting report execution for scheduler: {}", scheduler.getName());
             
-            // 根据频率计算时间范围
+            // 根据频率计算时间范围（对齐自然边界）
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime startTime;
-            
+            java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+
+            LocalDateTime rangeStart;
+            LocalDateTime rangeEnd;
+
             switch (scheduler.getFrequency()) {
-                case "Daily":
-                    startTime = now.minusDays(1);
+                case "Daily": {
+                    // 前一天 00:00 到 当天 00:00
+                    java.time.LocalDate today = now.toLocalDate();
+                    java.time.LocalDate previousDay = today.minusDays(1);
+                    rangeStart = previousDay.atStartOfDay();
+                    rangeEnd = today.atStartOfDay();
                     break;
-                case "Weekly":
-                    startTime = now.minusDays(7);
+                }
+                case "Weekly": {
+                    // 上周一 00:00 到 本周一 00:00（周起始为周一）
+                    java.time.LocalDate today = now.toLocalDate();
+                    java.time.LocalDate mondayThisWeek = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+                    rangeEnd = mondayThisWeek.atStartOfDay();
+                    rangeStart = rangeEnd.minusWeeks(1);
                     break;
-                case "Monthly":
-                    startTime = now.minusDays(30);
+                }
+                case "Monthly": {
+                    // 上月1日 00:00 到 本月1日 00:00
+                    java.time.LocalDate firstDayThisMonth = now.toLocalDate().withDayOfMonth(1);
+                    rangeEnd = firstDayThisMonth.atStartOfDay();
+                    rangeStart = firstDayThisMonth.minusMonths(1).atStartOfDay();
                     break;
-                default:
-                    startTime = now.minusDays(7); // 默认7天
+                }
+                default: {
+                    // 默认最近7天：对齐到今天 00:00 作为结束
+                    java.time.LocalDate today = now.toLocalDate();
+                    rangeEnd = today.atStartOfDay();
+                    rangeStart = rangeEnd.minusDays(7);
+                }
             }
-            
-            long startTimeMillis = startTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
-            long endTimeMillis = now.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+
+            long startTimeMillis = rangeStart.atZone(zone).toInstant().toEpochMilli();
+            long endTimeMillis = rangeEnd.atZone(zone).toInstant().toEpochMilli();
+            logger.info("Computed time range for {}: {} to {}", scheduler.getFrequency(),
+                java.time.Instant.ofEpochMilli(startTimeMillis), java.time.Instant.ofEpochMilli(endTimeMillis));
             
             // 生成PDF报告
             byte[] pdfContent = generatePdfReport(scheduler, startTimeMillis, endTimeMillis);
@@ -191,16 +213,17 @@ public class ReportScheduleExecutorService {
      * 根据模板生成PDF报告（带时间范围）
      */
     private byte[] generatePdfReport(ReportScheduler scheduler, long startTimeMillis, long endTimeMillis) throws Exception {
-        // 解析模板ID
-        Long templateId = parseTemplateId(scheduler.getTemplate());
+    // 解析模板ID（仅通过名称解析）
+    Long templateId = parseTemplateId(scheduler.getTemplate());
         
         if (templateId != null) {
             try {
                 // 使用带时间范围的PDF生成服务，传入时间参数给前端页面
+                java.time.ZoneId zone = java.time.ZoneId.systemDefault();
                 logger.info("Generating PDF from template ID: {} with time range for scheduler: {}", templateId, scheduler.getName());
                 logger.info("Time range: {} to {}", 
-                    java.time.Instant.ofEpochMilli(startTimeMillis),
-                    java.time.Instant.ofEpochMilli(endTimeMillis));
+                    java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(startTimeMillis), zone),
+                    java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(endTimeMillis), zone));
                 
                 // 使用带时间范围的PDF生成方法
                 return pdfGeneratorService.generatePdfFromTemplateWithTimeRange(templateId, startTimeMillis, endTimeMillis);
@@ -223,24 +246,16 @@ public class ReportScheduleExecutorService {
      * 解析模板ID
      */
     private Long parseTemplateId(String template) {
-        // 如果template是数字，则作为模板ID使用
+        if (template == null || template.isEmpty()) return null;
+        // 仅通过名称查找，不将纯数字视为ID
         try {
-            return Long.parseLong(template);
-        } catch (NumberFormatException e) {
-            // 如果不是数字，可能是模板名称，需要转换为ID
-            // 这里可以根据实际业务逻辑进行映射
-            switch (template) {
-                case "Security Dashboard":
-                    return 1L;
-                case "System Status Template":
-                case "系统状态模板":
-                    return 2L;
-                case "Security Alert Template":
-                case "安全警报模板":
-                    return 3L;
-                default:
-                    return null; // 使用默认生成方式
-            }
+            com.example.web_service.entity.Template matched = templateService.findAll().stream()
+                .filter(t -> template.equals(t.getName()))
+                .findFirst().orElse(null);
+            return matched != null ? matched.getId() : null;
+        } catch (Exception e) {
+            logger.warn("Failed to resolve template name '{}' to ID: {}", template, e.getMessage());
+            return null;
         }
     }
     

@@ -23,6 +23,8 @@ export class ReportSchedulerComponent implements OnInit {
 
     schedulers: any[] = [];
     filteredSchedulers: any[] = [];
+    // 正在执行的调度器集合，用于控制按钮loading/禁用
+    private executingIds = new Set<number>();
 
     constructor(
         private fb: FormBuilder,
@@ -171,10 +173,20 @@ export class ReportSchedulerComponent implements OnInit {
                 padding: '2em'
             }).then((result) => {
                 if (result.value) {
+                    // 显示全局loading并禁用当前行按钮
+                    this.executingIds.add(scheduler.id);
+                    Swal.fire({
+                        title: translations['Execute Scheduler'],
+                        html: '<div style="font-size:14px;opacity:.8">正在执行…</div>',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
                     this.reportSchedulerService.executeScheduler(scheduler.id).subscribe({
                         next: (response: any) => {
                             console.log('Scheduler execution response:', response);
                             this.showMessage(translations['Scheduler executed successfully']);
+                            Swal.close();
+                            this.executingIds.delete(scheduler.id);
                         },
                         error: (error: any) => {
                             console.error('Error executing scheduler:', error);
@@ -185,11 +197,17 @@ export class ReportSchedulerComponent implements OnInit {
                                 errorMessage += ': ' + error.message;
                             }
                             this.showMessage(errorMessage, 'error');
+                            Swal.close();
+                            this.executingIds.delete(scheduler.id);
                         }
                     });
                 }
             });
         });
+    }
+
+    isExecuting(id: number): boolean {
+        return this.executingIds.has(id);
     }
 
     saveScheduler() {
@@ -201,13 +219,13 @@ export class ReportSchedulerComponent implements OnInit {
         }
 
         const formValue = this.params.value;
-        
+
         // 确保时间格式正确 (HH:mm)
         let timeValue = formValue.time;
         if (timeValue && timeValue.length === 8) { // 如果是 HH:mm:ss 格式
             timeValue = timeValue.substring(0, 5); // 截取 HH:mm 部分
         }
-        
+
         // 准备调度器数据，只包含需要更新的字段
         const schedulerData: any = {
             name: formValue.name,
@@ -224,7 +242,7 @@ export class ReportSchedulerComponent implements OnInit {
         // 如果是更新操作，添加ID但不包含时间戳字段
         if (formValue.id) {
             schedulerData.id = formValue.id;
-            
+
             this.reportSchedulerService.updateScheduler(formValue.id, schedulerData).subscribe({
                 next: (result) => {
                     console.log('Update scheduler result:', result);

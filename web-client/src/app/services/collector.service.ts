@@ -63,7 +63,7 @@ export interface AppOptions {
     fileName: string;
     fileSize: number;
     fileType: number;
-    performanceMode: string;
+    // performanceMode: string;
     stopOnWrap: boolean;
   };
   snort: {

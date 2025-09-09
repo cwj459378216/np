@@ -80,14 +80,23 @@
                                 <td>{{ formatDate(scheduler.createdAt) }}</td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
-                                        <button type="button" class="btn btn-sm btn-outline-success"
+                                        <button type="button" class="btn btn-sm btn-outline-success relative"
+                                            [disabled]="isExecuting(scheduler.id)"
                                             (click)="executeScheduler(scheduler)" title="Execute Now">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M8 5V3C8 2.44772 8.44772 2 9 2H15C15.5523 2 16 2.44772 16 3V5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                <path d="M12 12L16 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                <path d="M8 8L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
-                                            </svg>
+                                            <ng-container *ngIf="!isExecuting(scheduler.id); else loadingIcon">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M8 5V3C8 2.44772 8.44772 2 9 2H15C15.5523 2 16 2.44772 16 3V5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M12 12L16 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M8 8L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                                                </svg>
+                                            </ng-container>
+                                            <ng-template #loadingIcon>
+                                                <svg class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                                </svg>
+                                            </ng-template>
                                         </button>
                                         <button type="button" class="btn btn-sm btn-outline-primary"
                                             (click)="editScheduler(scheduler)">{{ 'general.edit' | translate }}</button>
@@ -111,7 +120,7 @@
             <form [formGroup]="params" class="text-sm" (ngSubmit)="saveScheduler()" ngNativeValidate>
                 <div class="mb-5">
                     <label for="name">{{ 'Name' | translate }} <span class="text-danger">*</span></label>
-                    <input id="name" type="text" formControlName="name" class="form-input" 
+                    <input id="name" type="text" formControlName="name" class="form-input"
                            [class.border-danger]="params.get('name')?.invalid && params.get('name')?.touched" required />
                     <div *ngIf="params.get('name')?.invalid && params.get('name')?.touched" class="text-danger text-xs mt-1">
                         <div *ngIf="params.get('name')?.errors?.['required']">{{ 'validation.required' | translate }}</div>
@@ -120,7 +129,7 @@
                 </div>
                 <div class="mb-5">
                     <label for="description">{{ 'Description' | translate }} <span class="text-danger">*</span></label>
-                    <textarea id="description" formControlName="description" class="form-input" rows="3" 
+                    <textarea id="description" formControlName="description" class="form-input" rows="3"
                               [class.border-danger]="params.get('description')?.invalid && params.get('description')?.touched" required></textarea>
                     <div *ngIf="params.get('description')?.invalid && params.get('description')?.touched" class="text-danger text-xs mt-1">
                         <div *ngIf="params.get('description')?.errors?.['required']">{{ 'validation.required' | translate }}</div>
@@ -129,7 +138,7 @@
                 </div>
                 <div class="mb-5">
                     <label for="template">{{ 'templates.templates' | translate }} <span class="text-danger">*</span></label>
-                    <select id="template" formControlName="template" class="form-select" 
+                    <select id="template" formControlName="template" class="form-select"
                             [class.border-danger]="params.get('template')?.invalid && params.get('template')?.touched" required>
                         <option value="">{{ 'Select Template' | translate }}</option>
                         <option *ngFor="let option of templateOptions" [value]="option.value">
@@ -142,7 +151,7 @@
                 </div>
                 <div class="mb-5">
                     <label for="frequency">{{ 'templates.frequency' | translate }} <span class="text-danger">*</span></label>
-                    <select id="frequency" formControlName="frequency" class="form-select" 
+                    <select id="frequency" formControlName="frequency" class="form-select"
                             [class.border-danger]="params.get('frequency')?.invalid && params.get('frequency')?.touched" required>
                         <option value="">{{ 'Select Frequency' | translate }}</option>
                         <option value="Daily">{{ 'common.Daily' | translate }}</option>
@@ -155,7 +164,7 @@
                 </div>
                 <div class="mb-5">
                     <label for="time">{{ 'templates.time' | translate }} <span class="text-danger">*</span></label>
-                    <input id="time" type="time" formControlName="time" class="form-input" 
+                    <input id="time" type="time" formControlName="time" class="form-input"
                            [class.border-danger]="params.get('time')?.invalid && params.get('time')?.touched" required />
                     <div *ngIf="params.get('time')?.invalid && params.get('time')?.touched" class="text-danger text-xs mt-1">
                         <div *ngIf="params.get('time')?.errors?.['required']">{{ 'validation.required' | translate }}</div>

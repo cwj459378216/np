@@ -24,6 +24,7 @@ public class ReportScheduler {
     @Column(nullable = false)
     private String template;
 
+
     @Column(nullable = false)
     private String frequency;
 
