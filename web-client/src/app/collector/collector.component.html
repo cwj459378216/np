@@ -311,7 +311,7 @@
                                         <div class="mt-2 text-xs text-white-dark" *ngIf="params.value.filePath">{{ 'Uploaded path' | translate }}: {{ params.value.filePath }}</div>
                                     </div>
 
-                                    <div class="mb-5">
+                                    <div class="mb-5" *ngIf="showChannels">
                                         <label for="storageStrategy">{{ 'Storage Strategy' | translate }}</label>
                                         <ng-select [items]="storageStrategies"
                                                    formControlName="storageStrategy"

@@ -369,13 +369,26 @@ export class CollectorComponent implements OnInit {
       id: [0],
       name: ['', Validators.required],
       interfaceName: ['', Validators.required],
-  storageStrategy: ['', Validators.required],
+  // Storage Strategy 在 Adapter 为 File 时禁用且不必填
+  storageStrategy: [{ value: '', disabled: false }],
   // Filter Strategy 输入框隐藏，移除必填校验，保留控件以兼容后端字段
   filterStrategy: [''],
       protocolAnalysisEnabled: [false],
       idsEnabled: [false],
   status: ['stopped'],
   filePath: ['']
+    });
+
+    // 根据 interfaceName（Adapter）动态控制 Storage Strategy 可用性
+    const ssCtrl = this.params.get('storageStrategy');
+    const ifaceCtrl = this.params.get('interfaceName');
+    ifaceCtrl?.valueChanges.subscribe((val: string) => {
+      if (val === 'File') {
+        ssCtrl?.disable({ emitEvent: false });
+        ssCtrl?.setValue('', { emitEvent: false });
+      } else {
+        ssCtrl?.enable({ emitEvent: false });
+      }
     });
   }
 
@@ -425,6 +438,9 @@ export class CollectorComponent implements OnInit {
   status: user.status,
   filePath: (user as any).filePath || ''
       });
+
+  // 根据当前 Adapter 同步禁用/启用 Storage Strategy
+  this.onAdapterChange(this.params.value.interfaceName);
     }
   }
 
@@ -439,10 +455,20 @@ export class CollectorComponent implements OnInit {
     return;
   }
 
-    const collectorData: Partial<Collector> = {
+  // 非 File 适配器必须选择 Storage Strategy
+  if (this.params.value.interfaceName !== 'File' && !this.params.value.storageStrategy) {
+    this.showMessage('Please choose a Storage Strategy', 'error');
+    return;
+  }
+
+  const isFile = this.params.value.interfaceName === 'File';
+  // 后端 storage_strategy NOT NULL：File 模式写入占位值
+  const storageStrategyName = isFile ? 'FILE' : (this.params.value.storageStrategy || '');
+
+  const collectorData: Partial<Collector> = {
         name: this.params.value.name,
         interfaceName: this.params.value.interfaceName,
-        storageStrategy: this.params.value.storageStrategy,
+    storageStrategy: storageStrategyName,
         filterStrategy: this.params.value.filterStrategy,
         protocolAnalysisEnabled: this.params.value.protocolAnalysisEnabled || false,
         idsEnabled: this.params.value.idsEnabled || false,
@@ -529,6 +555,15 @@ export class CollectorComponent implements OnInit {
       this.showUpload = false;
   this.params.patchValue({ filePath: '' });
   this.selectedFile = undefined;
+    }
+
+    // 同步控制 Storage Strategy 的可用性
+    const ssCtrl = this.params?.get('storageStrategy');
+    if (event === 'File') {
+      ssCtrl?.disable({ emitEvent: false });
+      ssCtrl?.setValue('', { emitEvent: false });
+    } else {
+      ssCtrl?.enable({ emitEvent: false });
     }
   }
 
@@ -790,48 +825,48 @@ export class CollectorComponent implements OnInit {
   }
 
   startCapture(collector: ContactList) {
-    // 获取对应的存储策略
-    const storageStrategy = this.storageStrategies.find(s => s.name === collector.storageStrategy);
-    if (!storageStrategy) {
-      this.showMessage('Storage strategy not found', 'error');
-      return;
+    // 获取对应的存储策略（仅非 File 模式需要）
+    let storageStrategy: StorageStrategy | undefined;
+    if (collector.interfaceName !== 'File') {
+      storageStrategy = this.storageStrategies.find(s => s.name === collector.storageStrategy);
+      if (!storageStrategy) {
+        this.showMessage('Storage strategy not found', 'error');
+        return;
+      }
     }
 
     // 构建基本请求参数
+    const apps = [
+      'zeek',
+    //   ...(collector.idsEnabled ? ['snort'] : [])
+    ];
+    const appOpt: any = {
+      apps,
+      zeek: { enable: collector.protocolAnalysisEnabled || false },
+      suricata: { enable: collector.idsEnabled || false }
+    };
+
+    // 非 File 开启保存；File 关闭保存
+    if (collector.interfaceName !== 'File' && storageStrategy) {
+      appOpt.savePacket = {
+        enable: true,
+        duration: storageStrategy.duration || 0,
+        fileCount: storageStrategy.fileCount,
+        fileName: storageStrategy.name,
+        fileSize: this.parseFileSize(storageStrategy.fileSize),
+        fileType: storageStrategy.fileType === 'PCAP' ? 1 : 2,
+        // performanceMode: 'string',
+        stopOnWrap: storageStrategy.outOfDiskAction === 'Stop'
+      };
+    } else {
+      appOpt.savePacket = { enable: false };
+    }
+
     const request: Partial<CaptureRequest> = {
-    //   filter: {
-    //     capture: {
-    //       items: ["192.168.0.24/24;192.168.0.1"],
-    //       optReverse: true
-    //     }
-    //   },
-      // index: 0 表示file，1表示其他
+      // index: 0 表示 file，1 表示其他
       index: collector.interfaceName === 'File' ? 0 : 1,
       port: "0x1",
-      appOpt: {
-        // apps 中默认包含 zeek
-        apps: [
-          'zeek',
-          ...(collector.idsEnabled ? ['snort'] : [])
-        ],
-        zeek: {
-          enable: collector.protocolAnalysisEnabled || false
-        },
-        // savePacket 完全使用 Storage Strategy 的配置
-        savePacket: {
-          enable: true,
-          duration: storageStrategy.duration || 0,
-          fileCount: storageStrategy.fileCount,
-          fileName: storageStrategy.name, // 使用存储策略的名称作为文件名
-          fileSize: this.parseFileSize(storageStrategy.fileSize),
-          fileType: storageStrategy.fileType === 'PCAP' ? 1 : 2,
-        //   performanceMode: "string",
-          stopOnWrap: storageStrategy.outOfDiskAction === 'Stop'
-        },
-        snort: {
-          enable: collector.idsEnabled || false
-        }
-      }
+      appOpt
     };
 
     // 只有当选择File时才添加filePath
