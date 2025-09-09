@@ -128,6 +128,14 @@
                 (searchChange)="onSearchChange($event)"
                 skin="whitespace-nowrap table-hover"
             >
+                <!-- 自定义显示：源/目的 IP 显示资产名（找不到则显示原值） -->
+                <ng-template slot="SrcIP" let-row="data">
+                    <span [title]="row?.SrcIP">{{ resolveIpToAsset(row?.SrcIP) }}</span>
+                </ng-template>
+                <ng-template slot="DstIp" let-row="data">
+                    <span [title]="row?.DstIp">{{ resolveIpToAsset(row?.DstIp) }}</span>
+                </ng-template>
+
                 <ng-template slot="lastUpdateTime" let-value="data">
                     {{ formatDate(value.lastUpdateTime) }}
                 </ng-template>

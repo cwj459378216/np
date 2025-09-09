@@ -2,7 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 import { toggleAnimation } from 'src/app/shared/animations';
 import Swal from 'sweetalert2';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -58,15 +58,32 @@ export class AssetBookComponent {
     maskMAC = [/[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/, ':', /[A-Fa-f0-9]/, /[A-Fa-f0-9]/];
 
     initForm() {
+        // IPv4 正则：每段 0-255，共 4 段
+        const ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+        // MAC 正则：六段，两位十六进制（冒号分隔）
+        const macRegex = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
+
         this.params = this.fb.group({
             id: [0],
             asset_name: ['', Validators.required],
-            ip_address: ['', Validators.required],
-            mac_address: ['', Validators.required],
+            ip_address: ['', [Validators.pattern(ipv4Regex)]],
+            mac_address: ['', [Validators.pattern(macRegex)]],
             type: ['', Validators.required],
             status: ['Active'],
             last_updated: [new Date().toISOString().slice(0, 19).replace('T', ' ')]
-        });
+        }, { validators: this.atLeastOne(['ip_address', 'mac_address']) });
+    }
+
+    // 至少填写一个：IP 或 MAC
+    private atLeastOne(keys: string[]): ValidatorFn {
+        return (group: AbstractControl) => {
+            if (!group) return null;
+            const anyFilled = keys.some(k => {
+                const v = (group.get(k)?.value ?? '').toString().trim();
+                return v.length > 0;
+            });
+            return anyFilled ? null : { atLeastOne: true };
+        };
     }
 
     ngOnInit() {
@@ -89,13 +106,15 @@ export class AssetBookComponent {
     }
 
     searchAssets() {
+        const keyword = (this.searchUser || '').trim().toLowerCase();
+        if (!keyword) {
+            this.filterdContactsList = [...this.assetList];
+            return;
+        }
         this.filterdContactsList = this.assetList.filter((d) => {
-            if (!d || !d.asset_name || !d.ip_address || !d.mac_address) {
-                return false;
-            }
-            return d.asset_name.toLowerCase().includes(this.searchUser.toLowerCase()) ||
-                d.ip_address.toLowerCase().includes(this.searchUser.toLowerCase()) ||
-                d.mac_address.toLowerCase().includes(this.searchUser.toLowerCase());
+            if (!d) return false;
+            const fields = [d.asset_name, d.ip_address, d.mac_address, d.type, d.status].map(v => (v || '').toString().toLowerCase());
+            return fields.some(v => v.includes(keyword));
         });
     }
 

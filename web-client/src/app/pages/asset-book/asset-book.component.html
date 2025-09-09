@@ -62,10 +62,10 @@
                             </thead>
                             <tbody>
                                 <tr *ngFor="let asset of filterdContactsList">
-                                    <td>{{ asset.asset_name }}</td>
-                                    <td>{{ asset.ip_address }}</td>
-                                    <td>{{ asset.mac_address }}</td>
-                                    <td>{{ asset.type }}</td>
+                                    <td>{{ asset.asset_name || '—' }}</td>
+                                    <td>{{ asset.ip_address || '—' }}</td>
+                                    <td>{{ asset.mac_address || '—' }}</td>
+                                    <td>{{ asset.type || '—' }}</td>
                                     <td>
                                         <!-- Toggle switch replacing badge -->
                                         <label class="w-12 h-6 relative inline-block">
@@ -78,7 +78,7 @@
                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
                                         </label>
                                     </td>
-                                    <td>{{ asset.last_updated }}</td>
+                                    <td>{{ asset.last_updated || '—' }}</td>
                                     <td>
                                         <div class="flex items-center justify-center gap-4">
                                             <button type="button" class="btn btn-sm btn-outline-primary"
@@ -111,15 +111,24 @@
                                 placeholder="{{ 'assetBook.selectType' | translate }}" class="custom-multiselect flex-1">
                             </ng-select>
                         </div>
-                        <div class="mb-5">
+            <div class="mb-5">
                             <label for="ip_address">{{ 'assetBook.ipAddress' | translate }}</label>
                             <input id="ip_address" type="text" formControlName="ip_address" class="form-input"
-                                [textMask]="{mask: mask11}" placeholder="{{ 'assetBook.ipPlaceholder' | translate }}" required />
+                placeholder="{{ 'assetBook.ipPlaceholder' | translate }}" />
+                            <div class="mt-1 text-xs text-danger" *ngIf="params.get('ip_address')?.touched && params.get('ip_address')?.invalid">
+                                <span *ngIf="params.get('ip_address')?.errors?.['pattern']">{{ 'Please enter a valid IPv4 address (e.g., 192.168.1.10)' | translate }}</span>
+                            </div>
                         </div>
                         <div class="mb-5">
                             <label for="mac_address">{{ 'assetBook.macAddress' | translate }}</label>
                             <input id="mac_address" type="text" formControlName="mac_address" class="form-input"
-                                [textMask]="{mask: maskMAC}" placeholder="{{ 'assetBook.macPlaceholder' | translate }}" required />
+                                [textMask]="{mask: maskMAC}" placeholder="{{ 'assetBook.macPlaceholder' | translate }}" />
+                            <div class="mt-1 text-xs text-danger" *ngIf="params.get('mac_address')?.touched && params.get('mac_address')?.invalid">
+                                <span *ngIf="params.get('mac_address')?.errors?.['pattern']">{{ 'Please enter a valid MAC address (e.g., AA:BB:CC:DD:EE:FF)' | translate }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-1 text-xs text-danger" *ngIf="params.touched && params.errors?.['atLeastOne']">
+                            {{ 'Please fill at least one of IP Address or MAC Address' | translate }}
                         </div>
                         <div class="mt-8 flex items-center justify-end">
                             <button type="button" class="btn btn-outline-danger"

@@ -52,6 +52,9 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
     // 字段描述信息，用于AI分析
     protected fieldDescriptions: any[] = [];
 
+    // 资产簿：IP -> 资产信息 映射
+    private assetMap: Map<string, { id: number; asset_name: string; ip_address: string; mac_address: string; type: string; status: string; last_updated: string } > = new Map();
+
     // 图表基础配置
     protected baseChartConfig = {
         chart: {
@@ -220,6 +223,9 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         console.log('BaseProtocolComponent ngOnInit 开始');
         console.log('当前 rows:', this.rows);
         console.log('当前 cols:', this.cols);
+
+    // 预加载资产数据，用于 SrcIP/DstIp 替换显示
+    this.loadAssetsForMapping();
 
         // 确保操作列存在
         this.ensureActionColumn();
@@ -439,11 +445,30 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         // 处理查询响应数据
         if (response && response.hits && Array.isArray(response.hits) && response.hits.length > 0) {
             this.rows = [...response.hits];
-            console.log('this.rows', this.rows);
             this.total = response.total;
-            console.log('已加载真实数据:', this.rows.length, '条记录');
+
+            // 将 Src/Dst 等 IP 字段替换为资产名（命中资产簿时）
+            const isIpAlias = (alias: string) => {
+                const a = (alias || '').toLowerCase();
+                return /(^|\b)(src.*ip|dst.*ip|source.*ip|dest.*ip|id\.orig_h|id\.resp_h|clientip|serverip|ip)$/.test(a);
+            };
+            const isIpvXLike = (v: any) => typeof v === 'string' && (/^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/.test(v) || /\[?[0-9a-fA-F:]+\]?(:\d+)?$/.test(v));
+
+            if (Array.isArray(this.cols) && this.cols.length > 0) {
+                this.rows = this.rows.map((row: any) => {
+                    const updated: any = { ...row };
+                    this.cols.forEach(col => {
+                        const key = col?.field;
+                        if (!key) return;
+                        const value = updated[key];
+                        if (isIpAlias(key) || isIpvXLike(value)) {
+                            updated[key] = this.resolveIpToAsset(value);
+                        }
+                    });
+                    return updated;
+                });
+            }
         } else {
-            console.log('响应无效或无数据');
             // 清空数据显示
             this.rows = [];
             this.total = 0;
@@ -803,5 +828,47 @@ ${dataStr}${fieldDocumentation}
     protected setFieldDescriptions(descriptions: any[]) {
         this.fieldDescriptions = descriptions;
         console.log('字段描述信息已设置:', this.fieldDescriptions);
+    }
+
+    // 加载资产列表并建立 IP->资产名 映射
+    private loadAssetsForMapping() {
+        this.http.get<any[]>(`${environment.apiUrl}/assets`).subscribe({
+            next: (list) => {
+                if (Array.isArray(list)) {
+                    this.assetMap.clear();
+                    list.forEach((a: any) => {
+                        const ip = (a?.ip_address || '').trim();
+                        if (ip) this.assetMap.set(ip, a);
+                    });
+                }
+            },
+            error: (err) => {
+                console.debug('加载资产映射失败（不影响表格渲染）:', err);
+            }
+        });
+    }
+
+    // 从 "1.2.3.4:443" 中提取纯 IP 或直接返回 IP
+    private extractIp(value: any): string {
+        const raw = (value ?? '').toString().trim();
+        if (!raw) return '';
+        // 常见格式: ip:port 或 [ipv6]:port
+        if (raw.includes(':') && !raw.includes('.')) {
+            // 可能是 IPv6 或仅仅带端口，简单处理为去掉最后一个冒号后的端口
+            const last = raw.lastIndexOf(':');
+            if (last > 0) return raw.substring(0, last).replace(/^\[|\]$/g, '');
+        }
+        if (raw.includes(':')) {
+            return raw.split(':')[0];
+        }
+        return raw.replace(/^\[|\]$/g, '');
+    }
+
+    // 将 IP 解析为资产名；若未命中则返回原 IP
+    resolveIpToAsset(value: any): string {
+        const ip = this.extractIp(value);
+        if (!ip) return value ?? '';
+        const hit = this.assetMap.get(ip);
+        return hit?.asset_name || value;
     }
 }

@@ -149,7 +149,8 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
     }
 
     override ngOnInit() {
-        // 初始化时不需要做任何事情，因为已经在构造函数中设置了路由监听
+        // 需要调用父类初始化以加载资产映射、时间范围订阅等
+        super.ngOnInit();
     }
 
     override ngOnDestroy() {
@@ -160,21 +161,29 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
     }
 
     protected override processQueryResponse(response: any): void {
-        this.rows = response.hits.map((hit: any) => {
+        const isIpAlias = (alias: string) => {
+            const a = (alias || '').toLowerCase();
+            return /(^|\b)(src.*ip|dst.*ip|source.*ip|dest.*ip|id\.orig_h|id\.resp_h|clientip|serverip|ip)$/.test(a);
+        };
+        const isIpv4Like = (v: any) => typeof v === 'string' && /^(\[?[0-9a-fA-F:]+\]?(:\d+)?)$|^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/.test(v);
+
+        this.rows = (response?.hits || []).map((hit: any) => {
             const row: any = {};
             this.attributes.forEach(attr => {
-                const value = hit[attr.keyAlias];
+                let value = hit[attr.keyAlias];
                 if (attr.keyType === 'time') {
                     row[attr.keyAlias] = this.formatDate(value);
                 } else if (Array.isArray(value)) {
                     row[attr.keyAlias] = value.join(', ');
+                } else if (isIpAlias(attr.keyAlias) || isIpv4Like(value)) {
+                    row[attr.keyAlias] = this.resolveIpToAsset(value);
                 } else {
                     row[attr.keyAlias] = value;
                 }
             });
             return row;
         });
-        this.total = response.total;
+        this.total = response?.total || 0;
     }
 
     truncateText(text: string): string {
