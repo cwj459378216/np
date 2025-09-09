@@ -25,6 +25,8 @@ public class Collector {
     private Boolean protocolAnalysisEnabled;
     private Boolean idsEnabled;
     private String status;
+    // 手动文件模式下，保存已上传的文件路径
+    private String filePath;
     
     @Column(name = "session_id")
     private String sessionId;

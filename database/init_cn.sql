@@ -470,6 +470,7 @@ CREATE TABLE collectors (
     filter_strategy VARCHAR(50),
     protocol_analysis_enabled BOOLEAN DEFAULT false,
     ids_enabled BOOLEAN DEFAULT false,
+    file_path VARCHAR(255),
     status VARCHAR(20) DEFAULT 'stopped'
 );
 
@@ -491,10 +492,10 @@ CREATE TABLE storage_strategies (
 );
 
 -- 插入测试数据
-INSERT INTO collectors (name, interface_name, storage_strategy, filter_strategy, protocol_analysis_enabled, ids_enabled, status) 
+INSERT INTO collectors (name, interface_name, storage_strategy, filter_strategy, protocol_analysis_enabled, ids_enabled, status, file_path) 
 VALUES 
-('采集器-1', 'DPDK', '策略-1', '过滤器-1', true, false, '运行中'),
-('采集器-2', '文件', '策略-2', '过滤器-2', false, true, '已停止');
+('采集器-1', 'DPDK', '策略-1', '过滤器-1', true, false, '运行中', NULL),
+('采集器-2', '文件', '策略-2', '过滤器-2', false, true, '已停止', '/datastore/admin/pcap/example.pcap');
 
 INSERT INTO storage_strategies (name, file_size, file_count, out_of_disk_action, file_type, trigger_type, time_range) 
 VALUES 
@@ -503,3 +504,6 @@ VALUES
 
 -- 修改采集器表，添加会话ID字段
 ALTER TABLE collectors ADD COLUMN session_id VARCHAR(100);
+
+-- 若不存在则为已存在的数据库添加 file_path 字段
+ALTER TABLE collectors ADD COLUMN IF NOT EXISTS file_path VARCHAR(255);

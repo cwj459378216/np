@@ -14,6 +14,7 @@ export interface Collector {
   protocolAnalysisEnabled: boolean;
   idsEnabled: boolean;
   status: string;
+  filePath?: string;
 }
 
 export interface StorageStrategy {
@@ -195,5 +196,14 @@ export class CollectorService {
       params,
       responseType: 'blob'
     });
+  }
+
+  // Upload pcap file to a target directory on server
+  uploadPcap(file: File, targetPath: string): Observable<{ path: string }> {
+    const formData = new FormData();
+  // 传入第三个参数以明确文件名，避免后端在某些环境下获取到空文件
+  formData.append('file', file, file.name);
+    formData.append('path', targetPath);
+    return this.http.post<{ path: string }>(`${this.apiUrl}/capture-files/upload`, formData);
   }
 }

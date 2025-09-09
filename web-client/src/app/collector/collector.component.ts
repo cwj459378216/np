@@ -5,7 +5,6 @@ import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { Store } from '@ngrx/store';
-import { FileUploadWithPreview } from 'file-upload-with-preview';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
 import { CollectorService } from 'src/app/services/collector.service';
 import { Collector, StorageStrategy, CaptureRequest, CaptureResponse, CaptureFileItem } from '../services/collector.service';
@@ -38,6 +37,7 @@ export class CollectorComponent implements OnInit {
   revenueChart: any;
   showChannels = false;
   showUpload = false;
+  selectedFile?: File;
   showTimeRange = false;
   showAlarm = false;
 
@@ -369,11 +369,13 @@ export class CollectorComponent implements OnInit {
       id: [0],
       name: ['', Validators.required],
       interfaceName: ['', Validators.required],
-      storageStrategy: ['', Validators.required],
-      filterStrategy: ['', Validators.required],
+  storageStrategy: ['', Validators.required],
+  // Filter Strategy 输入框隐藏，移除必填校验，保留控件以兼容后端字段
+  filterStrategy: [''],
       protocolAnalysisEnabled: [false],
       idsEnabled: [false],
-      status: ['stopped']
+  status: ['stopped'],
+  filePath: ['']
     });
   }
 
@@ -420,7 +422,8 @@ export class CollectorComponent implements OnInit {
         filterStrategy: user.filterStrategy,
         protocolAnalysisEnabled: user.protocolAnalysisEnabled,
         idsEnabled: user.idsEnabled,
-        status: user.status
+  status: user.status,
+  filePath: (user as any).filePath || ''
       });
     }
   }
@@ -431,6 +434,11 @@ export class CollectorComponent implements OnInit {
         return;
     }
 
+  if (this.params.value.interfaceName === 'File' && !this.params.value.filePath) {
+    this.showMessage('Please upload a file for File adapter', 'error');
+    return;
+  }
+
     const collectorData: Partial<Collector> = {
         name: this.params.value.name,
         interfaceName: this.params.value.interfaceName,
@@ -438,6 +446,7 @@ export class CollectorComponent implements OnInit {
         filterStrategy: this.params.value.filterStrategy,
         protocolAnalysisEnabled: this.params.value.protocolAnalysisEnabled || false,
         idsEnabled: this.params.value.idsEnabled || false,
+  filePath: this.params.value.filePath || undefined,
         status: 'stopped',
         creationTime: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
@@ -512,22 +521,14 @@ export class CollectorComponent implements OnInit {
     if (event === 'File') {
       this.showChannels = false;
       this.showUpload = true;
-      setTimeout(() => {
-        new FileUploadWithPreview('myFirstImage', {
-          images: {
-            // baseImage: '/assets/images/file-preview.svg',
-            // backgroundImage: '',
-          },
-        });
-        let previewContainer = document.querySelector('.image-preview') as HTMLElement;
-        if (previewContainer) {
-          previewContainer.remove();
-        }
-
-      }, 100);
+  this.params.patchValue({ filePath: '' });
+  this.selectedFile = undefined;
+  // 使用原生文件输入，不再初始化第三方上传预览
     } else {
       this.showChannels = true;
       this.showUpload = false;
+  this.params.patchValue({ filePath: '' });
+  this.selectedFile = undefined;
     }
   }
 
@@ -539,6 +540,32 @@ export class CollectorComponent implements OnInit {
       this.showTimeRange = false;
       this.showAlarm = true;
     }
+  }
+
+  // 选择文件
+  onFileSelected(event: any) {
+    const file: File | undefined = event?.target?.files?.[0];
+    this.selectedFile = file;
+  }
+
+  // 上传文件到固定目录并保存路径
+  uploadSelectedFile() {
+    if (!this.selectedFile) {
+      this.showMessage('Please choose a file first', 'error');
+      return;
+    }
+    if (this.selectedFile.size === 0) {
+      this.showMessage('Selected file is empty', 'error');
+      return;
+    }
+    const target = '/datastore/admin/pcap';
+    this.collectorService.uploadPcap(this.selectedFile, target).subscribe({
+      next: (resp) => {
+        this.params.patchValue({ filePath: resp.path });
+        this.showMessage('File uploaded successfully');
+      },
+      error: () => this.showMessage('File upload failed', 'error')
+    });
   }
 
   loadCollectors() {
@@ -809,7 +836,12 @@ export class CollectorComponent implements OnInit {
 
     // 只有当选择File时才添加filePath
     if (collector.interfaceName === 'File') {
-      request.filePath = `/path/to/${storageStrategy.name}.pcap`; // 使用存储策略名称作为文件名
+      const fp = (collector as any).filePath;
+      if (!fp) {
+        this.showMessage('No file selected. Please upload a file in edit dialog first.', 'error');
+        return;
+      }
+      request.filePath = fp;
     }
 
     this.collectorService.startCapture(request as CaptureRequest).subscribe(

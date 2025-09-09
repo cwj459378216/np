@@ -470,6 +470,7 @@ CREATE TABLE collectors (
     filter_strategy VARCHAR(50),
     protocol_analysis_enabled BOOLEAN DEFAULT false,
     ids_enabled BOOLEAN DEFAULT false,
+    file_path VARCHAR(255),
     status VARCHAR(20) DEFAULT 'stopped'
 );
 
@@ -491,10 +492,10 @@ CREATE TABLE storage_strategies (
 );
 
 -- Insert test data
-INSERT INTO collectors (name, interface_name, storage_strategy, filter_strategy, protocol_analysis_enabled, ids_enabled, status) 
+INSERT INTO collectors (name, interface_name, storage_strategy, filter_strategy, protocol_analysis_enabled, ids_enabled, status, file_path) 
 VALUES 
-('Collector-1', 'DPDK', 'Strategy-1', 'Filter-1', true, false, 'running'),
-('Collector-2', 'File', 'Strategy-2', 'Filter-2', false, true, 'stopped');
+('Collector-1', 'DPDK', 'Strategy-1', 'Filter-1', true, false, 'running', NULL),
+('Collector-2', 'File', 'Strategy-2', 'Filter-2', false, true, 'stopped', '/datastore/admin/pcap/example.pcap');
 
 INSERT INTO storage_strategies (name, file_size, file_count, out_of_disk_action, file_type, trigger_type, time_range) 
 VALUES 
@@ -503,3 +504,6 @@ VALUES
 
 -- Modify collectors table, add session_id field
 ALTER TABLE collectors ADD COLUMN session_id VARCHAR(100);
+
+-- If not exists, add file_path column for existing databases
+ALTER TABLE collectors ADD COLUMN IF NOT EXISTS file_path VARCHAR(255);

@@ -11,10 +11,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.net.URLEncoder;
@@ -22,11 +24,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -37,6 +41,8 @@ public class CaptureFileController {
 
     // 目标目录，按需求也可以迁移到配置文件
     private static final String BASE_DIR = "/datastore/neteyez/datastore/pcap/capture/";
+    // 上传文件的默认目录（用于 File 适配器手动上传）
+    private static final String DEFAULT_UPLOAD_DIR = "/datastore/admin/pcap";
 
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_INSTANT;
 
@@ -84,5 +90,28 @@ public class CaptureFileController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encoded + "\"")
                 .contentLength(resource.contentLength())
                 .body(resource);
+    }
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "上传抓包文件", description = "接收 multipart 文件并保存到指定目录，返回保存路径")
+    public ResponseEntity<Map<String, String>> upload(@RequestParam("file") MultipartFile file,
+                                                      @RequestParam(value = "path", required = false) String path) throws Exception {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "File is empty"));
+        }
+
+        String targetDir = StringUtils.hasText(path) ? path : DEFAULT_UPLOAD_DIR;
+        File dir = new File(targetDir);
+        if (!dir.exists() && !dir.mkdirs()) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to create directory: " + targetDir));
+        }
+
+        String original = file.getOriginalFilename();
+        String cleanName = StringUtils.hasText(original) ? Paths.get(original).getFileName().toString() : ("upload-" + System.currentTimeMillis());
+
+        Path dest = Paths.get(targetDir, cleanName);
+        Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
+
+        return ResponseEntity.ok(Map.of("path", dest.toString()));
     }
 }

@@ -81,7 +81,7 @@
                                                 <th>{{ 'Creation Time' | translate }}</th>
                                                 <th>{{ 'Adapter' | translate }}</th>
                                                 <th>{{ 'Storage Strategy' | translate }}</th>
-                                                <th>{{ 'Filter Strategy' | translate }}</th>
+                                                <!-- 移除表格中的 Filter Strategy 列 -->
                                                 <th>{{ 'Protocol Analysis Enabled' | translate }}</th>
                                                 <th>{{ 'IDS Enabled' | translate }}</th>
                                                 <th class="!text-center">{{ 'Actions' | translate }}</th>
@@ -99,7 +99,7 @@
                                                     </td>
                                                     <td>{{ contact.interfaceName }}</td>
                                                     <td class="whitespace-nowrap">{{ contact.storageStrategy }}</td>
-                                                    <td class="whitespace-nowrap">{{ contact.filterStrategy }}</td>
+                                                    <!-- 移除表格中的 Filter Strategy 单元格 -->
                                                     <td class="whitespace-nowrap">
                                                         <label class="w-12 h-6 relative">
                                                             <input type="checkbox"
@@ -304,7 +304,11 @@
                                     </div>
 
                                     <div class="mb-5"  *ngIf="showUpload">
-                                        <div class="custom-file-container" data-upload-id="myFirstImage"></div>
+                                        <div class="mt-2 flex items-center gap-3">
+                                            <input type="file" (change)="onFileSelected($event)" class="form-input" accept=".pcap,.pcapng" />
+                                            <button type="button" class="btn btn-outline-primary" (click)="uploadSelectedFile()">{{ 'Upload' | translate }}</button>
+                                        </div>
+                                        <div class="mt-2 text-xs text-white-dark" *ngIf="params.value.filePath">{{ 'Uploaded path' | translate }}: {{ params.value.filePath }}</div>
                                     </div>
 
                                     <div class="mb-5">
@@ -321,12 +325,13 @@
                                             </ng-template>
                                         </ng-select>
                                     </div>
-                                    <div class="mb-5">
+                                    <!-- 隐藏添加/编辑中的 Filter Strategy 输入框 -->
+                                    <!-- <div class="mb-5">
                                         <label for="occupation">{{ 'Filter Strategy' | translate }}</label>
                                         <ng-select [items]="options" formControlName="filterStrategy" [clearable]="false"
                                             placeholder="{{ 'Select an option' | translate }}" class="custom-multiselect">
                                         </ng-select>
-                                    </div>
+                                    </div> -->
                                     <div class="mb-5">
                                         <label for="protocolAnalysisEnabled">{{ 'Protocol Analysis Enabled' | translate }}</label>
                                         <label class="w-12 h-6 relative">
