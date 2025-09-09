@@ -799,12 +799,12 @@ export class CollectorComponent implements OnInit {
 
     // 构建基本请求参数
     const request: Partial<CaptureRequest> = {
-      filter: {
-        capture: {
-          items: ["192.168.0.24/24;192.168.0.1"],
-          optReverse: true
-        }
-      },
+    //   filter: {
+    //     capture: {
+    //       items: ["192.168.0.24/24;192.168.0.1"],
+    //       optReverse: true
+    //     }
+    //   },
       // index: 0 表示file，1表示其他
       index: collector.interfaceName === 'File' ? 0 : 1,
       port: "0x1",

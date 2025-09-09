@@ -17,7 +17,7 @@ registerLocaleData(localeEn);
 export class LogComponent implements OnInit {
     search = '';
     cols: any[] = [];
-    rows = [];
+    rows: any[] = [];
     isColumnsInitialized = false;
 
     constructor(private http: HttpClient, private translate: TranslateService, private cdr: ChangeDetectorRef) {}
@@ -90,7 +90,13 @@ export class LogComponent implements OnInit {
     loadLogs() {
         this.http.get(`${environment.apiUrl}/logs`).subscribe(
             (data: any) => {
-                this.rows = data;
+                // 确保前端默认按时间倒序显示（最新在前）
+                const rows = Array.isArray(data) ? data : [];
+                this.rows = rows.sort((a: any, b: any) => {
+                    const ta = a?.date ? new Date(a.date).getTime() : 0;
+                    const tb = b?.date ? new Date(b.date).getTime() : 0;
+                    return tb - ta; // desc
+                });
             },
             error => {
                 console.error('Error loading logs:', error);

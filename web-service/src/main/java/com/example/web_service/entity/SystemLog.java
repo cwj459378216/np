@@ -38,5 +38,8 @@ public class SystemLog {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+        if (date == null) {
+            date = LocalDateTime.now();
+        }
     }
 } 

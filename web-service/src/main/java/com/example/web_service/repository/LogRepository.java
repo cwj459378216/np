@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LogRepository extends JpaRepository<SystemLog, Long> {
+	java.util.List<SystemLog> findAllByOrderByDateDesc();
 } 

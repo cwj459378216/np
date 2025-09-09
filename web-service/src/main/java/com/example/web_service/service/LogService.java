@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
 public class LogService {
@@ -14,7 +15,7 @@ public class LogService {
     private LogRepository logRepository;
 
     public List<SystemLog> findAll() {
-        return logRepository.findAll();
+    return logRepository.findAllByOrderByDateDesc();
     }
 
     public SystemLog findById(Long id) {
@@ -27,5 +28,27 @@ public class LogService {
 
     public void deleteById(Long id) {
         logRepository.deleteById(id);
+    }
+
+    public void info(String user, String module, String content) {
+        log("INFO", user, module, content);
+    }
+
+    public void warn(String user, String module, String content) {
+        log("WARN", user, module, content);
+    }
+
+    public void error(String user, String module, String content) {
+        log("ERROR", user, module, content);
+    }
+
+    public void log(String level, String user, String module, String content) {
+        SystemLog entry = new SystemLog();
+        entry.setDate(LocalDateTime.now());
+        entry.setLevel(level);
+        entry.setUser(user == null ? "system" : user);
+        entry.setModule(module);
+        entry.setContent(content);
+        save(entry);
     }
 } 
