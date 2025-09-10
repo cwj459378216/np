@@ -286,21 +286,28 @@
                                     <div class="mb-5" *ngIf="showChannels">
                                         <label for="ctnFile">{{ 'Channel' | translate }}</label>
                                         <label class="inline-flex mr-5">
-                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
+                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full"
+                                                   [(ngModel)]="channelStates.channel1" />
                                             <span>{{ 'Channel 1' | translate }}</span>
                                         </label>
                                         <label class="inline-flex mr-5">
-                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
+                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full"
+                                                   [(ngModel)]="channelStates.channel2" />
                                             <span>{{ 'Channel 2' | translate }}</span>
                                         </label>
                                         <label class="inline-flex mr-5">
-                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
+                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full"
+                                                   [(ngModel)]="channelStates.channel3" />
                                             <span>{{ 'Channel 3' | translate }}</span>
                                         </label>
                                         <label class="inline-flex mr-5">
-                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full" checked />
+                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full"
+                                                   [(ngModel)]="channelStates.channel4" />
                                             <span>{{ 'Channel 4' | translate }}</span>
                                         </label>
+                                        <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                                            Port value: {{ calculatePortValue() }}
+                                        </div>
                                     </div>
 
                                     <div class="mb-5"  *ngIf="showUpload">

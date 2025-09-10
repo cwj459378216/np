@@ -41,6 +41,14 @@ export class CollectorComponent implements OnInit {
   showTimeRange = false;
   showAlarm = false;
 
+  // Channel selection states
+  channelStates = {
+    channel1: true,
+    channel2: true,
+    channel3: true,
+    channel4: true
+  };
+
 
   displayType = 'list';
   @ViewChild('addContactModal') addContactModal!: NgxCustomModalComponent;
@@ -555,6 +563,14 @@ export class CollectorComponent implements OnInit {
       this.showUpload = false;
   this.params.patchValue({ filePath: '' });
   this.selectedFile = undefined;
+
+  // 重置channel状态为默认全选
+  this.channelStates = {
+    channel1: true,
+    channel2: true,
+    channel3: true,
+    channel4: true
+  };
     }
 
     // 同步控制 Storage Strategy 的可用性
@@ -865,7 +881,7 @@ export class CollectorComponent implements OnInit {
     const request: Partial<CaptureRequest> = {
       // index: 0 表示 file，1 表示其他
       index: collector.interfaceName === 'File' ? 0 : 1,
-      port: "0x1",
+      port: collector.interfaceName === 'File' ? "0x1" : this.calculatePortValue(),
       appOpt
     };
 
@@ -912,6 +928,21 @@ export class CollectorComponent implements OnInit {
 
     // return parseInt(match[1]) * 1024 * 1024; // 转换为字节
     return parseInt(match[1]); // M
+  }
+
+  // 计算port值：根据4个channel的选择状态转换为16进制
+  calculatePortValue(): string {
+    const { channel1, channel2, channel3, channel4 } = this.channelStates;
+
+    // 构建二进制字符串：channel4 channel3 channel2 channel1
+    // 例如：channel1=1, channel2=0, channel3=1, channel4=0 -> "0101"
+    const binaryString = `${channel4 ? '1' : '0'}${channel3 ? '1' : '0'}${channel2 ? '1' : '0'}${channel1 ? '1' : '0'}`;
+
+    // 转换为十进制数字
+    const decimalValue = parseInt(binaryString, 2);
+
+    // 转换为16进制，确保是大写并且有0x前缀
+    return `0x${decimalValue.toString(16).toUpperCase()}`;
   }
 
   // 添加开始轮询状态的方法
