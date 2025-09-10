@@ -32,7 +32,7 @@ public class Rule {
 
     private String cve;                 // TEXT
 
-    @Column(name = "rule")
+    @Column(name = "rule", columnDefinition = "TEXT")
     private String rule;                // TEXT (full snort rule)
 
     private String filename;            // TEXT

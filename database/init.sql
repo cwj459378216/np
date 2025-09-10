@@ -94,9 +94,6 @@ CREATE INDEX IF NOT EXISTS idx_template_id ON reports(template_id);
 CREATE INDEX IF NOT EXISTS idx_created_at ON reports(created_at);
 CREATE INDEX IF NOT EXISTS idx_creator ON reports(creator);
 
--- 移除外键约束（Templates 不应该与已生成的 Reports 关联）
-ALTER TABLE reports 
-DROP CONSTRAINT IF EXISTS fk_reports_template;
 
 -- 创建通知规则表
 CREATE TABLE IF NOT EXISTS notification_rules (
@@ -269,8 +266,6 @@ CREATE TABLE storage_strategies (
 -- 修改 collectors 表，添加 session_id 字段
 ALTER TABLE collectors ADD COLUMN session_id VARCHAR(100);
 
--- 若不存在则为已存在的数据库添加 file_path 字段
-ALTER TABLE collectors ADD COLUMN IF NOT EXISTS file_path VARCHAR(255);
 
 
 

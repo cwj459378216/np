@@ -8,8 +8,8 @@ ARTIFACTS_DIR="$ROOT_DIR/setup/artifacts"
 
 mkdir -p "$ARTIFACTS_DIR"
 
-echo "[1/1] Build web-service (Spring Boot)"
-if ( cd "$WEB_SERVICE_DIR" && mvn -q -DskipTests clean package ); then
+echo "[1/1] Build web-service (Spring Boot) for production"
+if ( cd "$WEB_SERVICE_DIR" && mvn -q -DskipTests -Pprod clean package ); then
     # 直接在 WEB_SERVICE_DIR 中查找 JAR 文件
     SERVICE_JAR=$(find "$WEB_SERVICE_DIR/target" -name "web-service-*.jar" -type f | head -n 1)
     if [ -n "$SERVICE_JAR" ] && [ -f "$SERVICE_JAR" ]; then

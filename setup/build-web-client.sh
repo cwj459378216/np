@@ -8,8 +8,8 @@ ARTIFACTS_DIR="$ROOT_DIR/setup/artifacts"
 
 mkdir -p "$ARTIFACTS_DIR"
 
-echo "[1/1] Build web-client (Angular)"
-( cd "$WEB_CLIENT_DIR" && npm ci && npm run build )
+echo "[1/1] Build web-client (Angular) for production"
+( cd "$WEB_CLIENT_DIR" && npm ci && npm run build -- --configuration=production )
 # Angular outputPath is 'dist' per angular.json
 CLIENT_DIST_DIR="$WEB_CLIENT_DIR/dist"
 CLIENT_TGZ="$ARTIFACTS_DIR/web-client-dist.tgz"
