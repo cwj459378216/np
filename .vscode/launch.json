@@ -4,16 +4,25 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        // {
+        //     "type": "java",
+        //     "name": "Debug Spring Boot",
+        //     "request": "launch",
+        //     "cwd": "${workspaceFolder}/web-service",
+        //     "mainClass": "com.example.web_service.WebServiceApplication",
+        //     "projectName": "web-service",
+        //     "env": {
+        //         "SPRING_PROFILES_ACTIVE": "local"
+        //     }
+        // },
         {
-            "type": "java",
-            "name": "Debug Spring Boot",
-            "request": "launch",
-            "cwd": "${workspaceFolder}/web-service",
-            "mainClass": "com.example.web_service.WebServiceApplication",
-            "projectName": "web-service",
-            "env": {
-                "SPRING_PROFILES_ACTIVE": "local"
-            }
+        "type": "java",
+        "name": "Debug Spring Boot",
+        "request": "launch",
+        "cwd": "${workspaceFolder}/web-service",
+        "mainClass": "com.example.web_service.WebServiceApplication",
+        "projectName": "web-service",
+        "vmArgs": "-Dspring.profiles.active=local"
         },
         {
             "type": "chrome",
