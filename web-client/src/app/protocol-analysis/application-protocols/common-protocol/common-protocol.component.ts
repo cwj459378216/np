@@ -55,7 +55,7 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
 
     private loadProtocolConfig(protocol: string) {
         this.protocolName = protocol.toUpperCase();
-        this.indexName = `${protocol.toLowerCase()}-realtime`;
+        this.indexName = `${protocol.toLowerCase()}-*`;
 
         this.zeekConfigService.getZeekConfig().subscribe({
             next: (config) => {

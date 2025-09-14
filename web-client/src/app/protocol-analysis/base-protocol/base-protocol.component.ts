@@ -361,15 +361,22 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         const endTime = this.currentTimeRange?.endTime?.getTime() || Date.now();
         const startTime = this.currentTimeRange?.startTime?.getTime() || (endTime - 24 * 60 * 60 * 1000);
         const interval = this.getTrendingInterval(this.currentTimeRange?.value || '24h');
+        const filePath = this.currentTimeRange?.filePath; // 获取当前选择的文件路径
 
-        this.http.get<any[]>(`${environment.apiUrl}/es/trending`, {
-            params: {
-                startTime: startTime.toString(),
-                endTime: endTime.toString(),
-                index: this.indexName,
-                interval: interval
-            }
-        }).subscribe({
+        // 构建请求参数
+        let params: any = {
+            startTime: startTime.toString(),
+            endTime: endTime.toString(),
+            index: this.indexName,
+            interval: interval
+        };
+
+        // 如果有文件路径，添加到参数中
+        if (filePath) {
+            params.filePath = filePath;
+        }
+
+        this.http.get<any[]>(`${environment.apiUrl}/es/trending`, { params }).subscribe({
             next: (data) => {
                 if (Array.isArray(data) && data.length > 0) {
                     const chartData = {
@@ -400,16 +407,23 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         this.loading = true;
         const rangeEnd = this.selectedEndTime ?? this.currentTimeRange?.endTime?.getTime() ?? Date.now();
         const rangeStart = this.selectedStartTime ?? this.currentTimeRange?.startTime?.getTime() ?? (rangeEnd - 24 * 60 * 60 * 1000);
+        const filePath = this.currentTimeRange?.filePath; // 获取当前选择的文件路径
 
-        this.http.get<any>(`${environment.apiUrl}/es/query`, {
-            params: {
-                startTime: rangeStart.toString(),
-                endTime: rangeEnd.toString(),
-                index: this.indexName,
-                size: this.pageSize.toString(),
-                from: ((this.currentPage - 1) * this.pageSize).toString()
-            }
-        }).subscribe({
+        // 构建请求参数
+        let params: any = {
+            startTime: rangeStart.toString(),
+            endTime: rangeEnd.toString(),
+            index: this.indexName,
+            size: this.pageSize.toString(),
+            from: ((this.currentPage - 1) * this.pageSize).toString()
+        };
+
+        // 如果有文件路径，添加到参数中
+        if (filePath) {
+            params.filePath = filePath;
+        }
+
+        this.http.get<any>(`${environment.apiUrl}/es/query`, { params }).subscribe({
             next: (response) => {
                 this.processQueryResponse(response);
                 this.loading = false;
