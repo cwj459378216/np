@@ -81,7 +81,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     ];
 
     // 新增: 数据源与时间范围选择相关属性
-    dataSources: { label: string; value: string }[] = [];
+    dataSources: { label: string; value: string; status: string }[] = [];
     timeRanges = [
         { label: this.translate.instant('Last 1 Hour') || '最近1小时', value: '1h' },
         { label: this.translate.instant('Last 6 Hours') || '最近6小时', value: '6h' },
@@ -89,9 +89,17 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         { label: this.translate.instant('Last 24 Hours') || '最近24小时', value: '24h' },
         { label: this.translate.instant('Last 7 Days') || '最近7天', value: '7d' },
     ];
-    selectedDataSource = { label: '', value: '' };
+    selectedDataSource = { label: '', value: '', status: '' };
     selectedTimeRange = this.timeRanges[3].value; // 默认24小时
     selectedQuickRange = this.timeRanges[3].value;
+    
+    // 自动更新相关属性
+    autoUpdateInterval: any = null;
+    isAutoUpdateEnabled = false;
+    autoUpdateStartTime: Date | null = null;
+    
+    // 防抖相关属性
+    private dataSourceChangeTimeout: any = null;
     
     @ViewChild('customRangeBox', { static: false }) customRangeBox?: ElementRef<HTMLLIElement>;
 
@@ -198,30 +206,38 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                     collector.status === 'completed' || collector.status === 'running'
                 );
                 
-                // 将active collectors转换为dataSources选项，name作为label，sessionId作为value
+                // 将active collectors转换为dataSources选项，name作为label，sessionId作为value，status作为status
                 this.dataSources = activeCollectors.map(collector => ({
                     label: collector.name,
-                    value: (collector as any).sessionId || ''
+                    value: (collector as any).sessionId || '',
+                    status: collector.status
                 }));
                 
                 // 始终选择第一个作为默认值（如果有数据的话）
                 if (this.dataSources.length > 0) {
                     this.selectedDataSource = this.dataSources[0];
+                    // 检查是否需要启动自动更新
+                    this.checkAndStartAutoUpdate();
                     // 自动查询第一个数据源的时间范围
                     this.queryDataSourceTimeRange(this.selectedDataSource.value);
                 } else {
-                    this.selectedDataSource = { label: '', value: '' };
+                    this.selectedDataSource = { label: '', value: '', status: '' };
                     // 没有数据源时设置默认时间范围
                     this.setDefaultTimeRange();
                 }
                 
-                console.log('Active collectors (completed/running) loaded, default selected:', this.selectedDataSource);
+                console.log('Active collectors (completed/running) loaded, default selected:', {
+                    selectedDataSource: this.selectedDataSource,
+                    status: this.selectedDataSource.status,
+                    isRunning: this.selectedDataSource.status === 'running',
+                    autoUpdateEnabled: this.isAutoUpdateEnabled
+                });
             },
             error: (error) => {
                 console.error('Error loading collectors for data sources:', error);
                 // 发生错误时设置为空
                 this.dataSources = [];
-                this.selectedDataSource = { label: '', value: '' };
+                this.selectedDataSource = { label: '', value: '', status: '' };
                 this.setDefaultTimeRange();
             }
         });
@@ -322,9 +338,30 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     // 新增: 选择变化事件
     onDataSourceChange(dataSource?: any) {
         if (dataSource) {
+            console.log('Data source changing from', this.selectedDataSource.label, 'to', dataSource.label);
+            
+            // 清除之前的防抖定时器
+            if (this.dataSourceChangeTimeout) {
+                clearTimeout(this.dataSourceChangeTimeout);
+            }
+            
+            // 先停止当前的自动更新
+            this.stopAutoUpdate();
+            
+            // 更新选中的数据源
             this.selectedDataSource = dataSource;
-            // 查询数据源的时间范围
-            this.queryDataSourceTimeRange(dataSource.value);
+            
+            // 重置时间相关状态
+            this.isCustomTimeRange = false;
+            this.selectedQuickRange = '';
+            this.customRangeValue = '';
+            this.autoUpdateStartTime = null;
+            
+            // 使用防抖机制，避免快速切换导致的问题
+            this.dataSourceChangeTimeout = setTimeout(() => {
+                console.log('Executing data source change after debounce:', dataSource.label);
+                this.queryDataSourceTimeRange(dataSource.value);
+            }, 100); // 100ms 防抖延迟
         }
         console.log('Data source changed:', this.selectedDataSource);
     }
@@ -363,7 +400,13 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             endTime: endTime.toISOString()
         });
         
-        // TODO: 触发数据刷新
+        // 如果当前是运行状态且自动更新已启用，更新开始时间
+        if (this.selectedDataSource.status === 'running' && this.isAutoUpdateEnabled) {
+            this.autoUpdateStartTime = startTime;
+            console.log('Updated auto-update start time to:', startTime.toISOString());
+        }
+        
+        // 触发数据刷新
         this.onTimeRangeApplied(startTime, endTime);
     }
 
@@ -395,6 +438,15 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
+        // 清理自动更新定时器
+        this.stopAutoUpdate();
+        
+        // 清理防抖定时器
+        if (this.dataSourceChangeTimeout) {
+            clearTimeout(this.dataSourceChangeTimeout);
+            this.dataSourceChangeTimeout = null;
+        }
+        
         // 不移除监听（菜单生命周期内复用），如需严格清理可记录并移除
     }
 
@@ -402,6 +454,124 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     private formatDate(d: Date): string {
         const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
         return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    // 格式化日期为本地时间显示（用于UI显示）
+    private formatDateLocal(d: Date): string {
+        const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
+        // 使用本地时间，不进行UTC转换
+        const formatted = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        
+        console.log('formatDateLocal:', {
+            input: d.toString(),
+            utc: d.toISOString(),
+            local: d.toLocaleString(),
+            formatted: formatted,
+            year: d.getFullYear(),
+            month: d.getMonth() + 1,
+            date: d.getDate(),
+            hours: d.getHours(),
+            minutes: d.getMinutes()
+        });
+        
+        return formatted;
+    }
+
+    // 解析时间戳，支持多种格式
+    private parseTimestamp(timestamp: any): Date {
+        if (!timestamp) {
+            throw new Error('Timestamp is null or undefined');
+        }
+
+        let date: Date;
+
+        // 如果是数字（Unix时间戳）
+        if (typeof timestamp === 'number') {
+            // 检查是否是毫秒时间戳（13位）还是秒时间戳（10位）
+            if (timestamp.toString().length === 10) {
+                date = new Date(timestamp * 1000);
+            } else {
+                date = new Date(timestamp);
+            }
+        }
+        // 如果是字符串
+        else if (typeof timestamp === 'string') {
+            // 特殊处理格式：2025-09-14T11:07:28（没有时区信息）
+            if (timestamp.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)) {
+                // 这种格式通常表示UTC时间，需要添加Z后缀
+                const utcTimestamp = timestamp + 'Z';
+                date = new Date(utcTimestamp);
+                console.log('Detected UTC format without timezone, added Z suffix:', {
+                    original: timestamp,
+                    modified: utcTimestamp,
+                    parsedAsUTC: date.toISOString(),
+                    parsedAsLocal: date.toString()
+                });
+            }
+            // 处理带微秒的格式：2025-09-14T14:05:08.427829
+            else if (timestamp.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+$/)) {
+                // 这种格式也通常表示UTC时间，需要添加Z后缀
+                const utcTimestamp = timestamp + 'Z';
+                date = new Date(utcTimestamp);
+                console.log('Detected UTC format with microseconds, added Z suffix:', {
+                    original: timestamp,
+                    modified: utcTimestamp,
+                    parsedAsUTC: date.toISOString(),
+                    parsedAsLocal: date.toString()
+                });
+            }
+            // 处理带时区的格式：2025-09-14T11:07:28Z
+            else if (timestamp.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)) {
+                // 已经是UTC格式，直接解析
+                date = new Date(timestamp);
+                console.log('Detected UTC format with Z suffix:', {
+                    original: timestamp,
+                    parsedAsUTC: date.toISOString(),
+                    parsedAsLocal: date.toString()
+                });
+            }
+            else {
+                // 尝试直接解析其他格式
+                date = new Date(timestamp);
+            }
+            
+            // 如果解析失败，尝试其他格式
+            if (isNaN(date.getTime())) {
+                // 尝试解析为数字
+                const numTimestamp = parseInt(timestamp, 10);
+                if (!isNaN(numTimestamp)) {
+                    if (timestamp.length === 10) {
+                        date = new Date(numTimestamp * 1000);
+                    } else {
+                        date = new Date(numTimestamp);
+                    }
+                } else {
+                    throw new Error(`Unable to parse timestamp: ${timestamp}`);
+                }
+            }
+        }
+        // 其他类型
+        else {
+            date = new Date(timestamp);
+        }
+
+        // 验证解析结果
+        if (isNaN(date.getTime())) {
+            throw new Error(`Invalid timestamp: ${timestamp}`);
+        }
+
+        console.log('Timestamp parsing result:', {
+            original: timestamp,
+            type: typeof timestamp,
+            parsed: date.toString(),
+            utc: date.toISOString(),
+            local: date.toLocaleString(),
+            timezoneOffset: date.getTimezoneOffset(),
+            localHours: date.getHours(),
+            localMinutes: date.getMinutes()
+        });
+
+        return date;
     }
 
     private handleRangeSelection(selectedDates: Date[], dateStr: string) {
@@ -414,7 +584,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             const now = new Date();
             if (end > now) end = now;
             // 生成标准格式字符串
-            const formatted = this.formatDate(start) + ' to ' + this.formatDate(end);
+            const formatted = this.formatDateLocal(start) + ' to ' + this.formatDateLocal(end);
             this.customRangeValue = formatted;
             if (formatted === this.lastAppliedRange) return; // 避免重复
             this.isCustomTimeRange = true;
@@ -444,10 +614,17 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         }
         const now = new Date();
         if (parsed.end > now) parsed.end = now;
-        const formatted = this.formatDate(parsed.start) + ' to ' + this.formatDate(parsed.end);
+        const formatted = this.formatDateLocal(parsed.start) + ' to ' + this.formatDateLocal(parsed.end);
         this.customRangeValue = formatted;
         this.isCustomTimeRange = true;
         this.selectedQuickRange = '';
+        
+        // 如果当前是运行状态且自动更新已启用，更新开始时间
+        if (this.selectedDataSource.status === 'running' && this.isAutoUpdateEnabled) {
+            this.autoUpdateStartTime = parsed.start;
+            console.log('Updated auto-update start time to:', parsed.start.toISOString());
+        }
+        
         if (formatted !== this.lastAppliedRange) {
             this.lastAppliedRange = formatted;
             this.onTimeRangeApplied(parsed.start, parsed.end);
@@ -490,14 +667,34 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             let endTime: Date;
 
             if (data && data.firstTimestamp && data.lastTimestamp) {
-                startTime = new Date(data.firstTimestamp);
-                endTime = new Date(data.lastTimestamp);
+                // 详细调试时间转换过程
+                console.log('Raw timestamps from API:', {
+                    firstTimestamp: data.firstTimestamp,
+                    lastTimestamp: data.lastTimestamp,
+                    firstTimestampType: typeof data.firstTimestamp,
+                    lastTimestampType: typeof data.lastTimestamp
+                });
+
+                // 尝试不同的时间解析方式
+                startTime = this.parseTimestamp(data.firstTimestamp);
+                endTime = this.parseTimestamp(data.lastTimestamp);
+                
+                console.log('Parsed timestamps:', {
+                    startTime: startTime.toString(),
+                    endTime: endTime.toString(),
+                    startTimeUTC: startTime.toISOString(),
+                    endTimeUTC: endTime.toISOString(),
+                    startTimeLocal: startTime.toLocaleString(),
+                    endTimeLocal: endTime.toLocaleString(),
+                    timezoneOffset: startTime.getTimezoneOffset()
+                });
             } else {
                 throw new Error('No timestamp data found');
             }
 
             // 确保时间范围合理
             if (startTime >= endTime) {
+                console.warn('Start time is not before end time, adjusting...');
                 startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // 1天前
             }
 
@@ -515,17 +712,34 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 filePath // 传递文件路径
             );
 
-            // 更新UI状态
+            // 更新UI状态 - 使用本地时间格式显示
             this.isCustomTimeRange = true;
             this.selectedQuickRange = '';
-            this.customRangeValue = this.formatDate(startTime) + ' to ' + this.formatDate(endTime);
+            this.customRangeValue = this.formatDateLocal(startTime) + ' to ' + this.formatDateLocal(endTime);
 
-            console.log('Data source time range updated:', {
+            // 如果是running状态，设置固定的开始时间用于自动更新
+            if (this.selectedDataSource.status === 'running') {
+                this.autoUpdateStartTime = startTime;
+                console.log('Running state: set fixed firstTimestamp for auto update:', startTime.toISOString());
+                
+                // 在API调用完成后启动自动更新
+                this.checkAndStartAutoUpdate();
+            }
+
+            console.log('Final display values:', {
                 filePath,
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
+                startTimeUTC: startTime.toISOString(),
+                endTimeUTC: endTime.toISOString(),
+                startTimeLocal: startTime.toString(),
+                endTimeLocal: endTime.toString(),
+                displayValue: this.customRangeValue,
+                formattedStart: this.formatDateLocal(startTime),
+                formattedEnd: this.formatDateLocal(endTime),
                 hasData: data.hasData,
-                isDefaultRange: data.isDefaultRange
+                isDefaultRange: data.isDefaultRange,
+                isRunning: this.selectedDataSource.status === 'running',
+                fixedStartTime: this.autoUpdateStartTime?.toISOString(),
+                dataSourceLabel: this.selectedDataSource.label
             });
 
         } catch (error) {
@@ -551,5 +765,366 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         this.customRangeValue = '';
 
         console.log('Default time range set (1 hour)');
+    }
+
+    // 检查并启动自动更新
+    private checkAndStartAutoUpdate() {
+        console.log('checkAndStartAutoUpdate called:', {
+            status: this.selectedDataSource.status,
+            isRunning: this.selectedDataSource.status === 'running',
+            currentAutoUpdate: this.isAutoUpdateEnabled
+        });
+        
+        if (this.selectedDataSource.status === 'running') {
+            this.startAutoUpdate();
+        } else {
+            this.stopAutoUpdate();
+        }
+    }
+
+    // 启动自动更新
+    private startAutoUpdate() {
+        if (this.isAutoUpdateEnabled) {
+            return; // 已经在运行
+        }
+        
+        this.isAutoUpdateEnabled = true;
+        
+        // 在running状态下，使用API返回的firstTimestamp作为固定的开始时间
+        // 不要使用getCurrentStartTime()，因为那可能会改变开始时间
+        if (this.selectedDataSource.status === 'running') {
+            // 如果没有autoUpdateStartTime，尝试从当前时间范围获取
+            if (!this.autoUpdateStartTime) {
+                // 从customRangeValue解析开始时间
+                if (this.customRangeValue && this.customRangeValue.includes(' to ')) {
+                    const parsed = this.parseRangeString(this.customRangeValue);
+                    if (parsed) {
+                        this.autoUpdateStartTime = parsed.start;
+                        console.log('Running state: extracted start time from customRangeValue:', this.autoUpdateStartTime.toISOString());
+                    } else {
+                        // 如果解析失败，使用1小时前作为默认值
+                        this.autoUpdateStartTime = new Date(Date.now() - 60 * 60 * 1000);
+                        console.log('Running state: using default start time (1 hour ago):', this.autoUpdateStartTime.toISOString());
+                    }
+                } else {
+                    // 如果没有customRangeValue，使用1小时前作为默认值
+                    this.autoUpdateStartTime = new Date(Date.now() - 60 * 60 * 1000);
+                    console.log('Running state: using default start time (1 hour ago):', this.autoUpdateStartTime.toISOString());
+                }
+            } else {
+                console.log('Running state: keeping existing firstTimestamp for auto update:', this.autoUpdateStartTime.toISOString());
+            }
+        } else {
+            // 非running状态才获取当前时间范围的开始时间
+            this.autoUpdateStartTime = this.getCurrentStartTime();
+        }
+        
+        // 重新启动自动更新时，立即更新结束时间为当前时间
+        this.updateEndTimeToNow();
+        
+        // 每6秒更新一次结束时间
+        this.autoUpdateInterval = setInterval(() => {
+            this.updateEndTimeToNow();
+        }, 6000);
+        
+        console.log('Auto update started for running data source, start time:', this.autoUpdateStartTime?.toISOString());
+    }
+
+    // 停止自动更新
+    private stopAutoUpdate() {
+        if (this.autoUpdateInterval) {
+            clearInterval(this.autoUpdateInterval);
+            this.autoUpdateInterval = null;
+        }
+        this.isAutoUpdateEnabled = false;
+        this.autoUpdateStartTime = null;
+        
+        console.log('Auto update stopped');
+    }
+
+    // 手动切换自动更新状态
+    public toggleAutoUpdate() {
+        console.log('toggleAutoUpdate called:', {
+            currentStatus: this.selectedDataSource.status,
+            currentAutoUpdate: this.isAutoUpdateEnabled,
+            hasAutoUpdateStartTime: !!this.autoUpdateStartTime,
+            customRangeValue: this.customRangeValue
+        });
+        
+        if (this.selectedDataSource.status !== 'running') {
+            console.warn('Cannot toggle auto update: data source is not in running state');
+            return; // 只有运行状态才能切换
+        }
+        
+        if (this.isAutoUpdateEnabled) {
+            console.log('Stopping auto update...');
+            this.stopAutoUpdate();
+        } else {
+            console.log('Starting auto update... (will update end time to current time)');
+            this.startAutoUpdate();
+        }
+        
+        console.log('Auto update toggled result:', {
+            enabled: this.isAutoUpdateEnabled,
+            dataSource: this.selectedDataSource.label,
+            status: this.selectedDataSource.status,
+            hasInterval: !!this.autoUpdateInterval
+        });
+    }
+
+    // 更新结束时间为当前时间
+    private updateEndTimeToNow() {
+        if (!this.isAutoUpdateEnabled) {
+            return;
+        }
+        
+        const now = new Date();
+        let startTime: Date;
+        
+        // 在running状态下，始终使用API返回的firstTimestamp作为开始时间
+        if (this.selectedDataSource.status === 'running' && this.autoUpdateStartTime) {
+            startTime = this.autoUpdateStartTime;
+            console.log('Running state: using fixed firstTimestamp as start time:', startTime.toISOString());
+        } else if (this.autoUpdateStartTime) {
+            startTime = this.autoUpdateStartTime;
+        } else {
+            console.warn('No start time available for auto update');
+            return;
+        }
+        
+        // 确保开始时间不会超过结束时间
+        if (startTime >= now) {
+            console.warn('Start time is not before end time, adjusting...');
+            if (this.selectedDataSource.status === 'running') {
+                // 在running状态下，不允许修改开始时间，停止自动更新
+                console.error('Running state: cannot adjust start time, stopping auto update');
+                this.stopAutoUpdate();
+                return;
+            } else {
+                this.autoUpdateStartTime = new Date(now.getTime() - 60 * 60 * 1000); // 设置为1小时前
+                return;
+            }
+        }
+        
+        // 更新时间范围，保持开始时间不变，结束时间更新为当前时间
+        this.timeRangeService.updateTimeRange(
+            startTime,
+            now,
+            `Live Data: ${this.selectedDataSource.label}`,
+            'live',
+            this.selectedDataSource.value
+        );
+        
+        // 更新UI状态 - 保持开始时间不变
+        this.isCustomTimeRange = true;
+        this.selectedQuickRange = '';
+        this.customRangeValue = this.formatDateLocal(startTime) + ' to ' + this.formatDateLocal(now);
+        
+        console.log('End time updated to now:', {
+            startTime: startTime.toISOString(),
+            endTime: now.toISOString(),
+            duration: Math.round((now.getTime() - startTime.getTime()) / 1000 / 60) + ' minutes',
+            startTimeFormatted: this.formatDateLocal(startTime),
+            endTimeFormatted: this.formatDateLocal(now),
+            isRunning: this.selectedDataSource.status === 'running',
+            usingFixedStartTime: this.selectedDataSource.status === 'running',
+            updateType: this.autoUpdateInterval ? 'scheduled' : 'immediate'
+        });
+    }
+
+    // 检查是否应该禁用时间选择
+    public isTimeRangeDisabled(): boolean {
+        return this.selectedDataSource.status === 'running' && this.isAutoUpdateEnabled;
+    }
+
+    // 获取自动更新状态显示文本
+    public getAutoUpdateStatusText(): string {
+        if (this.selectedDataSource.status !== 'running') {
+            return '';
+        }
+        return this.isAutoUpdateEnabled ? 'Auto Update: ON' : 'Auto Update: OFF';
+    }
+
+    // 获取当前时间范围的开始时间
+    private getCurrentStartTime(): Date {
+        // 如果已经有自定义时间范围，解析开始时间
+        if (this.customRangeValue && this.customRangeValue.includes(' to ')) {
+            const parsed = this.parseRangeString(this.customRangeValue);
+            if (parsed) {
+                return parsed.start;
+            }
+        }
+        
+        // 如果有快速选择的时间范围，计算开始时间
+        if (this.selectedQuickRange && !this.isCustomTimeRange) {
+            const endTime = new Date();
+            return this.calculateStartTime(this.selectedQuickRange, endTime);
+        }
+        
+        // 默认返回1小时前
+        const endTime = new Date();
+        return new Date(endTime.getTime() - 60 * 60 * 1000);
+    }
+
+    // 调试方法：测试时间转换
+    public debugTimeConversion(timestamp: any) {
+        console.log('=== Time Conversion Debug ===');
+        console.log('Input timestamp:', timestamp, 'Type:', typeof timestamp);
+        
+        try {
+            const parsed = this.parseTimestamp(timestamp);
+            const formatted = this.formatDateLocal(parsed);
+            
+            console.log('Conversion result:', {
+                original: timestamp,
+                parsed: parsed.toString(),
+                utc: parsed.toISOString(),
+                local: parsed.toLocaleString(),
+                formatted: formatted,
+                timezoneOffset: parsed.getTimezoneOffset(),
+                isUTCFormat: timestamp.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/) ? 'Yes (added Z)' : 'No'
+            });
+            
+            return {
+                success: true,
+                parsed,
+                formatted
+            };
+        } catch (error) {
+            console.error('Time conversion failed:', error);
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : String(error)
+            };
+        }
+    }
+
+    // 测试特定格式的时间转换
+    public testApiTimeFormat() {
+        console.log('=== Testing API Time Format ===');
+        const testTimestamp = '2025-09-14T11:07:28';
+        
+        console.log('=== Detailed Time Analysis ===');
+        console.log('Original timestamp:', testTimestamp);
+        console.log('Current timezone offset:', new Date().getTimezoneOffset(), 'minutes');
+        
+        // 测试不同的解析方式
+        const asUTC = new Date(testTimestamp + 'Z');
+        const asLocal = new Date(testTimestamp);
+        
+        console.log('Parsing results:', {
+            'as UTC (with Z)': {
+                date: asUTC.toString(),
+                iso: asUTC.toISOString(),
+                local: asUTC.toLocaleString(),
+                hours: asUTC.getHours(),
+                minutes: asUTC.getMinutes()
+            },
+            'as Local (no Z)': {
+                date: asLocal.toString(),
+                iso: asLocal.toISOString(),
+                local: asLocal.toLocaleString(),
+                hours: asLocal.getHours(),
+                minutes: asLocal.getMinutes()
+            },
+            'difference (ms)': asUTC.getTime() - asLocal.getTime(),
+            'difference (hours)': (asUTC.getTime() - asLocal.getTime()) / (1000 * 60 * 60)
+        });
+        
+        // 格式化测试
+        const utcFormatted = this.formatDateLocal(asUTC);
+        const localFormatted = this.formatDateLocal(asLocal);
+        
+        console.log('Formatting results:', {
+            'UTC formatted': utcFormatted,
+            'Local formatted': localFormatted,
+            'Expected (UTC+8)': '2025-09-14 19:07'
+        });
+        
+        // 手动验证
+        console.log('=== Manual Verification ===');
+        const manualUTC = new Date('2025-09-14T11:07:28Z');
+        console.log('Manual UTC parsing:', {
+            date: manualUTC.toString(),
+            iso: manualUTC.toISOString(),
+            local: manualUTC.toLocaleString(),
+            formatted: this.formatDateLocal(manualUTC)
+        });
+        
+        return this.debugTimeConversion(testTimestamp);
+    }
+
+    // 验证时间一致性
+    public validateTimeConsistency() {
+        console.log('=== Time Consistency Validation ===');
+        console.log('Current state:', {
+            selectedDataSource: this.selectedDataSource,
+            customRangeValue: this.customRangeValue,
+            isCustomTimeRange: this.isCustomTimeRange,
+            autoUpdateStartTime: this.autoUpdateStartTime?.toISOString(),
+            isAutoUpdateEnabled: this.isAutoUpdateEnabled
+        });
+        
+        if (this.customRangeValue && this.customRangeValue.includes(' to ')) {
+            const parsed = this.parseRangeString(this.customRangeValue);
+            if (parsed) {
+                console.log('Parsed time range:', {
+                    start: parsed.start.toISOString(),
+                    end: parsed.end.toISOString(),
+                    startLocal: parsed.start.toString(),
+                    endLocal: parsed.end.toString(),
+                    formatted: this.formatDateLocal(parsed.start) + ' to ' + this.formatDateLocal(parsed.end)
+                });
+            }
+        }
+    }
+
+    // 测试您提供的具体时间戳
+    public testSpecificTimestamps() {
+        console.log('=== Testing Specific API Timestamps ===');
+        
+        const firstTimestamp = "2025-09-14T11:07:28";
+        const lastTimestamp = "2025-09-14T14:05:08.427829";
+        
+        console.log('Original API timestamps:', {
+            firstTimestamp,
+            lastTimestamp
+        });
+        
+        // 解析时间戳
+        const startTime = this.parseTimestamp(firstTimestamp);
+        const endTime = this.parseTimestamp(lastTimestamp);
+        
+        // 格式化显示
+        const formattedStart = this.formatDateLocal(startTime);
+        const formattedEnd = this.formatDateLocal(endTime);
+        const displayValue = formattedStart + ' to ' + formattedEnd;
+        
+        console.log('Parsed and formatted result:', {
+            startTime: {
+                original: firstTimestamp,
+                parsed: startTime.toString(),
+                utc: startTime.toISOString(),
+                local: startTime.toLocaleString(),
+                formatted: formattedStart
+            },
+            endTime: {
+                original: lastTimestamp,
+                parsed: endTime.toString(),
+                utc: endTime.toISOString(),
+                local: endTime.toLocaleString(),
+                formatted: formattedEnd
+            },
+            displayValue: displayValue,
+            expected: '2025-09-14 19:07 to 2025-09-14 22:05 (UTC+8)'
+        });
+        
+        return {
+            startTime,
+            endTime,
+            displayValue,
+            formattedStart,
+            formattedEnd
+        };
     }
 }

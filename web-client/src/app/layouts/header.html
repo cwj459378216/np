@@ -143,11 +143,49 @@
                                     }"
                                     (click)="onDataSourceChange(ds)"
                                 >
-                                    <span>{{ ds.label }}</span>
+                                    <div class="flex items-center justify-between">
+                                        <span>{{ ds.label }}</span>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs px-2 py-1 rounded-full" 
+                                                  [ngClass]="{
+                                                      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': ds.status === 'running',
+                                                      'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200': ds.status === 'completed'
+                                                  }">
+                                                {{ ds.status }}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </button>
                             </li>
                         </ul>
                     </div>
+                </div>
+
+                <!-- Real-time 控制按钮 -->
+                <div class="shrink-0" *ngIf="selectedDataSource.status === 'running'">
+                    <button
+                        type="button"
+                        class="flex items-center space-x-1 rounded-full border-0 py-2 px-3 text-sm font-medium focus:ring-0 transition-colors duration-200"
+                        [ngClass]="{
+                            'bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700': isAutoUpdateEnabled,
+                            'bg-green-500 text-white hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700': !isAutoUpdateEnabled
+                        }"
+                        (click)="toggleAutoUpdate()"
+                        title="{{ isAutoUpdateEnabled ? 'Stop Real-time Update' : 'Start Real-time Update' }}"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12,6 12,12 16,14"></polyline>
+                        </svg>
+                        <span class="hidden sm:inline">
+                            {{ isAutoUpdateEnabled ? 'Stop' : 'Start' }}
+                        </span>
+                        <div class="w-2 h-2 rounded-full" 
+                             [ngClass]="{
+                                 'bg-white': isAutoUpdateEnabled,
+                                 'bg-gray-300': !isAutoUpdateEnabled
+                             }"></div>
+                    </button>
                 </div>
 
                 <!-- 时间范围选择器 -->
@@ -156,20 +194,48 @@
                          <button
                             type="button"
                             hlMenuButton
-                            class="flex w-full items-center justify-between rounded-full border-0 bg-white-light/40 py-2 px-3 text-sm font-medium hover:bg-white-light/90 focus:ring-0 dark:bg-dark/40 dark:hover:bg-dark/60 dark:text-white-light"
+                            [disabled]="isTimeRangeDisabled()"
+                            class="flex w-full items-center justify-between rounded-full border-0 py-2 px-3 text-sm font-medium focus:ring-0"
+                            [ngClass]="{
+                                'bg-white-light/40 hover:bg-white-light/90 dark:bg-dark/40 dark:hover:bg-dark/60 dark:text-white-light': !isTimeRangeDisabled(),
+                                'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed': isTimeRangeDisabled()
+                            }"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12,6 12,12 16,14"></polyline>
-                            </svg>
-                            <span class="flex-1 text-left truncate ml-2">{{ getTimeRangeDisplay() }}</span>
-                            <icon-caret-down class="h-3 w-3" />
+                            <div class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12,6 12,12 16,14"></polyline>
+                                </svg>
+                                <span class="flex-1 text-left truncate ml-2">{{ getTimeRangeDisplay() }}</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <!-- 自动更新状态指示器 -->
+                                <span *ngIf="selectedDataSource.status === 'running'" 
+                                      class="text-xs px-2 py-1 rounded-full"
+                                      [ngClass]="{
+                                          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': isAutoUpdateEnabled,
+                                          'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': !isAutoUpdateEnabled
+                                      }">
+                                    {{ isAutoUpdateEnabled ? 'LIVE' : 'PAUSED' }}
+                                </span>
+                                <icon-caret-down class="h-3 w-3" />
+                            </div>
                          </button>
                          <ul
                              *hlMenuItems
                              @toggleAnimation
                              class="top-11 w-[300px] sm:w-[350px] !py-3 text-sm text-dark dark:text-white-light ltr:-right-2 rtl:-left-2"
                          >
+                            <!-- 调试信息 -->
+                            <!-- <li *ngIf="selectedDataSource.status === 'running'" class="mb-3 border-b border-gray-200 dark:border-gray-600 pb-3">
+                                <div class="px-3 text-xs text-red-500">
+                                    Debug: Status={{ selectedDataSource.status }}, AutoUpdate={{ isAutoUpdateEnabled }}
+                                </div>
+                                <div class="px-3 text-xs text-gray-500 dark:text-gray-400">
+                                    Real-time control is now available in the header button
+                                </div>
+                            </li> -->
+                            
                             <!-- 快速时间选择 -->
                             <li class="mb-3">
                                 <div class="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{{ 'Quick Select' | translate }}</div>
@@ -178,12 +244,14 @@
                                         <button
                                             type="button"
                                             *hlMenuItem="let menuItem"
-                                            class="rounded px-2 py-1 text-left text-xs transition-colors duration-200 hover:bg-blue-50 hover:text-blue-600"
+                                            [disabled]="isTimeRangeDisabled()"
+                                            class="rounded px-2 py-1 text-left text-xs transition-colors duration-200"
                                             [ngClass]="{ 
                                                 'bg-blue-500 text-white font-medium': selectedQuickRange === tr.value,
-                                                'bg-white text-gray-700 dark:bg-gray-700 dark:text-white': selectedQuickRange !== tr.value
+                                                'bg-white text-gray-700 dark:bg-gray-700 dark:text-white hover:bg-blue-50 hover:text-blue-600': selectedQuickRange !== tr.value && !isTimeRangeDisabled(),
+                                                'bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500 cursor-not-allowed': isTimeRangeDisabled()
                                             }"
-                                            (click)="onQuickTimeSelect(tr)"
+                                            (click)="!isTimeRangeDisabled() && onQuickTimeSelect(tr)"
                                         >
                                             {{ tr.label }}
                                         </button>
@@ -195,7 +263,10 @@
                             <li #customRangeBox class="border-t border-gray-200 dark:border-gray-600 pt-3 w-full" (click)="$event.stopPropagation()">
                                 <div class="space-y-3 w-full px-3 custom-range-wrapper">
                                     <div class="w-full">
-                                        <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">{{ 'Time Range' | translate }}</label>
+                                        <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                            {{ 'Time Range' | translate }}
+                                            <span *ngIf="isTimeRangeDisabled()" class="text-red-500 ml-1">(Disabled - Live Mode)</span>
+                                        </label>
                                         <div class="w-full">
                                             <input
                                                 type="text"
@@ -203,7 +274,11 @@
                                                 [options]="dateTimePickerOptions"
                                                 [(ngModel)]="customRangeValue"
                                                 (ngModelChange)="onCustomTimeChange()"
+                                                [disabled]="isTimeRangeDisabled()"
                                                 class="form-input w-full block text-xs py-1.5 !w-full custom-range-input"
+                                                [ngClass]="{
+                                                    'opacity-50 cursor-not-allowed': isTimeRangeDisabled()
+                                                }"
                                                 placeholder="Select time range"
                                             />
                                         </div>
@@ -212,8 +287,8 @@
                                         type="button"
                                         *hlMenuItem="let menuItem"
                                         class="btn btn-primary btn-sm w-full mt-2"
-                                        (click)="applyCustomTimeRange()"
-                                        [disabled]="!customRangeValue || !customRangeValue.includes(' to ')"
+                                        [disabled]="isTimeRangeDisabled() || !customRangeValue || !customRangeValue.includes(' to ')"
+                                        (click)="!isTimeRangeDisabled() && applyCustomTimeRange()"
                                     >
                                         {{ 'Apply' | translate }}
                                     </button>
