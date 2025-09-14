@@ -101,16 +101,21 @@ export class DashboardDataService {
    * 获取带宽趋势数据
    * @param startTime 开始时间戳（毫秒）
    * @param endTime 结束时间戳（毫秒）
+   * @param filePath 文件路径（可选）
    * @param interval 时间间隔 (默认: 1h)
    * @returns Observable<BandwidthTrendsResponse>
    */
-  getBandwidthTrends(startTime: number, endTime: number, interval: string = '1h'): Observable<BandwidthTrendsResponse> {
-    const params = new HttpParams()
+  getBandwidthTrends(startTime: number, endTime: number, filePath?: string, interval: string = '1h'): Observable<BandwidthTrendsResponse> {
+    let params = new HttpParams()
       .set('startTime', startTime.toString())
       .set('endTime', endTime.toString())
       .set('interval', interval);
 
-    console.log('Fetching bandwidth trends with params:', { startTime, endTime, interval });
+    if (filePath) {
+      params = params.set('filePath', filePath);
+    }
+
+    console.log('Fetching bandwidth trends with params:', { startTime, endTime, filePath, interval });
     return this.http.get<BandwidthTrendsResponse>(`${this.apiUrl}/bandwidth-trends`, { params });
   }
 
@@ -118,29 +123,43 @@ export class DashboardDataService {
    * 获取协议交易趋势数据
    * @param startTime 开始时间戳（毫秒）
    * @param endTime 结束时间戳（毫秒）
+   * @param filePath 文件路径（可选）
    * @param interval 时间间隔 (默认: 1h)
    * @returns Observable<ProtocolTrendsResponse>
    */
-  getProtocolTrends(startTime: number, endTime: number, interval: string = '1h'): Observable<ProtocolTrendsResponse> {
-    const params = new HttpParams()
+  getProtocolTrends(startTime: number, endTime: number, filePath?: string, interval: string = '1h'): Observable<ProtocolTrendsResponse> {
+    let params = new HttpParams()
       .set('startTime', startTime.toString())
       .set('endTime', endTime.toString())
       .set('interval', interval);
 
-    console.log('Fetching protocol trends with params:', { startTime, endTime, interval });
+    if (filePath) {
+      params = params.set('filePath', filePath);
+    }
+
+    console.log('Fetching protocol trends with params:', { startTime, endTime, filePath, interval });
     return this.http.get<ProtocolTrendsResponse>(`${this.apiUrl}/protocol-trends`, { params });
   }
 
   /**
    * 获取基于 conn-realtime 按 protoName 聚合的网络协议趋势
+   * @param startTime 开始时间戳（毫秒）
+   * @param endTime 结束时间戳（毫秒）
+   * @param filePath 文件路径（可选）
+   * @param interval 时间间隔 (默认: 1h)
+   * @returns Observable<NetworkProtocolTrendsResponse>
    */
-  getNetworkProtocolTrends(startTime: number, endTime: number, interval: string = '1h'): Observable<NetworkProtocolTrendsResponse> {
-    const params = new HttpParams()
+  getNetworkProtocolTrends(startTime: number, endTime: number, filePath?: string, interval: string = '1h'): Observable<NetworkProtocolTrendsResponse> {
+    let params = new HttpParams()
       .set('startTime', startTime.toString())
       .set('endTime', endTime.toString())
       .set('interval', interval);
 
-    console.log('Fetching network protocol trends with params:', { startTime, endTime, interval });
+    if (filePath) {
+      params = params.set('filePath', filePath);
+    }
+
+    console.log('Fetching network protocol trends with params:', { startTime, endTime, filePath, interval });
     return this.http.get<NetworkProtocolTrendsResponse>(`${this.apiUrl}/network-protocol-trends`, { params });
   }
 
@@ -232,13 +251,14 @@ export class DashboardDataService {
   }
 
   /**
-   * 获取serviceName聚合统计数据
-   * @param topN 返回Top N的数据条数 (默认: 10)
-   * @param startTime 开始时间戳 (可选)
-   * @param endTime 结束时间戳 (可选)
+   * 获取服务名称聚合数据
+   * @param topN 返回前N个结果
+   * @param startTime 开始时间戳（毫秒，可选）
+   * @param endTime 结束时间戳（毫秒，可选）
+   * @param filePath 文件路径（可选）
    * @returns Observable<ServiceNameAggregationResponse>
    */
-  getServiceNameAggregation(topN: number = 10, startTime?: number, endTime?: number): Observable<ServiceNameAggregationResponse> {
+  getServiceNameAggregation(topN: number = 10, startTime?: number, endTime?: number, filePath?: string): Observable<ServiceNameAggregationResponse> {
     let params = new HttpParams()
       .set('topN', topN.toString());
 
@@ -248,8 +268,30 @@ export class DashboardDataService {
     if (endTime) {
       params = params.set('endTime', endTime.toString());
     }
+    if (filePath) {
+      params = params.set('filePath', filePath);
+    }
 
-    console.log('Fetching serviceName aggregation with topN:', topN, 'startTime:', startTime, 'endTime:', endTime);
+    console.log('Fetching serviceName aggregation with topN:', topN, 'startTime:', startTime, 'endTime:', endTime, 'filePath:', filePath);
     return this.http.get<ServiceNameAggregationResponse>(`${this.apiUrl}/service-name-aggregation`, { params });
   }
+
+  /**
+   * 根据文件路径查询数据（不限制时间范围）
+   * @param filePath 文件路径
+   * @param index 索引名称
+   * @returns Observable<any>
+   */
+  queryDataByFilePath(
+    filePath: string,
+    index: string = '*'
+  ): Observable<any> {
+    let params = new HttpParams()
+      .set('filePath', filePath)
+      .set('index', index);
+
+    console.log('Querying ES data by filePath with params:', { filePath, index });
+    return this.http.get<any>(`${this.apiUrl}/query-by-filepath`, { params });
+  }
+
 }

@@ -27,6 +27,7 @@ import com.example.web_service.model.es.TrendingData;
 import com.example.web_service.model.es.widget.WidgetQueryRequest;
 import com.example.web_service.model.es.widget.WidgetFilter;
 import java.util.Optional;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 
 @Service
 public class ElasticsearchSyncService {
@@ -335,7 +336,7 @@ public class ElasticsearchSyncService {
         );
     }
 
-    public Map<String, List<TrendingData>> getProtocolTrends(Long startTime, Long endTime, String interval) throws IOException {
+    public Map<String, List<TrendingData>> getProtocolTrends(Long startTime, Long endTime, String filePath, String interval) throws IOException {
         Map<String, List<TrendingData>> result = new java.util.HashMap<>();
         
         // 将时间戳转换为ISO字符串格式
@@ -343,16 +344,16 @@ public class ElasticsearchSyncService {
         String endTimeStr = java.time.Instant.ofEpochMilli(endTime).toString();
         
         // HTTP趋势 - 从http-realtime索引获取
-        List<TrendingData> httpTrends = getTrending(startTimeStr, endTimeStr, null, "http-realtime", interval);
+        List<TrendingData> httpTrends = getTrending(startTimeStr, endTimeStr, filePath, "http-*", interval);
         result.put("HTTP", httpTrends);
         
         // DNS趋势 - 从dns-realtime索引获取
-        List<TrendingData> dnsTrends = getTrending(startTimeStr, endTimeStr, null, "dns-realtime", interval);
+        List<TrendingData> dnsTrends = getTrending(startTimeStr, endTimeStr, filePath, "dns-*", interval);
         result.put("DNS", dnsTrends);
         
         // Others趋势 - 合并smb_cmd-realtime和conn-realtime索引的数据
-        List<TrendingData> smbTrends = getTrending(startTimeStr, endTimeStr, null, "smb_cmd-realtime", interval);
-        List<TrendingData> connTrends = getTrending(startTimeStr, endTimeStr, null, "conn-realtime", interval);
+        List<TrendingData> smbTrends = getTrending(startTimeStr, endTimeStr, filePath, "smb_cmd-*", interval);
+        List<TrendingData> connTrends = getTrending(startTimeStr, endTimeStr, filePath, "conn-*", interval);
         
         // 合并Others数据 - 将smb和conn的数据合并
         List<TrendingData> othersTrends = mergeOthersTrends(smbTrends, connTrends);
@@ -361,14 +362,14 @@ public class ElasticsearchSyncService {
         return result;
     }
 
-    public Map<String, List<TrendingData>> getBandwidthTrends(Long startTime, Long endTime, String interval) throws IOException {
+    public Map<String, List<TrendingData>> getBandwidthTrends(Long startTime, Long endTime, String filePath, String interval) throws IOException {
         Map<String, List<TrendingData>> result = new java.util.HashMap<>();
         
         // 将时间戳转换为ISO字符串格式
         String startTimeStr = java.time.Instant.ofEpochMilli(startTime).toString();
         String endTimeStr = java.time.Instant.ofEpochMilli(endTime).toString();
         
-        log.info("Getting bandwidth trends for time range: {} to {}, interval: {}", startTimeStr, endTimeStr, interval);
+        log.info("Getting bandwidth trends for time range: {} to {}, filePath: {}, interval: {}", startTimeStr, endTimeStr, filePath, interval);
         
         // 首先获取所有可用的port/channel
         Set<Integer> availablePorts = getAvailablePorts(startTimeStr, endTimeStr, "octopusx-data");
@@ -389,12 +390,12 @@ public class ElasticsearchSyncService {
     /**
      * 从 conn-realtime 索引聚合 protoName 的时间序列趋势
      */
-    public Map<String, List<TrendingData>> getConnProtocolNameTrends(Long startTime, Long endTime, String interval) throws IOException {
+    public Map<String, List<TrendingData>> getConnProtocolNameTrends(Long startTime, Long endTime, String filePath, String interval) throws IOException {
         // 将时间戳转换为ISO字符串格式
         String startTimeStr = java.time.Instant.ofEpochMilli(startTime).toString();
         String endTimeStr = java.time.Instant.ofEpochMilli(endTime).toString();
 
-        // 仅时间范围过滤
+        // 构建查询条件
         var rangeQuery = new Query.Builder()
             .range(r -> r
                 .field("timestamp")
@@ -402,15 +403,28 @@ public class ElasticsearchSyncService {
                 .lte(JsonData.of(endTimeStr))
             );
 
-        var query = Query.of(q -> q
-            .bool(b -> b
-                .must(rangeQuery.build())
+        // 如果指定了filePath，添加过滤条件
+        var query = filePath != null
+            ? Query.of(q -> q
+                .bool(b -> b
+                    .must(rangeQuery.build())
+                    .must(m -> m
+                        .match(t -> t
+                            .field("filePath")
+                            .query(filePath)
+                        )
+                    )
+                )
             )
-        );
+            : Query.of(q -> q
+                .bool(b -> b
+                    .must(rangeQuery.build())
+                )
+            );
 
         // 构建 date_histogram + terms 子聚合
         var searchRequest = SearchRequest.of(s -> s
-            .index("conn-realtime")
+            .index("conn-*")
             .size(0)
             .query(query)
             .aggregations("trend", a -> a
@@ -428,7 +442,7 @@ public class ElasticsearchSyncService {
             )
         );
 
-        log.info("Conn protocol trends request: start={}, end={}, interval={}", startTimeStr, endTimeStr, interval);
+        log.info("Conn protocol trends request: start={}, end={}, filePath={}, interval={}", startTimeStr, endTimeStr, filePath, interval);
         var response = esClient.search(searchRequest, Void.class);
 
         Map<String, java.util.Map<Long, Long>> seriesMap = new java.util.HashMap<>();
@@ -831,9 +845,137 @@ public class ElasticsearchSyncService {
      * @throws IOException
      */
     public Map<String, Object> getServiceNameAggregation(Integer topN) throws IOException {
-        return getServiceNameAggregation(topN, null, null);
+        return getServiceNameAggregation(topN, null, null, null);
     }
 
+    /**
+     * 获取serviceName字段的聚合统计数据（支持时间范围过滤和文件路径过滤）
+     * @param topN 返回Top N的数据条数
+     * @param startTime 开始时间戳（毫秒）
+     * @param endTime 结束时间戳（毫秒）
+     * @param filePath 文件路径（可选）
+     * @return 聚合结果
+     * @throws IOException
+     */
+    public Map<String, Object> getServiceNameAggregation(Integer topN, Long startTime, Long endTime, String filePath) throws IOException {
+        log.info("Getting serviceName aggregation with topN: {}, startTime: {}, endTime: {}, filePath: {}", topN, startTime, endTime, filePath);
+        String[] possibleFields = {"serviceName", "protoName", "serviceName.keyword", "protoName.keyword"};
+        for (String field : possibleFields) {
+            try {
+                log.info("Trying field: {}", field);
+                SearchRequest.Builder searchRequestBuilder = new SearchRequest.Builder()
+                    .index("conn-*")
+                    .size(0);
+                
+                // 构建查询条件
+                Query.Builder queryBuilder = new Query.Builder();
+                List<Query> mustQueries = new java.util.ArrayList<>();
+                
+                // 时间范围过滤
+                if (startTime != null && endTime != null) {
+                    log.info("Adding time range filter: {} to {}", startTime, endTime);
+                    mustQueries.add(Query.of(q -> q
+                        .range(r -> r
+                            .field("timestamp")
+                            .gte(JsonData.of(startTime))
+                            .lte(JsonData.of(endTime))
+                        )
+                    ));
+                }
+                
+                // 文件路径过滤
+                if (filePath != null && !filePath.trim().isEmpty()) {
+                    log.info("Adding filePath filter: {}", filePath);
+                    mustQueries.add(Query.of(q -> q
+                        .match(m -> m
+                            .field("filePath")
+                            .query(filePath)
+                        )
+                    ));
+                }
+                
+                // 如果有过滤条件，添加到查询中
+                if (!mustQueries.isEmpty()) {
+                    queryBuilder.bool(b -> b.must(mustQueries));
+                    searchRequestBuilder.query(queryBuilder.build());
+                }
+                
+                var searchRequest = searchRequestBuilder
+                    .aggregations("service_names", a -> a
+                        .terms(t -> t
+                            .field(field)
+                            .size(topN)
+                            .order(List.of(NamedValue.of("_count", co.elastic.clients.elasticsearch._types.SortOrder.Desc)))
+                        )
+                    )
+                    .build();
+
+                var response = esClient.search(searchRequest, Map.class);
+                log.info("ServiceName aggregation search completed for field: {}", field);
+                if (response.aggregations() == null) {
+                    log.warn("No aggregations in serviceName response for field: {}", field);
+                    continue;
+                }
+                var serviceNamesAgg = response.aggregations().get("service_names");
+                if (serviceNamesAgg == null || serviceNamesAgg.sterms() == null) {
+                    log.warn("No service_names aggregation found for field: {}", field);
+                    continue;
+                }
+                var buckets = serviceNamesAgg.sterms().buckets().array();
+                log.info("Found {} buckets in serviceName aggregation for field: {}", buckets.size(), field);
+                if (buckets.isEmpty()) {
+                    log.warn("No buckets found for field: {}, trying next field", field);
+                    continue;
+                }
+                
+                Map<String, Object> result = new java.util.HashMap<>();
+                List<Map<String, Object>> data = new java.util.ArrayList<>();
+                for (int i = 0; i < buckets.size(); i++) {
+                    var bucket = buckets.get(i);
+                    String serviceName;
+                    var keyValue = bucket.key();
+                    try {
+                        if (keyValue.isString()) {
+                            serviceName = keyValue.stringValue();
+                        } else if (keyValue.isLong()) {
+                            serviceName = String.valueOf(keyValue.longValue());
+                        } else if (keyValue.isDouble()) {
+                            serviceName = String.valueOf(keyValue.doubleValue());
+                        } else if (keyValue.isBoolean()) {
+                            serviceName = String.valueOf(keyValue.booleanValue());
+                        } else {
+                            serviceName = keyValue.toString();
+                        }
+                    } catch (Exception e) {
+                        log.warn("Error parsing key value for bucket {}: {}", i, e.getMessage());
+                        serviceName = "unknown";
+                    }
+                    Long docCount = bucket.docCount();
+                    Map<String, Object> item = new java.util.HashMap<>();
+                    item.put("serviceName", serviceName);
+                    item.put("count", docCount);
+                    data.add(item);
+                    log.info("Service: {}, Count: {}", serviceName, docCount);
+                }
+                result.put("data", data);
+                result.put("total", data.size());
+                result.put("field", field);
+                log.info("Successfully retrieved serviceName aggregation for field: {} with {} items", field, data.size());
+                return result;
+            } catch (Exception e) {
+                log.error("Error getting serviceName aggregation for field {}: {}", field, e.getMessage(), e);
+                continue;
+            }
+        }
+        log.warn("No serviceName aggregation data found for any field");
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("data", new java.util.ArrayList<>());
+        result.put("total", 0);
+        result.put("field", "none");
+        return result;
+    }
+
+// ... existing code ...
     /**
      * 获取serviceName字段的聚合统计数据（支持时间范围过滤）
      * @param topN 返回Top N的数据条数

@@ -389,7 +389,7 @@ export class CollectorComponent implements OnInit {
   filterStrategy: [''],
       protocolAnalysisEnabled: [true],
       idsEnabled: [true],
-  status: ['stopped'],
+  status: ['completed'],
   filePath: ['']
     });
 
@@ -487,7 +487,7 @@ export class CollectorComponent implements OnInit {
         protocolAnalysisEnabled: this.params.value.protocolAnalysisEnabled || false,
         idsEnabled: this.params.value.idsEnabled || false,
   filePath: this.params.value.filePath || undefined,
-        status: 'stopped',
+        status: this.params.value.id ? 'completed' : 'start',
         creationTime: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
 
@@ -657,7 +657,7 @@ export class CollectorComponent implements OnInit {
           path: 'profile-35.png',
           action: '',
           creationTime: this.formatDate(collector.creationTime),
-          analysisCompleted: collector.status === 'stopped' || collector.status === 'completed' || collector.status === 'STATUS_FINISHED' // 初始化分析完成状态
+          analysisCompleted: collector.status === 'completed' || collector.status === 'STATUS_FINISHED' // 初始化分析完成状态
         }));
 
         // 检查并为正在运行的抓包任务启动状态轮询
@@ -668,13 +668,14 @@ export class CollectorComponent implements OnInit {
             this.collectorService.getSessionInfo(collector.sessionId).subscribe(
               (response: CaptureResponse) => {
                 // 规范化完成态
-                if (response.status === 'STATUS_FINISHED' || response.status === 'completed' || response.status === 'stopped') {
+                if (response.status === 'STATUS_FINISHED' || response.status === 'completed') {
                   collector.analysisCompleted = true;
                   collector.status = 'completed';
-                  // 持久化状态并清理 sessionId
+                  // 持久化状态，但不清理 sessionId
                   this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
-                  this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
-                  collector.sessionId = undefined;
+                  // 注释掉清理sessionId的代码
+                  // this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
+                  // collector.sessionId = undefined;
                 } else {
                   collector.status = response.status;
                 }
@@ -685,12 +686,14 @@ export class CollectorComponent implements OnInit {
               },
               error => {
                 console.error('Error getting session info:', error);
-                // 如果获取状态失败，将状态设置为 stopped
-                collector.status = 'stopped';
-                collector.sessionId = undefined;
+                // 如果获取状态失败，将状态设置为 completed，但不删除sessionId
+                collector.status = 'completed';
+                // 注释掉清理sessionId的代码
+                // collector.sessionId = undefined;
                 // 更新数据库中的状态
-                this.collectorService.updateCollectorStatus(collector.id, 'stopped').subscribe();
-                this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
+                this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+                // 注释掉清理sessionId的代码
+                // this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
               }
             );
           }
@@ -886,6 +889,30 @@ export class CollectorComponent implements OnInit {
       }
     }
 
+    // 为非File模式设置接口信息（如果还没有设置的话）
+    if (collector.interfaceName !== 'File') {
+      this.selectedInterface = this.networkInterfaces.find(iface => iface.name === collector.interfaceName);
+      if (this.selectedInterface && this.selectedInterface.ports) {
+        this.availablePorts = this.selectedInterface.ports;
+        // 重置channel状态为默认全选
+        this.channelStates = {
+          channel1: true,
+          channel2: true,
+          channel3: true,
+          channel4: true
+        };
+      } else {
+        this.availablePorts = [];
+        // 如果没有找到接口信息，使用默认的4个channel
+        this.channelStates = {
+          channel1: true,
+          channel2: true,
+          channel3: true,
+          channel4: true
+        };
+      }
+    }
+
     // 构建基本请求参数
     const apps = [
       'zeek',
@@ -1011,16 +1038,17 @@ export class CollectorComponent implements OnInit {
               this.stopStatusPolling(collector.id);
 
               // 统一完成状态：将 STATUS_FINISHED 视为 completed
-              const isFinished = response.status === 'stopped' || response.status === 'completed' || response.status === 'STATUS_FINISHED';
+              const isFinished = response.status === 'completed' || response.status === 'STATUS_FINISHED';
               if (isFinished) {
                 collector.analysisCompleted = true;
                 if (response.status === 'STATUS_FINISHED') {
                   collector.status = 'completed';
                 }
-                // 持久化完成状态并清理 sessionId
+                // 持久化完成状态，但不清理 sessionId
                 this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
-                this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
-                collector.sessionId = undefined;
+                // 注释掉清理sessionId的代码
+                // this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
+                // collector.sessionId = undefined;
               }
 
               // 仅在未完成时显示错误
@@ -1056,33 +1084,39 @@ export class CollectorComponent implements OnInit {
       return;
     }
 
-    this.collectorService.stopCapture(collector.sessionId).subscribe(
+    // 保存sessionId用于API调用
+    const sessionId = collector.sessionId;
+
+    // 立即停止状态轮询，不等待API响应
+    this.stopStatusPolling(collector.id);
+    collector.status = 'completed';
+    collector.analysisCompleted = true; // 标记分析完成
+    // 注释掉清理sessionId的代码，保持sessionId
+    // collector.sessionId = undefined;
+
+    // 调用停止API，但不等待响应
+    this.collectorService.stopCapture(sessionId).subscribe(
       (response: CaptureResponse) => {
-        if (response.error === 0) {
-          // 立即停止状态轮询
-          this.stopStatusPolling(collector.id);
-
-          this.showMessage('Capture stopped successfully');
-          collector.status = 'stopped';
-          collector.analysisCompleted = true; // 标记分析完成
-
-          // 清除数据库中的 sessionId
-          this.collectorService.updateCollectorSessionId(collector.id, '').subscribe(
-            () => {
-              this.collectorService.updateCollectorStatus(collector.id, 'stopped').subscribe();
-              collector.sessionId = undefined;
-            },
-            error => {
-              console.error('Error clearing session ID:', error);
-            }
-          );
-        } else {
-          this.showMessage(`Error stopping capture: ${response.message}`, 'error');
-        }
+        // 即使API调用成功，状态已经在上面更新了
+        this.showMessage('Capture stopped successfully');
+        
+        // 注释掉清除数据库中的 sessionId 的代码
+        // this.collectorService.updateCollectorSessionId(collector.id, '').subscribe(
+        //   () => {
+        //     this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+        //   },
+        //   error => {
+        //     console.error('Error clearing session ID:', error);
+        //   }
+        // );
+        
+        // 只更新状态，不清除sessionId
+        this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
       },
       error => {
         console.error('Error stopping capture:', error);
-        this.showMessage('Error stopping capture', 'error');
+        // 即使API调用失败，UI状态也已经更新了
+        this.showMessage('Capture stopped (API call may have failed)', 'warning');
       }
     );
   }

@@ -102,33 +102,33 @@
                                                     <!-- 移除表格中的 Filter Strategy 单元格 -->
                                                     <td class="whitespace-nowrap">
                                                         <label class="w-12 h-6 relative"
-                                                               [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted }">
+                                                               [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' }">
                                                             <input type="checkbox"
                                                                 [checked]="contact.protocolAnalysisEnabled"
                                                                 (change)="onProtocolAnalysisChange(contact, $event)"
                                                                 class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
                                                                 [id]="'protocol_switch_' + contact.id"
-                                                                [disabled]="contact.analysisCompleted"
-                                                                [title]="contact.analysisCompleted ? ('Analyzed' | translate) : ''" />
+                                                                [disabled]="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED'"
+                                                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED') ? ('Cannot modify during analysis' | translate) : ''" />
                                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
                                                             </span>
                                                         </label>
-                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted">{{ 'Analyzed' | translate }}</span>
+                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED'">{{ 'Cannot modify during analysis' | translate }}</span>
                                                     </td>
                                                     <td class="whitespace-nowrap">
                                                         <label class="w-12 h-6 relative"
-                                                               [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted }">
+                                                               [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' }">
                                                             <input type="checkbox"
                                                                 [checked]="contact.idsEnabled"
                                                                 (change)="onIdsChange(contact, $event)"
                                                                 class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
                                                                 [id]="'ids_switch_' + contact.id"
-                                                                [disabled]="contact.analysisCompleted"
-                                                                [title]="contact.analysisCompleted ? ('Analyzed' | translate) : ''" />
+                                                                [disabled]="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED'"
+                                                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED') ? ('Cannot modify during analysis' | translate) : ''" />
                                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
                                                             </span>
                                                         </label>
-                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted">{{ 'Analyzed' | translate }}</span>
+                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED'">{{ 'Cannot modify during analysis' | translate }}</span>
                                                     </td>
                                                     <td>
                                                         <div class="flex items-center justify-center gap-2">

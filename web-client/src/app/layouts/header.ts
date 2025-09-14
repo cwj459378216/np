@@ -9,6 +9,9 @@ import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
 import { environment } from 'src/environments/environment';
 import { CollectorService, Collector } from 'src/app/services/collector.service';
 import { TimeRangeService } from 'src/app/services/time-range.service';
+import { DashboardDataService } from 'src/app/services/dashboard-data.service';
+import { HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 @Component({
     selector: 'header',
@@ -123,6 +126,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         private sanitizer: DomSanitizer,
         private collectorService: CollectorService,
         private timeRangeService: TimeRangeService,
+        private dashboardDataService: DashboardDataService,
     ) {
         this.initStore();
     }
@@ -139,6 +143,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         this.router.events.subscribe((event) => {
             if (event instanceof NavigationEnd) {
                 this.setActiveDropdown();
+                // 每次路由变化时重新加载collectors
+                this.loadCollectors();
             }
         });
         
@@ -187,26 +193,36 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     loadCollectors() {
         this.collectorService.getAllCollectors().subscribe({
             next: (collectors: Collector[]) => {
-                // 将collectors转换为dataSources选项，name作为label，sessionId作为value
-                this.dataSources = collectors.map(collector => ({
+                // 只显示状态为 "completed" 和 "running" 的collectors
+                const activeCollectors = collectors.filter(collector => 
+                    collector.status === 'completed' || collector.status === 'running'
+                );
+                
+                // 将active collectors转换为dataSources选项，name作为label，sessionId作为value
+                this.dataSources = activeCollectors.map(collector => ({
                     label: collector.name,
-                    value: (collector as any).sessionId || (collector as any).id || ''
+                    value: (collector as any).sessionId || ''
                 }));
                 
                 // 始终选择第一个作为默认值（如果有数据的话）
                 if (this.dataSources.length > 0) {
                     this.selectedDataSource = this.dataSources[0];
+                    // 自动查询第一个数据源的时间范围
+                    this.queryDataSourceTimeRange(this.selectedDataSource.value);
                 } else {
                     this.selectedDataSource = { label: '', value: '' };
+                    // 没有数据源时设置默认时间范围
+                    this.setDefaultTimeRange();
                 }
                 
-                console.log('Collectors loaded, default selected:', this.selectedDataSource);
+                console.log('Active collectors (completed/running) loaded, default selected:', this.selectedDataSource);
             },
             error: (error) => {
                 console.error('Error loading collectors for data sources:', error);
                 // 发生错误时设置为空
                 this.dataSources = [];
                 this.selectedDataSource = { label: '', value: '' };
+                this.setDefaultTimeRange();
             }
         });
     }
@@ -307,8 +323,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     onDataSourceChange(dataSource?: any) {
         if (dataSource) {
             this.selectedDataSource = dataSource;
+            // 查询数据源的时间范围
+            this.queryDataSourceTimeRange(dataSource.value);
         }
-        // TODO: 根据实际需求触发数据刷新或状态更新
         console.log('Data source changed:', this.selectedDataSource);
     }
 
@@ -360,9 +377,21 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             ? { label: 'Custom Range', value: 'custom' }
             : this.timeRanges.find(tr => tr.value === this.selectedQuickRange) || { label: 'Custom', value: 'custom' };
         
-        this.timeRangeService.updateTimeRange(startTime, endTime, currentRange.label, currentRange.value);
+        // 传递当前选择的文件路径
+        this.timeRangeService.updateTimeRange(
+            startTime, 
+            endTime, 
+            currentRange.label, 
+            currentRange.value,
+            this.selectedDataSource.value // 传递文件路径
+        );
         
-        console.log('Time range applied:', { startTime, endTime, label: currentRange.label });
+        console.log('Time range applied:', { 
+            startTime, 
+            endTime, 
+            label: currentRange.label,
+            filePath: this.selectedDataSource.value
+        });
     }
 
     ngOnDestroy(): void {
@@ -429,5 +458,98 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 document.body.click();
             }, 0);
         } catch {}
+    }
+
+    // 新增: 查询数据源时间范围的方法
+    private queryDataSourceTimeRange(filePath: string) {
+        if (!filePath) {
+            // 如果没有filePath，使用默认时间范围
+            this.setDefaultTimeRange();
+            return;
+        }
+
+        // 只传递filePath和index参数，不传递时间参数
+        this.dashboardDataService.queryDataByFilePath(
+            filePath,
+            '*' // 使用通配符索引
+        ).subscribe({
+            next: (data: any) => {
+                this.processDataSourceTimeRange(data, filePath);
+            },
+            error: (error: any) => {
+                console.error('Error querying data for data source:', error);
+                this.setDefaultTimeRange();
+            }
+        });
+    }
+
+    // 新增: 处理数据源时间范围的方法
+    private processDataSourceTimeRange(data: any, filePath: string) {
+        try {
+            let startTime: Date;
+            let endTime: Date;
+
+            if (data && data.firstTimestamp && data.lastTimestamp) {
+                startTime = new Date(data.firstTimestamp);
+                endTime = new Date(data.lastTimestamp);
+            } else {
+                throw new Error('No timestamp data found');
+            }
+
+            // 确保时间范围合理
+            if (startTime >= endTime) {
+                startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // 1天前
+            }
+
+            // 根据是否有实际数据来设置标签
+            const timeRangeLabel = data.isDefaultRange 
+                ? `Data Source: ${this.selectedDataSource.label} (Default 24h)`
+                : `Data Source: ${this.selectedDataSource.label}`;
+
+            // 更新时间范围，传递文件路径
+            this.timeRangeService.updateTimeRange(
+                startTime,
+                endTime,
+                timeRangeLabel,
+                'custom',
+                filePath // 传递文件路径
+            );
+
+            // 更新UI状态
+            this.isCustomTimeRange = true;
+            this.selectedQuickRange = '';
+            this.customRangeValue = this.formatDate(startTime) + ' to ' + this.formatDate(endTime);
+
+            console.log('Data source time range updated:', {
+                filePath,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                hasData: data.hasData,
+                isDefaultRange: data.isDefaultRange
+            });
+
+        } catch (error) {
+            console.error('Error processing data source time range:', error);
+            this.setDefaultTimeRange();
+        }
+    }
+
+    // 新增: 设置默认时间范围
+    private setDefaultTimeRange() {
+        const endTime = new Date();
+        const startTime = new Date(endTime.getTime() - 60 * 60 * 1000); // 1小时前
+        
+        this.timeRangeService.updateTimeRange(
+            startTime,
+            endTime,
+            'Last 1 Hour',
+            '1h'
+        );
+
+        this.isCustomTimeRange = false;
+        this.selectedQuickRange = '1h';
+        this.customRangeValue = '';
+
+        console.log('Default time range set (1 hour)');
     }
 }

@@ -6,6 +6,7 @@ export interface TimeRange {
   endTime: Date;
   label: string;
   value: string;
+  filePath?: string; // 新增文件路径字段
 }
 
 @Injectable({
@@ -16,19 +17,21 @@ export class TimeRangeService {
     startTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // 默认24小时前
     endTime: new Date(),
     label: 'Last 24 Hours',
-    value: '24h'
+    value: '24h',
+    filePath: undefined
   });
 
   public timeRange$ = this.timeRangeSubject.asObservable();
 
   constructor() {}
 
-  updateTimeRange(startTime: Date, endTime: Date, label: string, value: string) {
+  updateTimeRange(startTime: Date, endTime: Date, label: string, value: string, filePath?: string) {
     const timeRange: TimeRange = {
       startTime,
       endTime,
       label,
-      value
+      value,
+      filePath
     };
     console.log('TimeRangeService updating time range:', timeRange);
     this.timeRangeSubject.next(timeRange);

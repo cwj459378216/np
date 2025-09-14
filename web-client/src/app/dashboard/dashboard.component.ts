@@ -77,14 +77,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }, 30000);
   }
 
-  private loadNetworkProtocolTrends(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h') {
+  private loadNetworkProtocolTrends(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h', filePath?: string) {
     const endTime = endTimeTimestamp ? new Date(endTimeTimestamp) : new Date();
     const startTime = startTimeTimestamp ? new Date(startTimeTimestamp) : new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
     
     const startTs = startTime.getTime();
     const endTs = endTime.getTime();
 
-    this.dashboardDataService.getNetworkProtocolTrends(startTs, endTs, interval)
+    this.dashboardDataService.getNetworkProtocolTrends(startTs, endTs, filePath, interval)
       .subscribe({
         next: (data) => {
           // 将返回的多协议数据映射为 series
@@ -149,6 +149,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const startTimeTimestamp = timeRange.startTime.getTime();
     const endTimeTimestamp = timeRange.endTime.getTime();
+    const filePath = timeRange.filePath; // 获取文件路径
     
     // 根据时间范围长度决定间隔
     const timeSpan = endTimeTimestamp - startTimeTimestamp;
@@ -168,20 +169,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
       startTime: timeRange.startTime.toISOString(), 
       endTime: timeRange.endTime.toISOString(),
       interval,
+      filePath,
       timeSpan: timeSpan / (1000 * 60 * 60) + ' hours'
     });
 
-    // 加载协议趋势数据
-    this.loadProtocolTrendsData(startTimeTimestamp, endTimeTimestamp, interval);
+    // 加载协议趋势数据，传递 filePath
+    this.loadProtocolTrendsData(startTimeTimestamp, endTimeTimestamp, interval, filePath);
     
-    // 加载网络协议趋势数据
-    this.loadNetworkProtocolTrends(startTimeTimestamp, endTimeTimestamp, interval);
+    // 加载网络协议趋势数据，传递 filePath
+    this.loadNetworkProtocolTrends(startTimeTimestamp, endTimeTimestamp, interval, filePath);
     
-    // 加载带宽数据
-    this.loadBandwidthData(startTimeTimestamp, endTimeTimestamp, interval);
+    // 加载带宽数据，传递 filePath
+    this.loadBandwidthData(startTimeTimestamp, endTimeTimestamp, interval, filePath);
     
-    // 加载Application Protocol (Service Name)数据
-    this.loadServiceNameData(startTimeTimestamp, endTimeTimestamp);
+    // 加载Application Protocol (Service Name)数据，传递 filePath
+    this.loadServiceNameData(startTimeTimestamp, endTimeTimestamp, filePath);
   }
 
   async initStore() {
@@ -242,7 +244,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadProtocolTrendsData(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h') {
+  loadProtocolTrendsData(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h', filePath?: string) {
     // 使用传入的时间戳或默认获取最近24小时的数据
     const endTime = endTimeTimestamp ? new Date(endTimeTimestamp) : new Date();
     const startTime = startTimeTimestamp ? new Date(startTimeTimestamp) : new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
@@ -250,7 +252,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const startTs = startTime.getTime();
     const endTs = endTime.getTime();
 
-    this.dashboardDataService.getProtocolTrends(startTs, endTs, interval)
+    // 传递 filePath 参数
+    this.dashboardDataService.getProtocolTrends(startTs, endTs, filePath, interval)
       .subscribe({
         next: (data: ProtocolTrendsResponse) => {
           this.updateProtocolTrendingChart(data);
@@ -263,7 +266,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadBandwidthData(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h') {
+  loadBandwidthData(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h', filePath?: string) {
     // 使用传入的时间戳或默认获取最近24小时的数据
     const endTime = endTimeTimestamp ? new Date(endTimeTimestamp) : new Date();
     const startTime = startTimeTimestamp ? new Date(startTimeTimestamp) : new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
@@ -271,7 +274,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const startTs = startTime.getTime();
     const endTs = endTime.getTime();
 
-    this.dashboardDataService.getBandwidthTrends(startTs, endTs, interval)
+    // 传递 filePath 参数
+    this.dashboardDataService.getBandwidthTrends(startTs, endTs, filePath, interval)
       .subscribe({
         next: (data: BandwidthTrendsResponse) => {
           this.cachedBandwidthData = data; // 缓存数据
@@ -285,9 +289,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadServiceNameData(startTime?: number, endTime?: number) {
-    console.log('Loading service name data with time range...', startTime, endTime);
-    this.dashboardDataService.getServiceNameAggregation(10, startTime, endTime)
+  loadServiceNameData(startTime?: number, endTime?: number, filePath?: string) {
+    console.log('Loading service name data with time range...', { startTime, endTime, filePath });
+    // 传递 filePath 参数
+    this.dashboardDataService.getServiceNameAggregation(10, startTime, endTime, filePath)
       .subscribe({
         next: (data: ServiceNameAggregationResponse) => {
           console.log('Service name data received:', data);

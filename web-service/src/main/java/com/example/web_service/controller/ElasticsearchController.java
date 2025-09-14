@@ -6,6 +6,8 @@ import com.example.web_service.model.es.widget.WidgetQueryRequest;
 import com.example.web_service.service.elasticsearch.ElasticsearchSyncService;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.json.JsonData;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
@@ -26,6 +28,9 @@ public class ElasticsearchController {
 
     @Autowired
     private ElasticsearchSyncService elasticsearchSyncService;
+    
+    @Autowired
+    private ElasticsearchClient esClient;
 
     private static final String INDEX_NAME = "conn-realtime";
 
@@ -62,9 +67,10 @@ public class ElasticsearchController {
     public Map<String, List<TrendingData>> getProtocolTrends(
             @RequestParam Long startTime,
             @RequestParam Long endTime,
+            @RequestParam(required = false) String filePath,
             @RequestParam(defaultValue = "1h") String interval
     ) throws IOException {
-        return elasticsearchSyncService.getProtocolTrends(startTime, endTime, interval);
+        return elasticsearchSyncService.getProtocolTrends(startTime, endTime, filePath, interval);
     }
 
     @GetMapping("/bandwidth-trends")
@@ -72,10 +78,11 @@ public class ElasticsearchController {
     public Map<String, List<TrendingData>> getBandwidthTrends(
             @RequestParam Long startTime,
             @RequestParam Long endTime,
+            @RequestParam(required = false) String filePath,
             @RequestParam(defaultValue = "1h") String interval
     ) throws IOException {
-        log.info("Received bandwidth trends request - startTime: {}, endTime: {}, interval: {}", startTime, endTime, interval);
-        Map<String, List<TrendingData>> result = elasticsearchSyncService.getBandwidthTrends(startTime, endTime, interval);
+        log.info("Received bandwidth trends request - startTime: {}, endTime: {}, filePath: {}, interval: {}", startTime, endTime, filePath, interval);
+        Map<String, List<TrendingData>> result = elasticsearchSyncService.getBandwidthTrends(startTime, endTime, filePath, interval);
         log.info("Returning bandwidth trends with {} channels", result.size());
         return result;
     }
@@ -85,10 +92,11 @@ public class ElasticsearchController {
     public Map<String, List<TrendingData>> getNetworkProtocolTrends(
             @RequestParam Long startTime,
             @RequestParam Long endTime,
+            @RequestParam(required = false) String filePath,
             @RequestParam(defaultValue = "1h") String interval
     ) throws IOException {
-        log.info("Received network protocol trends request - startTime: {}, endTime: {}, interval: {}", startTime, endTime, interval);
-        Map<String, List<TrendingData>> result = elasticsearchSyncService.getConnProtocolNameTrends(startTime, endTime, interval);
+        log.info("Received network protocol trends request - startTime: {}, endTime: {}, filePath: {}, interval: {}", startTime, endTime, filePath, interval);
+        Map<String, List<TrendingData>> result = elasticsearchSyncService.getConnProtocolNameTrends(startTime, endTime, filePath, interval);
         log.info("Returning network protocol trends with {} protocols", result.size());
         return result;
     }
@@ -98,10 +106,11 @@ public class ElasticsearchController {
     public Map<String, Object> getServiceNameAggregation(
             @RequestParam(defaultValue = "10") Integer topN,
             @RequestParam(required = false) Long startTime,
-            @RequestParam(required = false) Long endTime
+            @RequestParam(required = false) Long endTime,
+            @RequestParam(required = false) String filePath
     ) throws IOException {
-        log.info("Received service name aggregation request - topN: {}, startTime: {}, endTime: {}", topN, startTime, endTime);
-        Map<String, Object> result = elasticsearchSyncService.getServiceNameAggregation(topN, startTime, endTime);
+        log.info("Received service name aggregation request - topN: {}, startTime: {}, endTime: {}, filePath: {}", topN, startTime, endTime, filePath);
+        Map<String, Object> result = elasticsearchSyncService.getServiceNameAggregation(topN, startTime, endTime, filePath);
         log.info("Returning service name aggregation with {} entries", result.size());
         return result;
     }
@@ -144,6 +153,100 @@ public class ElasticsearchController {
             );
 
         return elasticsearchSyncService.searchRawWithPagination(index, query, size, from);
+    }
+
+    @GetMapping("/query-by-filepath")
+    @Operation(summary = "根据文件路径查询数据时间范围", description = "根据filePath查询数据的时间范围，返回第一条和最后一条数据的时间")
+    public Map<String, Object> queryDataByFilePath(
+            @RequestParam String filePath,
+            @RequestParam(defaultValue = "*") String index
+    ) throws IOException {
+        // 构建查询条件，只根据filePath过滤，不限制时间
+        Query query = Query.of(q -> q
+            .bool(b -> b
+                .must(m -> m
+                    .match(t -> t
+                        .field("filePath")
+                        .query(filePath)
+                    )
+                )
+            )
+        );
+
+        // 查询第一条数据（最早时间）- 使用升序排序
+        SearchResponse<JsonData> firstResponse = esClient.search(s -> s
+            .index(index)
+            .query(query)
+            .size(1)
+            .sort(sort -> sort
+                .field(f -> f
+                    .field("timestamp")
+                    .order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)
+                )
+            ),
+            JsonData.class
+        );
+        
+        // 查询最后一条数据（最晚时间）- 使用降序排序
+        SearchResponse<JsonData> lastResponse = esClient.search(s -> s
+            .index(index)
+            .query(query)
+            .size(1)
+            .sort(sort -> sort
+                .field(f -> f
+                    .field("timestamp")
+                    .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)
+                )
+            ),
+            JsonData.class
+        );
+
+        // 提取时间戳
+        String firstTimestamp = null;
+        String lastTimestamp = null;
+        
+        if (firstResponse.hits().hits().size() > 0) {
+            var firstHit = firstResponse.hits().hits().get(0);
+            if (firstHit.source() != null) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> firstRecord = (Map<String, Object>) firstHit.source().to(Map.class);
+                firstTimestamp = (String) firstRecord.get("timestamp");
+            }
+        }
+        
+        if (lastResponse.hits().hits().size() > 0) {
+            var lastHit = lastResponse.hits().hits().get(0);
+            if (lastHit.source() != null) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> lastRecord = (Map<String, Object>) lastHit.source().to(Map.class);
+                lastTimestamp = (String) lastRecord.get("timestamp");
+            }
+        }
+
+        // 如果没有查询到数据，返回最近一天的时间范围
+        if (firstTimestamp == null || lastTimestamp == null) {
+            java.time.Instant now = java.time.Instant.now();
+            java.time.Instant oneDayAgo = now.minus(java.time.Duration.ofDays(1));
+            
+            firstTimestamp = oneDayAgo.toString();
+            lastTimestamp = now.toString();
+            
+            return Map.of(
+                "filePath", filePath,
+                "firstTimestamp", firstTimestamp,
+                "lastTimestamp", lastTimestamp,
+                "hasData", false,
+                "isDefaultRange", true
+            );
+        }
+
+        return Map.of(
+            "filePath", filePath,
+            "firstTimestamp", firstTimestamp,
+            "lastTimestamp", lastTimestamp,
+            "hasData", true,
+            "isDefaultRange", false
+        );
     }
 
     @GetMapping("/indices")
