@@ -20,6 +20,7 @@ interface ContactList extends Collector {
   path?: string;
   action?: string;
   sessionId?: string;
+  analysisCompleted?: boolean; // 新增：分析完成状态
 }
 
 @Component({
@@ -42,12 +43,17 @@ export class CollectorComponent implements OnInit {
   showAlarm = false;
 
   // Channel selection states
-  channelStates = {
+  channelStates: { [key: string]: boolean } = {
     channel1: true,
     channel2: true,
     channel3: true,
     channel4: true
   };
+
+  // Network interfaces with detailed information
+  networkInterfaces: any[] = [];
+  selectedInterface: any = null;
+  availablePorts: any[] = [];
 
 
   displayType = 'list';
@@ -381,8 +387,8 @@ export class CollectorComponent implements OnInit {
   storageStrategy: [{ value: '', disabled: false }],
   // Filter Strategy 输入框隐藏，移除必填校验，保留控件以兼容后端字段
   filterStrategy: [''],
-      protocolAnalysisEnabled: [false],
-      idsEnabled: [false],
+      protocolAnalysisEnabled: [true],
+      idsEnabled: [true],
   status: ['stopped'],
   filePath: ['']
     });
@@ -555,22 +561,38 @@ export class CollectorComponent implements OnInit {
     if (event === 'File') {
       this.showChannels = false;
       this.showUpload = true;
-  this.params.patchValue({ filePath: '' });
-  this.selectedFile = undefined;
-  // 使用原生文件输入，不再初始化第三方上传预览
+      this.params.patchValue({ filePath: '' });
+      this.selectedFile = undefined;
+      this.selectedInterface = null;
+      this.availablePorts = [];
+      // 使用原生文件输入，不再初始化第三方上传预览
     } else {
       this.showChannels = true;
       this.showUpload = false;
-  this.params.patchValue({ filePath: '' });
-  this.selectedFile = undefined;
+      this.params.patchValue({ filePath: '' });
+      this.selectedFile = undefined;
 
-  // 重置channel状态为默认全选
-  this.channelStates = {
-    channel1: true,
-    channel2: true,
-    channel3: true,
-    channel4: true
-  };
+      // 根据选择的接口名称找到对应的接口信息
+      this.selectedInterface = this.networkInterfaces.find(iface => iface.name === event);
+      if (this.selectedInterface && this.selectedInterface.ports) {
+        this.availablePorts = this.selectedInterface.ports;
+        // 重置channel状态为默认全选
+        this.channelStates = {
+          channel1: true,
+          channel2: true,
+          channel3: true,
+          channel4: true
+        };
+      } else {
+        this.availablePorts = [];
+        // 如果没有找到接口信息，使用默认的4个channel
+        this.channelStates = {
+          channel1: true,
+          channel2: true,
+          channel3: true,
+          channel4: true
+        };
+      }
     }
 
     // 同步控制 Storage Strategy 的可用性
@@ -634,7 +656,8 @@ export class CollectorComponent implements OnInit {
           following: 0,
           path: 'profile-35.png',
           action: '',
-          creationTime: this.formatDate(collector.creationTime)
+          creationTime: this.formatDate(collector.creationTime),
+          analysisCompleted: collector.status === 'stopped' || collector.status === 'completed' || collector.status === 'STATUS_FINISHED' // 初始化分析完成状态
         }));
 
         // 检查并为正在运行的抓包任务启动状态轮询
@@ -644,7 +667,17 @@ export class CollectorComponent implements OnInit {
             // 先获取一次当前状态
             this.collectorService.getSessionInfo(collector.sessionId).subscribe(
               (response: CaptureResponse) => {
-                collector.status = response.status;
+                // 规范化完成态
+                if (response.status === 'STATUS_FINISHED' || response.status === 'completed' || response.status === 'stopped') {
+                  collector.analysisCompleted = true;
+                  collector.status = 'completed';
+                  // 持久化状态并清理 sessionId
+                  this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+                  this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
+                  collector.sessionId = undefined;
+                } else {
+                  collector.status = response.status;
+                }
                 // 如果状态是 STATUS_STARTED，启动轮询
                 if (response.status === 'STATUS_STARTED') {
                   this.startStatusPolling(collector);
@@ -830,6 +863,8 @@ export class CollectorComponent implements OnInit {
   loadNetworkInterfaces() {
     this.collectorService.getNetworkInterfaces().subscribe(
       interfaces => {
+        // 存储完整的网络接口信息
+        this.networkInterfaces = interfaces;
         // 将网络接口名称添加到选项中
         this.options = ['File', ...interfaces.map(iface => iface.name)];
       },
@@ -879,8 +914,8 @@ export class CollectorComponent implements OnInit {
     }
 
     const request: Partial<CaptureRequest> = {
-      // index: 0 表示 file，1 表示其他
-      index: collector.interfaceName === 'File' ? 0 : 1,
+      // index: 0 表示 file，其他使用接口的 index
+      index: collector.interfaceName === 'File' ? 0 : (this.selectedInterface?.index || 1),
       port: collector.interfaceName === 'File' ? "0x1" : this.calculatePortValue(),
       appOpt
     };
@@ -930,19 +965,34 @@ export class CollectorComponent implements OnInit {
     return parseInt(match[1]); // M
   }
 
-  // 计算port值：根据4个channel的选择状态转换为16进制
+  // 计算port值：根据选择的channel和接口信息转换为16进制
   calculatePortValue(): string {
-    const { channel1, channel2, channel3, channel4 } = this.channelStates;
+    if (this.availablePorts.length > 0) {
+      // 如果有可用的 ports，根据选择的 channel 和 port 的 id 计算
+      let decimalValue = 0;
+      for (let i = 0; i < this.availablePorts.length; i++) {
+        const port = this.availablePorts[i];
+        const channelKey = `channel${i + 1}`;
+        if (this.channelStates[channelKey]) {
+          // 使用 port 的 id 作为位位置
+          decimalValue |= (1 << port.id);
+        }
+      }
+      return `0x${decimalValue.toString(16).toUpperCase()}`;
+    } else {
+      // 如果没有可用的 ports，使用默认的4个channel逻辑
+      const { channel1, channel2, channel3, channel4 } = this.channelStates;
 
-    // 构建二进制字符串：channel4 channel3 channel2 channel1
-    // 例如：channel1=1, channel2=0, channel3=1, channel4=0 -> "0101"
-    const binaryString = `${channel4 ? '1' : '0'}${channel3 ? '1' : '0'}${channel2 ? '1' : '0'}${channel1 ? '1' : '0'}`;
+      // 构建二进制字符串：channel4 channel3 channel2 channel1
+      // 例如：channel1=1, channel2=0, channel3=1, channel4=0 -> "0101"
+      const binaryString = `${channel4 ? '1' : '0'}${channel3 ? '1' : '0'}${channel2 ? '1' : '0'}${channel1 ? '1' : '0'}`;
 
-    // 转换为十进制数字
-    const decimalValue = parseInt(binaryString, 2);
+      // 转换为十进制数字
+      const decimalValue = parseInt(binaryString, 2);
 
-    // 转换为16进制，确保是大写并且有0x前缀
-    return `0x${decimalValue.toString(16).toUpperCase()}`;
+      // 转换为16进制，确保是大写并且有0x前缀
+      return `0x${decimalValue.toString(16).toUpperCase()}`;
+    }
   }
 
   // 添加开始轮询状态的方法
@@ -959,8 +1009,23 @@ export class CollectorComponent implements OnInit {
             // 只有当状态不是 STATUS_STARTED 时才停止轮询
             if (response.status !== 'STATUS_STARTED') {
               this.stopStatusPolling(collector.id);
-              if (response.error !== 0) {
-                this.showMessage(`Capture error: ${response.message}`, 'error');
+
+              // 统一完成状态：将 STATUS_FINISHED 视为 completed
+              const isFinished = response.status === 'stopped' || response.status === 'completed' || response.status === 'STATUS_FINISHED';
+              if (isFinished) {
+                collector.analysisCompleted = true;
+                if (response.status === 'STATUS_FINISHED') {
+                  collector.status = 'completed';
+                }
+                // 持久化完成状态并清理 sessionId
+                this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+                this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
+                collector.sessionId = undefined;
+              }
+
+              // 仅在未完成时显示错误
+              if (response.error !== 0 && !isFinished) {
+                this.showMessage(`Capture error: ${response.message || 'Unknown error'}`, 'error');
               }
             }
           },
@@ -999,6 +1064,7 @@ export class CollectorComponent implements OnInit {
 
           this.showMessage('Capture stopped successfully');
           collector.status = 'stopped';
+          collector.analysisCompleted = true; // 标记分析完成
 
           // 清除数据库中的 sessionId
           this.collectorService.updateCollectorSessionId(collector.id, '').subscribe(

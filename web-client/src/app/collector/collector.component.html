@@ -101,57 +101,75 @@
                                                     <td class="whitespace-nowrap">{{ contact.storageStrategy }}</td>
                                                     <!-- 移除表格中的 Filter Strategy 单元格 -->
                                                     <td class="whitespace-nowrap">
-                                                        <label class="w-12 h-6 relative">
+                                                        <label class="w-12 h-6 relative"
+                                                               [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted }">
                                                             <input type="checkbox"
                                                                 [checked]="contact.protocolAnalysisEnabled"
                                                                 (change)="onProtocolAnalysisChange(contact, $event)"
                                                                 class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
-                                                                [id]="'protocol_switch_' + contact.id" />
+                                                                [id]="'protocol_switch_' + contact.id"
+                                                                [disabled]="contact.analysisCompleted"
+                                                                [title]="contact.analysisCompleted ? ('Analyzed' | translate) : ''" />
                                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
                                                             </span>
                                                         </label>
+                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted">{{ 'Analyzed' | translate }}</span>
                                                     </td>
                                                     <td class="whitespace-nowrap">
-                                                        <label class="w-12 h-6 relative">
+                                                        <label class="w-12 h-6 relative"
+                                                               [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted }">
                                                             <input type="checkbox"
                                                                 [checked]="contact.idsEnabled"
                                                                 (change)="onIdsChange(contact, $event)"
                                                                 class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
-                                                                [id]="'ids_switch_' + contact.id" />
+                                                                [id]="'ids_switch_' + contact.id"
+                                                                [disabled]="contact.analysisCompleted"
+                                                                [title]="contact.analysisCompleted ? ('Analyzed' | translate) : ''" />
                                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
                                                             </span>
                                                         </label>
+                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted">{{ 'Analyzed' | translate }}</span>
                                                     </td>
                                                     <td>
-                                                        <div class="flex items-center justify-center gap-4">
+                                                        <div class="flex items-center justify-center gap-2">
                                                             <button type="button"
-                                                                    class="btn btn-sm btn-outline-primary"
+                                                                    class="btn btn-sm btn-outline-primary w-20"
                                                                     (click)="editUser(contact)"
-                                                                    [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
+                                                                    [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.analysisCompleted"
+                                                                    [title]="contact.analysisCompleted ? ('Analyzed' | translate) : ''">
                                                                 {{ 'collector.edit' | translate }}
                                                             </button>
 
                                                             <button type="button"
-                                                                    class="btn btn-sm btn-outline-danger"
+                                                                    class="btn btn-sm btn-outline-danger w-20"
                                                                     (click)="deleteUser(contact)"
                                                                     [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
                                                                 {{ 'Delete' | translate }}
                                                             </button>
 
-                                                            <!-- 使用 ngIf 来切换显示 Start 按钮或 Animation 按钮 -->
-                                                            <ng-container *ngIf="contact.status !== 'running' && contact.status !== 'STATUS_STARTED'; else analyzingButton">
+                                                            <!-- 使用 ngIf 来切换显示不同的按钮状态 -->
+                                                            <ng-container *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED'; else notAnalyzingButton">
                                                                 <button type="button"
-                                                                        class="btn btn-sm btn-outline-success"
-                                                                        (click)="startCapture(contact)">
-                                                                    {{ 'collector.start' | translate }}
-                                                                </button>
-                                                            </ng-container>
-                                                            <ng-template #analyzingButton>
-                                                                <button type="button"
-                                                                        class="btn btn-sm btn-outline-success"
+                                                                        class="btn btn-sm btn-outline-success w-20"
                                                                         (click)="confirmStopCapture(contact)">
                                                                     <app-analyze-animation></app-analyze-animation>
                                                                 </button>
+                                                            </ng-container>
+                                                            <ng-template #notAnalyzingButton>
+                                                                <ng-container *ngIf="contact.analysisCompleted; else startButton">
+                                                                    <button type="button"
+                                                                            class="btn btn-sm btn-outline-secondary w-20"
+                                                                            disabled>
+                                                                        {{ 'Analyzed' | translate }}
+                                                                    </button>
+                                                                </ng-container>
+                                                                <ng-template #startButton>
+                                                                    <button type="button"
+                                                                            class="btn btn-sm btn-outline-success w-20"
+                                                                            (click)="startCapture(contact)">
+                                                                        {{ 'collector.start' | translate }}
+                                                                    </button>
+                                                                </ng-template>
                                                             </ng-template>
                                                         </div>
                                                     </td>
@@ -253,7 +271,9 @@
                                         <div
                                             class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
                                             <button type="button" class="btn btn-outline-primary w-1/2"
-                                                (click)="editUser(contact)">{{ 'collector.edit' | translate }}</button>
+                                                (click)="editUser(contact)"
+                                                [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.analysisCompleted"
+                                                [title]="contact.analysisCompleted ? ('Analyzed' | translate) : ''">{{ 'collector.edit' | translate }}</button>
                                             <button type="button" class="btn btn-outline-danger w-1/2"
                                                 (click)="deleteUser(contact)">{{ 'Delete' | translate }}</button>
                                         </div>
@@ -285,26 +305,45 @@
 
                                     <div class="mb-5" *ngIf="showChannels">
                                         <label for="ctnFile">{{ 'Channel' | translate }}</label>
-                                        <label class="inline-flex mr-5">
-                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full"
-                                                   [(ngModel)]="channelStates.channel1" />
-                                            <span>{{ 'Channel 1' | translate }}</span>
-                                        </label>
-                                        <label class="inline-flex mr-5">
-                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full"
-                                                   [(ngModel)]="channelStates.channel2" />
-                                            <span>{{ 'Channel 2' | translate }}</span>
-                                        </label>
-                                        <label class="inline-flex mr-5">
-                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full"
-                                                   [(ngModel)]="channelStates.channel3" />
-                                            <span>{{ 'Channel 3' | translate }}</span>
-                                        </label>
-                                        <label class="inline-flex mr-5">
-                                            <input type="checkbox" class="form-checkbox outline-primary rounded-full"
-                                                   [(ngModel)]="channelStates.channel4" />
-                                            <span>{{ 'Channel 4' | translate }}</span>
-                                        </label>
+
+                                        <!-- 如果有可用的 ports，显示基于接口的 channel 选择 -->
+                                        <div *ngIf="availablePorts.length > 0">
+                                            <label class="inline-flex mr-5" *ngFor="let port of availablePorts; let i = index">
+                                                <input type="checkbox" class="form-checkbox outline-primary rounded-full"
+                                                       [(ngModel)]="channelStates['channel' + (i + 1)]"
+                                                       [ngModelOptions]="{standalone: true}" />
+                                                <span>{{ 'Channel' | translate }} {{ port.id + 1 }} ({{ port.speed }})</span>
+                                            </label>
+                                        </div>
+
+                                        <!-- 如果没有可用的 ports，显示默认的 4 个 channel -->
+                                        <div *ngIf="availablePorts.length === 0">
+                                            <label class="inline-flex mr-5">
+                                                <input type="checkbox" class="form-checkbox outline-primary rounded-full"
+                                                       [(ngModel)]="channelStates['channel1']"
+                                                       [ngModelOptions]="{standalone: true}" />
+                                                <span>{{ 'Channel 1' | translate }}</span>
+                                            </label>
+                                            <label class="inline-flex mr-5">
+                                                <input type="checkbox" class="form-checkbox outline-primary rounded-full"
+                                                       [(ngModel)]="channelStates['channel2']"
+                                                       [ngModelOptions]="{standalone: true}" />
+                                                <span>{{ 'Channel 2' | translate }}</span>
+                                            </label>
+                                            <label class="inline-flex mr-5">
+                                                <input type="checkbox" class="form-checkbox outline-primary rounded-full"
+                                                       [(ngModel)]="channelStates['channel3']"
+                                                       [ngModelOptions]="{standalone: true}" />
+                                                <span>{{ 'Channel 3' | translate }}</span>
+                                            </label>
+                                            <label class="inline-flex mr-5">
+                                                <input type="checkbox" class="form-checkbox outline-primary rounded-full"
+                                                       [(ngModel)]="channelStates['channel4']"
+                                                       [ngModelOptions]="{standalone: true}" />
+                                                <span>{{ 'Channel 4' | translate }}</span>
+                                            </label>
+                                        </div>
+
                                         <div class="mt-2 text-xs text-gray-600 dark:text-gray-400">
                                             Port value: {{ calculatePortValue() }}
                                         </div>
