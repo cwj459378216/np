@@ -85,24 +85,6 @@
       <div class="panel h-full xl:col-span-2">
         <div class="mb-5 flex items-center justify-between dark:text-white-light">
           <h5 class="text-lg font-semibold">{{ 'Bandwidth' | translate }}</h5>
-          <div class="dropdown ltr:ml-auto rtl:mr-auto">
-            <div hlMenu>
-              <a hlMenuButton href="javascript:;" class="align-middle">
-                <icon-horizontal-dots class="text-black/70 hover:!text-primary dark:text-white/70" />
-              </a>
-              <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
-                <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Weekly' | translate }}</a>
-                </li>
-                <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Monthly' | translate }}</a>
-                </li>
-                <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Yearly' | translate }}</a>
-                </li>
-              </ul>
-            </div>
-          </div>
         </div>
         <p class="text-lg dark:text-white-light/90"> {{ 'Average bandwidth' | translate }}<span class="ml-2 text-primary">{{ averageBandwidth | number:'1.0-1' }}%</span></p>
         <div class="relative overflow-hidden">
@@ -126,24 +108,6 @@
       <div class="panel h-full xl:col-span-2">
         <div class="mb-5 flex items-center justify-between dark:text-white-light">
           <h5 class="text-lg font-semibold">{{ 'Protocol Transaction Trends' | translate }}</h5>
-          <div class="dropdown ltr:ml-auto rtl:mr-auto">
-            <div hlMenu>
-              <a hlMenuButton href="javascript:;" class="align-middle">
-                <icon-horizontal-dots class="text-black/70 hover:!text-primary dark:text-white/70" />
-              </a>
-              <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
-                <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Weekly' | translate }}</a>
-                </li>
-                <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Monthly' | translate }}</a>
-                </li>
-                <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Yearly' | translate }}</a>
-                </li>
-              </ul>
-            </div>
-          </div>
         </div>
         <p class="text-lg dark:text-white-light/90">{{ 'dashboard.flowCount' | translate }}<span class="ml-2 text-primary">{{ totalFlowCount | number }}</span></p>
         <div class="relative overflow-hidden">
@@ -283,24 +247,6 @@
       <div class="panel h-full xl:col-span-3">
         <div class="mb-5 flex items-center justify-between dark:text-white-light">
           <h5 class="text-lg font-semibold">{{ 'Network Protocol Trend Chart' | translate }}</h5>
-          <div class="dropdown ltr:ml-auto rtl:mr-auto">
-            <div hlMenu>
-              <a hlMenuButton href="javascript:;" class="align-middle">
-                <icon-horizontal-dots class="text-black/70 hover:!text-primary dark:text-white/70" />
-              </a>
-              <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
-                <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Weekly' | translate }}</a>
-                </li>
-                <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Monthly' | translate }}</a>
-                </li>
-                <li>
-                  <a href="javascript:;" *hlMenuItem="let menuItem">{{ 'Yearly' | translate }}</a>
-                </li>
-              </ul>
-            </div>
-          </div>
         </div>
   <p class="text-lg dark:text-white-light/90">{{ 'Flow Count' | translate }}<span class="ml-2 text-primary">{{ networkProtocolFlowCount | number }}</span></p>
         <div class="relative overflow-hidden">
