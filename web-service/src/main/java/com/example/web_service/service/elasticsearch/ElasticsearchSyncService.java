@@ -28,6 +28,9 @@ import com.example.web_service.model.es.widget.WidgetQueryRequest;
 import com.example.web_service.model.es.widget.WidgetFilter;
 import java.util.Optional;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch.core.DeleteByQueryResponse;
+import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
+import co.elastic.clients.elasticsearch._types.Conflicts;
 
 @Service
 public class ElasticsearchSyncService {
@@ -2019,5 +2022,48 @@ public class ElasticsearchSyncService {
                 "total", totalVal != null ? totalVal : docs.size(),
                 "data", docs
         );
+    }
+
+    /**
+     * Delete all documents across relevant indices associated with a given sessionId.
+     * This uses delete-by-query on multiple indices that may store data for a capture session.
+     * Indices included: conn-*, http-*, dns-*, smb_cmd-*, octopusx-data, zeek-* (if present).
+     */
+    public long deleteBySessionId(String sessionId) throws IOException {
+        if (sessionId == null || sessionId.isBlank()) {
+            return 0L;
+        }
+
+        // Build a bool query matching sessionId in either sessionId or uuid fields, also try filePath contains sessionId
+        BoolQuery.Builder bool = new BoolQuery.Builder();
+        bool.should(s -> s.term(t -> t.field("sessionId").value(v -> v.stringValue(sessionId))))
+            .should(s -> s.term(t -> t.field("uuid").value(v -> v.stringValue(sessionId))))
+            .should(s -> s.match(m -> m.field("filePath").query(sessionId)))
+            .minimumShouldMatch("1");
+        Query query = Query.of(q -> q.bool(bool.build()));
+
+        String[] indices = new String[] {
+            "conn-*", "http-*", "dns-*", "smb_cmd-*", "octopusx-data", "zeek-*"
+        };
+
+        long totalDeleted = 0L;
+        for (String indexPattern : indices) {
+            try {
+                DeleteByQueryRequest req = new DeleteByQueryRequest.Builder()
+                    .index(indexPattern)
+                    .query(query)
+                    .conflicts(Conflicts.Proceed)
+                    .refresh(true)
+                    .build();
+                DeleteByQueryResponse resp = esClient.deleteByQuery(req);
+                long deleted = resp.deleted();
+                log.info("deleteBySessionId: indexPattern={}, deleted={}", indexPattern, deleted);
+                totalDeleted += deleted;
+            } catch (Exception e) {
+                // Index pattern may not exist; log and continue
+                log.warn("deleteBySessionId failed on pattern {}: {}", indexPattern, e.getMessage());
+            }
+        }
+        return totalDeleted;
     }
 }

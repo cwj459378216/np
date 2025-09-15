@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.web_service.entity.Collector;
 import com.example.web_service.service.CollectorService;
 import com.example.web_service.service.LogService;
+import com.example.web_service.service.EsDeletionTaskService;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,8 @@ public class CollectorController {
     private CollectorService collectorService;
     @Autowired
     private LogService logService;
+    @Autowired
+    private EsDeletionTaskService esDeletionTaskService;
     
     @GetMapping
     public List<Collector> getAllCollectors() {
@@ -30,8 +33,23 @@ public class CollectorController {
     
     @DeleteMapping("/{id}")
     public void deleteCollector(@PathVariable Long id) {
+        // Only delete collector record here. ES deletion is handled by async endpoints.
         collectorService.deleteCollector(id);
-    logService.warn("admin", "Collector", "Delete collector id=" + id);
+        logService.warn("admin", "Collector", "Delete collector id=" + id);
+    }
+
+    // Start async ES deletion by collectorId
+    @PostMapping("/{id}/es-delete")
+    public Map<String, String> startEsDeletion(@PathVariable Long id) {
+        String taskId = esDeletionTaskService.startDeletion(id);
+        logService.info("admin", "Collector", "Start ES deletion for collector id=" + id + ", taskId=" + taskId);
+        return java.util.Map.of("taskId", taskId);
+    }
+
+    // Query async deletion status
+    @GetMapping("/es-delete/{taskId}")
+    public EsDeletionTaskService.TaskStatus getEsDeletionStatus(@PathVariable String taskId) {
+        return esDeletionTaskService.getStatus(taskId);
     }
     
     @GetMapping("/{id}")

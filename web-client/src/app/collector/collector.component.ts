@@ -528,15 +528,55 @@ export class CollectorComponent implements OnInit {
         padding: '2em'
     }).then((result) => {
         if (result.value) {
-            this.collectorService.deleteCollector(user.id).subscribe(
-                () => {
-                    this.loadCollectors();
-                    this.showMessage('Collector has been deleted successfully.');
-                },
-                error => {
-                    this.showMessage('Error deleting collector', 'error');
-                }
-            );
+            // 1) Start async ES deletion
+            Swal.fire({
+              title: 'Deleting... Please wait',
+              html: 'Deleting related data from Elasticsearch. This may take a while.',
+              allowOutsideClick: false,
+              didOpen: () => Swal.showLoading()
+            });
+
+            this.collectorService.startEsDelete(user.id).subscribe({
+              next: ({ taskId }) => {
+                // 2) Poll status until DONE/FAILED
+                const pollInterval = 3000;
+                const poller = setInterval(() => {
+                  this.collectorService.getEsDeleteStatus(taskId).subscribe({
+                    next: (s) => {
+                      if (!s || !s.state) return;
+                      if (s.state === 'DONE') {
+                        clearInterval(poller);
+                        // 3) After ES deletion, delete the collector record
+                        this.collectorService.deleteCollector(user.id).subscribe({
+                          next: () => {
+                            Swal.close();
+                            this.loadCollectors();
+                            this.showMessage('Collector has been deleted successfully.');
+                          },
+                          error: () => {
+                            Swal.close();
+                            this.showMessage('Error deleting collector record', 'error');
+                          }
+                        });
+                      } else if (s.state === 'FAILED') {
+                        clearInterval(poller);
+                        Swal.close();
+                        this.showMessage(`ES deletion failed: ${s.errorMessage || ''}`, 'error');
+                      }
+                    },
+                    error: () => {
+                      clearInterval(poller);
+                      Swal.close();
+                      this.showMessage('Failed to query deletion status', 'error');
+                    }
+                  });
+                }, pollInterval);
+              },
+              error: () => {
+                Swal.close();
+                this.showMessage('Failed to start ES deletion task', 'error');
+              }
+            });
         }
     });
   }
@@ -664,6 +704,10 @@ export class CollectorComponent implements OnInit {
         this.contactList.forEach(collector => {
           // 检查 status 为 running 或 STATUS_STARTED 的情况
           if (collector.sessionId && (collector.status === 'running' || collector.status === 'STATUS_STARTED')) {
+            // 如果当前为 running，进入页面即开始轮询
+            if (collector.status === 'running') {
+              this.startStatusPolling(collector);
+            }
             // 先获取一次当前状态
             this.collectorService.getSessionInfo(collector.sessionId).subscribe(
               (response: CaptureResponse) => {
@@ -673,11 +717,17 @@ export class CollectorComponent implements OnInit {
                   collector.status = 'completed';
                   // 持久化状态，但不清理 sessionId
                   this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
-                  // 注释掉清理sessionId的代码
-                  // this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
-                  // collector.sessionId = undefined;
                 } else {
                   collector.status = response.status;
+                }
+                // 错误或会话不存在，标记为异常
+                if (response && response.error !== 0) {
+                  const msg = (response.message || '').toLowerCase();
+                  if (!response.status || msg.includes('no session found')) {
+                    collector.status = 'error';
+                    this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+                    return;
+                  }
                 }
                 // 如果状态是 STATUS_STARTED，启动轮询
                 if (response.status === 'STATUS_STARTED') {
@@ -686,14 +736,9 @@ export class CollectorComponent implements OnInit {
               },
               error => {
                 console.error('Error getting session info:', error);
-                // 如果获取状态失败，将状态设置为 completed，但不删除sessionId
-                collector.status = 'completed';
-                // 注释掉清理sessionId的代码
-                // collector.sessionId = undefined;
-                // 更新数据库中的状态
-                this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
-                // 注释掉清理sessionId的代码
-                // this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
+                // 调用异常时标记为异常
+                collector.status = 'error';
+                this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
               }
             );
           }
@@ -1033,6 +1078,17 @@ export class CollectorComponent implements OnInit {
             // 更新状态
             collector.status = response.status;
 
+            // 如果返回错误或会话不存在，则标记为异常并停止轮询
+            if (response && response.error !== 0) {
+              const msg = (response.message || '').toLowerCase();
+              if (!response.status || msg.includes('no session found')) {
+                this.stopStatusPolling(collector.id);
+                collector.status = 'error';
+                this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+                return;
+              }
+            }
+
             // 只有当状态不是 STATUS_STARTED 时才停止轮询
             if (response.status !== 'STATUS_STARTED') {
               this.stopStatusPolling(collector.id);
@@ -1046,9 +1102,8 @@ export class CollectorComponent implements OnInit {
                 }
                 // 持久化完成状态，但不清理 sessionId
                 this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
-                // 注释掉清理sessionId的代码
-                // this.collectorService.updateCollectorSessionId(collector.id, '').subscribe();
-                // collector.sessionId = undefined;
+                // 刷新列表以反映UI变化
+                this.searchContacts();
               }
 
               // 仅在未完成时显示错误
@@ -1060,6 +1115,8 @@ export class CollectorComponent implements OnInit {
           error => {
             console.error('Error getting session info:', error);
             this.stopStatusPolling(collector.id);
+            collector.status = 'error';
+            this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
           }
         );
       }
@@ -1087,36 +1144,44 @@ export class CollectorComponent implements OnInit {
     // 保存sessionId用于API调用
     const sessionId = collector.sessionId;
 
-    // 立即停止状态轮询，不等待API响应
+    // 停止轮询，等待API返回后再更新状态
     this.stopStatusPolling(collector.id);
-    collector.status = 'completed';
-    collector.analysisCompleted = true; // 标记分析完成
-    // 注释掉清理sessionId的代码，保持sessionId
-    // collector.sessionId = undefined;
 
-    // 调用停止API，但不等待响应
+    // 显示加载中
+    Swal.fire({
+      title: 'Stopping...',
+      html: 'Waiting for stop to complete.',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
     this.collectorService.stopCapture(sessionId).subscribe(
       (response: CaptureResponse) => {
-        // 即使API调用成功，状态已经在上面更新了
-        this.showMessage('Capture stopped successfully');
-        
-        // 注释掉清除数据库中的 sessionId 的代码
-        // this.collectorService.updateCollectorSessionId(collector.id, '').subscribe(
-        //   () => {
-        //     this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
-        //   },
-        //   error => {
-        //     console.error('Error clearing session ID:', error);
-        //   }
-        // );
-        
-        // 只更新状态，不清除sessionId
-        this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+        Swal.close();
+        // 根据返回结果更新状态
+        const isFinished = response.status === 'completed' || response.status === 'STATUS_FINISHED';
+        const isSuccess = response && response.error === 0;
+        if (isFinished || isSuccess) {
+          collector.status = 'completed';
+          collector.analysisCompleted = true;
+          this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+          this.searchContacts();
+          this.showMessage('Capture stopped successfully');
+        } else if (response.error !== 0) {
+          // 停止失败，恢复为运行态并提示
+          collector.status = 'running';
+          this.showMessage(`Stop failed: ${response.message || 'Unknown error'}`, 'error');
+          // 不再继续轮询，避免状态不一致
+        } else {
+          // 未返回完成，但也未报错，保持服务器返回状态（可能为null），不轮询
+          collector.status = response.status || collector.status;
+        }
       },
       error => {
+        Swal.close();
         console.error('Error stopping capture:', error);
-        // 即使API调用失败，UI状态也已经更新了
-        this.showMessage('Capture stopped (API call may have failed)', 'warning');
+        // 失败则保持原状态（通常仍在运行），不再轮询
+        this.showMessage('Failed to stop capture', 'error');
       }
     );
   }

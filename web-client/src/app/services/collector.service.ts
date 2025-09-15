@@ -94,6 +94,15 @@ export interface CaptureFileItem {
   creationTime: string; // ISO string from backend
 }
 
+export interface EsDeleteTaskStatus {
+  taskId: string;
+  state: 'PENDING' | 'RUNNING' | 'DONE' | 'FAILED';
+  deletedCount?: number;
+  errorMessage?: string;
+  startedAt?: number;
+  finishedAt?: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -205,5 +214,15 @@ export class CollectorService {
   formData.append('file', file, file.name);
     formData.append('path', targetPath);
     return this.http.post<{ path: string }>(`${this.apiUrl}/capture-files/upload`, formData);
+  }
+
+  // Start async ES deletion for a collector
+  startEsDelete(collectorId: number): Observable<{ taskId: string }> {
+    return this.http.post<{ taskId: string }>(`${this.apiUrl}/collectors/${collectorId}/es-delete`, {});
+  }
+
+  // Get ES deletion task status
+  getEsDeleteStatus(taskId: string): Observable<EsDeleteTaskStatus> {
+    return this.http.get<EsDeleteTaskStatus>(`${this.apiUrl}/collectors/es-delete/${taskId}`);
   }
 }
