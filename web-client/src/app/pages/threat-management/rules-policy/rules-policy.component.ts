@@ -1,4 +1,4 @@
-import { Component, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { RulesPolicyService } from '../../../services/rules-policy.service';
@@ -35,19 +35,27 @@ export class RulesPolicyComponent implements AfterViewInit {
   availableRules: Rule[] = [];
   policies: RulesPolicy[] = [];
 
+  // 分页相关属性
+  currentPage = 1;
+  pageSize = 20;
+  totalElements = 0;
+  totalPages = 0;
+  loading = false;
+  needsSelectionUpdate = false;
+
   // 修改表格列配置
   ruleColumns = [
-    { field: 'id', title: 'ID', visible: false },
-    { field: 'sid', title: 'SID' },
-    { field: 'protocol', title: 'Protocol' },
-    { field: 'direction', title: 'Direction' },
-    { field: 'srcPort', title: 'Src.Port' },
-    { field: 'dstPort', title: 'Dst.Port' },
-    { field: 'msg', title: 'Message' },
-    { field: 'classType', title: 'ClassType' },
-    { field: 'priority', title: 'Priority' },
-    { field: 'cve', title: 'CVE' },
-    { field: 'filename', title: 'File' }
+    { field: 'id', title: 'ID', hide: true },
+    { field: 'sid', title: 'SID', hide: false },
+    { field: 'protocol', title: 'Protocol', hide: false },
+    { field: 'direction', title: 'Direction', hide: false },
+    { field: 'srcPort', title: 'Src.Port', hide: false },
+    { field: 'dstPort', title: 'Dst.Port', hide: false },
+    { field: 'msg', title: 'Message', hide: false },
+    { field: 'classType', title: 'ClassType', hide: false },
+    { field: 'priority', title: 'Priority', hide: false },
+    { field: 'cve', title: 'CVE', hide: false },
+    { field: 'filename', title: 'File', hide: true }
   ];
 
   // 添加策略规则数据
@@ -78,12 +86,14 @@ export class RulesPolicyComponent implements AfterViewInit {
   ];
   */
 
-  // 添加 document.body 的引用
-  documentBody = document.body;
+
+  // 添加 Math 对象引用，用于模板计算
+  Math = Math;
 
   constructor(
     private fb: FormBuilder,
-    private rulesPolicyService: RulesPolicyService
+    private rulesPolicyService: RulesPolicyService,
+    private cdr: ChangeDetectorRef
   ) {
     this.policyForm = this.fb.group({
       id: [''],
@@ -119,13 +129,53 @@ export class RulesPolicyComponent implements AfterViewInit {
   }
 
   loadRules(): void {
-    this.rulesPolicyService.getAllRules().subscribe(
-      (rules: Rule[]) => {
-        console.log('Loaded rules:', rules);
-        this.availableRules = rules;
+    this.loading = true;
+    // 后端API使用0作为第一页，前端ng-datatable使用1作为第一页，需要转换
+    const backendPage = this.currentPage - 1;
+    this.rulesPolicyService.getRulesPaginated(backendPage, this.pageSize, this.searchTerm).subscribe(
+      (response: any) => {
+        console.log('Loaded paginated rules:', response);
+
+        // 先更新数据
+        this.availableRules = response.content;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
+        this.loading = false;
+
+        // 立即标记需要应用选择状态
+        this.needsSelectionUpdate = true;
+
+        // 强制触发变更检测
+        this.cdr.detectChanges();
+
+        // 使用多个时间点尝试应用选择状态
+        setTimeout(() => {
+          this.applySelectionImmediately();
+        }, 100);
+
+        setTimeout(() => {
+          this.applySelectionImmediately();
+        }, 300);
+
+        setTimeout(() => {
+          this.applySelectionImmediately();
+        }, 500);
       },
       (error: Error) => {
         console.error('Error loading rules:', error);
+        this.loading = false;
+      }
+    );
+  }
+
+  loadAllRules(): void {
+    this.rulesPolicyService.getAllRules().subscribe(
+      (rules: Rule[]) => {
+        console.log('Loaded all rules:', rules);
+        this.availableRules = rules;
+      },
+      (error: Error) => {
+        console.error('Error loading all rules:', error);
       }
     );
   }
@@ -134,17 +184,22 @@ export class RulesPolicyComponent implements AfterViewInit {
     console.log('Edit rule called with policy:', policy);
     this.isInitializing = true;
 
+    // 重置表格状态
+    this.resetTableState();
+
     if (policy) {
       this.policyForm.patchValue(policy);
-      this.selectedRules = policy.rules || [];
+      // 保存要编辑的策略的规则，但先清空selectedRules，等数据加载完成后再设置
+      this.pendingEditPolicy = policy;
     } else {
       this.policyForm.reset();
-      this.selectedRules = [];
+      this.pendingEditPolicy = undefined;
     }
 
     this.addRuleModal.open();
 
-    this.pendingEditPolicy = policy;
+    // 重新加载规则数据
+    this.loadRules();
 
     const checkAndInitialize = () => {
       console.log('Checking datatable initialization...');
@@ -200,18 +255,22 @@ export class RulesPolicyComponent implements AfterViewInit {
       console.log('Handling edit mode with policy:', policy);
       const rows = this._datatable.rows;
 
-      this.selectedRules = this.selectedRules.filter(selected =>
+      // 设置要编辑的策略的规则
+      this.selectedRules = policy.rules || [];
+
+      // 过滤出当前页面存在的规则
+      const currentPageSelectedRules = this.selectedRules.filter(selected =>
         rows.some((row: Rule) => row.id === selected.id)
       );
 
       rows.forEach((row: Rule, index: number) => {
-        if (this.selectedRules.some(r => r.id === row.id)) {
+        if (currentPageSelectedRules.some(r => r.id === row.id)) {
           console.log('Selecting row:', index, row);
           this._datatable.selectRow(index);
         }
       });
 
-      if (this.selectedRules.length === rows.length) {
+      if (currentPageSelectedRules.length === rows.length && rows.length > 0) {
         console.log('Setting select all to true');
         this._datatable.selectAll(true);
       }
@@ -267,19 +326,73 @@ export class RulesPolicyComponent implements AfterViewInit {
       return;
     }
 
-    this.rulesPolicyService.updatePolicyStatus(id, checked).subscribe(
+    // 如果要启用当前策略，需要先禁用所有其他策略
+    if (checked) {
+      // 收集所有需要禁用的策略ID（除了当前策略）
+      const policiesToDisable = this.policies
+        .filter(p => p.id !== id && p.enabled)
+        .map(p => p.id);
+
+      if (policiesToDisable.length > 0) {
+        // 批量禁用其他策略
+        const disablePromises = policiesToDisable.map(policyId =>
+          this.rulesPolicyService.updatePolicyStatus(policyId, false).toPromise()
+        );
+
+        Promise.all(disablePromises).then(() => {
+          // 禁用成功后，更新本地状态
+          policiesToDisable.forEach(policyId => {
+            const policy = this.policies.find(p => p.id === policyId);
+            if (policy) {
+              policy.enabled = false;
+            }
+          });
+
+          // 然后启用当前策略
+          this.enableCurrentPolicy(id, policyToUpdate, target);
+        }).catch((error) => {
+          console.error('Error disabling other policies:', error);
+          // 发生错误时恢复复选框状态
+          target.checked = false;
+          this.showMessage('Failed to update policy status', 'error');
+        });
+      } else {
+        // 没有其他策略需要禁用，直接启用当前策略
+        this.enableCurrentPolicy(id, policyToUpdate, target);
+      }
+    } else {
+      // 禁用当前策略
+      this.disableCurrentPolicy(id, policyToUpdate, target);
+    }
+  }
+
+  private enableCurrentPolicy(id: number, policyToUpdate: any, target: HTMLInputElement): void {
+    this.rulesPolicyService.updatePolicyStatus(id, true).subscribe(
       () => {
-        console.log('Policy status updated');
-        // 直接更新本地状态，而不是重新加载
-        policyToUpdate.enabled = checked;
-        this.showMessage(`Policy ${checked ? 'enabled' : 'disabled'} successfully`);
+        console.log('Policy enabled successfully');
+        policyToUpdate.enabled = true;
+        this.showMessage(`Policy "${policyToUpdate.name}" enabled successfully`);
       },
       (error: Error) => {
-        console.error('Error updating policy status:', error);
-        // 发生错误时恢复复选框状态
-        target.checked = !checked;
-        policyToUpdate.enabled = !checked;
-        this.showMessage('Failed to update policy status', 'error');
+        console.error('Error enabling policy:', error);
+        target.checked = false;
+        this.showMessage('Failed to enable policy', 'error');
+      }
+    );
+  }
+
+  private disableCurrentPolicy(id: number, policyToUpdate: any, target: HTMLInputElement): void {
+    this.rulesPolicyService.updatePolicyStatus(id, false).subscribe(
+      () => {
+        console.log('Policy disabled successfully');
+        policyToUpdate.enabled = false;
+        this.showMessage(`Policy "${policyToUpdate.name}" disabled successfully`);
+      },
+      (error: Error) => {
+        console.error('Error disabling policy:', error);
+        target.checked = true;
+        policyToUpdate.enabled = true;
+        this.showMessage('Failed to disable policy', 'error');
       }
     );
   }
@@ -297,12 +410,26 @@ export class RulesPolicyComponent implements AfterViewInit {
   }
 
   onSelectedRulesChange(event: any): void {
-    console.log('Selected rows:', event);
-    this.selectedRules = event;
+    console.log('Selected rows changed:', event);
+
+    // 获取当前页面的所有规则ID
+    const currentPageRuleIds = this.availableRules.map(rule => rule.id);
+
+    // 移除当前页面的所有选择
+    this.selectedRules = this.selectedRules.filter(selected =>
+      !currentPageRuleIds.includes(selected.id)
+    );
+
+    // 添加当前页面的新选择
+    if (event && event.length > 0) {
+      this.selectedRules = [...this.selectedRules, ...event];
+    }
+
+    console.log('Updated selected rules:', this.selectedRules.length);
 
     if (this._datatable) {
       const totalRows = this._datatable.rows?.length || this.availableRules.length;
-      this._datatable.selectedAll = this.selectedRules.length === totalRows;
+      this._datatable.selectedAll = event && event.length === totalRows;
     }
   }
 
@@ -340,48 +467,6 @@ export class RulesPolicyComponent implements AfterViewInit {
     }
   }
 
-  getRuleTooltipContent(rules: Rule[] | undefined): string {
-    if (!rules || rules.length === 0) {
-        return '<div class="tooltip-table">No rules defined</div>';
-    }
-
-    return `
-        <div class="tooltip-table">
-            <table class="w-full table-auto">
-                <thead>
-                    <tr>
-                        <th>SID</th>
-                        <th>Protocol</th>
-                        <th>Direction</th>
-                        <th>Src.Port</th>
-                        <th>Dst.Port</th>
-                        <th>Message</th>
-                        <th>ClassType</th>
-                        <th>Priority</th>
-                        <th>CVE</th>
-                        <th>File</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rules.map(rule => `
-                        <tr>
-                            <td>${rule.sid ?? ''}</td>
-                            <td>${rule.protocol ?? ''}</td>
-                            <td>${rule.direction ?? ''}</td>
-                            <td>${rule.srcPort ?? ''}</td>
-                            <td>${rule.dstPort ?? ''}</td>
-                            <td>${rule.msg ?? ''}</td>
-                            <td>${rule.classType ?? ''}</td>
-                            <td>${rule.priority ?? ''}</td>
-                            <td>${rule.cve ?? ''}</td>
-                            <td>${rule.filename ?? ''}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-  }
 
   // 添加 onFilterChange 方法
   onFilterChange(event: any) {
@@ -412,6 +497,175 @@ export class RulesPolicyComponent implements AfterViewInit {
     if (this._datatable) {
       this._datatable.selectedAll = false;
     }
+  }
+
+  // 重置表格状态
+  private resetTableState(): void {
+    console.log('Resetting table state...');
+
+    // 重置分页状态
+    this.currentPage = 1;
+    this.pageSize = 20;
+    this.totalElements = 0;
+    this.totalPages = 0;
+
+    // 清除搜索条件
+    this.searchTerm = '';
+
+    // 重置加载状态
+    this.loading = false;
+
+    // 清除选择状态（在编辑模式下会在handleDatatableSelection中重新设置）
+    this.selectedRules = [];
+    this.needsSelectionUpdate = false;
+
+    // 重置datatable状态
+    if (this._datatable) {
+      this._datatable.selectedAll = false;
+      this._datatable.selectAll(false);
+    }
+
+    console.log('Table state reset completed');
+  }
+
+  // 立即应用选择状态
+  private applySelectionImmediately(): void {
+    console.log('Applying selection immediately, selected rules:', this.selectedRules.length);
+
+    if (!this._datatable || !this._datatable.rows || this._datatable.rows.length === 0) {
+      console.log('Datatable not ready, will retry...');
+      // 如果datatable还没准备好，再等一会儿
+      setTimeout(() => {
+        this.applySelectionImmediately();
+      }, 100);
+      return;
+    }
+
+    // 清除当前选择
+    this._datatable.selectAll(false);
+
+    if (this.selectedRules.length > 0) {
+      // 重新应用选择状态
+      const rows = this._datatable.rows;
+      let appliedCount = 0;
+
+      rows.forEach((row: Rule, index: number) => {
+        if (this.selectedRules.some(selected => selected.id === row.id)) {
+          console.log('Selecting row:', index, row);
+          this._datatable.selectRow(index);
+          appliedCount++;
+        }
+      });
+
+      // 检查是否需要设置全选状态
+      const selectedInCurrentPage = rows.filter((row: Rule) =>
+        this.selectedRules.some(selected => selected.id === row.id)
+      ).length;
+
+      if (selectedInCurrentPage === rows.length && rows.length > 0) {
+        console.log('Setting select all to true');
+        this._datatable.selectedAll = true;
+      }
+
+      console.log('Applied selection count:', appliedCount);
+    }
+
+    // 强制更新视图
+    this.cdr.detectChanges();
+
+    // 多次尝试直接操作DOM来确保选择状态显示
+    setTimeout(() => {
+      this.forceUpdateCheckboxes();
+    }, 10);
+
+    setTimeout(() => {
+      this.forceUpdateCheckboxes();
+    }, 50);
+
+    setTimeout(() => {
+      this.forceUpdateCheckboxes();
+    }, 100);
+  }
+
+  // 强制更新复选框状态
+  private forceUpdateCheckboxes(): void {
+    const datatableElement = document.querySelector('.datatable');
+    if (!datatableElement) return;
+
+    const checkboxes = datatableElement.querySelectorAll('input[type="checkbox"]');
+    console.log('Found checkboxes:', checkboxes.length);
+
+    if (this.selectedRules.length > 0 && this._datatable && this._datatable.rows) {
+      const rows = this._datatable.rows;
+
+      rows.forEach((row: Rule, index: number) => {
+        if (this.selectedRules.some(selected => selected.id === row.id)) {
+          // 找到对应的复选框并设置为选中状态
+          const checkbox = checkboxes[index + 1]; // +1 因为第一个是全选复选框
+          if (checkbox && checkbox instanceof HTMLInputElement) {
+            checkbox.checked = true;
+            console.log('Force checked checkbox for row:', index);
+          }
+        }
+      });
+
+      // 检查全选复选框
+      const selectAllCheckbox = checkboxes[0];
+      if (selectAllCheckbox && selectAllCheckbox instanceof HTMLInputElement) {
+        const selectedInCurrentPage = rows.filter((row: Rule) =>
+          this.selectedRules.some(selected => selected.id === row.id)
+        ).length;
+
+        if (selectedInCurrentPage === rows.length && rows.length > 0) {
+          selectAllCheckbox.checked = true;
+          console.log('Force checked select all checkbox');
+        } else {
+          selectAllCheckbox.checked = false;
+        }
+      }
+    }
+  }
+
+  // datatable准备就绪事件
+  onDatatableReady(): void {
+    console.log('Datatable ready event triggered');
+    // 如果数据已经加载完成且有选择状态，立即应用
+    if (!this.loading && this.selectedRules.length > 0) {
+      setTimeout(() => {
+        this.applySelectionImmediately();
+      }, 50);
+    }
+  }
+
+  // 获取当前页面的选中行
+  getSelectedRowsForCurrentPage(): Rule[] {
+    if (!this.availableRules || this.availableRules.length === 0) {
+      return [];
+    }
+
+    return this.availableRules.filter(rule =>
+      this.selectedRules.some(selected => selected.id === rule.id)
+    );
+  }
+
+  // 服务器端分页、排序、搜索事件处理
+  onServerChange(event: any): void {
+    console.log('Server change event:', event);
+
+    if (event.current_page !== undefined) {
+      this.currentPage = event.current_page;
+    }
+
+    if (event.page_size !== undefined) {
+      this.pageSize = event.page_size;
+    }
+
+    if (event.search !== undefined) {
+      this.searchTerm = event.search;
+    }
+
+    // 重新加载数据
+    this.loadRules();
   }
 
   // 添加 showMessage 方法

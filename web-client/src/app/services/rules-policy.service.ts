@@ -55,6 +55,14 @@ export class RulesPolicyService {
     return this.http.get<Rule[]>(`${this.apiUrl}/rules`);
   }
 
+  getRulesPaginated(page: number = 0, size: number = 20, search?: string): Observable<any> {
+    let url = `${this.apiUrl}/rules/paginated?page=${page}&size=${size}`;
+    if (search && search.trim()) {
+      url += `&search=${encodeURIComponent(search.trim())}`;
+    }
+    return this.http.get<any>(url);
+  }
+
   updatePolicyStatus(id: number, enabled: boolean): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/${id}/status`, { enabled });
   }

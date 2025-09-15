@@ -7,6 +7,10 @@ import com.example.web_service.repository.RulesPolicyRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,6 +36,31 @@ public class RulesPolicyService {
             return rules;
         } catch (Exception e) {
             log.error("Error getting rules", e);
+            throw e;
+        }
+    }
+
+    public Page<Rule> getRulesPaginated(Pageable pageable, String search) {
+        try {
+            Page<Rule> rulesPage;
+            if (search != null && !search.trim().isEmpty()) {
+                // 这里可以根据需要实现搜索逻辑，比如按SID、协议、消息等字段搜索
+                // 暂时使用简单的findAll，后续可以添加自定义查询
+                rulesPage = ruleRepository.findAll(pageable);
+            } else {
+                // 按SID排序
+                Pageable sortedPageable = PageRequest.of(
+                    pageable.getPageNumber(), 
+                    pageable.getPageSize(), 
+                    Sort.by("sid").ascending()
+                );
+                rulesPage = ruleRepository.findAll(sortedPageable);
+            }
+            log.info("Found {} rules for page {} of {} with search: {}", 
+                rulesPage.getContent().size(), pageable.getPageNumber(), rulesPage.getTotalPages(), search);
+            return rulesPage;
+        } catch (Exception e) {
+            log.error("Error getting paginated rules", e);
             throw e;
         }
     }

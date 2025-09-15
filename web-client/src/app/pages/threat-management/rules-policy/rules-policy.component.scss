@@ -6,7 +6,7 @@
     max-height: 90vh;
     margin: 2.5vh auto;
   }
-  
+
   .modal-body {
     height: calc(90vh - 130px);
     overflow-y: auto;
@@ -29,85 +29,5 @@
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.tooltip-table {
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    background: white;
-    min-width: 800px;
-    
-    th, td {
-      padding: 10px 15px;
-      text-align: left;
-      font-size: 13px;
-      border: 1px solid #e5e7eb;
-      white-space: nowrap;
-    }
-    
-    th {
-      background-color: #f8fafc;
-      font-weight: 600;
-      color: #3b3f5c;
-    }
-    
-    td {
-      color: #3b3f5c;
-      background: white;
-    }
 
-    tr:nth-child(even) td {
-      background-color: #f9fafb;
-    }
-    
-    tr:hover td {
-      background-color: #f3f4f6;
-    }
-  }
-}
 
-:host {
-    .tooltip-table {
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            background: white;
-            
-            th, td {
-                border: 1px solid #e5e7eb;
-                padding: 8px;
-                text-align: left;
-                font-size: 12px;
-            }
-            
-            th {
-                background-color: #f8f9fa;
-                font-weight: 600;
-            }
-            
-            tr:nth-child(even) {
-                background-color: #f9fafb;
-            }
-            
-            tr:hover {
-                background-color: #f3f4f6;
-            }
-        }
-    }
-} 
-
-::ng-deep {
-  .tippy-box[data-theme='light'] {
-    background-color: white;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    color: initial;
-    .tippy-content {
-      padding: 0;
-    }
-    
-    .tippy-arrow {
-      display: none;
-    }
-  }
-} 

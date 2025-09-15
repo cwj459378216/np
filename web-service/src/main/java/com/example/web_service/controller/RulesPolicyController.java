@@ -4,6 +4,9 @@ import com.example.web_service.entity.Rule;
 import com.example.web_service.entity.RulesPolicy;
 import com.example.web_service.service.RulesPolicyService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +41,35 @@ public class RulesPolicyController {
             return rules;
         } catch (Exception e) {
             log.error("Error getting rules", e);
+            throw e;
+        }
+    }
+
+    @GetMapping("/rules/paginated")
+    @Operation(summary = "分页获取可用规则")
+    public Map<String, Object> getRulesPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Rule> rulesPage = rulesPolicyService.getRulesPaginated(pageable, search);
+            
+            Map<String, Object> response = Map.of(
+                "content", rulesPage.getContent(),
+                "totalElements", rulesPage.getTotalElements(),
+                "totalPages", rulesPage.getTotalPages(),
+                "currentPage", rulesPage.getNumber(),
+                "size", rulesPage.getSize(),
+                "hasNext", rulesPage.hasNext(),
+                "hasPrevious", rulesPage.hasPrevious()
+            );
+            
+            log.info("Returning {} rules for page {} of {}", 
+                rulesPage.getContent().size(), page, rulesPage.getTotalPages());
+            return response;
+        } catch (Exception e) {
+            log.error("Error getting paginated rules", e);
             throw e;
         }
     }
