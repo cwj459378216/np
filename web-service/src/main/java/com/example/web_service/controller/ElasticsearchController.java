@@ -161,6 +161,63 @@ public class ElasticsearchController {
             @RequestParam String filePath,
             @RequestParam(defaultValue = "*") String index
     ) throws IOException {
+        // 统一输出格式为: yyyy-MM-dd'T'HH:mm:ss （UTC，无小数，无时区后缀）
+        final java.time.format.DateTimeFormatter targetFormatter =
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+                .withZone(java.time.ZoneOffset.UTC);
+
+        // 将不同格式的时间戳（ISO字符串/epoch毫秒/epoch秒(含小数)）统一到上述格式
+        java.util.function.Function<Object, String> normalizeTimestamp = (value) -> {
+            if (value == null) {
+                return null;
+            }
+            try {
+                if (value instanceof String) {
+                    String text = ((String) value).trim();
+                    // 先尝试按ISO-8601解析
+                    try {
+                        java.time.Instant instant = java.time.Instant.parse(text);
+                        return targetFormatter.format(instant);
+                    } catch (Exception ignore) { /* fallback to numeric parsing */ }
+
+                    // 再尝试按数字解析（可能是秒、毫秒，秒可能带小数）
+                    if (text.matches("^-?\\d+(\\.\\d+)?$") ) {
+                        double numeric = Double.parseDouble(text);
+                        if (numeric > 1.0e12) { // 绝大多数情况下是毫秒
+                            long millis = (long) numeric;
+                            java.time.Instant instant = java.time.Instant.ofEpochMilli(millis);
+                            return targetFormatter.format(instant);
+                        } else { // 视为秒（可能带小数）
+                            long seconds = (long) Math.floor(numeric);
+                            long nanos = (long) Math.round((numeric - seconds) * 1_000_000_000L);
+                            java.time.Instant instant = java.time.Instant.ofEpochSecond(seconds, nanos);
+                            return targetFormatter.format(instant);
+                        }
+                    }
+                } else if (value instanceof Number) {
+                    double numeric = ((Number) value).doubleValue();
+                    if (numeric > 1.0e12) { // 毫秒
+                        long millis = (long) numeric;
+                        java.time.Instant instant = java.time.Instant.ofEpochMilli(millis);
+                        return targetFormatter.format(instant);
+                    } else { // 秒（可能带小数）
+                        long seconds = (long) Math.floor(numeric);
+                        long nanos = (long) Math.round((numeric - seconds) * 1_000_000_000L);
+                        java.time.Instant instant = java.time.Instant.ofEpochSecond(seconds, nanos);
+                        return targetFormatter.format(instant);
+                    }
+                } else if (value instanceof java.util.Date) {
+                    java.time.Instant instant = java.time.Instant.ofEpochMilli(((java.util.Date) value).getTime());
+                    return targetFormatter.format(instant);
+                } else if (value instanceof java.time.Instant) {
+                    return targetFormatter.format((java.time.Instant) value);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to normalize timestamp value: {}", value, e);
+            }
+            return String.valueOf(value);
+        };
+
         // 构建查询条件，只根据filePath过滤，不限制时间
         Query query = Query.of(q -> q
             .bool(b -> b
@@ -210,7 +267,8 @@ public class ElasticsearchController {
             if (firstHit.source() != null) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> firstRecord = (Map<String, Object>) firstHit.source().to(Map.class);
-                firstTimestamp = (String) firstRecord.get("timestamp");
+                Object ts = firstRecord.get("timestamp");
+                firstTimestamp = normalizeTimestamp.apply(ts);
             }
         }
         
@@ -219,7 +277,8 @@ public class ElasticsearchController {
             if (lastHit.source() != null) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> lastRecord = (Map<String, Object>) lastHit.source().to(Map.class);
-                lastTimestamp = (String) lastRecord.get("timestamp");
+                Object ts = lastRecord.get("timestamp");
+                lastTimestamp = normalizeTimestamp.apply(ts);
             }
         }
 
