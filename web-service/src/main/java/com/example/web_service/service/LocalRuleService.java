@@ -106,6 +106,7 @@ public class LocalRuleService {
             if (bodyObj instanceof Map) {
                 Map<?, ?> map = (Map<?, ?>) bodyObj;
                 Boolean success = null;
+                // 1) Common boolean-bearing keys
                 Object[] keys = new Object[] {"valid", "isValid", "success", "result", "data"};
                 for (Object k : keys) {
                     if (map.containsKey(k)) {
@@ -113,6 +114,26 @@ public class LocalRuleService {
                         if (v instanceof Boolean) success = (Boolean) v;
                         else if (v instanceof String) success = Boolean.parseBoolean(((String) v).trim());
                         if (success != null) break;
+                    }
+                }
+                // 2) Numeric error code conventions: error == 0 means success
+                if (success == null && map.containsKey("error")) {
+                    Object err = map.get("error");
+                    if (err instanceof Number) {
+                        success = ((Number) err).intValue() == 0;
+                    } else if (err instanceof String) {
+                        try {
+                            success = Integer.parseInt(((String) err).trim()) == 0;
+                        } catch (NumberFormatException ignore) {}
+                    }
+                }
+                // 3) Status strings
+                if (success == null && map.containsKey("status")) {
+                    Object st = map.get("status");
+                    if (st instanceof String) {
+                        String s = ((String) st).trim().toLowerCase();
+                        if ("ok".equals(s) || "success".equals(s)) success = true;
+                        if ("error".equals(s) || "fail".equals(s) || "failed".equals(s)) success = false;
                     }
                 }
                 String message = null;
