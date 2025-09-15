@@ -107,35 +107,52 @@ export class LocalRulesComponent implements OnInit {
         }
 
         const rule = this.params.value;
+        // must pass Test Rule before saving
+        this.localRuleService.testRule(rule.rule_content).subscribe({
+            next: (result: { success: boolean; message?: string }) => {
+                if (!result?.success) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Rule Test Failed',
+                        text: result?.message || 'The rule syntax is invalid. Please check and try again.',
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
 
-        if (rule.id) {
-            this.localRuleService.updateRule(rule.id, rule).subscribe({
-                next: (updatedRule: LocalRule) => {
-                    const index = this.localRules.findIndex(r => r.id === updatedRule.id);
-                    if (index !== -1) {
-                        this.localRules[index] = updatedRule;
-                    }
-                    this.searchRules();
-                    this.showMessage('Rule has been updated successfully.');
-                    this.addRuleModal.close();
-                },
-                error: (error: Error) => {
-                    this.showMessage('Failed to update rule', 'error');
+                if (rule.id) {
+                    this.localRuleService.updateRule(rule.id, rule).subscribe({
+                        next: (updatedRule: LocalRule) => {
+                            const index = this.localRules.findIndex(r => r.id === updatedRule.id);
+                            if (index !== -1) {
+                                this.localRules[index] = updatedRule;
+                            }
+                            this.searchRules();
+                            this.showMessage('Rule has been updated successfully.');
+                            this.addRuleModal.close();
+                        },
+                        error: (error: Error) => {
+                            this.showMessage('Failed to update rule', 'error');
+                        }
+                    });
+                } else {
+                    this.localRuleService.createRule(rule).subscribe({
+                        next: (newRule: LocalRule) => {
+                            this.localRules.unshift(newRule);
+                            this.searchRules();
+                            this.showMessage('Rule has been created successfully.');
+                            this.addRuleModal.close();
+                        },
+                        error: (error: Error) => {
+                            this.showMessage('Failed to create rule', 'error');
+                        }
+                    });
                 }
-            });
-        } else {
-            this.localRuleService.createRule(rule).subscribe({
-                next: (newRule: LocalRule) => {
-                    this.localRules.unshift(newRule);
-                    this.searchRules();
-                    this.showMessage('Rule has been created successfully.');
-                    this.addRuleModal.close();
-                },
-                error: (error: Error) => {
-                    this.showMessage('Failed to create rule', 'error');
-                }
-            });
-        }
+            },
+            error: () => {
+                this.showMessage('Failed to test rule', 'error');
+            }
+        });
     }
 
     deleteRule(rule: LocalRule) {
@@ -218,8 +235,8 @@ export class LocalRulesComponent implements OnInit {
         });
 
         this.localRuleService.testRule(this.params.value.rule_content).subscribe({
-            next: (isValid: boolean) => {
-                if (isValid) {
+            next: (result: { success: boolean; message?: string }) => {
+                if (result?.success) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Rule Test Successful',
@@ -230,7 +247,7 @@ export class LocalRulesComponent implements OnInit {
                     Swal.fire({
                         icon: 'error',
                         title: 'Rule Test Failed',
-                        text: 'The rule syntax is invalid. Please check and try again.',
+                        text: result?.message || 'The rule syntax is invalid. Please check and try again.',
                         confirmButtonText: 'OK'
                     });
                 }
@@ -239,7 +256,7 @@ export class LocalRulesComponent implements OnInit {
                 Swal.fire({
                     icon: 'error',
                     title: 'Test Failed',
-                    text: 'An error occurred while testing the rule.',
+                    text: (error as any)?.error?.message || 'An error occurred while testing the rule.',
                     confirmButtonText: 'OK'
                 });
             }

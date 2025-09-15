@@ -2,10 +2,16 @@ package com.example.web_service.service;
 
 import com.example.web_service.dto.LocalRuleDTO;
 import com.example.web_service.entity.LocalRule;
+import com.example.web_service.dto.RuleTestResultDTO;
 import com.example.web_service.repository.LocalRuleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.io.IOException;
+import java.util.Map;
 
 @Service
 public class LocalRuleService {
@@ -29,6 +36,12 @@ public class LocalRuleService {
 
     @Value("${suricata.customer.rules.path:/datastore/user/admin/apps/suricata/share/suricata/rules/customer.rules}")
     private String customerRulesPath;
+    
+    @Value("${third-party.base-url}")
+    private String thirdPartyBaseUrl;
+
+    @Autowired
+    private RestTemplate restTemplate;
     
     public List<LocalRuleDTO> getAllRules() {
         return localRuleRepository.findAll().stream()
@@ -62,10 +75,68 @@ public class LocalRuleService {
         syncEnabledRulesToFile();
     }
     
-    public boolean testRule(String ruleContent) {
-        return ruleContent != null && 
-               ruleContent.contains("alert") && 
-               ruleContent.contains("->");
+    public RuleTestResultDTO testRule(String ruleContent) {
+        if (ruleContent == null || ruleContent.trim().isEmpty()) {
+            return new RuleTestResultDTO(false, "rule_content is empty");
+        }
+
+        Path tmpRulePath = Path.of("/tmp/loadrules.rules");
+        try {
+            Files.write(tmpRulePath, List.of(ruleContent.trim()), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+        } catch (IOException e) {
+            log.error("Failed writing test rule to {}: {}", tmpRulePath, e.toString(), e);
+            return new RuleTestResultDTO(false, "write rule file failed: " + e.getMessage());
+        }
+
+        String base = thirdPartyBaseUrl != null ? thirdPartyBaseUrl.replaceAll("/+?$", "") : "";
+        String url = base + "/checkSuricataRule";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String body = String.format("{\"ruleFilePath\":\"%s\"}", tmpRulePath.toString());
+        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        try {
+            ResponseEntity<Object> response = restTemplate.postForEntity(url, entity, Object.class);
+            Object bodyObj = response.getBody();
+            if (bodyObj == null) {
+                return new RuleTestResultDTO(false, "empty response");
+            }
+            if (bodyObj instanceof Boolean) {
+                return new RuleTestResultDTO((Boolean) bodyObj, null);
+            }
+            if (bodyObj instanceof Map) {
+                Map<?, ?> map = (Map<?, ?>) bodyObj;
+                Boolean success = null;
+                Object[] keys = new Object[] {"valid", "isValid", "success", "result", "data"};
+                for (Object k : keys) {
+                    if (map.containsKey(k)) {
+                        Object v = map.get(k);
+                        if (v instanceof Boolean) success = (Boolean) v;
+                        else if (v instanceof String) success = Boolean.parseBoolean(((String) v).trim());
+                        if (success != null) break;
+                    }
+                }
+                String message = null;
+                Object msg = map.get("message");
+                if (msg instanceof String) message = (String) msg;
+                if (success == null) {
+                    log.warn("Unexpected response map from Suricata rule check: {}", map);
+                    return new RuleTestResultDTO(false, message != null ? message : "unexpected response");
+                }
+                return new RuleTestResultDTO(success, message);
+            }
+            if (bodyObj instanceof String) {
+                String str = ((String) bodyObj).trim();
+                if ("true".equalsIgnoreCase(str) || "false".equalsIgnoreCase(str)) {
+                    return new RuleTestResultDTO(Boolean.parseBoolean(str), null);
+                }
+                return new RuleTestResultDTO(false, str);
+            }
+            log.warn("Unexpected response format from Suricata rule check: {}", bodyObj);
+            return new RuleTestResultDTO(false, "unexpected response");
+        } catch (Exception ex) {
+            log.error("Error calling Suricata rule check at {}: {}", url, ex.toString(), ex);
+            return new RuleTestResultDTO(false, ex.getMessage());
+        }
     }
     
     private LocalRuleDTO convertToDTO(LocalRule rule) {
@@ -126,4 +197,4 @@ public class LocalRuleService {
             }
         }
     }
-} 
+}

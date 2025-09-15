@@ -44,8 +44,8 @@ export class LocalRuleService {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
-    testRule(ruleContent: string): Observable<boolean> {
+    testRule(ruleContent: string): Observable<{ success: boolean; message?: string }> {
         const payload = { rule_content: ruleContent };
-        return this.http.post<boolean>(`${this.apiUrl}/test`, payload);
+        return this.http.post<{ success: boolean; message?: string }>(`${this.apiUrl}/test`, payload);
     }
 }

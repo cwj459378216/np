@@ -1,6 +1,7 @@
 package com.example.web_service.controller;
 
 import com.example.web_service.dto.LocalRuleDTO;
+import com.example.web_service.dto.RuleTestResultDTO;
 import com.example.web_service.service.LocalRuleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +38,7 @@ public class LocalRuleController {
     }
 
     @PostMapping("/test")
-    public ResponseEntity<Boolean> testRule(@RequestBody String ruleContent) {
-        return ResponseEntity.ok(localRuleService.testRule(ruleContent));
+    public ResponseEntity<RuleTestResultDTO> testRule(@RequestBody LocalRuleDTO payload) {
+        return ResponseEntity.ok(localRuleService.testRule(payload.getRule_content()));
     }
 } 
