@@ -7,7 +7,7 @@ import Swal from 'sweetalert2';
 import { Store } from '@ngrx/store';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
 import { CollectorService } from 'src/app/services/collector.service';
-import { Collector, StorageStrategy, CaptureRequest, CaptureResponse, CaptureFileItem } from '../services/collector.service';
+import { Collector, StorageStrategy, CaptureRequest, CaptureResponse, CaptureFileItem, SessionConnStats, SessionEventCount, SessionTrafficItem } from '../services/collector.service';
 
 interface ContactList extends Collector {
   role?: string;
@@ -21,6 +21,12 @@ interface ContactList extends Collector {
   action?: string;
   sessionId?: string;
   analysisCompleted?: boolean; // 新增：分析完成状态
+  // 展示指标
+  uiAdapter?: string;
+  uiDuration?: number | null;
+  uiLogs?: number | null;
+  uiEvents?: number | null;
+  uiTrafficSeries?: any[] | null;
 }
 
 @Component({
@@ -697,7 +703,11 @@ export class CollectorComponent implements OnInit {
           path: 'profile-35.png',
           action: '',
           creationTime: this.formatDate(collector.creationTime),
-          analysisCompleted: collector.status === 'completed' || collector.status === 'STATUS_FINISHED' // 初始化分析完成状态
+          analysisCompleted: collector.status === 'completed' || collector.status === 'STATUS_FINISHED', // 初始化分析完成状态
+          uiAdapter: collector.interfaceName,
+          uiDuration: null,
+          uiLogs: null,
+          uiEvents: null
         }));
 
         // 检查并为正在运行的抓包任务启动状态轮询
@@ -746,12 +756,61 @@ export class CollectorComponent implements OnInit {
           }
         });
 
+        // 为每个有sessionId的条目加载ES指标
+        this.contactList.forEach(c => {
+          if (c.sessionId) {
+            this.loadSessionMetrics(c);
+          }
+        });
+
         this.searchContacts();
       },
       error => {
         console.error('Error loading collectors:', error);
       }
     );
+  }
+
+  private loadSessionMetrics(collector: ContactList) {
+    const sessionId = collector.sessionId as string;
+    // 仅示例：不限定时间范围，后续可接入基于文件时间或UI选择的时间
+    this.collectorService.getSessionConnStats(sessionId).subscribe({
+      next: (s: SessionConnStats) => {
+        collector.uiLogs = s.logs ?? 0;
+        collector.uiDuration = s.avgConnDuration ?? 0;
+      },
+      error: () => {}
+    });
+
+    this.collectorService.getSessionEventCount(sessionId).subscribe({
+      next: (e: SessionEventCount) => {
+        collector.uiEvents = e.eventCount ?? 0;
+      },
+      error: () => {}
+    });
+
+    // 直接根据 sessionId 请求会话流量，服务端限制最多20个点
+    this.collectorService.getSessionTraffic(sessionId, undefined, undefined, 20).subscribe({
+      next: (items: SessionTrafficItem[]) => {
+        const groups: { [port: string]: [number, number][] } = {};
+        for (const it of items || []) {
+          const portKey = String(it.port ?? 0);
+          const ts = typeof it.timestamp === 'number' ? (it.timestamp as unknown as number) : (it.timestamp ? new Date(it.timestamp).getTime() : Date.now());
+          const utilNum = it.util != null ? parseFloat(String(it.util)) : 0;
+          if (!groups[portKey]) groups[portKey] = [];
+          groups[portKey].push([ts, utilNum]);
+        }
+        Object.values(groups).forEach(arr => arr.sort((a, b) => a[0] - b[0]));
+        const series = Object.keys(groups).map(k => ({
+          name: `Channel ${Number(k) + 1} Utilization`,
+          data: groups[k]
+        }));
+        collector.uiTrafficSeries = series.length ? series : null;
+      },
+      error: () => {
+        collector.uiTrafficSeries = null;
+      }
+    });
   }
 
   loadStorageStrategies() {

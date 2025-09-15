@@ -103,6 +103,39 @@ export interface EsDeleteTaskStatus {
   finishedAt?: number;
 }
 
+export interface SessionConnStats {
+  sessionId: string;
+  logs: number;
+  avgConnDuration: number | null;
+}
+
+export interface SessionEventCount {
+  sessionId: string;
+  eventCount: number;
+}
+
+export interface SessionTrafficItem {
+  errorPackets?: number;
+  pps?: number;
+  bps?: number;
+  util?: string;
+  port?: number;
+  filePath?: string;
+  totalBytes?: number;
+  dropPackets?: number;
+  tage?: string;
+  totalPackets?: number;
+  timestamp?: string;
+}
+
+export interface EsTimeRangeByFilePathResp {
+  filePath: string;
+  firstTimestamp: string | null;
+  lastTimestamp: string | null;
+  hasData: boolean;
+  isDefaultRange: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -224,5 +257,34 @@ export class CollectorService {
   // Get ES deletion task status
   getEsDeleteStatus(taskId: string): Observable<EsDeleteTaskStatus> {
     return this.http.get<EsDeleteTaskStatus>(`${this.apiUrl}/collectors/es-delete/${taskId}`);
+  }
+
+  // ========== Session-based ES queries ==========
+  getSessionConnStats(sessionId: string, startTime?: number, endTime?: number): Observable<SessionConnStats> {
+    const params: any = { sessionId };
+    if (startTime != null) params.startTime = startTime;
+    if (endTime != null) params.endTime = endTime;
+    return this.http.get<SessionConnStats>(`${this.apiUrl}/es/session/conn-stats`, { params });
+  }
+
+  getSessionEventCount(sessionId: string, startTime?: number, endTime?: number): Observable<SessionEventCount> {
+    const params: any = { sessionId };
+    if (startTime != null) params.startTime = startTime;
+    if (endTime != null) params.endTime = endTime;
+    return this.http.get<SessionEventCount>(`${this.apiUrl}/es/session/event-count`, { params });
+  }
+
+  getSessionTraffic(sessionId: string, startTime?: number, endTime?: number, desiredPoints?: number): Observable<SessionTrafficItem[]> {
+    const params: any = { sessionId };
+    if (startTime != null) params.startTime = startTime;
+    if (endTime != null) params.endTime = endTime;
+    if (desiredPoints != null) params.desiredPoints = desiredPoints;
+    return this.http.get<SessionTrafficItem[]>(`${this.apiUrl}/es/session/traffic`, { params });
+  }
+
+  // Query ES time range by filePath in a specific index pattern
+  getEsTimeRangeByFilePath(filePath: string, index: string = 'octopusx-data-*'): Observable<EsTimeRangeByFilePathResp> {
+    const params: any = { filePath, index };
+    return this.http.get<EsTimeRangeByFilePathResp>(`${this.apiUrl}/es/query-by-filepath`, { params });
   }
 }

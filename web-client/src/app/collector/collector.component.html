@@ -192,7 +192,7 @@
                                                     [src]="'/assets/images/' + contact.path" />
                                             </ng-container> -->
                                             <div class="relative overflow-hidden">
-                                                <apx-chart [series]="revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
+                                                <apx-chart [series]="contact.uiTrafficSeries || revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
                                                   [stroke]="revenueChart.stroke" [colors]="revenueChart.colors" [markers]="revenueChart.markers"
                                                   [labels]="revenueChart.labels" [xaxis]="revenueChart.xaxis" [yaxis]="revenueChart.yaxis"
                                                   [grid]="revenueChart.grid" [legend]="revenueChart.legend" [tooltip]="revenueChart.tooltip"
@@ -211,15 +211,15 @@
                                                 <div class="text-white-dark">{{ contact.role }}</div>
                                                 <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
                                                     <div class="flex-auto">
-                                                        <div class="text-info">{{ contact.posts }}</div>
+                                                        <div class="text-info">{{ contact.uiDuration ?? 0 | number:'1.0-3' }}</div>
                                                         <div>{{ 'Duration' | translate }}</div>
                                                     </div>
                                                     <div class="flex-auto">
-                                                        <div class="text-info">{{ contact.following }}</div>
+                                                        <div class="text-info">{{ contact.uiEvents ?? 0 }}</div>
                                                         <div>{{ 'Event' | translate }}</div>
                                                     </div>
                                                     <div class="flex-auto">
-                                                        <div class="text-info">{{ contact.followers }}</div>
+                                                        <div class="text-info">{{ contact.uiLogs ?? 0 }}</div>
                                                         <div>{{ 'Logs' | translate }}</div>
                                                     </div>
                                                 </div>
@@ -260,11 +260,11 @@
                                                 </div>
                                                 <div class="flex items-center">
                                                     <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'Adapter :' | translate }}</div>
-                                                    <div class="text-white-dark">DPDK</div>
+                                                    <div class="text-white-dark">{{ contact.uiAdapter }}</div>
                                                 </div>
-                                                <div class="flex items-center">
+                                                <div class="flex items-center" *ngIf="contact.uiAdapter !== 'File'">
                                                     <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'Filter Strategy :' | translate }}</div>
-                                                    <div class="text-white-dark">bbbb</div>
+                                                    <div class="text-white-dark">{{ contact.storageStrategy }}</div>
                                                 </div>
                                             </div>
                                         </div>

@@ -8,6 +8,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.CountResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
@@ -34,6 +35,31 @@ public class ElasticsearchController {
 
     private static final String INDEX_NAME = "conn-realtime";
 
+    private static String autoIntervalFromSpan(long spanMillis, int desiredPoints) {
+        if (spanMillis <= 0) return "1m";
+        long targetBucketMs = Math.max(60_000L, spanMillis / Math.max(1, desiredPoints));
+        // Snap to common intervals
+        long[] steps = new long[]{
+                60_000L,       // 1m
+                5 * 60_000L,   // 5m
+                15 * 60_000L,  // 15m
+                30 * 60_000L,  // 30m
+                60 * 60_000L,  // 1h
+                3 * 60 * 60_000L,  // 3h
+                6 * 60 * 60_000L,  // 6h
+                12 * 60 * 60_000L, // 12h
+                24 * 60 * 60_000L, // 1d
+                7 * 24 * 60 * 60_000L // 7d
+        };
+        String[] labels = new String[]{
+                "1m","5m","15m","30m","1h","3h","6h","12h","1d","7d"
+        };
+        for (int i = 0; i < steps.length; i++) {
+            if (steps[i] >= targetBucketMs) return labels[i];
+        }
+        return "7d";
+    }
+
     @GetMapping("/search")
     @Operation(summary = "查询ES数据", description = "从conn-realtime索引中查询数据")
     public List<ConnRecord> searchData(@RequestParam(required = false) String keyword) throws IOException {
@@ -57,9 +83,17 @@ public class ElasticsearchController {
             @RequestParam String endTime,
             @RequestParam(required = false) String filePath,
             @RequestParam(defaultValue = "conn-realtime") String index,
-            @RequestParam(defaultValue = "1h") String interval
+            @RequestParam(defaultValue = "auto") String interval
     ) throws IOException {
-        return elasticsearchSyncService.getTrending(startTime, endTime, filePath, index, interval);
+        String useInterval = interval;
+        if ("auto".equalsIgnoreCase(interval)) {
+            try {
+                long s = java.time.Instant.parse(startTime).toEpochMilli();
+                long e = java.time.Instant.parse(endTime).toEpochMilli();
+                useInterval = autoIntervalFromSpan(Math.max(0, e - s), 200);
+            } catch (Exception ignore) { useInterval = "1h"; }
+        }
+        return elasticsearchSyncService.getTrending(startTime, endTime, filePath, index, useInterval);
     }
 
     @GetMapping("/protocol-trends")
@@ -68,9 +102,12 @@ public class ElasticsearchController {
             @RequestParam Long startTime,
             @RequestParam Long endTime,
             @RequestParam(required = false) String filePath,
-            @RequestParam(defaultValue = "1h") String interval
+            @RequestParam(defaultValue = "auto") String interval
     ) throws IOException {
-        return elasticsearchSyncService.getProtocolTrends(startTime, endTime, filePath, interval);
+        String useInterval = "auto".equalsIgnoreCase(interval)
+                ? autoIntervalFromSpan(Math.max(0, endTime - startTime), 200)
+                : interval;
+        return elasticsearchSyncService.getProtocolTrends(startTime, endTime, filePath, useInterval);
     }
 
     @GetMapping("/bandwidth-trends")
@@ -79,10 +116,13 @@ public class ElasticsearchController {
             @RequestParam Long startTime,
             @RequestParam Long endTime,
             @RequestParam(required = false) String filePath,
-            @RequestParam(defaultValue = "1h") String interval
+            @RequestParam(defaultValue = "auto") String interval
     ) throws IOException {
-        log.info("Received bandwidth trends request - startTime: {}, endTime: {}, filePath: {}, interval: {}", startTime, endTime, filePath, interval);
-        Map<String, List<TrendingData>> result = elasticsearchSyncService.getBandwidthTrends(startTime, endTime, filePath, interval);
+        String useInterval = "auto".equalsIgnoreCase(interval)
+                ? autoIntervalFromSpan(Math.max(0, endTime - startTime), 200)
+                : interval;
+        log.info("Received bandwidth trends request - startTime: {}, endTime: {}, filePath: {}, interval: {}", startTime, endTime, filePath, useInterval);
+        Map<String, List<TrendingData>> result = elasticsearchSyncService.getBandwidthTrends(startTime, endTime, filePath, useInterval);
         log.info("Returning bandwidth trends with {} channels", result.size());
         return result;
     }
@@ -93,10 +133,13 @@ public class ElasticsearchController {
             @RequestParam Long startTime,
             @RequestParam Long endTime,
             @RequestParam(required = false) String filePath,
-            @RequestParam(defaultValue = "1h") String interval
+            @RequestParam(defaultValue = "auto") String interval
     ) throws IOException {
-        log.info("Received network protocol trends request - startTime: {}, endTime: {}, filePath: {}, interval: {}", startTime, endTime, filePath, interval);
-        Map<String, List<TrendingData>> result = elasticsearchSyncService.getConnProtocolNameTrends(startTime, endTime, filePath, interval);
+        String useInterval = "auto".equalsIgnoreCase(interval)
+                ? autoIntervalFromSpan(Math.max(0, endTime - startTime), 200)
+                : interval;
+        log.info("Received network protocol trends request - startTime: {}, endTime: {}, filePath: {}, interval: {}", startTime, endTime, filePath, useInterval);
+        Map<String, List<TrendingData>> result = elasticsearchSyncService.getConnProtocolNameTrends(startTime, endTime, filePath, useInterval);
         log.info("Returning network protocol trends with {} protocols", result.size());
         return result;
     }
@@ -334,5 +377,254 @@ public class ElasticsearchController {
         log.info("Controller received widget query request: {}", req);
         log.info("Controller yField check: '{}'", req.getYField());
         return elasticsearchSyncService.executeWidgetQuery(req);
+    }
+
+    // ============ Session-based helper endpoints ============
+
+    @GetMapping("/session/conn-stats")
+    @Operation(summary = "根据sessionId统计连接信息", description = "在conn-*索引下, 按filePath=sessionId聚合统计: 文档数(Logs)与平均会话时长(Avg connDuration)")
+    public Map<String, Object> getConnStatsBySession(
+            @RequestParam String sessionId,
+            @RequestParam(required = false) Long startTime,
+            @RequestParam(required = false) Long endTime,
+            @RequestParam(defaultValue = "conn-*") String index
+    ) throws IOException {
+        Query filePathQuery = Query.of(q -> q.match(m -> m.field("filePath").query(sessionId)));
+
+        Query finalQuery = (startTime != null && endTime != null)
+                ? Query.of(q -> q.bool(b -> b
+                        .must(filePathQuery)
+                        .must(m -> m.range(r -> r
+                                .field("timestamp")
+                                .gte(JsonData.of(startTime))
+                                .lte(JsonData.of(endTime))
+                        ))
+                ))
+                : filePathQuery;
+
+        var response = esClient.search(s -> s
+                        .index(index)
+                        .size(0)
+                        .query(finalQuery)
+                        .aggregations("avgDuration", a -> a.avg(v -> v.field("connDuration")))
+                , JsonData.class);
+
+        long logs = response.hits().total() != null ? response.hits().total().value() : 0L;
+        Double avgDuration = null;
+        if (response.aggregations() != null && response.aggregations().containsKey("avgDuration")) {
+            var avg = response.aggregations().get("avgDuration").avg();
+            if (avg != null) {
+                double v = avg.value();
+                if (!Double.isNaN(v)) {
+                    avgDuration = v;
+                }
+            }
+        }
+
+        return Map.of(
+                "sessionId", sessionId,
+                "logs", logs,
+                "avgConnDuration", avgDuration
+        );
+    }
+
+    @GetMapping("/session/traffic")
+    @Operation(summary = "根据sessionId查询流量趋势", description = "在octopusx-data-*索引中按filePath=sessionId过滤, 返回时间序列原始记录(util/pps/bps/port/timestamp)")
+    public List<Map<String, Object>> getTrafficBySession(
+            @RequestParam String sessionId,
+            @RequestParam(defaultValue = "octopusx-data-*") String index,
+            @RequestParam(defaultValue = "20") Integer desiredPoints
+    ) throws IOException {
+        int targetPoints = Math.max(1, Math.min(desiredPoints != null ? desiredPoints : 20, 20));
+        Query finalQuery = Query.of(q -> q.match(m -> m.field("filePath").query(sessionId)));
+
+        SearchResponse<JsonData> resp = esClient.search(s -> s
+                .index(index)
+                .size(1000)
+                .query(finalQuery)
+                .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)))
+        , JsonData.class);
+
+        java.util.ArrayList<Map<String, Object>> raw = new java.util.ArrayList<>();
+        if (resp.hits() != null && resp.hits().hits() != null) {
+            for (var h : resp.hits().hits()) {
+                if (h.source() != null) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> record = (Map<String, Object>) h.source().to(Map.class);
+                    raw.add(record);
+                }
+            }
+        }
+
+        // If data is small, return directly
+        if (raw.size() <= targetPoints) {
+            return raw;
+        }
+
+        // Downsample based on time range to approximately desiredPoints
+        long minTs = Long.MAX_VALUE;
+        long maxTs = Long.MIN_VALUE;
+        for (Map<String, Object> r : raw) {
+            Object tsv = r.get("timestamp");
+            if (tsv == null) continue;
+            long t;
+            if (tsv instanceof Number) {
+                t = ((Number) tsv).longValue();
+            } else {
+                try {
+                    t = java.time.Instant.parse(String.valueOf(tsv)).toEpochMilli();
+                } catch (Exception e) {
+                    // fallback
+                    t = 0L;
+                }
+            }
+            if (t < minTs) minTs = t;
+            if (t > maxTs) maxTs = t;
+        }
+        if (minTs == Long.MAX_VALUE || maxTs == Long.MIN_VALUE || maxTs <= minTs) {
+            return raw; // cannot determine range
+        }
+
+        long span = maxTs - minTs;
+        long bucketMs = Math.max(1L, (long) Math.ceil((double) span / Math.max(1, targetPoints)));
+
+        // port -> bucketStart -> [sumUtil, count, sampleRecordForOtherFields]
+        java.util.Map<String, java.util.Map<Long, double[]>> acc = new java.util.HashMap<>();
+        java.util.Map<String, java.util.Map<Long, Map<String, Object>>> sample = new java.util.HashMap<>();
+
+        for (Map<String, Object> r : raw) {
+            String port = String.valueOf(r.getOrDefault("port", 0));
+            Object tsv = r.get("timestamp");
+            long t;
+            if (tsv instanceof Number) {
+                t = ((Number) tsv).longValue();
+            } else {
+                try {
+                    t = java.time.Instant.parse(String.valueOf(tsv)).toEpochMilli();
+                } catch (Exception e) {
+                    continue;
+                }
+            }
+            long bucket = ((t - minTs) / bucketMs) * bucketMs + minTs;
+            double util = 0.0;
+            Object u = r.get("util");
+            if (u != null) {
+                try { util = Double.parseDouble(String.valueOf(u)); } catch (Exception ignore) { util = 0.0; }
+            }
+            acc.computeIfAbsent(port, k -> new java.util.HashMap<>());
+            sample.computeIfAbsent(port, k -> new java.util.HashMap<>());
+            double[] sarr = acc.get(port).computeIfAbsent(bucket, k -> new double[]{0.0, 0.0});
+            sarr[0] += util;
+            sarr[1] += 1.0;
+            sample.get(port).putIfAbsent(bucket, r);
+        }
+
+        java.util.ArrayList<Map<String, Object>> down = new java.util.ArrayList<>();
+        for (var perPort : acc.entrySet()) {
+            String port = perPort.getKey();
+            java.util.List<Long> buckets = new java.util.ArrayList<>(perPort.getValue().keySet());
+            java.util.Collections.sort(buckets);
+            for (Long b : buckets) {
+                double[] sarr = perPort.getValue().get(b);
+                double avg = sarr[1] > 0 ? (sarr[0] / sarr[1]) : 0.0;
+                Map<String, Object> r = new java.util.HashMap<>(sample.get(port).get(b));
+                r.put("timestamp", b);
+                r.put("port", Integer.parseInt(port));
+                r.put("util", String.format(java.util.Locale.US, "%.4f", avg));
+                down.add(r);
+            }
+        }
+
+        return down;
+    }
+
+    @GetMapping("/session/traffic-trending")
+    @Operation(summary = "根据sessionId返回按通道聚合的trending数据", description = "自动查询首末时间，按时间跨度计算合适的间隔，返回每个通道的util趋势，最大约20个点/通道")
+    public Map<String, List<TrendingData>> getTrafficTrendingBySession(
+            @RequestParam String sessionId,
+            @RequestParam(defaultValue = "octopusx-data-*") String index,
+            @RequestParam(defaultValue = "20") Integer desiredPoints
+    ) throws IOException {
+        // 1) 查询首末时间
+        Query query = Query.of(q -> q
+                .bool(b -> b.must(m -> m.match(t -> t.field("filePath").query(sessionId))))
+        );
+
+        SearchResponse<JsonData> firstResp = esClient.search(s -> s
+                .index(index)
+                .query(query)
+                .size(1)
+                .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)))
+        , JsonData.class);
+        SearchResponse<JsonData> lastResp = esClient.search(s -> s
+                .index(index)
+                .query(query)
+                .size(1)
+                .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)))
+        , JsonData.class);
+
+        Long startMs = null;
+        Long endMs = null;
+        if (!firstResp.hits().hits().isEmpty() && firstResp.hits().hits().get(0).source() != null) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> m = (Map<String, Object>) firstResp.hits().hits().get(0).source().to(Map.class);
+            Object ts = m.get("timestamp");
+            try {
+                startMs = (ts instanceof Number) ? ((Number) ts).longValue() : java.time.Instant.parse(String.valueOf(ts)).toEpochMilli();
+            } catch (Exception ignore) {}
+        }
+        if (!lastResp.hits().hits().isEmpty() && lastResp.hits().hits().get(0).source() != null) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> m = (Map<String, Object>) lastResp.hits().hits().get(0).source().to(Map.class);
+            Object ts = m.get("timestamp");
+            try {
+                endMs = (ts instanceof Number) ? ((Number) ts).longValue() : java.time.Instant.parse(String.valueOf(ts)).toEpochMilli();
+            } catch (Exception ignore) {}
+        }
+
+        if (startMs == null || endMs == null || endMs <= startMs) {
+            // 没有数据，返回空
+            return java.util.Collections.emptyMap();
+        }
+
+        // 2) 计算合适的interval，目标点数 desiredPoints（默认20）
+        int target = Math.max(1, Math.min(desiredPoints != null ? desiredPoints : 20, 20));
+        String interval = autoIntervalFromSpan(endMs - startMs, target);
+
+        // 3) 使用已有带宽趋势方法（按通道util）
+        return elasticsearchSyncService.getBandwidthTrends(startMs, endMs, sessionId, interval);
+    }
+
+    @GetMapping("/session/event-count")
+    @Operation(summary = "根据sessionId统计事件数", description = "在event-*索引下, 按filePath=sessionId统计文档数量")
+    public Map<String, Object> getEventCountBySession(
+            @RequestParam String sessionId,
+            @RequestParam(required = false) Long startTime,
+            @RequestParam(required = false) Long endTime,
+            @RequestParam(defaultValue = "event-*") String index
+    ) throws IOException {
+        Query filePathQuery = Query.of(q -> q.match(m -> m.field("filePath").query(sessionId)));
+
+        Query finalQuery = (startTime != null && endTime != null)
+                ? Query.of(q -> q.bool(b -> b
+                        .must(filePathQuery)
+                        .must(m -> m.range(r -> r
+                                .field("timestamp")
+                                .gte(JsonData.of(startTime))
+                                .lte(JsonData.of(endTime))
+                        ))
+                ))
+                : filePathQuery;
+
+        CountResponse countResp = esClient.count(c -> c
+                .index(index)
+                .query(finalQuery)
+        );
+
+        long count = countResp.count();
+        return Map.of(
+                "sessionId", sessionId,
+                "eventCount", count
+        );
     }
 }
