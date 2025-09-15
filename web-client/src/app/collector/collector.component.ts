@@ -717,6 +717,8 @@ export class CollectorComponent implements OnInit {
                   collector.status = 'completed';
                   // 持久化状态，但不清理 sessionId
                   this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+                  // 提示分析完成
+                  this.showMessage('Analysis completed');
                 } else {
                   collector.status = response.status;
                 }
@@ -924,6 +926,16 @@ export class CollectorComponent implements OnInit {
   }
 
   startCapture(collector: ContactList) {
+    // 同一 Adapter 类型（如 File 或 ens33）只能同时分析一个
+    const adapter = collector.interfaceName;
+    const hasRunningSameAdapter = this.contactList.some(c =>
+      c.id !== collector.id && c.interfaceName === adapter && (c.status === 'running' || c.status === 'STATUS_STARTED')
+    );
+    if (hasRunningSameAdapter) {
+      this.showMessage(`Adapter ${adapter} already has a running task.`, 'error');
+      return;
+    }
+
     // 获取对应的存储策略（仅非 File 模式需要）
     let storageStrategy: StorageStrategy | undefined;
     if (collector.interfaceName !== 'File') {
@@ -1102,6 +1114,8 @@ export class CollectorComponent implements OnInit {
                 }
                 // 持久化完成状态，但不清理 sessionId
                 this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+                // 提示分析完成
+                this.showMessage('Analysis completed');
                 // 刷新列表以反映UI变化
                 this.searchContacts();
               }
