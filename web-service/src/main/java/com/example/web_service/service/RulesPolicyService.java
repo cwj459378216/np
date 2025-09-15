@@ -12,12 +12,21 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class RulesPolicyService {
     private static final Logger log = LoggerFactory.getLogger(RulesPolicyService.class);
+
+    private static final String SURICATA_RULES_PATH = "/datastore/user/admin/apps/suricata/share/suricata/load_rules.rules";
 
     @Autowired
     private RuleRepository ruleRepository;
@@ -91,11 +100,80 @@ public class RulesPolicyService {
     }
 
     public RulesPolicy updateStatus(Long id, Boolean enabled) {
-        RulesPolicy policy = rulesPolicyRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Policy not found"));
-        policy.setEnabled(enabled);
-        return rulesPolicyRepository.save(policy);
+        return updateStatusAndSyncRulesFile(id, enabled);
     }
 
     // ... 其他方法
+
+    @Transactional
+    protected RulesPolicy updateStatusAndSyncRulesFile(Long id, Boolean enabled) {
+        RulesPolicy targetPolicy = rulesPolicyRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Policy not found"));
+
+        // If enabling a policy, disable all others first to enforce mutual exclusivity
+        if (Boolean.TRUE.equals(enabled)) {
+            List<RulesPolicy> allPolicies = rulesPolicyRepository.findAll();
+            for (RulesPolicy p : allPolicies) {
+                if (!Objects.equals(p.getId(), id) && Boolean.TRUE.equals(p.getEnabled())) {
+                    p.setEnabled(false);
+                }
+            }
+            rulesPolicyRepository.saveAll(allPolicies);
+
+            // Enable the target policy
+            targetPolicy.setEnabled(true);
+            targetPolicy = rulesPolicyRepository.save(targetPolicy);
+
+            // Write rules of the enabled policy to Suricata rules file
+            try {
+                writeRulesToSuricataFile(targetPolicy.getRules());
+            } catch (Exception e) {
+                log.error("Failed to write Suricata rules file", e);
+                throw new RuntimeException("Failed to write Suricata rules file", e);
+            }
+        } else {
+            // Disabling the target policy
+            targetPolicy.setEnabled(false);
+            targetPolicy = rulesPolicyRepository.save(targetPolicy);
+
+            // If no policy is enabled now, clear the rules file
+            boolean anyEnabled = rulesPolicyRepository.findAll().stream().anyMatch(RulesPolicy::getEnabled);
+            if (!anyEnabled) {
+                try {
+                    clearSuricataRulesFile();
+                } catch (Exception e) {
+                    log.error("Failed to clear Suricata rules file", e);
+                    throw new RuntimeException("Failed to clear Suricata rules file", e);
+                }
+            }
+        }
+
+        return targetPolicy;
+    }
+
+    private void writeRulesToSuricataFile(List<Rule> rules) throws Exception {
+        if (rules == null || rules.isEmpty()) {
+            clearSuricataRulesFile();
+            return;
+        }
+
+        String content = rules.stream()
+            .map(Rule::getRule)
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.joining(System.lineSeparator())) + System.lineSeparator();
+
+        Path path = Path.of(SURICATA_RULES_PATH);
+        Files.createDirectories(path.getParent());
+        Files.write(path, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        log.info("Wrote {} rules to {}", rules.size(), SURICATA_RULES_PATH);
+    }
+
+    private void clearSuricataRulesFile() throws Exception {
+        Path path = Path.of(SURICATA_RULES_PATH);
+        Files.createDirectories(path.getParent());
+        Files.write(path, new byte[0], StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        log.info("Cleared Suricata rules file {}", SURICATA_RULES_PATH);
+    }
 } 
