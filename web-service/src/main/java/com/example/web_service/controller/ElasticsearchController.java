@@ -373,6 +373,28 @@ public class ElasticsearchController {
         return elasticsearchSyncService.listIndexFields(index, fieldType);
     }
 
+    @GetMapping("/assets")
+    @Operation(summary = "资产表聚合", description = "在event-*索引中按assetIP聚合，返回每个资产的最小severity(1高/2中/3低)、事件总数与最后发生时间，支持timeRange与filePath过滤")
+    public Map<String, Object> getAssets(
+            @RequestParam Long startTime,
+            @RequestParam Long endTime,
+            @RequestParam(required = false) String filePath,
+            @RequestParam(defaultValue = "5") Integer size
+    ) throws IOException {
+        return elasticsearchSyncService.getAssetAggregation(startTime, endTime, filePath, size);
+    }
+
+    @GetMapping("/alarms")
+    @Operation(summary = "告警表聚合", description = "在event-*索引中按severity->SourceClass->signature聚合，返回每组的最后发生时间，支持timeRange与filePath过滤")
+    public Map<String, Object> getAlarms(
+            @RequestParam Long startTime,
+            @RequestParam Long endTime,
+            @RequestParam(required = false) String filePath,
+            @RequestParam(defaultValue = "5") Integer size
+    ) throws IOException {
+        return elasticsearchSyncService.getAlarmAggregation(startTime, endTime, filePath, size);
+    }
+
     @PostMapping("/widget/query")
     @Operation(summary = "Widget数据查询", description = "根据Widget配置(索引/过滤/聚合)返回图表或表格数据, 默认最近7天")
     public Map<String,Object> widgetQuery(@RequestBody WidgetQueryRequest req) throws IOException {

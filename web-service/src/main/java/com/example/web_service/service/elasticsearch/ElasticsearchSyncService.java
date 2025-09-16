@@ -2151,6 +2151,228 @@ public class ElasticsearchSyncService {
     }
 
     /**
+     * 资产聚合（event-*）：先按 alert.severity 分组(1高/2中/3低)，再按 src_ip 分组，取每个 src_ip 的最大 timestamp。
+     * - 过滤条件：timestamp in [startTime, endTime]，可选 filePath match
+     * - 返回字段：severity(数值)、severityLabel(High/Medium/Low)、asset(IP)、eventCount、lastTimestamp
+     * - 排序：severity 升序(1->2->3)，同一severity内按 eventCount 降序；最后截断到前 N 条
+     */
+    public Map<String, Object> getAssetAggregation(Long startTime, Long endTime, String filePath, Integer size) throws IOException {
+        long start = startTime != null ? startTime : (System.currentTimeMillis() - 24L*60*60*1000);
+        long end = endTime != null ? endTime : System.currentTimeMillis();
+        int topN = (size != null && size > 0) ? size : 5;
+
+        // 构建过滤查询
+        var boolBuilder = new co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery.Builder();
+        boolBuilder.must(m -> m.range(r -> r.field("timestamp").gte(JsonData.of(start)).lte(JsonData.of(end))));
+        if (filePath != null && !filePath.isBlank()) {
+            boolBuilder.must(m -> m.match(t -> t.field("filePath").query(filePath)));
+        }
+        Query query = Query.of(q -> q.bool(boolBuilder.build()));
+
+        // 先按 alert.severity (long terms) -> 再按 src_ip (string terms) 并取 max(timestamp)
+        var srb = new SearchRequest.Builder()
+            .index("event-*")
+            .size(0)
+            .query(query)
+            .aggregations("by_sev", a -> a
+                .terms(t -> t.field("alert.severity").size(3))
+                .aggregations("by_src", sub -> sub
+                    .terms(tt -> tt.field("src_ip").size(Math.max(topN, 100)))
+                    .aggregations("last_ts", mx -> mx.max(m -> m.field("timestamp")))
+                )
+            );
+
+        var resp = esClient.search(srb.build(), Void.class);
+        var sevAgg = resp.aggregations().get("by_sev");
+        if (sevAgg == null || sevAgg.lterms() == null || sevAgg.lterms().buckets() == null) {
+            return Map.of("total", 0, "data", List.of());
+        }
+        var sevBuckets = sevAgg.lterms().buckets().array();
+        java.util.List<Map<String, Object>> rows = new java.util.ArrayList<>();
+        // 固定 severity 顺序 1 -> 2 -> 3
+        int[] sevOrder = new int[] {1, 2, 3};
+        for (int sevWanted : sevOrder) {
+            // 找到对应 severity 的 bucket
+            var optBucket = sevBuckets.stream().filter(b -> (int)b.key() == sevWanted).findFirst();
+            if (optBucket.isEmpty()) continue;
+            var bSev = optBucket.get();
+            var bySrc = bSev.aggregations() != null ? bSev.aggregations().get("by_src") : null;
+            if (bySrc == null || bySrc.sterms() == null) continue;
+            var ipBuckets = bySrc.sterms().buckets().array();
+            // 转为列表并按 docCount 降序
+            java.util.List<co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket> ipList = new java.util.ArrayList<>();
+            for (int i = 0; i < ipBuckets.size(); i++) ipList.add(ipBuckets.get(i));
+            ipList.sort((a,b) -> Long.compare(b.docCount(), a.docCount()));
+
+            for (var ipBucket : ipList) {
+                String asset;
+                var keyValue = ipBucket.key();
+                if (keyValue != null) {
+                    try {
+                        asset = keyValue.isString() ? keyValue.stringValue() : keyValue.toString();
+                    } catch (Exception e) {
+                        asset = keyValue.toString();
+                    }
+                } else {
+                    asset = "unknown";
+                }
+                long count = ipBucket.docCount();
+                Long lastTs = null;
+                if (ipBucket.aggregations() != null) {
+                    var mx = ipBucket.aggregations().get("last_ts");
+                    if (mx != null && mx.max() != null) {
+                        Double v = mx.max().value();
+                        if (v != null) lastTs = v.longValue();
+                    }
+                }
+                int sevInt = sevWanted;
+                String severityLabel = switch (sevInt) {
+                    case 1 -> "High";
+                    case 2 -> "Medium";
+                    default -> "Low";
+                };
+                rows.add(Map.of(
+                    "asset", asset,
+                    "severity", sevInt,
+                    "severityLabel", severityLabel,
+                    "eventCount", count,
+                    "lastTimestamp", lastTs
+                ));
+            }
+        }
+
+        // 由于已按 severity 顺序遍历且按 count 降序收集，仅需截断
+
+        if (rows.size() > topN) rows = rows.subList(0, topN);
+        return Map.of(
+            "total", rows.size(),
+            "data", rows
+        );
+    }
+
+    /**
+     * 告警聚合（event-*）：按 alert.severity 分组(1高/2中/3低)，再按 signature 分组并取每个 signature 的最大 timestamp。
+     * - 过滤条件：timestamp in [startTime, endTime]，可选 filePath match
+     * - 返回字段：severity(数值)、severityLabel(High/Medium/Low)、signature、eventCount、lastTimestamp
+     * - 排序：severity 固定顺序(1->2->3)，同一 severity 内按 eventCount 降序；最后整体截断到前 N 条
+     */
+    public Map<String, Object> getAlarmAggregation(Long startTime, Long endTime, String filePath, Integer size) throws IOException {
+        long start = startTime != null ? startTime : (System.currentTimeMillis() - 24L*60*60*1000);
+        long end = endTime != null ? endTime : System.currentTimeMillis();
+        int topN = (size != null && size > 0) ? size : 5;
+
+    // 构建过滤查询：仅使用 timestamp 字段（不查询 @timestamp）
+        var boolBuilder = new co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery.Builder();
+    boolBuilder.must(m -> m.range(r -> r.field("timestamp").gte(JsonData.of(start)).lte(JsonData.of(end))));
+        if (filePath != null && !filePath.isBlank()) {
+            boolBuilder.must(m -> m.match(t -> t.field("filePath").query(filePath)));
+        }
+        Query query = Query.of(q -> q.bool(boolBuilder.build()));
+
+        // 构建请求（优先使用 keyword 字段），失败时回退到非 keyword 字段
+        SearchResponse<Void> resp;
+        try {
+            var req1 = buildAlarmAggRequest(query, topN, true);
+            resp = esClient.search(req1, Void.class);
+        } catch (Exception e) {
+            log.warn("alarm aggregation with keyword fields failed, fallback to non-keyword: {}", e.getMessage());
+            var req2 = buildAlarmAggRequest(query, topN, false);
+            resp = esClient.search(req2, Void.class);
+        }
+    var sevAgg = resp.aggregations().get("by_sev");
+        if (sevAgg == null || sevAgg.lterms() == null || sevAgg.lterms().buckets() == null) {
+            return Map.of("total", 0, "data", java.util.List.of());
+        }
+
+        var sevBuckets = sevAgg.lterms().buckets().array();
+        java.util.List<Map<String, Object>> rows = new java.util.ArrayList<>();
+        int[] sevOrder = new int[]{1, 2, 3};
+        for (int sevWanted : sevOrder) {
+            var optBucket = sevBuckets.stream().filter(b -> (int) b.key() == sevWanted).findFirst();
+            if (optBucket.isEmpty()) continue;
+            var bSev = optBucket.get();
+            var bySig = bSev.aggregations() != null ? bSev.aggregations().get("by_sig") : null;
+            if (bySig == null || bySig.sterms() == null) continue;
+            var sigBuckets = bySig.sterms().buckets().array();
+
+            // 将 signature buckets 转为列表并按 docCount 降序
+            java.util.List<co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket> sigList = new java.util.ArrayList<>();
+            for (int j = 0; j < sigBuckets.size(); j++) sigList.add(sigBuckets.get(j));
+            sigList.sort((a, b) -> Long.compare(b.docCount(), a.docCount()));
+
+            for (var sigBucket : sigList) {
+                String signatureVal;
+                var sigKey = sigBucket.key();
+                if (sigKey != null) {
+                    try { signatureVal = sigKey.isString() ? sigKey.stringValue() : sigKey.toString(); }
+                    catch (Exception e) { signatureVal = sigKey.toString(); }
+                } else {
+                    signatureVal = "unknown";
+                }
+
+                long count = sigBucket.docCount();
+                Long lastTs = null;
+                if (sigBucket.aggregations() != null) {
+                    var mx = sigBucket.aggregations().get("last_ts");
+                    if (mx != null && mx.max() != null) {
+                        Double v = mx.max().value();
+                        if (v != null) lastTs = v.longValue();
+                    }
+                }
+
+                int sevInt = sevWanted;
+                String severityLabel = switch (sevInt) {
+                    case 1 -> "High";
+                    case 2 -> "Medium";
+                    default -> "Low";
+                };
+
+                rows.add(Map.of(
+                    "signature", signatureVal,
+                    "severity", sevInt,
+                    "severityLabel", severityLabel,
+                    "eventCount", count,
+                    "lastTimestamp", lastTs
+                ));
+            }
+        }
+
+        // 由于已按 severity 顺序与 count 排序收集，仅需截断
+        if (rows.size() > topN) rows = rows.subList(0, topN);
+        return Map.of(
+            "total", rows.size(),
+            "data", rows
+        );
+    }
+
+    // 根据是否使用 keyword 字段构建告警聚合请求
+    private co.elastic.clients.elasticsearch.core.SearchRequest buildAlarmAggRequest(Query query, int topN, boolean useKeyword) {
+        String signatureField = useKeyword ? "alert.signature.keyword" : "alert.signature";
+
+        return new co.elastic.clients.elasticsearch.core.SearchRequest.Builder()
+            .index("event-*")
+            .size(0)
+            .allowNoIndices(true)
+            .ignoreUnavailable(true)
+            .query(query)
+            .aggregations("by_sev", a -> a
+                .terms(t -> t
+                    .field("alert.severity")
+                    .size(3)
+                )
+                .aggregations("by_sig", sig -> sig
+                    .terms(ttt -> ttt
+                        .field(signatureField)
+                        .size(Math.max(topN, 200))
+                        .missing("unknown")
+                    )
+                    .aggregations("last_ts", mx -> mx.max(m -> m.field("timestamp")))
+                )
+            )
+            .build();
+    }
+
+    /**
      * Delete all documents across relevant indices associated with a given sessionId.
      * This uses delete-by-query on multiple indices that may store data for a capture session.
      * Indices included: conn-*, http-*, dns-*, smb_cmd-*, octopusx-data, zeek-* (if present).

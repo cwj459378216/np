@@ -88,6 +88,33 @@ export interface NetworkInterface {
   internal: boolean;
 }
 
+export interface AssetItem {
+  asset: string; // IP
+  severity: number; // 1=High,2=Medium,3=Low
+  severityLabel: string;
+  eventCount: number;
+  lastTimestamp: number; // epoch millis
+}
+
+export interface AssetAggregationResponse {
+  total: number;
+  data: AssetItem[];
+}
+
+export interface AlarmItem {
+  sourceClass: string;
+  signature: string;
+  severity: number;
+  severityLabel: string;
+  eventCount: number;
+  lastTimestamp: number;
+}
+
+export interface AlarmAggregationResponse {
+  total: number;
+  data: AlarmItem[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -274,6 +301,30 @@ export class DashboardDataService {
 
     console.log('Fetching serviceName aggregation with topN:', topN, 'startTime:', startTime, 'endTime:', endTime, 'filePath:', filePath);
     return this.http.get<ServiceNameAggregationResponse>(`${this.apiUrl}/service-name-aggregation`, { params });
+  }
+
+  /**
+   * 获取资产聚合（event-* 索引）
+   */
+  getAssets(startTime: number, endTime: number, filePath?: string, size: number = 10): Observable<AssetAggregationResponse> {
+    let params = new HttpParams()
+      .set('startTime', String(startTime))
+      .set('endTime', String(endTime))
+      .set('size', String(size));
+    if (filePath) params = params.set('filePath', filePath);
+    return this.http.get<AssetAggregationResponse>(`${this.apiUrl}/assets`, { params });
+  }
+
+  /**
+   * 获取告警聚合（event-* 索引）
+   */
+  getAlarms(startTime: number, endTime: number, filePath?: string, size: number = 10): Observable<AlarmAggregationResponse> {
+    let params = new HttpParams()
+      .set('startTime', String(startTime))
+      .set('endTime', String(endTime))
+      .set('size', String(size));
+    if (filePath) params = params.set('filePath', filePath);
+    return this.http.get<AlarmAggregationResponse>(`${this.apiUrl}/alarms`, { params });
   }
 
   /**

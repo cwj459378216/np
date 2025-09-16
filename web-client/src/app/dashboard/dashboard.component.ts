@@ -31,6 +31,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   averageBandwidth: number = 0; // 新增属性存储平均带宽利用率
   networkProtocolFlowCount: number = 0; // 新增：网络协议趋势总流量计数
 
+  // 资产表数据
+  assets: import('../services/dashboard-data.service').AssetItem[] = [];
+  // 告警表数据
+  alarms: import('../services/dashboard-data.service').AlarmItem[] = [];
+
   // 系统信息属性
   systemInfo: SystemInfo | null = null;
   cpuUsage: number = 0;
@@ -45,7 +50,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // 定时器
   private systemInfoInterval: any;
-  
+
   // 时间范围订阅
   private timeRangeSubscription: Subscription = new Subscription();
   private currentTimeRange: TimeRange | null = null;
@@ -57,7 +62,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     console.log('Dashboard component initializing...');
-    
+
     // 订阅时间范围变化
     this.timeRangeSubscription = this.timeRangeService.timeRange$.subscribe(timeRange => {
       console.log('Dashboard received time range update:', timeRange);
@@ -68,7 +73,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // 初始化时间范围
     this.currentTimeRange = this.timeRangeService.getCurrentTimeRange();
     console.log('Dashboard initial time range:', this.currentTimeRange);
-    
+
     this.loadSystemInfo();
 
     // 每30秒更新一次系统信息
@@ -80,7 +85,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private loadNetworkProtocolTrends(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h', filePath?: string) {
     const endTime = endTimeTimestamp ? new Date(endTimeTimestamp) : new Date();
     const startTime = startTimeTimestamp ? new Date(startTimeTimestamp) : new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
-    
+
     const startTs = startTime.getTime();
     const endTs = endTime.getTime();
 
@@ -150,11 +155,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const startTimeTimestamp = timeRange.startTime.getTime();
     const endTimeTimestamp = timeRange.endTime.getTime();
     const filePath = timeRange.filePath; // 获取文件路径
-    
+
     // 根据时间范围长度决定间隔
     const timeSpan = endTimeTimestamp - startTimeTimestamp;
     let interval = '1h';
-    
+
     if (timeSpan <= 1000 * 60 * 60 * 6) { // 6小时内
       interval = '15m';
     } else if (timeSpan <= 1000 * 60 * 60 * 24) { // 24小时内
@@ -165,8 +170,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       interval = '1d';
     }
 
-    console.log('Loading data for time range:', { 
-      startTime: timeRange.startTime.toISOString(), 
+    console.log('Loading data for time range:', {
+      startTime: timeRange.startTime.toISOString(),
       endTime: timeRange.endTime.toISOString(),
       interval,
       filePath,
@@ -175,15 +180,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // 加载协议趋势数据，传递 filePath
     this.loadProtocolTrendsData(startTimeTimestamp, endTimeTimestamp, interval, filePath);
-    
+
     // 加载网络协议趋势数据，传递 filePath
     this.loadNetworkProtocolTrends(startTimeTimestamp, endTimeTimestamp, interval, filePath);
-    
+
     // 加载带宽数据，传递 filePath
     this.loadBandwidthData(startTimeTimestamp, endTimeTimestamp, interval, filePath);
-    
+
     // 加载Application Protocol (Service Name)数据，传递 filePath
     this.loadServiceNameData(startTimeTimestamp, endTimeTimestamp, filePath);
+
+  // 加载资产表数据（event-*），传递 filePath
+  this.loadAssetsData(startTimeTimestamp, endTimeTimestamp, filePath);
+  // 加载告警表数据（event-*），传递 filePath
+  this.loadAlarmsData(startTimeTimestamp, endTimeTimestamp, filePath);
   }
 
   async initStore() {
@@ -305,6 +315,50 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.setEmptyServiceNameChart();
         }
       });
+  }
+
+  loadAssetsData(startTime?: number, endTime?: number, filePath?: string, size: number = 10) {
+    if (!startTime || !endTime) {
+      const end = Date.now();
+      const start = end - 24 * 60 * 60 * 1000;
+      startTime = start;
+      endTime = end;
+    }
+    this.dashboardDataService.getAssets(startTime!, endTime!, filePath, size).subscribe({
+      next: (resp) => {
+        this.assets = Array.isArray(resp?.data) ? resp.data : [];
+      },
+      error: (err) => {
+        console.error('Failed to load assets', err);
+        this.assets = [];
+      }
+    });
+  }
+
+  getSeverityBadgeClass(sev: number): string {
+    switch (sev) {
+      case 1: return 'bg-danger';
+      case 2: return 'bg-warning';
+      default: return 'bg-success';
+    }
+  }
+
+  loadAlarmsData(startTime?: number, endTime?: number, filePath?: string, size: number = 5) {
+    if (!startTime || !endTime) {
+      const end = Date.now();
+      const start = end - 24 * 60 * 60 * 1000;
+      startTime = start;
+      endTime = end;
+    }
+    this.dashboardDataService.getAlarms(startTime!, endTime!, filePath, size).subscribe({
+      next: (resp) => {
+        this.alarms = Array.isArray(resp?.data) ? resp.data : [];
+      },
+      error: (err) => {
+        console.error('Failed to load alarms', err);
+        this.alarms = [];
+      }
+    });
   }
 
   updateProtocolTrendingChart(data: ProtocolTrendsResponse) {

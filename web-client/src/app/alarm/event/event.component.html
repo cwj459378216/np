@@ -33,6 +33,9 @@
             </div>
         </div>
         <div class="relative overflow-hidden">
+            <div *ngIf="chartLoading" class="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-black/50 z-10">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
             <apx-chart
                 [series]="revenueChart.series"
                 [chart]="revenueChart.chart"
@@ -40,13 +43,13 @@
                 [stroke]="revenueChart.stroke"
                 [colors]="revenueChart.colors"
                 [markers]="revenueChart.markers"
-                [labels]="revenueChart.labels"
                 [xaxis]="revenueChart.xaxis"
                 [yaxis]="revenueChart.yaxis"
                 [grid]="revenueChart.grid"
                 [legend]="revenueChart.legend"
                 [tooltip]="revenueChart.tooltip"
                 [fill]="revenueChart.fill"
+                [noData]="revenueChart.noData"
                 class="rounded-lg bg-white dark:bg-black">
             </apx-chart>
         </div>
@@ -111,13 +114,36 @@
                 [rows]="rows"
                 [columns]="visibleColumns"
                 [sortable]="true"
+                [loading]="loading"
                 [search]="search"
+                [pagination]="true"
+                [page]="currentPage"
+                [pageSize]="pageSize"
+                [totalRows]="total"
+                [showPageSize]="true"
+                [pageSizeOptions]="[10,20,50,100]"
+                [isServerMode]="true"
+                [showNumbers]="true"
+                [showFirstPage]="true"
+                [showLastPage]="true"
+                (changeServer)="onServerChange($event)"
+                (pageChange)="onPageChange($event)"
+                (pageSizeChange)="onPageSizeChange($event)"
+                (sortChange)="onSortChange($event)"
+                (searchChange)="onSearchChange($event)"
                 skin="whitespace-nowrap table-hover"
                 firstArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M13 19L7 12L13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M16.9998 19L10.9998 12L16.9998 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
                 lastArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M11 19L17 12L11 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M6.99976 19L12.9998 12L6.99976 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg> '
                 previousArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
                 nextArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
             >
+                <!-- 自定义显示：源/目的 IP 显示资产名（找不到则显示原值） -->
+                <ng-template slot="src_ip" let-row="data">
+                    <span [title]="row?.src_ip">{{ resolveIpToAsset(row?.src_ip) }}</span>
+                </ng-template>
+                <ng-template slot="dest_ip" let-row="data">
+                    <span [title]="row?.dest_ip">{{ resolveIpToAsset(row?.dest_ip) }}</span>
+                </ng-template>
             </ng-datatable>
         </div>
     </div>

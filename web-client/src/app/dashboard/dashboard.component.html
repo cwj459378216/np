@@ -14,10 +14,10 @@
           <h5 class="text-lg font-semibold dark:text-white-light">{{ 'System Info' | translate }}</h5>
         </div>
         <div class="flex flex-col space-y-5">
+          <!-- CPU -->
           <div class="flex items-center">
             <div class="h-9 w-9">
-              <div
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary dark:text-white-light">
+              <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary dark:text-white-light">
                 <icon-cpu-bolt class="h-5 w-5" />
               </div>
             </div>
@@ -27,19 +27,16 @@
                 <p class="text-xs ltr:ml-auto rtl:mr-auto">{{ cpuUsage | number:'1.0-0' }}%</p>
               </div>
               <div>
-                <div
-                  class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
-                  <div
-                    class="relative h-full w-full rounded-full bg-gradient-to-r from-[#009ffd] to-[#2a2a72] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
-                    [style.width.%]="cpuUsage"></div>
+                <div class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
+                  <div class="relative h-full w-full rounded-full bg-gradient-to-r from-[#1b55e2] to-[#17c1e8] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5" [style.width.%]="cpuUsage"></div>
                 </div>
               </div>
             </div>
           </div>
+          <!-- Memory -->
           <div class="flex items-center">
             <div class="h-9 w-9">
-              <div
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-danger/10 text-danger dark:bg-danger dark:text-white-light">
+              <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-danger/10 text-danger dark:bg-danger dark:text-white-light">
                 <icon-safari class="h-5 w-5" />
               </div>
             </div>
@@ -49,19 +46,16 @@
                 <p class="text-xs ltr:ml-auto rtl:mr-auto">{{ memoryUsage | number:'1.0-0' }}%</p>
               </div>
               <div>
-                <div
-                  class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
-                  <div
-                    class="relative h-full w-full rounded-full bg-gradient-to-r from-[#a71d31] to-[#3f0d12] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
-                    [style.width.%]="memoryUsage"></div>
+                <div class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
+                  <div class="relative h-full w-full rounded-full bg-gradient-to-r from-[#e7515a] to-[#f7b731] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5" [style.width.%]="memoryUsage"></div>
                 </div>
               </div>
             </div>
           </div>
+          <!-- Disk -->
           <div class="flex items-center">
             <div class="h-9 w-9">
-              <div
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10 text-warning dark:bg-warning dark:text-white-light">
+              <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10 text-warning dark:bg-warning dark:text-white-light">
                 <icon-globe class="h-5 w-5" />
               </div>
             </div>
@@ -71,11 +65,8 @@
                 <p class="text-xs ltr:ml-auto rtl:mr-auto">{{ diskUsage | number:'1.0-0' }}%</p>
               </div>
               <div>
-                <div
-                  class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
-                  <div
-                    class="relative h-full w-full rounded-full bg-gradient-to-r from-[#fe5f75] to-[#fc9842] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
-                    [style.width.%]="diskUsage"></div>
+                <div class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
+                  <div class="relative h-full w-full rounded-full bg-gradient-to-r from-[#fe5f75] to-[#fc9842] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5" [style.width.%]="diskUsage"></div>
                 </div>
               </div>
             </div>
@@ -163,30 +154,15 @@
               </tr>
             </thead>
             <tbody>
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-danger shadow-md dark:group-hover:bg-transparent">{{ 'High' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview">192.168.1.1</a></td>
-                <td>2024/11/5 09:11:12</td>
+              <tr *ngIf="!assets || assets.length === 0" class="text-center text-white-dark dark:text-white-light/90">
+                <td colspan="3">{{ 'No data' | translate }}</td>
               </tr>
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-warning shadow-md dark:group-hover:bg-transparent">{{ 'Medium' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview">192.168.1.2</a></td>
-                <td>2024/11/5 09:11:12</td>
-              </tr>
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview">192.168.1.3</a></td>
-                <td>2024/11/5 09:11:12</td>
-              </tr>
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview">192.168.1.4</a></td>
-                <td>2024/11/5 09:11:12</td>
-              </tr>
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview">192.168.1.5</a></td>
-                <td>2024/11/5 09:11:12</td>
+              <tr *ngFor="let a of assets" class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
+                <td>
+                  <span [ngClass]="'badge shadow-md ' + getSeverityBadgeClass(a.severity)">{{ a.severityLabel | translate }}</span>
+                </td>
+                <td class="whitespace-nowrap font-semibold text-black dark:text-white-light">{{ a.asset }}</td>
+                <td class="text-xs text-gray-600 dark:text-gray-300">{{ a.lastTimestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
               </tr>
             </tbody>
           </table>
@@ -202,38 +178,20 @@
             <thead>
               <tr>
                 <th class="ltr:rounded-l-md rtl:rounded-r-md">{{ 'Severity' | translate }}</th>
-                <th>{{ 'SourceClass' | translate }}</th>
-                <th>{{ 'Timestamp' | translate }}</th>
+                <th>{{ 'Signature' | translate }}</th>
+                <th class="ltr:rounded-r-md rtl:rounded-l-md">{{ 'Timestamp' | translate }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-danger shadow-md dark:group-hover:bg-transparent">{{ 'High' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview">Executable code was detected</a></td>
-                <td>2024/11/5 09:11:12</td>
+              <tr *ngIf="!alarms || alarms.length === 0" class="text-center text-white-dark dark:text-white-light/90">
+                <td colspan="3">{{ 'No data' | translate }}</td>
               </tr>
-
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-warning shadow-md dark:group-hover:bg-transparent">{{ 'Medium' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview"> Misc Attack </a></td>
-                <td>2024/11/5 09:11:12</td>
-              </tr>
-
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview"> Attempted Information Leak </a></td>
-                <td>2024/11/5 09:11:12</td>
-              </tr>
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview"> Information Leak </a></td>
-                <td>2024/11/5 09:11:12</td>
-              </tr>
-
-              <tr class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
-                <td><span class="badge bg-success shadow-md dark:group-hover:bg-transparent">{{ 'Low' | translate }}</span></td>
-                <td><a routerLink="/apps/invoice/preview"> Detection of a Network Scan </a></td>
-                <td>2024/11/5 09:11:12</td>
+              <tr *ngFor="let al of alarms" class="group text-white-dark hover:text-black dark:hover:text-white-light/90">
+                <td>
+                  <span [ngClass]="'badge shadow-md ' + getSeverityBadgeClass(al.severity)">{{ al.severityLabel | translate }}</span>
+                </td>
+                <td class="whitespace-nowrap">{{ al.signature }}</td>
+                <td class="text-xs text-gray-600 dark:text-gray-300">{{ al.lastTimestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
               </tr>
 
             </tbody>
