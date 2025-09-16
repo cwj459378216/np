@@ -92,15 +92,15 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     selectedDataSource = { label: '', value: '', status: '' };
     selectedTimeRange = this.timeRanges[3].value; // 默认24小时
     selectedQuickRange = this.timeRanges[3].value;
-    
+
     // 自动更新相关属性
     autoUpdateInterval: any = null;
     isAutoUpdateEnabled = false;
     autoUpdateStartTime: Date | null = null;
-    
+
     // 防抖相关属性
     private dataSourceChangeTimeout: any = null;
-    
+
     @ViewChild('customRangeBox', { static: false }) customRangeBox?: ElementRef<HTMLLIElement>;
 
     // 时间选择器配置 (加入 inline 防止关闭，closeOnSelect=false)
@@ -118,7 +118,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         onChange: (selectedDates: Date[], dateStr: string) => this.handleRangeSelection(selectedDates, dateStr),
         onValueUpdate: (selectedDates: Date[], dateStr: string) => this.handleRangeSelection(selectedDates, dateStr)
     };
-    
+
     // 自定义时间范围 (range 模式单输入)
     customRangeValue: string = '';
     isCustomTimeRange: boolean = false;
@@ -155,13 +155,13 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 this.loadCollectors();
             }
         });
-        
+
         // 初始化时间范围标签
         this.updateTimeRangeLabels();
-        
+
         // 加载collectors数据
         this.loadCollectors();
-        
+
         // 初始化默认时间范围（24小时）
         this.initializeDefaultTimeRange();
     }
@@ -201,18 +201,18 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     loadCollectors() {
         this.collectorService.getAllCollectors().subscribe({
             next: (collectors: Collector[]) => {
-                // 只显示状态为 "completed" 和 "running" 的collectors
-                const activeCollectors = collectors.filter(collector => 
-                    collector.status === 'completed' || collector.status === 'running'
+                // 显示状态为 "completed"、"running"、以及 "error"（Partial）的 collectors
+                const activeCollectors = collectors.filter(collector =>
+                    collector.status === 'completed' || collector.status === 'running' || collector.status === 'error'
                 );
-                
+
                 // 将active collectors转换为dataSources选项，name作为label，sessionId作为value，status作为status
                 this.dataSources = activeCollectors.map(collector => ({
                     label: collector.name,
                     value: (collector as any).sessionId || '',
                     status: collector.status
                 }));
-                
+
                 // 始终选择第一个作为默认值（如果有数据的话）
                 if (this.dataSources.length > 0) {
                     this.selectedDataSource = this.dataSources[0];
@@ -225,7 +225,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                     // 没有数据源时设置默认时间范围
                     this.setDefaultTimeRange();
                 }
-                
+
                 console.log('Active collectors (completed/running) loaded, default selected:', {
                     selectedDataSource: this.selectedDataSource,
                     status: this.selectedDataSource.status,
@@ -245,7 +245,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
     shouldShowDataSourceAndTimeRange(): boolean {
         const currentUrl = this.router.url;
-        
+
         // Dashboard相关页面
         const dashboardRoutes = [
             '/',           // 首页dashboard
@@ -254,7 +254,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             '/finance',    // finance页面
             '/crypto',     // crypto页面
         ];
-        
+
         // 检查是否是dashboard页面
         const isDashboardPage = dashboardRoutes.some(route => {
             if (route === '/') {
@@ -262,15 +262,15 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             }
             return currentUrl.startsWith(route);
         });
-        
+
         // 检查是否是protocol-analysis相关页面
         const isProtocolAnalysisPage = currentUrl.startsWith('/protocol-analysis');
-        
+
         // 检查是否是event页面
         const isEventPage = currentUrl.startsWith('/alarm/event');
-        
+
         const shouldShow = isDashboardPage || isProtocolAnalysisPage || isEventPage;
-        
+
         // 开发环境下的调试信息
         // if (!environment.production) {
         //     console.log('Header visibility check:', {
@@ -281,7 +281,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         //         shouldShow
         //     });
         // }
-        
+
         return shouldShow;
     }
 
@@ -339,24 +339,24 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     onDataSourceChange(dataSource?: any) {
         if (dataSource) {
             console.log('Data source changing from', this.selectedDataSource.label, 'to', dataSource.label);
-            
+
             // 清除之前的防抖定时器
             if (this.dataSourceChangeTimeout) {
                 clearTimeout(this.dataSourceChangeTimeout);
             }
-            
+
             // 先停止当前的自动更新
             this.stopAutoUpdate();
-            
+
             // 更新选中的数据源
             this.selectedDataSource = dataSource;
-            
+
             // 重置时间相关状态
             this.isCustomTimeRange = false;
             this.selectedQuickRange = '';
             this.customRangeValue = '';
             this.autoUpdateStartTime = null;
-            
+
             // 使用防抖机制，避免快速切换导致的问题
             this.dataSourceChangeTimeout = setTimeout(() => {
                 console.log('Executing data source change after debounce:', dataSource.label);
@@ -389,23 +389,23 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         this.selectedTimeRange = timeRange.value;
         this.isCustomTimeRange = false;
         this.customRangeValue = '';
-        
+
         // 计算实际的时间范围
         const endTime = new Date();
         const startTime = this.calculateStartTime(timeRange.value, endTime);
-        
+
         console.log('Quick time selected:', {
             range: timeRange.label,
             startTime: startTime.toISOString(),
             endTime: endTime.toISOString()
         });
-        
+
         // 如果当前是运行状态且自动更新已启用，更新开始时间
         if (this.selectedDataSource.status === 'running' && this.isAutoUpdateEnabled) {
             this.autoUpdateStartTime = startTime;
             console.log('Updated auto-update start time to:', startTime.toISOString());
         }
-        
+
         // 触发数据刷新
         this.onTimeRangeApplied(startTime, endTime);
     }
@@ -416,22 +416,22 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
     onTimeRangeApplied(startTime: Date, endTime: Date) {
         // 更新时间范围服务的状态
-        const currentRange = this.isCustomTimeRange 
+        const currentRange = this.isCustomTimeRange
             ? { label: 'Custom Range', value: 'custom' }
             : this.timeRanges.find(tr => tr.value === this.selectedQuickRange) || { label: 'Custom', value: 'custom' };
-        
+
         // 传递当前选择的文件路径
         this.timeRangeService.updateTimeRange(
-            startTime, 
-            endTime, 
-            currentRange.label, 
+            startTime,
+            endTime,
+            currentRange.label,
             currentRange.value,
             this.selectedDataSource.value // 传递文件路径
         );
-        
-        console.log('Time range applied:', { 
-            startTime, 
-            endTime, 
+
+        console.log('Time range applied:', {
+            startTime,
+            endTime,
             label: currentRange.label,
             filePath: this.selectedDataSource.value
         });
@@ -440,13 +440,13 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     ngOnDestroy(): void {
         // 清理自动更新定时器
         this.stopAutoUpdate();
-        
+
         // 清理防抖定时器
         if (this.dataSourceChangeTimeout) {
             clearTimeout(this.dataSourceChangeTimeout);
             this.dataSourceChangeTimeout = null;
         }
-        
+
         // 不移除监听（菜单生命周期内复用），如需严格清理可记录并移除
     }
 
@@ -461,7 +461,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
         // 使用本地时间，不进行UTC转换
         const formatted = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-        
+
         console.log('formatDateLocal:', {
             input: d.toString(),
             utc: d.toISOString(),
@@ -473,7 +473,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             hours: d.getHours(),
             minutes: d.getMinutes()
         });
-        
+
         return formatted;
     }
 
@@ -534,7 +534,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 // 尝试直接解析其他格式
                 date = new Date(timestamp);
             }
-            
+
             // 如果解析失败，尝试其他格式
             if (isNaN(date.getTime())) {
                 // 尝试解析为数字
@@ -618,13 +618,13 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         this.customRangeValue = formatted;
         this.isCustomTimeRange = true;
         this.selectedQuickRange = '';
-        
+
         // 如果当前是运行状态且自动更新已启用，更新开始时间
         if (this.selectedDataSource.status === 'running' && this.isAutoUpdateEnabled) {
             this.autoUpdateStartTime = parsed.start;
             console.log('Updated auto-update start time to:', parsed.start.toISOString());
         }
-        
+
         if (formatted !== this.lastAppliedRange) {
             this.lastAppliedRange = formatted;
             this.onTimeRangeApplied(parsed.start, parsed.end);
@@ -678,7 +678,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 // 尝试不同的时间解析方式
                 startTime = this.parseTimestamp(data.firstTimestamp);
                 endTime = this.parseTimestamp(data.lastTimestamp);
-                
+
                 console.log('Parsed timestamps:', {
                     startTime: startTime.toString(),
                     endTime: endTime.toString(),
@@ -699,7 +699,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             }
 
             // 根据是否有实际数据来设置标签
-            const timeRangeLabel = data.isDefaultRange 
+            const timeRangeLabel = data.isDefaultRange
                 ? `Data Source: ${this.selectedDataSource.label} (Default 24h)`
                 : `Data Source: ${this.selectedDataSource.label}`;
 
@@ -721,7 +721,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             if (this.selectedDataSource.status === 'running') {
                 this.autoUpdateStartTime = startTime;
                 console.log('Running state: set fixed firstTimestamp for auto update:', startTime.toISOString());
-                
+
                 // 在API调用完成后启动自动更新
                 this.checkAndStartAutoUpdate();
             }
@@ -752,7 +752,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     private setDefaultTimeRange() {
         const endTime = new Date();
         const startTime = new Date(endTime.getTime() - 60 * 60 * 1000); // 1小时前
-        
+
         this.timeRangeService.updateTimeRange(
             startTime,
             endTime,
@@ -774,7 +774,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             isRunning: this.selectedDataSource.status === 'running',
             currentAutoUpdate: this.isAutoUpdateEnabled
         });
-        
+
         if (this.selectedDataSource.status === 'running') {
             this.startAutoUpdate();
         } else {
@@ -787,9 +787,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         if (this.isAutoUpdateEnabled) {
             return; // 已经在运行
         }
-        
+
         this.isAutoUpdateEnabled = true;
-        
+
         // 在running状态下，使用API返回的firstTimestamp作为固定的开始时间
         // 不要使用getCurrentStartTime()，因为那可能会改变开始时间
         if (this.selectedDataSource.status === 'running') {
@@ -818,15 +818,15 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             // 非running状态才获取当前时间范围的开始时间
             this.autoUpdateStartTime = this.getCurrentStartTime();
         }
-        
+
         // 重新启动自动更新时，立即更新结束时间为当前时间
         this.updateEndTimeToNow();
-        
+
         // 每6秒更新一次结束时间
         this.autoUpdateInterval = setInterval(() => {
             this.updateEndTimeToNow();
         }, 6000);
-        
+
         console.log('Auto update started for running data source, start time:', this.autoUpdateStartTime?.toISOString());
     }
 
@@ -838,7 +838,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         }
         this.isAutoUpdateEnabled = false;
         this.autoUpdateStartTime = null;
-        
+
         console.log('Auto update stopped');
     }
 
@@ -850,12 +850,12 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             hasAutoUpdateStartTime: !!this.autoUpdateStartTime,
             customRangeValue: this.customRangeValue
         });
-        
+
         if (this.selectedDataSource.status !== 'running') {
             console.warn('Cannot toggle auto update: data source is not in running state');
             return; // 只有运行状态才能切换
         }
-        
+
         if (this.isAutoUpdateEnabled) {
             console.log('Stopping auto update...');
             this.stopAutoUpdate();
@@ -863,7 +863,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             console.log('Starting auto update... (will update end time to current time)');
             this.startAutoUpdate();
         }
-        
+
         console.log('Auto update toggled result:', {
             enabled: this.isAutoUpdateEnabled,
             dataSource: this.selectedDataSource.label,
@@ -877,10 +877,10 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         if (!this.isAutoUpdateEnabled) {
             return;
         }
-        
+
         const now = new Date();
         let startTime: Date;
-        
+
         // 在running状态下，始终使用API返回的firstTimestamp作为开始时间
         if (this.selectedDataSource.status === 'running' && this.autoUpdateStartTime) {
             startTime = this.autoUpdateStartTime;
@@ -891,7 +891,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             console.warn('No start time available for auto update');
             return;
         }
-        
+
         // 确保开始时间不会超过结束时间
         if (startTime >= now) {
             console.warn('Start time is not before end time, adjusting...');
@@ -905,7 +905,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 return;
             }
         }
-        
+
         // 更新时间范围，保持开始时间不变，结束时间更新为当前时间
         this.timeRangeService.updateTimeRange(
             startTime,
@@ -914,12 +914,12 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             'live',
             this.selectedDataSource.value
         );
-        
+
         // 更新UI状态 - 保持开始时间不变
         this.isCustomTimeRange = true;
         this.selectedQuickRange = '';
         this.customRangeValue = this.formatDateLocal(startTime) + ' to ' + this.formatDateLocal(now);
-        
+
         console.log('End time updated to now:', {
             startTime: startTime.toISOString(),
             endTime: now.toISOString(),
@@ -954,13 +954,13 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 return parsed.start;
             }
         }
-        
+
         // 如果有快速选择的时间范围，计算开始时间
         if (this.selectedQuickRange && !this.isCustomTimeRange) {
             const endTime = new Date();
             return this.calculateStartTime(this.selectedQuickRange, endTime);
         }
-        
+
         // 默认返回1小时前
         const endTime = new Date();
         return new Date(endTime.getTime() - 60 * 60 * 1000);
@@ -970,11 +970,11 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     public debugTimeConversion(timestamp: any) {
         console.log('=== Time Conversion Debug ===');
         console.log('Input timestamp:', timestamp, 'Type:', typeof timestamp);
-        
+
         try {
             const parsed = this.parseTimestamp(timestamp);
             const formatted = this.formatDateLocal(parsed);
-            
+
             console.log('Conversion result:', {
                 original: timestamp,
                 parsed: parsed.toString(),
@@ -984,7 +984,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 timezoneOffset: parsed.getTimezoneOffset(),
                 isUTCFormat: timestamp.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/) ? 'Yes (added Z)' : 'No'
             });
-            
+
             return {
                 success: true,
                 parsed,
@@ -1003,15 +1003,15 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     public testApiTimeFormat() {
         console.log('=== Testing API Time Format ===');
         const testTimestamp = '2025-09-14T11:07:28';
-        
+
         console.log('=== Detailed Time Analysis ===');
         console.log('Original timestamp:', testTimestamp);
         console.log('Current timezone offset:', new Date().getTimezoneOffset(), 'minutes');
-        
+
         // 测试不同的解析方式
         const asUTC = new Date(testTimestamp + 'Z');
         const asLocal = new Date(testTimestamp);
-        
+
         console.log('Parsing results:', {
             'as UTC (with Z)': {
                 date: asUTC.toString(),
@@ -1030,17 +1030,17 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             'difference (ms)': asUTC.getTime() - asLocal.getTime(),
             'difference (hours)': (asUTC.getTime() - asLocal.getTime()) / (1000 * 60 * 60)
         });
-        
+
         // 格式化测试
         const utcFormatted = this.formatDateLocal(asUTC);
         const localFormatted = this.formatDateLocal(asLocal);
-        
+
         console.log('Formatting results:', {
             'UTC formatted': utcFormatted,
             'Local formatted': localFormatted,
             'Expected (UTC+8)': '2025-09-14 19:07'
         });
-        
+
         // 手动验证
         console.log('=== Manual Verification ===');
         const manualUTC = new Date('2025-09-14T11:07:28Z');
@@ -1050,7 +1050,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             local: manualUTC.toLocaleString(),
             formatted: this.formatDateLocal(manualUTC)
         });
-        
+
         return this.debugTimeConversion(testTimestamp);
     }
 
@@ -1064,7 +1064,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             autoUpdateStartTime: this.autoUpdateStartTime?.toISOString(),
             isAutoUpdateEnabled: this.isAutoUpdateEnabled
         });
-        
+
         if (this.customRangeValue && this.customRangeValue.includes(' to ')) {
             const parsed = this.parseRangeString(this.customRangeValue);
             if (parsed) {
@@ -1082,24 +1082,24 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     // 测试您提供的具体时间戳
     public testSpecificTimestamps() {
         console.log('=== Testing Specific API Timestamps ===');
-        
+
         const firstTimestamp = "2025-09-14T11:07:28";
         const lastTimestamp = "2025-09-14T14:05:08.427829";
-        
+
         console.log('Original API timestamps:', {
             firstTimestamp,
             lastTimestamp
         });
-        
+
         // 解析时间戳
         const startTime = this.parseTimestamp(firstTimestamp);
         const endTime = this.parseTimestamp(lastTimestamp);
-        
+
         // 格式化显示
         const formattedStart = this.formatDateLocal(startTime);
         const formattedEnd = this.formatDateLocal(endTime);
         const displayValue = formattedStart + ' to ' + formattedEnd;
-        
+
         console.log('Parsed and formatted result:', {
             startTime: {
                 original: firstTimestamp,
@@ -1118,7 +1118,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             displayValue: displayValue,
             expected: '2025-09-14 19:07 to 2025-09-14 22:05 (UTC+8)'
         });
-        
+
         return {
             startTime,
             endTime,

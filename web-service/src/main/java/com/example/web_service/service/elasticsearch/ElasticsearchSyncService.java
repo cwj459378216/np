@@ -248,7 +248,15 @@ public class ElasticsearchSyncService {
         // 打印响应
         log.info("ES Response: {}", objectMapper.writeValueAsString(response));
         log.info("ES Response Took: {}ms", response.took());
-        log.info("ES Response Total Hits: {}", response.hits().total() != null ? response.hits().total().value() : 0);
+        long totalHits = 0L;
+        try {
+            var hits = response.hits();
+            var totalObj = (hits != null) ? hits.total() : null;
+            if (totalObj != null) {
+                totalHits = totalObj.value();
+            }
+        } catch (Exception ignore) {}
+        log.info("ES Response Total Hits: {}", totalHits);
   
 
         if (response.aggregations() == null) {
@@ -374,14 +382,14 @@ public class ElasticsearchSyncService {
         
         log.info("Getting bandwidth trends for time range: {} to {}, filePath: {}, interval: {}", startTimeStr, endTimeStr, filePath, interval);
         
-        // 首先获取所有可用的port/channel
-        Set<Integer> availablePorts = getAvailablePorts(startTimeStr, endTimeStr, "octopusx-data");
+    // 首先获取所有可用的port/channel（可选 filePath 过滤，索引用通配）
+    Set<Integer> availablePorts = getAvailablePortsWithFilter(startTimeStr, endTimeStr, "octopusx-data-*", filePath);
         log.info("Found {} available ports: {}", availablePorts.size(), availablePorts);
         
         // 为每个port/channel获取趋势数据
         for (Integer port : availablePorts) {
             log.info("Processing bandwidth trends for port: {}", port);
-            List<TrendingData> channelTrends = getBandwidthTrending(startTimeStr, endTimeStr, port, "octopusx-data", interval);
+            List<TrendingData> channelTrends = getBandwidthTrendingWithFilter(startTimeStr, endTimeStr, port, "octopusx-data-*", interval, filePath);
             result.put("channel" + port, channelTrends);
             log.info("Got {} data points for port {}", channelTrends.size(), port);
         }
@@ -514,6 +522,7 @@ public class ElasticsearchSyncService {
                 .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("unused")
     private Set<Integer> getAvailablePorts(String startTime, String endTime, String index) throws IOException {
         // 构建查询条件 - 只包含时间范围
         var rangeQuery = new Query.Builder()
@@ -604,7 +613,15 @@ public class ElasticsearchSyncService {
         // 打印响应
         log.info("ES Response for ports query: {}", objectMapper.writeValueAsString(response));
         log.info("ES Response Took for ports query: {}ms", response.took());
-        log.info("ES Response Total Hits for ports query: {}", response.hits().total() != null ? response.hits().total().value() : 0);
+        long portsTotal = 0L;
+        try {
+            var hits = response.hits();
+            var totalObj = (hits != null) ? hits.total() : null;
+            if (totalObj != null) {
+                portsTotal = totalObj.value();
+            }
+        } catch (Exception ignore) {}
+        log.info("ES Response Total Hits for ports query: {}", portsTotal);
 
         if (response.aggregations() == null) {
             log.warn("No aggregations in port query response");
@@ -636,6 +653,46 @@ public class ElasticsearchSyncService {
         return portSet;
     }
 
+    // 带 filePath 过滤的可用端口查询
+    private Set<Integer> getAvailablePortsWithFilter(String startTime, String endTime, String index, String filePath) throws IOException {
+        // 时间范围
+        var rangeQuery = new Query.Builder()
+            .range(r -> r
+                .field("timestamp")
+                .gte(JsonData.of(startTime))
+                .lte(JsonData.of(endTime))
+            );
+
+        var boolBuilder = new co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery.Builder()
+            .must(rangeQuery.build());
+        if (filePath != null && !filePath.trim().isEmpty()) {
+            boolBuilder.must(m -> m
+                .match(t -> t
+                    .field("filePath")
+                    .query(filePath)
+                )
+            );
+        }
+        var query = Query.of(q -> q.bool(boolBuilder.build()));
+
+        var searchRequest = SearchRequest.of(s -> s
+            .index(index)
+            .size(0)
+            .query(query)
+            .aggregations("ports", a -> a
+                .terms(t -> t.field("port").size(100))
+            )
+        );
+
+        var response = esClient.search(searchRequest, Void.class);
+        if (response.aggregations() == null) return Set.of();
+        var ports = response.aggregations().get("ports");
+        if (ports == null) return Set.of();
+        var buckets = ports.lterms().buckets().array();
+        return buckets.stream().map(b -> (int)b.key()).collect(Collectors.toSet());
+    }
+
+    @SuppressWarnings("unused")
     private List<TrendingData> getBandwidthTrending(String startTime, String endTime, int port, String index, String interval) throws IOException {
         // 构建查询条件 - 包含时间范围和port过滤
         var rangeQuery = new Query.Builder()
@@ -799,7 +856,15 @@ public class ElasticsearchSyncService {
         // 打印响应
         log.info("ES Response for port {}: {}", port, objectMapper.writeValueAsString(response));
         log.info("ES Response Took for port {}: {}ms", port, response.took());
-        log.info("ES Response Total Hits for port {}: {}", port, response.hits().total() != null ? response.hits().total().value() : 0);
+        long portTotal = 0L;
+        try {
+            var hits = response.hits();
+            var totalObj = (hits != null) ? hits.total() : null;
+            if (totalObj != null) {
+                portTotal = totalObj.value();
+            }
+        } catch (Exception ignore) {}
+        log.info("ES Response Total Hits for port {}: {}", port, portTotal);
 
         if (response.aggregations() == null) {
             log.warn("No aggregations in bandwidth response for port {}", port);
@@ -839,6 +904,67 @@ public class ElasticsearchSyncService {
         log.info("Bandwidth trending result size for port {}: {}", port, result.size());
         log.info("Bandwidth trending result for port {}: {}", port, result);
         return result;
+    }
+
+    // 带 filePath 过滤的带宽趋势查询（util 时间桶平均）
+    private List<TrendingData> getBandwidthTrendingWithFilter(String startTime, String endTime, int port, String index, String interval, String filePath) throws IOException {
+        var rangeQuery = new Query.Builder()
+            .range(r -> r
+                .field("timestamp")
+                .gte(JsonData.of(startTime))
+                .lte(JsonData.of(endTime))
+            );
+        var portQuery = new Query.Builder()
+            .term(t -> t
+                .field("port")
+                .value(port)
+            );
+        var boolBuilder = new co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery.Builder()
+            .must(rangeQuery.build())
+            .must(portQuery.build());
+        if (filePath != null && !filePath.trim().isEmpty()) {
+            boolBuilder.must(m -> m
+                .match(t -> t
+                    .field("filePath")
+                    .query(filePath)
+                )
+            );
+        }
+        var query = Query.of(q -> q.bool(boolBuilder.build()));
+
+        var searchRequest = SearchRequest.of(s -> s
+            .index(index)
+            .size(0)
+            .query(query)
+            .aggregations("trend", a -> a
+                .dateHistogram(h -> h
+                    .field("timestamp")
+                    .calendarInterval(parseInterval(interval))
+                    .format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+                )
+                .aggregations("avg_util", avg -> avg
+                    .avg(av -> av.field("util"))
+                )
+            )
+        );
+
+        var response = esClient.search(searchRequest, Void.class);
+        if (response.aggregations() == null) return List.of();
+        var trend = response.aggregations().get("trend");
+        if (trend == null || trend.dateHistogram() == null) return List.of();
+        var buckets = trend.dateHistogram().buckets().array();
+        return buckets.stream().map(b -> {
+            double avgUtil = 0.0;
+            var avg = b.aggregations().get("avg_util");
+            if (avg != null && avg.avg() != null) {
+                Double v = avg.avg().value();
+                if (v != null) avgUtil = v.doubleValue();
+            }
+            TrendingData td = new TrendingData();
+            td.setTimestamp(b.key());
+            td.setCount((long)Math.round(avgUtil * 100));
+            return td;
+        }).collect(Collectors.toList());
     }
 
     /**
@@ -2056,7 +2182,8 @@ public class ElasticsearchSyncService {
                     .refresh(true)
                     .build();
                 DeleteByQueryResponse resp = esClient.deleteByQuery(req);
-                long deleted = resp.deleted();
+                Long delBoxed = resp.deleted();
+                long deleted = delBoxed != null ? delBoxed.longValue() : 0L;
                 log.info("deleteBySessionId: indexPattern={}, deleted={}", indexPattern, deleted);
                 totalDeleted += deleted;
             } catch (Exception e) {

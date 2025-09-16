@@ -307,9 +307,10 @@ public class ElasticsearchController {
         
         if (firstResponse.hits().hits().size() > 0) {
             var firstHit = firstResponse.hits().hits().get(0);
-            if (firstHit.source() != null) {
+            var firstSrc = firstHit.source();
+            if (firstSrc != null) {
                 @SuppressWarnings("unchecked")
-                Map<String, Object> firstRecord = (Map<String, Object>) firstHit.source().to(Map.class);
+                Map<String, Object> firstRecord = (Map<String, Object>) firstSrc.to(Map.class);
                 Object ts = firstRecord.get("timestamp");
                 firstTimestamp = normalizeTimestamp.apply(ts);
             }
@@ -317,9 +318,10 @@ public class ElasticsearchController {
         
         if (lastResponse.hits().hits().size() > 0) {
             var lastHit = lastResponse.hits().hits().get(0);
-            if (lastHit.source() != null) {
+            var lastSrc = lastHit.source();
+            if (lastSrc != null) {
                 @SuppressWarnings("unchecked")
-                Map<String, Object> lastRecord = (Map<String, Object>) lastHit.source().to(Map.class);
+                Map<String, Object> lastRecord = (Map<String, Object>) lastSrc.to(Map.class);
                 Object ts = lastRecord.get("timestamp");
                 lastTimestamp = normalizeTimestamp.apply(ts);
             }
@@ -402,14 +404,20 @@ public class ElasticsearchController {
                 ))
                 : filePathQuery;
 
-        var response = esClient.search(s -> s
-                        .index(index)
-                        .size(0)
-                        .query(finalQuery)
-                        .aggregations("avgDuration", a -> a.avg(v -> v.field("connDuration")))
-                , JsonData.class);
+    // 使用 count API 获取真实文档总数（避免默认 10,000 的上限）
+    var countResp = esClient.count(c -> c
+        .index(index)
+        .query(finalQuery)
+    );
+    long logs = countResp != null ? countResp.count() : 0L;
 
-        long logs = response.hits().total() != null ? response.hits().total().value() : 0L;
+    // 使用一次轻量 search 获取平均会话时长聚合
+    var response = esClient.search(s -> s
+            .index(index)
+            .size(0)
+            .query(finalQuery)
+            .aggregations("avgDuration", a -> a.avg(v -> v.field("connDuration")))
+        , JsonData.class);
         Double avgDuration = null;
         if (response.aggregations() != null && response.aggregations().containsKey("avgDuration")) {
             var avg = response.aggregations().get("avgDuration").avg();
@@ -448,9 +456,10 @@ public class ElasticsearchController {
         java.util.ArrayList<Map<String, Object>> raw = new java.util.ArrayList<>();
         if (resp.hits() != null && resp.hits().hits() != null) {
             for (var h : resp.hits().hits()) {
-                if (h.source() != null) {
+                var src = h.source();
+                if (src != null) {
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> record = (Map<String, Object>) h.source().to(Map.class);
+                    Map<String, Object> record = (Map<String, Object>) src.to(Map.class);
                     raw.add(record);
                 }
             }
@@ -565,21 +574,29 @@ public class ElasticsearchController {
 
         Long startMs = null;
         Long endMs = null;
-        if (!firstResp.hits().hits().isEmpty() && firstResp.hits().hits().get(0).source() != null) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> m = (Map<String, Object>) firstResp.hits().hits().get(0).source().to(Map.class);
+        if (!firstResp.hits().hits().isEmpty()) {
+            var firstHit = firstResp.hits().hits().get(0);
+            var src = firstHit.source();
+            if (src != null) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> m = (Map<String, Object>) src.to(Map.class);
             Object ts = m.get("timestamp");
             try {
                 startMs = (ts instanceof Number) ? ((Number) ts).longValue() : java.time.Instant.parse(String.valueOf(ts)).toEpochMilli();
             } catch (Exception ignore) {}
+            }
         }
-        if (!lastResp.hits().hits().isEmpty() && lastResp.hits().hits().get(0).source() != null) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> m = (Map<String, Object>) lastResp.hits().hits().get(0).source().to(Map.class);
+        if (!lastResp.hits().hits().isEmpty()) {
+            var lastHit = lastResp.hits().hits().get(0);
+            var src2 = lastHit.source();
+            if (src2 != null) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> m = (Map<String, Object>) src2.to(Map.class);
             Object ts = m.get("timestamp");
             try {
                 endMs = (ts instanceof Number) ? ((Number) ts).longValue() : java.time.Instant.parse(String.valueOf(ts)).toEpochMilli();
             } catch (Exception ignore) {}
+            }
         }
 
         if (startMs == null || endMs == null || endMs <= startMs) {

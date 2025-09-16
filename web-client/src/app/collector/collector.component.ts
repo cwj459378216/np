@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import { Store } from '@ngrx/store';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
 import { CollectorService } from 'src/app/services/collector.service';
+import { DashboardDataService, BandwidthTrendsResponse, TrendingData } from '../services/dashboard-data.service';
 import { Collector, StorageStrategy, CaptureRequest, CaptureResponse, CaptureFileItem, SessionConnStats, SessionEventCount, SessionTrafficItem } from '../services/collector.service';
 
 interface ContactList extends Collector {
@@ -109,7 +110,8 @@ export class CollectorComponent implements OnInit {
     private http: HttpClient,
     public fb: FormBuilder,
     public storeData: Store<any>,
-    private collectorService: CollectorService
+  private collectorService: CollectorService,
+  private dashboardDataService: DashboardDataService
   ) {
     this.initStore();
     this.isLoading = false;
@@ -143,6 +145,8 @@ export class CollectorComponent implements OnInit {
   setTab(tab: string) {
     this.tab2 = tab;
     if (this.tab2.toLowerCase() === 'profile') {
+  // 切换到 Storage Strategy 默认显示表格
+  this.displayType = 'list';
       this.loadCaptureFiles();
     }
   }
@@ -216,6 +220,9 @@ export class CollectorComponent implements OnInit {
           show: false,
         },
       },
+      noData: {
+        text: 'No data'
+      },
       dataLabels: {
         enabled: false,
       },
@@ -280,9 +287,7 @@ export class CollectorComponent implements OnInit {
       yaxis: {
         tickAmount: 2,
         labels: {
-          formatter: (value: number) => {
-            return parseInt(value * 100 + "") + '%';
-          },
+          formatter: (value: number) => `${Math.round(value)}%`,
           offsetX: isRtl ? -30 : -10,
           offsetY: 0,
           style: {
@@ -345,42 +350,8 @@ export class CollectorComponent implements OnInit {
           stops: isDark ? [100, 100] : [45, 100],
         },
       },
-      series: [
-        {
-          name: 'Channel 0 Utilization',
-          data: [
-            [1609459200000, 0.1], // 时间戳，收入
-            [1612137600000, 0.2],
-            [1614556800000, 0.5],
-            [1617235200000, 0.8],
-            [1619827200000, 0.3],
-            [1622505600000, 0.6],
-            [1625097600000, 0.5],
-            [1627776000000, 0.9],
-            [1630454400000, 0.7],
-            [1633046400000, 0.4],
-            [1635724800000, 0.8],
-            [1638316800000, 0.6],
-          ],
-        },
-        {
-          name: 'Channel 1 Utilization',
-          data: [
-            [1609459200000, 0.2], // 时间戳，收入
-            [1612137600000, 0.3],
-            [1614556800000, 0.1],
-            [1617235200000, 0.5],
-            [1619827200000, 0.2],
-            [1622505600000, 0.7],
-            [1625097600000, 0.8],
-            [1627776000000, 0.5],
-            [1630454400000, 0.1],
-            [1633046400000, 0.4],
-            [1635724800000, 0.3],
-            [1638316800000, 0.8],
-          ],
-        },
-      ],
+  // 移除默认静态数据，留空由实时数据填充
+  series: [],
     };
   }
 
@@ -773,7 +744,7 @@ export class CollectorComponent implements OnInit {
 
   private loadSessionMetrics(collector: ContactList) {
     const sessionId = collector.sessionId as string;
-    // 仅示例：不限定时间范围，后续可接入基于文件时间或UI选择的时间
+    // 连接统计（与interval无关）
     this.collectorService.getSessionConnStats(sessionId).subscribe({
       next: (s: SessionConnStats) => {
         collector.uiLogs = s.logs ?? 0;
@@ -789,7 +760,41 @@ export class CollectorComponent implements OnInit {
       error: () => {}
     });
 
-    // 直接根据 sessionId 请求会话流量，服务端限制最多20个点
+    // 计算首末时间 -> 计算 interval -> 传给 ES 的 date_histogram
+    this.collectorService.getEsTimeRangeByFilePath(sessionId, 'octopusx-data-*').subscribe({
+      next: (range) => {
+        if (!range || !range.hasData || !range.firstTimestamp || !range.lastTimestamp) {
+          // 回退到旧逻辑（直接20点原始数据）
+          this.loadTrafficFallback(sessionId, collector);
+          return;
+        }
+        const startMs = new Date(range.firstTimestamp).getTime();
+        const endMs = new Date(range.lastTimestamp).getTime();
+        if (!isFinite(startMs) || !isFinite(endMs) || endMs <= startMs) {
+          this.loadTrafficFallback(sessionId, collector);
+          return;
+        }
+        const interval = this.computeAutoInterval(endMs - startMs, 200);
+        this.dashboardDataService.getBandwidthTrends(startMs, endMs, sessionId, interval).subscribe({
+          next: (resp: BandwidthTrendsResponse) => {
+            const series = Object.keys(resp || {}).sort().map((key) => {
+              const arr = (resp as any)[key] as TrendingData[];
+              const idx = key.match(/(\d+)/)?.[1];
+              const chName = idx != null ? `Channel ${Number(idx) + 1} Utilization` : key;
+              const data = (arr || []).map(p => [p.timestamp, p.count]);
+              return { name: chName, data };
+            });
+            collector.uiTrafficSeries = series.length ? series : [];
+          },
+          error: () => this.loadTrafficFallback(sessionId, collector)
+        });
+      },
+      error: () => this.loadTrafficFallback(sessionId, collector)
+    });
+  }
+
+  // 回退：不传 interval 的最少实现（最多20个点）
+  private loadTrafficFallback(sessionId: string, collector: ContactList) {
     this.collectorService.getSessionTraffic(sessionId, undefined, undefined, 20).subscribe({
       next: (items: SessionTrafficItem[]) => {
         const groups: { [port: string]: [number, number][] } = {};
@@ -801,16 +806,39 @@ export class CollectorComponent implements OnInit {
           groups[portKey].push([ts, utilNum]);
         }
         Object.values(groups).forEach(arr => arr.sort((a, b) => a[0] - b[0]));
-        const series = Object.keys(groups).map(k => ({
+  const series = Object.keys(groups).map(k => ({
           name: `Channel ${Number(k) + 1} Utilization`,
           data: groups[k]
         }));
-        collector.uiTrafficSeries = series.length ? series : null;
+  collector.uiTrafficSeries = series.length ? series : [];
       },
       error: () => {
-        collector.uiTrafficSeries = null;
+  collector.uiTrafficSeries = [];
       }
     });
+  }
+
+  // 依据时间跨度计算最接近目标点数的常用间隔
+  private computeAutoInterval(spanMillis: number, desiredPoints: number): string {
+    const safeSpan = Math.max(1, spanMillis);
+    const targetBucketMs = Math.max(60_000, Math.floor(safeSpan / Math.max(1, desiredPoints)));
+    const steps: number[] = [
+      60_000,             // 1m
+      5 * 60_000,         // 5m
+      15 * 60_000,        // 15m
+      30 * 60_000,        // 30m
+      60 * 60_000,        // 1h
+      3 * 60 * 60_000,    // 3h
+      6 * 60 * 60_000,    // 6h
+      12 * 60 * 60_000,   // 12h
+      24 * 60 * 60_000,   // 1d
+      7 * 24 * 60 * 60_000 // 7d
+    ];
+    const labels: string[] = ['1m','5m','15m','30m','1h','3h','6h','12h','1d','7d'];
+    for (let i = 0; i < steps.length; i++) {
+      if (steps[i] >= targetBucketMs) return labels[i];
+    }
+    return '7d';
   }
 
   loadStorageStrategies() {

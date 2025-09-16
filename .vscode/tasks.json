@@ -7,7 +7,11 @@
             "script": "start",
             "isBackground": true,
             "options": {
-                "cwd": "${workspaceFolder}/web-client"
+                "cwd": "${workspaceFolder}/web-client",
+                "shell": {
+                    "executable": "/bin/bash",
+                    "args": ["-l", "-c"]
+                }
             },
             "problemMatcher": {
                 "owner": "typescript",
@@ -24,4 +28,4 @@
             }
         }
     ]
-} 
+}
