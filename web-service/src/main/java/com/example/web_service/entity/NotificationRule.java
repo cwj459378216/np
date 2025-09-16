@@ -30,10 +30,8 @@ public class NotificationRule {
     @Column(columnDefinition = "jsonb")
     private Object filters;
 
-    @Column(name = "notification_method", nullable = false)
-    private String notificationMethod;
-
-    private String endpoint;
+    @Column(name = "notification_setting_id", nullable = false)
+    private Long notificationSettingId;
 
     private String status;
 

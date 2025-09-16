@@ -103,8 +103,7 @@ CREATE TABLE IF NOT EXISTS notification_rules (
     time_window VARCHAR(50) NOT NULL,
     trigger_condition VARCHAR(50) NOT NULL,
     filters JSONB,
-    notification_method VARCHAR(50) NOT NULL,
-    endpoint VARCHAR(255),
+    notification_setting_id BIGINT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'Active',
     created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP

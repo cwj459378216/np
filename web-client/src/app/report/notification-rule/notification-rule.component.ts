@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
+import { NotificationSettingService } from '../../services/notification-setting.service';
 
 @Component({
     selector: 'app-notification-rule',
@@ -27,10 +28,11 @@ export class NotificationRuleComponent implements OnInit {
         { value: 'condition', label: 'On Specific Condition' }
     ];
 
-    notificationMethodOptions = [
-        { value: 'email', label: 'Email' },
-        { value: 'syslog', label: 'Syslog' }
-    ];
+    // 由通知设置动态生成
+    notificationMethodOptions: { value: string | number; label: string }[] = [];
+
+    // 通知设置列表（来自 Notification Settings）
+    notificationSettings: any[] = [];
 
     rules = [
         {
@@ -38,8 +40,8 @@ export class NotificationRuleComponent implements OnInit {
             ruleName: 'High CPU Usage Alert',
             timeWindow: '24 hours',
             triggerCondition: 'new_event',
+            // 仅用于占位/演示；实际从后端加载时使用 notificationSettingId
             notificationMethod: 'email',
-            endpoint: 'admin@example.com',
             status: 'Active',
             filters: []
         },
@@ -48,10 +50,10 @@ export class NotificationRuleComponent implements OnInit {
             ruleName: 'Memory Usage Warning',
             timeWindow: '7 days',
             triggerCondition: 'condition',
+            // 仅用于占位/演示；实际从后端加载时使用 notificationSettingId
             notificationMethod: 'syslog',
-            endpoint: '192.168.1.100:514',
             status: 'Inactive',
-            filters: [{ field: 'memory_usage', value: '80' }]
+            filters: [{ field: 'severity', value: 'high' }]
         }
     ];
 
@@ -59,18 +61,26 @@ export class NotificationRuleComponent implements OnInit {
 
     filters: any[] = [{ field: '', value: '' }];
     filterFields = [
-        { value: 'cpu_usage', label: 'CPU Usage' },
-        { value: 'memory_usage', label: 'Memory Usage' },
-        { value: 'disk_usage', label: 'Disk Usage' },
-        { value: 'network_traffic', label: 'Network Traffic' }
+        { value: 'severity', label: 'Severity' },
+        { value: 'signature', label: 'Signature' },
+        { value: 'dest_ip', label: 'Destination IP' },
+        { value: 'src_ip', label: 'Source IP' },
+        { value: 'app_proto', label: 'Application Protocol' }
     ];
 
-    constructor(private fb: FormBuilder, private http: HttpClient, private translate: TranslateService) {
+    constructor(
+        private fb: FormBuilder,
+        private http: HttpClient,
+        private translate: TranslateService,
+        private notificationSettingService: NotificationSettingService
+    ) {
         this.initForm();
     }
 
     ngOnInit(): void {
-        this.loadRules();
+    // 并行加载通知设置与规则
+    this.loadNotificationSettings();
+    this.loadRules();
     }
 
     initForm() {
@@ -80,8 +90,7 @@ export class NotificationRuleComponent implements OnInit {
             description: [''],
             timeWindow: ['', Validators.required],
             triggerCondition: ['', Validators.required],
-            notificationMethod: ['', Validators.required],
-            endpoint: [''],
+            notificationSettingId: [null, Validators.required],
             status: ['Active']
         });
 
@@ -107,14 +116,23 @@ export class NotificationRuleComponent implements OnInit {
         this.initForm();
 
         if (rule) {
+            // 兼容：如果是旧字段 notificationMethod，则尽力映射为设置ID
+            let settingId: any = (rule as any).notificationSettingId;
+            if (!settingId && (rule as any).notificationMethod) {
+                const legacy = (rule as any).notificationMethod;
+                if (legacy === 'email' || legacy === 'syslog') {
+                    const mapped = this.getSettingIdByService(legacy);
+                    if (mapped !== null) settingId = mapped;
+                }
+            }
+
             const formValue = {
                 id: rule.id,
                 ruleName: rule.ruleName,
                 description: rule.description,
                 timeWindow: rule.timeWindow,
                 triggerCondition: rule.triggerCondition,
-                notificationMethod: rule.notificationMethod,
-                endpoint: rule.endpoint,
+                notificationSettingId: settingId ?? null,
                 status: rule.status
             };
 
@@ -157,7 +175,7 @@ export class NotificationRuleComponent implements OnInit {
     }
 
     saveRule() {
-        const requiredFields = ['ruleName', 'timeWindow', 'triggerCondition', 'notificationMethod'];
+    const requiredFields = ['ruleName', 'timeWindow', 'triggerCondition', 'notificationSettingId'];
         const invalidFields = requiredFields.filter(field => !this.params.get(field)?.valid);
 
         if (invalidFields.length > 0) {
@@ -175,8 +193,8 @@ export class NotificationRuleComponent implements OnInit {
             }
         }
 
-        const formValue = this.params.value;
-        const ruleData = {
+    const formValue = this.params.value;
+    const ruleData = {
             ...formValue,
             filters: this.params.get('triggerCondition')?.value === 'condition'
                 ? this.filters.filter(f => f.field && f.value)
@@ -210,17 +228,27 @@ export class NotificationRuleComponent implements OnInit {
         }
 
         const searchTerm = this.searchText.toLowerCase();
-        this.filteredRules = this.rules.filter(rule =>
-            rule.ruleName.toLowerCase().includes(searchTerm) ||
-            rule.triggerCondition.toLowerCase().includes(searchTerm) ||
-            rule.notificationMethod.toLowerCase().includes(searchTerm)
+        this.filteredRules = this.rules.filter((rule: any) =>
+            rule.ruleName?.toLowerCase().includes(searchTerm) ||
+            rule.triggerCondition?.toLowerCase().includes(searchTerm) ||
+            this.getSettingLabel(rule.notificationSettingId ?? (rule as any).notificationMethod).toLowerCase().includes(searchTerm)
         );
     }
 
     loadRules() {
         this.http.get(`${environment.apiUrl}/notification-rules`).subscribe(
             (data: any) => {
-                this.rules = data;
+                // 兼容：若返回为旧结构，尽量映射 settingId
+                this.rules = (data || []).map((r: any) => {
+                    if (!r.notificationSettingId && r.notificationMethod) {
+                        const legacy = r.notificationMethod;
+                        if (legacy === 'email' || legacy === 'syslog') {
+                            const mapped = this.getSettingIdByService(legacy);
+                            if (mapped !== null) r.notificationSettingId = mapped;
+                        }
+                    }
+                    return r;
+                });
                 this.searchRules();
             },
             error => {
@@ -262,5 +290,39 @@ export class NotificationRuleComponent implements OnInit {
                 this.showMessage('Failed to update rule status', 'error');
             }
         });
+    }
+
+    // 加载通知设置并生成下拉选项
+    private loadNotificationSettings() {
+        this.notificationSettingService.getSettings().subscribe({
+            next: (settings) => {
+                this.notificationSettings = settings || [];
+                this.notificationMethodOptions = this.notificationSettings.map((s: any) => ({
+                    value: s.id,
+                    label: `${s.name} (${s.service})`
+                }));
+            },
+            error: () => {
+                this.notificationSettings = [];
+                this.notificationMethodOptions = [];
+            }
+        });
+    }
+
+    // 根据 notificationSettingId（或旧值）返回显示标签
+    getSettingLabel(settingIdOrLegacy: any): string {
+        if (settingIdOrLegacy === undefined || settingIdOrLegacy === null) return '';
+        // 如果存的是ID
+        const setting = this.notificationSettings.find((s: any) => `${s.id}` === `${settingIdOrLegacy}`);
+        if (setting) return `${setting.name} (${setting.service})`;
+        // 兼容历史数据：直接存储了 'email' 或 'syslog'
+        if (settingIdOrLegacy === 'email' || settingIdOrLegacy === 'syslog') return settingIdOrLegacy;
+        return `${settingIdOrLegacy}`;
+    }
+
+    // 通过服务类型找到一个对应的通知设置 ID（优先第一个匹配）
+    private getSettingIdByService(service: 'email' | 'syslog'): number | null {
+        const found = this.notificationSettings.find((s: any) => s.service === service);
+        return found ? found.id : null;
     }
 }

@@ -19,7 +19,7 @@
                                 {{ 'Add Rule' | translate }}
                             </button>
                         </div>
-                        <div>
+                        <!-- <div>
                             <button type="button" class="btn btn-outline-primary p-2"
                                 [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
                                 (click)="displayType = 'list'">
@@ -32,7 +32,7 @@
                                 (click)="displayType = 'grid'">
                                 <icon-layout-grid />
                             </button>
-                        </div>
+                        </div> -->
                     </div>
 
                     <div class="relative">
@@ -74,12 +74,7 @@
                                     </ng-container>
                                 </td>
                                 <td>
-                                    <ng-container *ngIf="rule.notificationMethod === 'syslog'">
-                                        {{ 'Syslog' | translate }} ({{ rule.endpoint }})
-                                    </ng-container>
-                                    <ng-container *ngIf="rule.notificationMethod === 'email'">
-                                        {{ 'Email' | translate }}
-                                    </ng-container>
+                                    {{ getSettingLabel(rule.notificationSettingId ?? rule.notificationMethod) }}
                                 </td>
                                 <td>
                                     <label class="w-12 h-6 relative inline-block">
@@ -176,16 +171,11 @@
                         </div>
                         <div class="mb-5">
                             <label for="notificationMethod">{{ 'Notification Method' | translate }}</label>
-                            <select id="notificationMethod" formControlName="notificationMethod" class="form-select" required>
+                            <select id="notificationMethod" formControlName="notificationSettingId" class="form-select" required>
                                 <option *ngFor="let option of notificationMethodOptions" [value]="option.value">
                                     {{ option.label }}
                                 </option>
                             </select>
-                        </div>
-                        <div class="mb-5">
-                            <label for="endpoint">{{ 'Endpoint' | translate }}</label>
-                            <input id="endpoint" type="text" formControlName="endpoint" class="form-input"
-                                   [placeholder]="params.get('notificationMethod')?.value === 'email' ? 'Email address' : 'Server:Port'" />
                         </div>
                         <div class="mb-5">
                             <label for="status">{{ 'Status' | translate }}</label>
