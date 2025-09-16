@@ -2373,9 +2373,13 @@ public class ElasticsearchSyncService {
     }
 
     /**
-     * Delete all documents across relevant indices associated with a given sessionId.
-     * This uses delete-by-query on multiple indices that may store data for a capture session.
-     * Indices included: conn-*, http-*, dns-*, smb_cmd-*, octopusx-data, zeek-* (if present).
+     * Delete all documents in Elasticsearch associated with a given sessionId.
+     * Rather than hardcoding index patterns, this method enumerates all non-system indices
+     * via _cat/indices and executes delete-by-query against each. A document matches if any of:
+     * - sessionId term equals the provided sessionId
+     * - uuid term equals the provided sessionId
+     * - filePath contains the provided sessionId (match query)
+     * System or internal indices are skipped (names starting with "." or known internal prefixes).
      */
     public long deleteBySessionId(String sessionId) throws IOException {
         if (sessionId == null || sessionId.isBlank()) {
@@ -2390,15 +2394,44 @@ public class ElasticsearchSyncService {
             .minimumShouldMatch("1");
         Query query = Query.of(q -> q.bool(bool.build()));
 
-        String[] indices = new String[] {
-            "conn-*", "http-*", "dns-*", "smb_cmd-*", "octopusx-data", "zeek-*"
-        };
-
         long totalDeleted = 0L;
-        for (String indexPattern : indices) {
+
+        // Enumerate all indices and filter out system/internal ones
+        List<co.elastic.clients.elasticsearch.cat.indices.IndicesRecord> all;
+        try {
+            all = esClient.cat().indices(c -> c).valueBody();
+        } catch (Exception e) {
+            log.warn("deleteBySessionId: failed to list indices via _cat/indices: {}", e.getMessage());
+            all = java.util.Collections.emptyList();
+        }
+
+        if (all.isEmpty()) {
+            log.warn("deleteBySessionId: no indices found (cat empty). Nothing to delete.");
+            return 0L;
+        }
+
+        for (var rec : all) {
+            String index = rec.index();
+            if (index == null || index.isBlank()) continue;
+            // Skip system and internal indices
+            if (index.startsWith(".")
+                || index.startsWith("kibana")
+                || index.startsWith("security")
+                || index.startsWith(".security")
+                || index.startsWith(".tasks")
+                || index.startsWith(".monitoring")
+                || index.startsWith(".kibana")
+                || index.startsWith(".apm")
+                || index.startsWith("apm-")
+                || index.startsWith(".ds-")
+            ) {
+                log.debug("deleteBySessionId: skip system/internal index: {}", index);
+                continue;
+            }
+
             try {
                 DeleteByQueryRequest req = new DeleteByQueryRequest.Builder()
-                    .index(indexPattern)
+                    .index(index)
                     .query(query)
                     .conflicts(Conflicts.Proceed)
                     .refresh(true)
@@ -2406,11 +2439,10 @@ public class ElasticsearchSyncService {
                 DeleteByQueryResponse resp = esClient.deleteByQuery(req);
                 Long delBoxed = resp.deleted();
                 long deleted = delBoxed != null ? delBoxed.longValue() : 0L;
-                log.info("deleteBySessionId: indexPattern={}, deleted={}", indexPattern, deleted);
+                log.info("deleteBySessionId: index={}, deleted={}", index, deleted);
                 totalDeleted += deleted;
             } catch (Exception e) {
-                // Index pattern may not exist; log and continue
-                log.warn("deleteBySessionId failed on pattern {}: {}", indexPattern, e.getMessage());
+                log.warn("deleteBySessionId failed on index {}: {}", index, e.getMessage());
             }
         }
         return totalDeleted;
