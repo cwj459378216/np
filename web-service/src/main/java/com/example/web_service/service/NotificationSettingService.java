@@ -113,4 +113,50 @@ public class NotificationSettingService {
             return false;
         }
     }
-} 
+
+    /**
+     * Send a notification using the provided setting. Supports email and syslog.
+     */
+    public void sendNotification(NotificationSetting setting, String subject, String content) throws Exception {
+        if (setting == null || setting.getService() == null) {
+            throw new IllegalArgumentException("Invalid notification setting");
+        }
+        if ("email".equalsIgnoreCase(setting.getService())) {
+            Properties props = new Properties();
+            props.put("mail.smtp.host", setting.getMailServer());
+            props.put("mail.smtp.port", setting.getEmailPort());
+            props.put("mail.smtp.auth", "true");
+            if ("ssl".equalsIgnoreCase(setting.getSecurity())) {
+                props.put("mail.smtp.ssl.enable", "true");
+                props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            } else if ("tls".equalsIgnoreCase(setting.getSecurity())) {
+                props.put("mail.smtp.starttls.enable", "true");
+            }
+            Session session = Session.getInstance(props, new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(setting.getAccountName(), setting.getPassword());
+                }
+            });
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(setting.getSender()));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(setting.getReceiver()));
+            message.setSubject(subject != null ? subject : (setting.getSubject() != null ? setting.getSubject() : "Notification"));
+            message.setText(content != null ? content : "");
+            Transport.send(message);
+        } else if ("syslog".equalsIgnoreCase(setting.getService())) {
+            try (Socket socket = new Socket(setting.getHost(), Integer.parseInt(setting.getSyslogPort()))) {
+                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM dd HH:mm:ss"));
+                String hostname = InetAddress.getLocalHost().getHostName();
+                String tag = (setting.getSubject() != null && !setting.getSubject().isBlank()) ? setting.getSubject() : "Notification";
+                String payload = (content != null ? content : "").replaceAll("\r?\n", " ");
+                String msg = String.format("<%d>%s %s %s: %s\n", 13, timestamp, hostname, tag, payload);
+                OutputStream out = socket.getOutputStream();
+                out.write(msg.getBytes(StandardCharsets.UTF_8));
+                out.flush();
+            }
+        } else {
+            throw new UnsupportedOperationException("Unsupported notification service: " + setting.getService());
+        }
+    }
+}

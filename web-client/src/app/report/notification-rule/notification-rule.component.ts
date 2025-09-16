@@ -23,6 +23,12 @@ export class NotificationRuleComponent implements OnInit {
         { value: '30 days', label: '30 Days' }
     ];
 
+    timeUnits = [
+        { value: 'minutes', label: 'Minutes' },
+        { value: 'hours', label: 'Hours' },
+        { value: 'days', label: 'Days' }
+    ];
+
     triggerConditionOptions = [
         { value: 'new_event', label: 'On New Event' },
         { value: 'condition', label: 'On Specific Condition' }
@@ -88,7 +94,11 @@ export class NotificationRuleComponent implements OnInit {
             id: [null],
             ruleName: ['', Validators.required],
             description: [''],
+            // 保留后端需要的 timeWindow（由下面两个字段合成）
             timeWindow: ['', Validators.required],
+            // 新增：时间窗口值与单位
+            timeWindowValue: [null, [Validators.required, Validators.min(1)]],
+            timeWindowUnit: ['hours', Validators.required],
             triggerCondition: ['', Validators.required],
             notificationSettingId: [null, Validators.required],
             status: ['Active']
@@ -109,6 +119,26 @@ export class NotificationRuleComponent implements OnInit {
 
     removeFilter(index: number) {
         this.filters.splice(index, 1);
+    }
+
+    private setTimeWindowFieldsFromString(tw: string | null | undefined) {
+        const def = { value: null as any, unit: 'hours' };
+        if (!tw) {
+            this.params.patchValue({ timeWindowValue: def.value, timeWindowUnit: def.unit }, { emitEvent: false });
+            return;
+        }
+        const m = String(tw).match(/(\d+)\s*(minute|minutes|min|hour|hours|h|day|days|d)/i);
+        if (m) {
+            const num = parseInt(m[1], 10);
+            const raw = m[2].toLowerCase();
+            let unit: 'minutes' | 'hours' | 'days' = 'hours';
+            if (raw.startsWith('min')) unit = 'minutes';
+            else if (raw.startsWith('h')) unit = 'hours';
+            else if (raw.startsWith('d') || raw.startsWith('day')) unit = 'days';
+            this.params.patchValue({ timeWindowValue: num, timeWindowUnit: unit }, { emitEvent: false });
+        } else {
+            this.params.patchValue({ timeWindowValue: def.value, timeWindowUnit: def.unit }, { emitEvent: false });
+        }
     }
 
     editRule(rule: any = null) {
@@ -137,6 +167,7 @@ export class NotificationRuleComponent implements OnInit {
             };
 
             this.params.patchValue(formValue);
+            this.setTimeWindowFieldsFromString(rule.timeWindow);
             this.filters = rule.filters || [];
 
             if (rule.triggerCondition === 'condition' && this.filters.length === 0) {
@@ -175,7 +206,8 @@ export class NotificationRuleComponent implements OnInit {
     }
 
     saveRule() {
-    const requiredFields = ['ruleName', 'timeWindow', 'triggerCondition', 'notificationSettingId'];
+        // 更新校验：使用 timeWindowValue 与 timeWindowUnit
+        const requiredFields = ['ruleName', 'timeWindowValue', 'timeWindowUnit', 'triggerCondition', 'notificationSettingId'];
         const invalidFields = requiredFields.filter(field => !this.params.get(field)?.valid);
 
         if (invalidFields.length > 0) {
@@ -193,18 +225,30 @@ export class NotificationRuleComponent implements OnInit {
             }
         }
 
-    const formValue = this.params.value;
-    const ruleData = {
-            ...formValue,
+        // 由 value+unit 组合成后端需要的 timeWindow 文本（如 "15 minutes"）
+        const value = this.params.get('timeWindowValue')?.value;
+        const unit = this.params.get('timeWindowUnit')?.value;
+        const timeWindowText = `${value} ${unit}`;
+        this.params.patchValue({ timeWindow: timeWindowText }, { emitEvent: false });
+
+        const formValue = this.params.value;
+        const ruleData = {
+            id: formValue.id,
+            ruleName: formValue.ruleName,
+            description: formValue.description,
+            timeWindow: formValue.timeWindow,
+            triggerCondition: formValue.triggerCondition,
+            notificationSettingId: formValue.notificationSettingId,
+            status: formValue.status,
             filters: this.params.get('triggerCondition')?.value === 'condition'
                 ? this.filters.filter(f => f.field && f.value)
                 : []
         };
 
         const url = `${environment.apiUrl}/notification-rules${ruleData.id ? `/${ruleData.id}` : ''}`;
-        const method = ruleData.id ? 'put' : 'post';
+        const method = (ruleData as any).id ? 'put' : 'post';
 
-        this.http[method](url, ruleData).subscribe(
+        this.http[method](url as any, ruleData).subscribe(
             () => {
                 this.loadRules();
                 this.translate.get('Rule has been saved successfully').subscribe(message => {

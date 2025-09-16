@@ -109,12 +109,15 @@
                             <input id="ruleName" type="text" formControlName="ruleName" class="form-input" required />
                         </div>
                         <div class="mb-5">
-                            <label for="timeWindow">{{ 'Time Window' | translate }}</label>
-                            <select id="timeWindow" formControlName="timeWindow" class="form-select" required>
-                                <option *ngFor="let option of timeWindowOptions" [value]="option.value">
-                                    {{ option.label }}
-                                </option>
-                            </select>
+                            <label class="block">{{ 'Time Window' | translate }}</label>
+                            <div class="flex gap-2">
+                                <input type="number" min="1" step="1" class="form-input w-28" formControlName="timeWindowValue" required />
+                                <select class="form-select w-40" formControlName="timeWindowUnit" required>
+                                    <option value="minutes">{{ 'Minutes' | translate }}</option>
+                                    <option value="hours">{{ 'Hours' | translate }}</option>
+                                    <option value="days">{{ 'Days' | translate }}</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="mb-5">
                             <label for="triggerCondition">{{ 'Trigger Condition' | translate }}</label>

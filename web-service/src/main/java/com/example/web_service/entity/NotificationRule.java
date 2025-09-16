@@ -46,11 +46,16 @@ public class NotificationRule {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        if (updatedAt == null) {
+            updatedAt = createdAt;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        // Only auto-update when not explicitly set by business logic
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
     }
-} 
+}

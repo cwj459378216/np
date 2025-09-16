@@ -17,6 +17,9 @@ public class NotificationRuleController {
     @Autowired
     private NotificationRuleService notificationRuleService;
 
+    @Autowired
+    private com.example.web_service.service.NotificationRuleSchedulerService notificationRuleSchedulerService;
+
     @GetMapping
     @Operation(summary = "获取所有规则")
     public List<NotificationRule> getAllRules() {
@@ -32,19 +35,25 @@ public class NotificationRuleController {
     @PostMapping
     @Operation(summary = "创建规则")
     public NotificationRule createRule(@RequestBody NotificationRule rule) {
-        return notificationRuleService.save(rule);
+        NotificationRule saved = notificationRuleService.save(rule);
+        // schedule at updatedAt + timeWindow
+        notificationRuleSchedulerService.scheduleRule(saved.getId());
+        return saved;
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "更新规则")
     public NotificationRule updateRule(@PathVariable Long id, @RequestBody NotificationRule rule) {
         rule.setId(id);
-        return notificationRuleService.save(rule);
+        NotificationRule saved = notificationRuleService.save(rule);
+        notificationRuleSchedulerService.scheduleRule(saved.getId());
+        return saved;
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除规则")
     public void deleteRule(@PathVariable Long id) {
         notificationRuleService.deleteById(id);
+        notificationRuleSchedulerService.cancelRule(id);
     }
-} 
+}
