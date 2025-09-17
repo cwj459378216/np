@@ -64,7 +64,7 @@ public class ReportScheduleExecutorService {
                     .filter(scheduler -> "Active".equals(scheduler.getStatus()) || "enabled".equals(scheduler.getStatus()))
                     .toList();
             
-            logger.debug("Checking {} active schedulers at {}", activeSchedulers.size(), now);
+            // logger.debug("Checking {} active schedulers at {}", activeSchedulers.size(), now);
             
             for (ReportScheduler scheduler : activeSchedulers) {
                 if (shouldExecuteNow(scheduler, now)) {

@@ -64,7 +64,12 @@ export class BoxedSigninComponent {
 
     async submit() {
         if (!this.inputEmail || !this.inputPassword) {
-            Swal.fire({ icon: 'warning', title: '提示', text: '请输入用户名和密码', confirmButtonText: '确定' });
+            Swal.fire({
+                icon: 'warning',
+                title: this.translate.instant('auth.prompt'),
+                text: this.translate.instant('auth.enterUsernamePassword'),
+                confirmButtonText: this.translate.instant('general.ok')
+            });
             return;
         }
         // 解析路由中的 returnUrl（如果用户因守卫被重定向）
@@ -80,9 +85,9 @@ export class BoxedSigninComponent {
             error: () => {
                 Swal.fire({
                     icon: 'error',
-                    title: '登录失败',
-                    text: '用户名或密码错误',
-                    confirmButtonText: '确定'
+                    title: this.translate.instant('auth.loginFailed'),
+                    text: this.translate.instant('auth.invalidCredentials'),
+                    confirmButtonText: this.translate.instant('general.ok')
                 });
             }
         });

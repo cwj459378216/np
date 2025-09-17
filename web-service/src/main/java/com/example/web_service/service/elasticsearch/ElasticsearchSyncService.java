@@ -146,30 +146,6 @@ public class ElasticsearchSyncService {
                 )
             );
 
-        // 打印原始查询条件
-        log.info("Query DSL: {}", query.toString());
-        log.info("Query JSON: {}", objectMapper.writeValueAsString(query));
-        
-        // 打印Kibana可运行的查询语句
-        log.info("=== Kibana Query for Trending ===");
-        log.info("GET /{}/_search", index);
-        log.info("Content-Type: application/json");
-        log.info("");
-        log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
-            "size", 0,
-            "query", query,
-            "aggs", Map.of(
-                "trend", Map.of(
-                    "date_histogram", Map.of(
-                        "field", "timestamp",
-                        "calendar_interval", interval,
-                        "format", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-                    )
-                )
-            )
-        )));
-        log.info("=== End Kibana Query ===");
-
         // 创建完整的搜索请求
         var searchRequest = SearchRequest.of(s -> s
                 .index(index)
@@ -184,70 +160,9 @@ public class ElasticsearchSyncService {
                 )
         );
 
-        // 打印完整的搜索请求
-        log.info("Complete Search Request: {}", searchRequest.toString());
-        log.info("Complete Search Request JSON: {}", objectMapper.writeValueAsString(Map.of(
-            "index", index,
-            "size", 0,
-            "query", Map.of(
-                "bool", Map.of(
-                    "must", List.of(
-                        Map.of(
-                            "range", Map.of(
-                                "timestamp", Map.of(
-                                    "gte", startTime,
-                                    "lte", endTime
-                                )
-                            )
-                        )
-                    )
-                )
-            ),
-            "aggs", Map.of(
-                "trend", Map.of(
-                    "date_histogram", Map.of(
-                        "field", "timestamp",
-                        "calendar_interval", interval,
-                        "format", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-                    )
-                )
-            )
-        )));
-        log.info("Complete Search Request Pretty JSON: {}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
-            "index", index,
-            "size", 0,
-            "query", Map.of(
-                "bool", Map.of(
-                    "must", List.of(
-                        Map.of(
-                            "range", Map.of(
-                                "timestamp", Map.of(
-                                    "gte", startTime,
-                                    "lte", endTime
-                                )
-                            )
-                        )
-                    )
-                )
-            ),
-            "aggs", Map.of(
-                "trend", Map.of(
-                    "date_histogram", Map.of(
-                        "field", "timestamp",
-                        "calendar_interval", interval,
-                        "format", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-                    )
-                )
-            )
-        )));
-        log.info("Search Request Details - Index: {}, Size: 0, Interval: {}, Aggregations: trend date_histogram on 'timestamp'", index, interval);
-
         // 执行查询
         var response = esClient.search(searchRequest, Void.class);
 
-        // 打印响应
-        log.info("ES Response: {}", objectMapper.writeValueAsString(response));
-        log.info("ES Response Took: {}ms", response.took());
         long totalHits = 0L;
         try {
             var hits = response.hits();
@@ -256,11 +171,8 @@ public class ElasticsearchSyncService {
                 totalHits = totalObj.value();
             }
         } catch (Exception ignore) {}
-        log.info("ES Response Total Hits: {}", totalHits);
-  
 
         if (response.aggregations() == null) {
-            log.warn("No aggregations in response");
             return List.of();
         }
 
@@ -268,12 +180,10 @@ public class ElasticsearchSyncService {
         var aggs = response.aggregations();
         var trend = aggs.get("trend");
         if (trend == null) {
-            log.warn("No trend aggregation found");
             return List.of();
         }
 
         var buckets = trend.dateHistogram().buckets().array();
-        log.info("Found {} buckets in trend aggregation", buckets.size());
 
         var result = buckets.stream()
                 .map(bucket -> {
@@ -281,18 +191,16 @@ public class ElasticsearchSyncService {
                         bucket.key(),
                         bucket.docCount()
                     );
-                    log.debug("Bucket: timestamp={}, count={}", 
-                        bucket.key(), bucket.docCount());
                     return trendData;
                 })
                 .collect(Collectors.toList());
 
-        log.info("Trending result size: {}", result.size());
         return result;
     }
 
     public Map<String, Object> searchRawWithPagination(String index, Query query, Integer size, Integer from) throws IOException {
-        SearchResponse<JsonData> response = esClient.search(s -> s
+        // 构建SearchRequest
+        SearchRequest searchRequest = SearchRequest.of(s -> s
                 .index(index)
                 .query(query)
                 .size(size)
@@ -302,28 +210,18 @@ public class ElasticsearchSyncService {
                         .field("timestamp")
                         .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)
                     )
-                ),
-                JsonData.class
+                )
         );
         
-        log.info("ES Query: {}", objectMapper.writeValueAsString(response.toString()));
+        // 输出请求日志
+        try {
+            String requestString = searchRequest.toString();
+            log.debug("Elasticsearch SearchRequest: {}", requestString);
+        } catch (Exception e) {
+            log.warn("Failed to serialize SearchRequest for logging: {}", e.getMessage());
+        }
         
-        // 打印Kibana可运行的查询语句
-        log.info("=== Kibana Query for Raw Search ===");
-        log.info("GET /{}/_search", index);
-        log.info("Content-Type: application/json");
-        log.info("");
-        log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
-            "size", size,
-            "from", from,
-            "query", query,
-            "sort", List.of(Map.of(
-                "timestamp", Map.of(
-                    "order", "desc"
-                )
-            ))
-        )));
-        log.info("=== End Kibana Query ===");
+        SearchResponse<JsonData> response = esClient.search(searchRequest, JsonData.class);
         
         List<Map<String, Object>> hits = response.hits().hits().stream()
                 .map(hit -> hit.source())
@@ -380,21 +278,15 @@ public class ElasticsearchSyncService {
         String startTimeStr = java.time.Instant.ofEpochMilli(startTime).toString();
         String endTimeStr = java.time.Instant.ofEpochMilli(endTime).toString();
         
-        log.info("Getting bandwidth trends for time range: {} to {}, filePath: {}, interval: {}", startTimeStr, endTimeStr, filePath, interval);
-        
     // 首先获取所有可用的port/channel（可选 filePath 过滤，索引用通配）
     Set<Integer> availablePorts = getAvailablePortsWithFilter(startTimeStr, endTimeStr, "octopusx-data-*", filePath);
-        log.info("Found {} available ports: {}", availablePorts.size(), availablePorts);
         
         // 为每个port/channel获取趋势数据
         for (Integer port : availablePorts) {
-            log.info("Processing bandwidth trends for port: {}", port);
             List<TrendingData> channelTrends = getBandwidthTrendingWithFilter(startTimeStr, endTimeStr, port, "octopusx-data-*", interval, filePath);
             result.put("channel" + port, channelTrends);
-            log.info("Got {} data points for port {}", channelTrends.size(), port);
         }
         
-        log.info("Bandwidth trends result contains {} channels", result.size());
         return result;
     }
 
@@ -453,7 +345,6 @@ public class ElasticsearchSyncService {
             )
         );
 
-        log.info("Conn protocol trends request: start={}, end={}, filePath={}, interval={}", startTimeStr, endTimeStr, filePath, interval);
         var response = esClient.search(searchRequest, Void.class);
 
         Map<String, java.util.Map<Long, Long>> seriesMap = new java.util.HashMap<>();
@@ -552,67 +443,9 @@ public class ElasticsearchSyncService {
                 )
         );
 
-                // 打印完整的搜索请求
-        log.info("Port Search Request JSON: {}", objectMapper.writeValueAsString(Map.of(
-            "index", index,
-            "size", 0,
-            "query", Map.of(
-                "bool", Map.of(
-                    "must", List.of(
-                        Map.of(
-                            "range", Map.of(
-                                "timestamp", Map.of(
-                                    "gte", startTime,
-                                    "lte", endTime
-                                )
-                            )
-                        )
-                    )
-                )
-            ),
-            "aggs", Map.of(
-                "ports", Map.of(
-                    "terms", Map.of(
-                        "field", "port",
-                        "size", 100
-                    )
-                )
-            )
-        )));
-        log.info("Port Search Request Pretty JSON: {}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
-            "index", index,
-            "size", 0,
-            "query", Map.of(
-                "bool", Map.of(
-                    "must", List.of(
-                        Map.of(
-                            "range", Map.of(
-                                "timestamp", Map.of(
-                                    "gte", startTime,
-                                    "lte", endTime
-                                )
-                            )
-                        )
-                    )
-                )
-            ),
-            "aggs", Map.of(
-                "ports", Map.of(
-                    "terms", Map.of(
-                        "field", "port",
-                        "size", 100
-                    )
-                )
-            )
-        )));
-        log.info("Port Search Request - Index: {}, Size: 0, Aggregations: ports terms on field 'port'", index);
-
         // 执行查询
         var response = esClient.search(searchRequest, Void.class);
 
-        // 打印响应
-        log.info("ES Response for ports query: {}", objectMapper.writeValueAsString(response));
-        log.info("ES Response Took for ports query: {}ms", response.took());
         long portsTotal = 0L;
         try {
             var hits = response.hits();
@@ -621,10 +454,8 @@ public class ElasticsearchSyncService {
                 portsTotal = totalObj.value();
             }
         } catch (Exception ignore) {}
-        log.info("ES Response Total Hits for ports query: {}", portsTotal);
 
         if (response.aggregations() == null) {
-            log.warn("No aggregations in port query response");
             return Set.of();
         }
 
@@ -632,24 +463,16 @@ public class ElasticsearchSyncService {
         var aggs = response.aggregations();
         var ports = aggs.get("ports");
         if (ports == null) {
-            log.warn("No ports aggregation found");
             return Set.of();
         }
 
         var longTerms = ports.lterms();
         var buckets = longTerms.buckets().array();
-        log.info("Found {} different ports", buckets.size());
         
         Set<Integer> portSet = buckets.stream()
                 .map(bucket -> (int) bucket.key())
                 .collect(Collectors.toSet());
         
-        log.info("Port buckets details:");
-        buckets.forEach(bucket -> {
-            log.info("  Port: {}, Doc Count: {}", bucket.key(), bucket.docCount());
-        });
-        
-        log.info("Final port set: {}", portSet);
         return portSet;
     }
 
@@ -715,37 +538,6 @@ public class ElasticsearchSyncService {
             )
         );
 
-        // 打印原始查询条件
-        log.info("Bandwidth Query DSL for port {}: {}", port, query.toString());
-        log.info("Bandwidth Query JSON for port {}: {}", port, objectMapper.writeValueAsString(query));
-        
-        // 打印Kibana可运行的查询语句
-        log.info("=== Kibana Query for Bandwidth Port {} ===", port);
-        log.info("GET /octopusx-data/_search");
-        log.info("Content-Type: application/json");
-        log.info("");
-        log.info("{}", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
-            "size", 0,
-            "query", query,
-            "aggs", Map.of(
-                "trend", Map.of(
-                    "date_histogram", Map.of(
-                        "field", "timestamp",
-                        "calendar_interval", interval,
-                        "format", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-                    ),
-                    "aggs", Map.of(
-                        "avg_util", Map.of(
-                            "avg", Map.of(
-                                "field", "util"
-                            )
-                        )
-                    )
-                )
-            )
-        )));
-        log.info("=== End Kibana Query ===");
-
         // 创建完整的搜索请求
         var searchRequest = SearchRequest.of(s -> s
                 .index(index)
@@ -765,97 +557,9 @@ public class ElasticsearchSyncService {
                 )
         );
 
-        // 打印完整的搜索请求
-        log.info("Bandwidth Search Request JSON for port {}: {}", port, objectMapper.writeValueAsString(Map.of(
-            "index", index,
-            "size", 0,
-            "query", Map.of(
-                "bool", Map.of(
-                    "must", List.of(
-                        Map.of(
-                            "range", Map.of(
-                                "timestamp", Map.of(
-                                    "gte", startTime,
-                                    "lte", endTime
-                                )
-                            )
-                        ),
-                        Map.of(
-                            "term", Map.of(
-                                "port", Map.of(
-                                    "value", port
-                                )
-                            )
-                        )
-                    )
-                )
-            ),
-            "aggs", Map.of(
-                "trend", Map.of(
-                    "date_histogram", Map.of(
-                        "field", "timestamp",
-                        "calendar_interval", interval,
-                        "format", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-                    ),
-                    "aggs", Map.of(
-                        "avg_util", Map.of(
-                            "avg", Map.of(
-                                "field", "util"
-                            )
-                        )
-                    )
-                )
-            )
-        )));
-        log.info("Bandwidth Search Request Pretty JSON for port {}: {}", port, objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(Map.of(
-            "index", index,
-            "size", 0,
-            "query", Map.of(
-                "bool", Map.of(
-                    "must", List.of(
-                        Map.of(
-                            "range", Map.of(
-                                "timestamp", Map.of(
-                                    "gte", startTime,
-                                    "lte", endTime
-                                )
-                            )
-                        ),
-                        Map.of(
-                            "term", Map.of(
-                                "port", Map.of(
-                                    "value", port
-                                )
-                            )
-                        )
-                    )
-                )
-            ),
-            "aggs", Map.of(
-                "trend", Map.of(
-                    "date_histogram", Map.of(
-                        "field", "timestamp",
-                        "calendar_interval", interval,
-                        "format", "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-                    ),
-                    "aggs", Map.of(
-                        "avg_util", Map.of(
-                            "avg", Map.of(
-                                "field", "util"
-                            )
-                        )
-                    )
-                )
-            )
-        )));
-        log.info("Bandwidth Search Request for port {} - Index: {}, Size: 0, Interval: {}, Aggregations: trend date_histogram on 'timestamp' with avg_util avg on 'util'", port, index, interval);
-
         // 执行查询
         var response = esClient.search(searchRequest, Void.class);
 
-        // 打印响应
-        log.info("ES Response for port {}: {}", port, objectMapper.writeValueAsString(response));
-        log.info("ES Response Took for port {}: {}ms", port, response.took());
         long portTotal = 0L;
         try {
             var hits = response.hits();
@@ -864,10 +568,8 @@ public class ElasticsearchSyncService {
                 portTotal = totalObj.value();
             }
         } catch (Exception ignore) {}
-        log.info("ES Response Total Hits for port {}: {}", port, portTotal);
 
         if (response.aggregations() == null) {
-            log.warn("No aggregations in bandwidth response for port {}", port);
             return List.of();
         }
 
@@ -875,12 +577,10 @@ public class ElasticsearchSyncService {
         var aggs = response.aggregations();
         var trend = aggs.get("trend");
         if (trend == null) {
-            log.warn("No trend aggregation found in bandwidth response for port {}", port);
             return List.of();
         }
 
         var buckets = trend.dateHistogram().buckets().array();
-        log.info("Found {} buckets in bandwidth trend aggregation for port {}", buckets.size(), port);
 
         var result = buckets.stream()
                 .map(bucket -> {
@@ -895,14 +595,10 @@ public class ElasticsearchSyncService {
                     trendData.setTimestamp(bucket.key());
                     trendData.setCount((long) (avgUtilValue * 100)); // 转换为百分比
                     
-                    log.info("Bandwidth Bucket for port {}: timestamp={}, avg_util={}, doc_count={}", 
-                        port, bucket.key(), avgUtilValue, bucket.docCount());
                     return trendData;
                 })
                 .collect(Collectors.toList());
 
-        log.info("Bandwidth trending result size for port {}: {}", port, result.size());
-        log.info("Bandwidth trending result for port {}: {}", port, result);
         return result;
     }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input, SimpleChanges, OnChanges, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input, SimpleChanges, OnChanges, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { toggleAnimation } from 'src/app/shared/animations';
@@ -26,7 +26,7 @@ import { filter } from 'rxjs/operators';
         SharedModule
     ]
 })
-export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
+export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
     @Input() protocolName: string = '';
     @Input() indexName: string = '';
     @Input() cols: any[] = [];
@@ -44,6 +44,8 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
     private refreshInterval: NodeJS.Timeout | undefined;
     sortField?: string;
     sortOrder?: 'asc' | 'desc';
+    // 搜索输入防抖计时器，避免在同一变更检测周期内多次触发导致 NG0100
+    private searchDebounce: any;
 
     // AI 解释相关（基础文本 + Markdown 增强）
     showAiModal = false;
@@ -243,11 +245,13 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
 
     ngOnInit() {
         console.log('BaseProtocolComponent ngOnInit 开始');
+        console.log('当前 protocolName:', this.protocolName);
+        console.log('当前 indexName:', this.indexName);
         console.log('当前 rows:', this.rows);
         console.log('当前 cols:', this.cols);
 
-    // 预加载资产数据，用于 SrcIP/DstIp 替换显示
-    this.loadAssetsForMapping();
+        // 预加载资产数据，用于 SrcIP/DstIp 替换显示
+        this.loadAssetsForMapping();
 
         // 确保操作列存在
         this.ensureActionColumn();
@@ -259,17 +263,18 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         this.timeRangeSubscription = this.timeRangeService.timeRange$.subscribe(tr => {
             this.currentTimeRange = tr;
             if (this.protocolName && this.indexName) {
-                // 时间范围变化后重新加载趋势与表格数据
-                this.loadTrendingData();
-                this.loadData();
+                // 时间范围变化后重新加载趋势与表格数据（使用微任务延迟避免同周期变更检测冲突）
+                this.deferDataReload();
             }
         });
 
-        // 初始加载（如果已经有值）
+        // 记录当前时间范围，真正的初始加载放到 ngAfterViewInit 防止 ExpressionChanged
         this.currentTimeRange = this.timeRangeService.getCurrentTimeRange();
+    }
+
+    ngAfterViewInit() {
         if (this.protocolName && this.indexName) {
-            this.loadTrendingData();
-            this.loadData();
+            this.deferDataReload();
         }
     }
 
@@ -357,24 +362,67 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
                 // 添加操作列
                 this.cols.push({
                     field: 'actions',
-                    title: 'Actions',
-                    sortable: false,
-                    hide: false,
-                    slot: 'actions',
-                    headerClass: 'text-center',
-                    cellClass: 'text-center'
+                    title: 'AI',
+                    sort: false,
+                    width: '120px',
+                    headerAlign: 'center',
+                    align: 'center',
+                    hide: false
                 });
-
-                // 触发变更检测
-                this.cdr.detectChanges();
             }
         }
+    }
+
+    // 检查字段是否为时间类型
+    private isTimeField(fieldName: string): boolean {
+        const timeFieldNames = [
+            'timestamp', 'ts', 'lastUpdateTime', 'from', 'till', 'date',
+            'time', 'createdAt', 'updatedAt', 'created_at', 'updated_at',
+            'start_time', 'end_time', 'startTime', 'endTime'
+        ];
+
+        const fieldLower = (fieldName || '').toLowerCase();
+
+        // 直接匹配字段名
+        if (timeFieldNames.some(name => fieldLower === name.toLowerCase())) {
+            return true;
+        }
+
+        // 匹配包含time的字段
+        if (fieldLower.includes('time') || fieldLower.includes('date')) {
+            return true;
+        }
+
+        // 通过字段描述配置判断时间类型
+        if (this.fieldDescriptions && this.fieldDescriptions.length > 0) {
+            const fieldDesc = this.fieldDescriptions.find(desc =>
+                desc.keyWord === fieldName || desc.keyAlias === fieldName
+            );
+            if (fieldDesc && fieldDesc.keyType === 'time') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // 统一的延迟加载方法（微任务队列），避免在同一个变更检测周期内修改绑定值
+    private deferDataReload() {
+        Promise.resolve().then(() => {
+            this.loadTrendingData();
+            this.loadData();
+        });
     }
 
     // 使用当前选择的时间范围加载趋势数据
     protected loadTrendingData() {
         if (!this.indexName) return;
-        this.chartLoading = true;
+
+        // 使用微任务来避免在同一变更检测周期内修改状态
+        Promise.resolve().then(() => {
+            this.chartLoading = true;
+            this.cdr.detectChanges();
+        });
 
         const endTime = this.currentTimeRange?.endTime?.getTime() || Date.now();
         const startTime = this.currentTimeRange?.startTime?.getTime() || (endTime - 24 * 60 * 60 * 1000);
@@ -443,7 +491,13 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
     // 使用当前时间范围加载表格数据
     protected loadData() {
         if (!this.indexName) return;
-        this.loading = true;
+
+        // 使用微任务来避免在同一变更检测周期内修改状态
+        Promise.resolve().then(() => {
+            this.loading = true;
+            this.cdr.detectChanges();
+        });
+
         const rangeEnd = this.selectedEndTime ?? this.currentTimeRange?.endTime?.getTime() ?? Date.now();
         const rangeStart = this.selectedStartTime ?? this.currentTimeRange?.startTime?.getTime() ?? (rangeEnd - 24 * 60 * 60 * 1000);
         const filePath = this.currentTimeRange?.filePath; // 获取当前选择的文件路径
@@ -457,10 +511,23 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
             from: ((this.currentPage - 1) * this.pageSize).toString()
         };
 
+        // 添加搜索参数
+        if (this.search && this.search.trim()) {
+            params.search = this.search.trim();
+        }
+
+        // 添加排序参数
+        if (this.sortField) {
+            params.sortField = this.sortField;
+            params.sortOrder = this.sortOrder || 'asc';
+        }
+
         // 如果有文件路径，添加到参数中
         if (filePath) {
             params.filePath = filePath;
         }
+
+        console.log('Loading data with params:', params); // 调试日志
 
         this.http.get<any>(`${environment.apiUrl}/es/query`, { params }).subscribe({
             next: (response) => {
@@ -514,8 +581,19 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
                         const key = col?.field;
                         if (!key) return;
                         const value = updated[key];
+
+                        // 处理 IP 字段
                         if (isIpAlias(key) || isIpvXLike(value)) {
                             updated[key] = this.resolveIpToAsset(value);
+                        }
+
+                        // 处理时间字段 - 在数据层面进行预处理
+                        if (this.isTimeField(key) && value) {
+                            // 为时间字段创建一个显示用的副本字段
+                            const displayKey = key + '_display';
+                            updated[displayKey] = this.formatTimeField(value);
+                            // 保留原始值用于排序和其他操作
+                            updated[key + '_raw'] = value;
                         }
                     });
                     return updated;
@@ -526,7 +604,98 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
             this.rows = [];
             this.total = 0;
         }
-        this.cdr.detectChanges();
+        // 使用 markForCheck 而不是 detectChanges 来避免立即触发变更检测
+        this.cdr.markForCheck();
+    }
+
+    onServerChange(event: any) {
+        console.log('Server change event:', event); // 调试日志
+
+        if (event.current_page !== undefined) {
+            this.currentPage = event.current_page;
+        }
+
+        if (event.sort_column !== undefined) {
+            this.sortField = event.sort_column;
+            this.sortOrder = event.sort_direction;
+        }
+
+        if (event.page_size !== undefined) {
+            this.pageSize = event.page_size;
+        }
+
+        if (event.search !== undefined) {
+            this.search = event.search;
+        }
+
+        // 只有当配置了真实数据源时才重新加载
+        if (this.protocolName && this.indexName) {
+            this.loadData();
+        }
+    }
+
+    onPageChange(event: any) {
+        console.log('Page change event:', event); // 调试日志
+        if (this.currentPage !== event) {
+            this.currentPage = event;
+            // 只有当配置了真实数据源时才重新加载
+            if (this.protocolName && this.indexName) {
+                this.loadData();
+            }
+        }
+    }
+
+    onPageSizeChange(event: any) {
+        console.log('Page size change event:', event); // 调试日志
+        if (this.pageSize !== event) {
+            this.pageSize = event;
+            this.currentPage = 1;
+            // 只有当配置了真实数据源时才重新加载
+            if (this.protocolName && this.indexName) {
+                this.loadData();
+            }
+        }
+    }
+
+    onSortChange(event: any) {
+        console.log('Sort change event:', event); // 调试日志
+        this.sortField = event.column;
+        this.sortOrder = event.direction;
+        this.currentPage = 1;
+        // 只有当配置了真实数据源时才重新加载
+        if (this.protocolName && this.indexName) {
+            this.loadData();
+        }
+    }
+
+    onSearchChange(event: any) {
+        console.log('Search change event:', event); // 调试日志
+        if (this.search !== event) {
+            this.search = event;
+            this.currentPage = 1;
+            if (this.protocolName && this.indexName) {
+                this.loadData();
+            }
+        }
+    }
+
+    // 新增：直接由输入框触发的防抖搜索方法
+    onSearchInputChange(value: string) {
+        this.search = value || '';
+        this.currentPage = 1; // 搜索时重置到第一页
+
+        // 清除之前的防抖计时器
+        if (this.searchDebounce) {
+            clearTimeout(this.searchDebounce);
+        }
+
+        // 设置新的防抖计时器
+        this.searchDebounce = setTimeout(() => {
+            if (this.protocolName && this.indexName) {
+                console.log('Search triggered with value:', this.search); // 调试日志
+                this.loadData();
+            }
+        }, 300);
     }
 
     // ========== 资产映射（移植自 event 组件简化版） ==========
@@ -574,69 +743,56 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         return '';
     }
 
-    onServerChange(event: any) {
-        if (event.current_page !== undefined) {
-            this.currentPage = event.current_page;
-        }
+    // 通用时间格式化方法，支持多种时间格式
+    formatTimeField(value: any): string {
+        if (!value) return '';
 
-        if (event.sort_column !== undefined) {
-            this.sortField = event.sort_column;
-            this.sortOrder = event.sort_direction;
-        }
+        try {
+            let date: Date;
 
-        if (event.page_size !== undefined) {
-            this.pageSize = event.page_size;
-        }
-
-        if (event.search !== undefined) {
-            this.search = event.search;
-        }
-
-        // 只有当配置了真实数据源时才重新加载
-        if (this.protocolName && this.indexName) {
-            this.loadData();
-        }
-    }
-
-    onPageChange(event: any) {
-        if (this.currentPage !== event) {
-            this.currentPage = event;
-            // 只有当配置了真实数据源时才重新加载
-            if (this.protocolName && this.indexName) {
-                this.loadData();
+            // 处理不同类型的时间值
+            if (typeof value === 'number') {
+                // 时间戳处理：检查是否是秒或毫秒
+                if (value.toString().length === 10) {
+                    date = new Date(value * 1000); // 秒时间戳
+                } else {
+                    date = new Date(value); // 毫秒时间戳
+                }
+            } else if (typeof value === 'string') {
+                // 字符串时间处理
+                if (value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)) {
+                    // UTC格式：2025-09-14T11:07:28
+                    date = new Date(value + 'Z');
+                } else if (value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+/)) {
+                    // 带微秒的格式：2025-09-14T14:05:08.427829
+                    const cleanValue = value.replace(/(\.\d{3})\d*/, '$1'); // 保留3位小数
+                    date = new Date(cleanValue + 'Z');
+                } else {
+                    // 其他字符串格式
+                    date = new Date(value);
+                }
+            } else {
+                date = new Date(value);
             }
-        }
-    }
 
-    onPageSizeChange(event: any) {
-        if (this.pageSize !== event) {
-            this.pageSize = event;
-            this.currentPage = 1;
-            // 只有当配置了真实数据源时才重新加载
-            if (this.protocolName && this.indexName) {
-                this.loadData();
+            // 验证日期是否有效
+            if (isNaN(date.getTime())) {
+                return String(value); // 如果无法解析，返回原值
             }
-        }
-    }
 
-    onSortChange(event: any) {
-        this.sortField = event.column;
-        this.sortOrder = event.direction;
-        this.currentPage = 1;
-        // 只有当配置了真实数据源时才重新加载
-        if (this.protocolName && this.indexName) {
-            this.loadData();
-        }
-    }
-
-    onSearchChange(event: any) {
-        if (this.search !== event) {
-            this.search = event;
-            this.currentPage = 1;
-            // 只有当配置了真实数据源时才重新加载
-            if (this.protocolName && this.indexName) {
-                this.loadData();
-            }
+            // 使用中文本地化格式
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        } catch (error) {
+            console.warn('Error formatting time field:', value, error);
+            return String(value); // 格式化失败时返回原值
         }
     }
 

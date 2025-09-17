@@ -99,7 +99,7 @@
                 </div>
 
                 <div>
-                    <input [(ngModel)]="search" type="text" class="form-input" placeholder="{{ 'Search...' | translate }}" />
+                    <input [(ngModel)]="search" (ngModelChange)="onSearchInputChange($event)" type="text" class="form-input" placeholder="{{ 'Search...' | translate }}" />
                 </div>
             </div>
         </div>
@@ -125,7 +125,6 @@
                 (pageChange)="onPageChange($event)"
                 (pageSizeChange)="onPageSizeChange($event)"
                 (sortChange)="onSortChange($event)"
-                (searchChange)="onSearchChange($event)"
                 skin="whitespace-nowrap table-hover"
             >
                 <!-- 自定义显示：源/目的 IP 显示资产名（找不到则显示原值） -->
@@ -136,8 +135,24 @@
                     <span [title]="row?.DstIp">{{ resolveIpToAsset(row?.DstIp) }}</span>
                 </ng-template>
 
+                <!-- 时间字段自定义显示模板 -->
+                <ng-template slot="timestamp" let-value="data">
+                    <span [title]="value.timestamp">{{ formatTimeField(value.timestamp) }}</span>
+                </ng-template>
                 <ng-template slot="lastUpdateTime" let-value="data">
-                    {{ formatDate(value.lastUpdateTime) }}
+                    <span [title]="value.lastUpdateTime">{{ formatTimeField(value.lastUpdateTime) }}</span>
+                </ng-template>
+                <ng-template slot="ts" let-value="data">
+                    <span [title]="value.ts">{{ formatTimeField(value.ts) }}</span>
+                </ng-template>
+                <ng-template slot="from" let-value="data">
+                    <span [title]="value.from">{{ formatTimeField(value.from) }}</span>
+                </ng-template>
+                <ng-template slot="till" let-value="data">
+                    <span [title]="value.till">{{ formatTimeField(value.till) }}</span>
+                </ng-template>
+                <ng-template slot="date" let-value="data">
+                    <span [title]="value.date">{{ formatTimeField(value.date) }}</span>
                 </ng-template>
 
                 <!-- AI 解释操作列 -->

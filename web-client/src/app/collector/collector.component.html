@@ -4,7 +4,7 @@
             <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.collector' | translate }}</a>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>{{ 'navigation.collector' | translate }}</span>
+            <span>{{ 'navigation.collectorAnalyzer' | translate }}</span>
         </li>
     </ul>
     <div class="pt-5">
@@ -109,11 +109,11 @@
                                                                 class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
                                                                 [id]="'protocol_switch_' + contact.id"
                                                                 [disabled]="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'"
-                                                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') ? ('Cannot modify during analysis' | translate) : ''" />
+                                                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') ? ('collectorMessages.cannotModifyDuringAnalysis' | translate) : ''" />
                                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
                                                             </span>
                                                         </label>
-                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'">{{ 'Cannot modify during analysis' | translate }}</span>
+                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'">{{ 'collectorMessages.cannotModifyDuringAnalysis' | translate }}</span>
                                                     </td>
                                                     <td class="whitespace-nowrap">
                                                         <label class="w-12 h-6 relative"
@@ -124,11 +124,11 @@
                                                                 class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
                                                                 [id]="'ids_switch_' + contact.id"
                                 [disabled]="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'"
-                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') ? ('Cannot modify during analysis' | translate) : ''" />
+                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') ? ('collectorMessages.cannotModifyDuringAnalysis' | translate) : ''" />
                                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
                                                             </span>
                                                         </label>
-                            <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'">{{ 'Cannot modify during analysis' | translate }}</span>
+                            <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'">{{ 'collectorMessages.cannotModifyDuringAnalysis' | translate }}</span>
                                                     </td>
                                                     <td>
                                                         <div class="flex items-center justify-center gap-2">
@@ -136,7 +136,7 @@
                                                                     class="btn btn-sm btn-outline-primary w-20"
                                                                     (click)="editUser(contact)"
                                                                     [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.analysisCompleted || contact.status === 'error'"
-                                                                    [title]="contact.status === 'error' ? 'Partial' : (contact.analysisCompleted ? ('Analyzed' | translate) : '')">
+                                                                    [title]="contact.status === 'error' ? ('collectorStatus.partial' | translate) : (contact.analysisCompleted ? ('collectorMessages.analyzed' | translate) : '')">
                                                                 {{ 'collector.edit' | translate }}
                                                             </button>
 
@@ -160,7 +160,7 @@
                                                                     <button type="button"
                                                                             class="btn btn-sm btn-outline-secondary w-20"
                                                                             disabled>
-                                                                        {{ contact.status === 'error' ? 'Partial' : ('Analyzed' | translate) }}
+                                                                        {{ contact.status === 'error' ? ('collectorStatus.partial' | translate) : ('collectorMessages.analyzed' | translate) }}
                                                                     </button>
                                                                 </ng-container>
                                                                 <ng-template #startButton>
@@ -210,7 +210,7 @@
                                                 <div class="text-xl">{{ contact.name }}</div>
                                                 <div class="text-white-dark">{{ contact.role }}</div>
                                                 <div class="mt-2" *ngIf="contact.status === 'error'">
-                                                    <span class="inline-block rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">Partial</span>
+                                                    <span class="inline-block rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">{{ 'collectorStatus.partial' | translate }}</span>
                                                 </div>
                                                 <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
                                                     <div class="flex-auto">
@@ -276,7 +276,7 @@
                                             <button type="button" class="btn btn-outline-primary w-1/2"
                                                 (click)="editUser(contact)"
                                                 [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.analysisCompleted || contact.status === 'error'"
-                                                [title]="contact.status === 'error' ? 'Partial' : (contact.analysisCompleted ? ('Analyzed' | translate) : '')">{{ 'collector.edit' | translate }}</button>
+                                                [title]="contact.status === 'error' ? ('collectorStatus.partial' | translate) : (contact.analysisCompleted ? ('collectorMessages.analyzed' | translate) : '')">{{ 'collector.edit' | translate }}</button>
                                             <button type="button" class="btn btn-outline-danger w-1/2"
                                                 (click)="deleteUser(contact)">{{ 'Delete' | translate }}</button>
                                         </div>
@@ -464,7 +464,7 @@
                                                 <th>{{ 'File Count' | translate }}</th>
                                                 <th>{{ 'Out of Disk Action' | translate }}</th>
                                                 <th>{{ 'File Type' | translate }}</th>
-                                                <th>{{ 'Trigger Type' | translate }}</th>
+                                                <!-- Hidden: Trigger Type column removed per request -->
                                                 <th class="!text-center">{{ 'Actions' | translate }}</th>
                                             </tr>
                                         </thead>
@@ -476,7 +476,7 @@
                                                 <td>{{ strategy.fileCount }}</td>
                                                 <td>{{ strategy.outOfDiskAction }}</td>
                                                 <td>{{ strategy.fileType }}</td>
-                                                <td>{{ strategy.triggerType }}</td>
+                                                <!-- Trigger Type cell hidden -->
                                                 <td>
                                                     <div class="flex items-center justify-center gap-4">
                                                         <button type="button" class="btn btn-sm btn-outline-primary"
@@ -569,7 +569,7 @@
                                             <td>{{ f.creationTime | date:'yyyy-MM-dd HH:mm:ss' }}</td>
                                             <td class="!text-center">
                                                 <button type="button" class="btn btn-sm btn-outline-primary" (click)="downloadFile(f)">
-                                                    {{ 'Download' | translate }}
+                                                    {{ 'general.download' | translate }}
                                                 </button>
                                             </td>
                                         </tr>

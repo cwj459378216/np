@@ -166,34 +166,54 @@ public class ElasticsearchController {
             @RequestParam(required = false) String filePath,
             @RequestParam(defaultValue = "conn-realtime") String index,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(defaultValue = "0") Integer from
+            @RequestParam(defaultValue = "0") Integer from,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sortField,
+            @RequestParam(defaultValue = "asc") String sortOrder
     ) throws IOException {
-        // 构建查询条件
-        var rangeQuery = new Query.Builder()
+        // 构建时间范围查询
+        var rangeQuery = Query.of(q -> q
             .range(r -> r
                 .field("timestamp")
                 .gte(JsonData.of(startTime))
                 .lte(JsonData.of(endTime))
-            );
+            )
+        );
+
+        // 构建查询条件列表
+        java.util.List<Query> mustQueries = new java.util.ArrayList<>();
+        mustQueries.add(rangeQuery);
 
         // 如果指定了filePath，添加过滤条件
-        var query = filePath != null
-            ? Query.of(q -> q
-                .bool(b -> b
-                    .must(rangeQuery.build())
-                    .must(m -> m
-                        .match(t -> t
-                            .field("filePath")
-                            .query(filePath)
-                        )
-                    )
+        if (filePath != null) {
+            mustQueries.add(Query.of(q -> q
+                .match(m -> m
+                    .field("filePath")
+                    .query(filePath)
                 )
-            )
-            : Query.of(q -> q
-                .bool(b -> b
-                    .must(rangeQuery.build())
+            ));
+        }
+
+        // 如果指定了搜索关键词，添加多字段搜索
+        if (search != null && !search.trim().isEmpty()) {
+            String searchTerm = search.trim();
+            mustQueries.add(Query.of(q -> q
+                .multiMatch(m -> m
+                    .query(searchTerm)
+                    .fields("*") // 搜索所有字段
+                    .type(co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.BestFields)
+                    .fuzziness("AUTO") // 启用模糊搜索
                 )
-            );
+            ));
+        }
+
+        // 构建最终查询
+        var query = Query.of(q -> q
+            .bool(b -> {
+                b.must(mustQueries);
+                return b;
+            })
+        );
 
         return elasticsearchSyncService.searchRawWithPagination(index, query, size, from);
     }

@@ -84,6 +84,8 @@ export class EventComponent implements OnInit, OnDestroy {
     total = 0;
     sortField?: string;
     sortOrder?: 'asc' | 'desc';
+    // 搜索输入防抖计时器，避免在同一变更检测周期内多次触发导致 NG0100
+    private searchDebounce: any;
 
     private timeRangeSubscription?: Subscription;
     private currentTimeRange?: TimeRange;
@@ -118,18 +120,28 @@ export class EventComponent implements OnInit, OnDestroy {
         this.timeRangeSubscription = this.timeRangeService.timeRange$.subscribe(tr => {
             this.currentTimeRange = tr;
             this.currentPage = 1;
-            this.loadTrendingData();
-            this.loadData();
+            // 使用微任务延迟执行，避免在同一变更检测周期内修改状态
+            Promise.resolve().then(() => {
+                this.loadTrendingData();
+                this.loadData();
+            });
         });
 
         // 初始加载（如果有默认时间范围）
         this.currentTimeRange = this.timeRangeService.getCurrentTimeRange();
-        this.loadTrendingData();
-        this.loadData();
+        // 使用微任务延迟执行，避免在同一变更检测周期内修改状态
+        Promise.resolve().then(() => {
+            this.loadTrendingData();
+            this.loadData();
+        });
     }
 
     ngOnDestroy(): void {
         this.timeRangeSubscription?.unsubscribe();
+        // 清理搜索防抖计时器
+        if (this.searchDebounce) {
+            clearTimeout(this.searchDebounce);
+        }
     }
 
     // 初始化趋势图配置（参考 BaseProtocol）
@@ -217,7 +229,13 @@ export class EventComponent implements OnInit, OnDestroy {
 
     private loadTrendingData() {
         if (!this.currentTimeRange) return;
-        this.chartLoading = true;
+
+        // 使用微任务来避免在同一变更检测周期内修改状态
+        Promise.resolve().then(() => {
+            this.chartLoading = true;
+            this.cdr.detectChanges();
+        });
+
         const endTime = this.currentTimeRange.endTime?.getTime() || Date.now();
         const startTime = this.currentTimeRange.startTime?.getTime() || (endTime - 24 * 60 * 60 * 1000);
         const interval = this.getTrendingInterval(this.currentTimeRange.value || '24h');
@@ -249,7 +267,13 @@ export class EventComponent implements OnInit, OnDestroy {
     // 表格数据（服务端分页）
     private loadData() {
         if (!this.currentTimeRange) return;
-        this.loading = true;
+
+        // 使用微任务来避免在同一变更检测周期内修改状态
+        Promise.resolve().then(() => {
+            this.loading = true;
+            this.cdr.detectChanges();
+        });
+
         const rangeEnd = this.selectedEndTime ?? this.currentTimeRange.endTime?.getTime() ?? Date.now();
         const rangeStart = this.selectedStartTime ?? this.currentTimeRange.startTime?.getTime() ?? (rangeEnd - 24 * 60 * 60 * 1000);
         const filePath = this.currentTimeRange.filePath;
@@ -261,6 +285,18 @@ export class EventComponent implements OnInit, OnDestroy {
             size: this.pageSize.toString(),
             from: ((this.currentPage - 1) * this.pageSize).toString()
         };
+
+        // 添加搜索参数
+        if (this.search && this.search.trim()) {
+            params.search = this.search.trim();
+        }
+
+        // 添加排序参数
+        if (this.sortField) {
+            params.sortField = this.sortField;
+            params.sortOrder = this.sortOrder || 'asc';
+        }
+
         if (filePath) params.filePath = filePath;
 
         this.http.get<any>(`${environment.apiUrl}/es/query`, { params }).subscribe({
@@ -319,12 +355,29 @@ export class EventComponent implements OnInit, OnDestroy {
         if (event.page_size !== undefined) this.pageSize = event.page_size;
         if (event.sort_column !== undefined) this.sortField = event.sort_column;
         if (event.sort_direction !== undefined) this.sortOrder = event.sort_direction;
+        if (event.search !== undefined) this.search = event.search;
         this.loadData();
     }
     onPageChange(p: number) { if (this.currentPage !== p) { this.currentPage = p; this.loadData(); } }
     onPageSizeChange(ps: number) { if (this.pageSize !== ps) { this.pageSize = ps; this.currentPage = 1; this.loadData(); } }
     onSortChange(e: any) { this.sortField = e.column; this.sortOrder = e.direction; this.currentPage = 1; this.loadData(); }
     onSearchChange(e: any) { this.search = e; /* 后端暂无搜索参数，保留 */ }
+
+    // 新增：直接由输入框触发的防抖搜索方法
+    onSearchInputChange(value: string) {
+        this.search = value || '';
+        this.currentPage = 1; // 搜索时重置到第一页
+
+        // 清除之前的防抖计时器
+        if (this.searchDebounce) {
+            clearTimeout(this.searchDebounce);
+        }
+
+        // 设置新的防抖计时器
+        this.searchDebounce = setTimeout(() => {
+            this.loadData();
+        }, 300);
+    }
 
     updateColumn(col: TableColumn) { this.cols = [...this.cols]; }
 

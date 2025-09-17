@@ -59,7 +59,9 @@
     "new": "新建",
     "viewAllActivities": "查看所有活动",
     "noDataAvailable": "无可用数据。",
-    "readAllNotifications": "阅读所有通知"
+  "readAllNotifications": "阅读所有通知",
+  "currentUser": "当前用户",
+  "notLoggedIn": "未登录"
   },
   "dashboard": {
     "systemInfo": "系统信息",
@@ -131,6 +133,17 @@
     "edit": "设置",
     "start": "分析"
   },
+  "collectorStatus": {
+    "running": "运行中",
+    "completed": "已完成",
+    "partial": "部分完成",
+    "error": "错误",
+    "started": "已开始"
+  },
+  "collectorMessages": {
+    "cannotModifyDuringAnalysis": "分析过程中无法修改",
+    "analyzed": "已分析"
+  },
   "users": {
     "username": "用户名",
     "email": "邮箱",
@@ -172,8 +185,11 @@
     "signUp": "注册",
     "enterEmailPassword": "输入您的邮箱和密码以登录",
     "enterEmailPasswordRegister": "输入您的邮箱和密码以注册",
+    "enterUserPassword": "输入您的用户名和密码以登录",
     "name": "姓名",
     "enterName": "输入姓名",
+  "username": "用户名",
+  "enterUsername": "输入用户名",
     "email": "邮箱",
     "enterEmail": "输入邮箱",
     "password": "密码",
@@ -183,7 +199,11 @@
     "dontHaveAccount": "还没有账户？",
     "signUpButton": "注册",
     "alreadyHaveAccount": "已有账户？",
-    "signInButton": "登录"
+  "signInButton": "登录",
+  "prompt": "提示",
+  "enterUsernamePassword": "请输入用户名和密码",
+  "loginFailed": "登录失败",
+  "invalidCredentials": "用户名或密码错误"
   },
   "systemTime": {
     "timeSettingMethod": "时间设置方法",
@@ -588,4 +608,7 @@
     "email": "请输入有效的邮箱地址",
     "pattern": "请输入有效的格式"
   }
+  ,
+  "File Name": "文件名",
+  "Size": "大小"
 }

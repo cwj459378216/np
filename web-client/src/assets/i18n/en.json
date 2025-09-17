@@ -56,10 +56,11 @@
     "lockScreen": "Lock Screen",
     "notification": "Notification",
     "messages": "Messages",
-    "new": "New",
     "viewAllActivities": "VIEW ALL ACTIVITIES",
     "noDataAvailable": "No data available.",
-    "readAllNotifications": "Read All Notifications"
+    "readAllNotifications": "Read All Notifications",
+    "currentUser": "Current User",
+    "notLoggedIn": "Not Logged In"
   },
   "dashboard": {
     "systemInfo": "System Info",
@@ -102,7 +103,8 @@
     "download": "Download",
     "apply": "Apply",
     "save": "Save",
-    "addAddress": "Add Address"
+    "addAddress": "Add Address",
+    "ok": "OK"
   },
   "collector": {
     "collectorName": "Collector Name",
@@ -130,6 +132,17 @@
     "durationSeconds": "Duration (seconds)",
     "edit": "Edit",
     "start": "Start"
+  },
+  "collectorStatus": {
+    "running": "Running",
+    "completed": "Completed",
+    "partial": "Partial",
+    "error": "Error",
+    "started": "Started"
+  },
+  "collectorMessages": {
+    "cannotModifyDuringAnalysis": "Cannot modify during analysis",
+    "analyzed": "Analyzed"
   },
   "users": {
     "username": "Username",
@@ -185,7 +198,11 @@
     "dontHaveAccount": "Don't have an account ?",
     "signUpButton": "SIGN UP",
     "alreadyHaveAccount": "Already have an account ?",
-    "signInButton": "SIGN IN"
+  "signInButton": "SIGN IN",
+  "prompt": "Prompt",
+  "enterUsernamePassword": "Please enter username and password",
+  "loginFailed": "Login Failed",
+  "invalidCredentials": "Invalid username or password"
   },
   "systemTime": {
     "timeSettingMethod": "Time Setting Method",
@@ -592,4 +609,7 @@
     "email": "Please enter a valid email address",
     "pattern": "Please enter a valid format"
   }
+  ,
+  "File Name": "File Name",
+  "Size": "Size"
 }

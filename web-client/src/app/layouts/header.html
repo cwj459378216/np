@@ -81,7 +81,7 @@
                 </button>
             </div>
 
-            <div>
+            <!-- <div>
                 <a
                     href="javascript:;"
                     *ngIf="store.theme === 'light'"
@@ -106,7 +106,7 @@
                 >
                     <icon-laptop />
                 </a>
-            </div>
+            </div> -->
 
             <!-- 新增: 数据源与时间范围选择 -->
                         <div class="flex items-center space-x-2 rtl:space-x-reverse" *ngIf="shouldShowDataSourceAndTimeRange()">
@@ -477,12 +477,12 @@
                     </button>
                     <ul *hlMenuItems @toggleAnimation class="top-11 w-[180px] divide-y !py-0 text-sm font-semibold text-dark dark:divide-white/10 dark:text-white-dark ltr:right-0 rtl:left-0">
                         <li class="px-4 py-2" *ngIf="currentUser">
-                            <div class="text-xs text-gray-500 dark:text-gray-400">当前用户</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ 'header.currentUser' | translate }}</div>
                             <div class="truncate">{{ currentUser?.username || currentUser?.name }}</div>
                         </li>
                         <li>
-                            <button *ngIf="currentUser" (click)="logout()" class="w-full px-4 py-2 text-left hover:bg-white-light/60 dark:hover:bg-dark/60">退出登录</button>
-                            <a *ngIf="!currentUser" routerLink="/auth/boxed-signin" class="block px-4 py-2 hover:bg-white-light/60 dark:hover:bg-dark/60">登录</a>
+                            <button *ngIf="currentUser" (click)="logout()" class="w-full px-4 py-2 text-left hover:bg-white-light/60 dark:hover:bg-dark/60">{{ 'header.signOut' | translate }}</button>
+                            <a *ngIf="!currentUser" routerLink="/auth/boxed-signin" class="block px-4 py-2 hover:bg-white-light/60 dark:hover:bg-dark/60">{{ 'auth.signIn' | translate }}</a>
                         </li>
                     </ul>
                 </div>
