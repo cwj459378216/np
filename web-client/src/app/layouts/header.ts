@@ -152,18 +152,17 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             if (event instanceof NavigationEnd) {
                 this.setActiveDropdown();
                 // 每次路由变化时重新加载collectors
-                this.loadCollectors();
+        // 先尝试恢复（如果本次导航还没恢复过）
+        const restored = this.restorePersistedState();
+        this.loadCollectors();
             }
         });
 
         // 初始化时间范围标签
         this.updateTimeRangeLabels();
-
-        // 加载collectors数据
-        this.loadCollectors();
-
-        // 初始化默认时间范围（24小时）
-        this.initializeDefaultTimeRange();
+    const restored = this.restorePersistedState();
+    this.loadCollectors();
+    if (!restored) this.initializeDefaultTimeRange();
     }
 
     ngAfterViewInit(): void {
@@ -213,17 +212,37 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                     status: collector.status
                 }));
 
-                // 始终选择第一个作为默认值（如果有数据的话）
                 if (this.dataSources.length > 0) {
-                    this.selectedDataSource = this.dataSources[0];
-                    // 检查是否需要启动自动更新
-                    this.checkAndStartAutoUpdate();
-                    // 自动查询第一个数据源的时间范围
-                    this.queryDataSourceTimeRange(this.selectedDataSource.value);
+                    // 如果之前通过本地存储已经恢复了 selectedDataSource（value 不为空），尝试保持它
+                    const hasRestored = !!this.selectedDataSource.value;
+                    if (hasRestored) {
+                        const matched = this.dataSources.find(ds => ds.value === this.selectedDataSource.value);
+                        if (matched) {
+                            // 用最新状态替换（更新 status 等）
+                            this.selectedDataSource = matched;
+                            // 如果已持久化时间范围存在，则不强制重新查询，避免覆盖用户选择
+                            // 仅在需要自动更新时启动
+                            if (this.isAutoUpdateEnabled) {
+                                this.checkAndStartAutoUpdate();
+                            }
+                        } else {
+                            // 持久化的dataSource已经不在列表里，退化到第一个
+                            this.selectedDataSource = this.dataSources[0];
+                            this.checkAndStartAutoUpdate();
+                            this.queryDataSourceTimeRange(this.selectedDataSource.value);
+                        }
+                    } else {
+                        // 没有已恢复的，正常初始化第一个
+                        this.selectedDataSource = this.dataSources[0];
+                        this.checkAndStartAutoUpdate();
+                        this.queryDataSourceTimeRange(this.selectedDataSource.value);
+                    }
                 } else {
                     this.selectedDataSource = { label: '', value: '', status: '' };
-                    // 没有数据源时设置默认时间范围
-                    this.setDefaultTimeRange();
+                    // 没有数据源时设置默认时间范围（且允许持久化覆盖）
+                    if (!this.customRangeValue && !this.selectedQuickRange) {
+                        this.setDefaultTimeRange();
+                    }
                 }
 
                 console.log('Active collectors (completed/running) loaded, default selected:', {
@@ -232,6 +251,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                     isRunning: this.selectedDataSource.status === 'running',
                     autoUpdateEnabled: this.isAutoUpdateEnabled
                 });
+                // 加载完成后再持久化一次（保持最新status）
+                this.persistState();
             },
             error: (error) => {
                 console.error('Error loading collectors for data sources:', error);
@@ -239,6 +260,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 this.dataSources = [];
                 this.selectedDataSource = { label: '', value: '', status: '' };
                 this.setDefaultTimeRange();
+                this.persistState();
             }
         });
     }
@@ -350,6 +372,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
             // 更新选中的数据源
             this.selectedDataSource = dataSource;
+            // 立即持久化当前已选择的数据源（即使时间范围稍后才查询完成）
+            this.persistState();
 
             // 重置时间相关状态
             this.isCustomTimeRange = false;
@@ -361,6 +385,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             this.dataSourceChangeTimeout = setTimeout(() => {
                 console.log('Executing data source change after debounce:', dataSource.label);
                 this.queryDataSourceTimeRange(dataSource.value);
+                this.persistState();
             }, 100); // 100ms 防抖延迟
         }
         console.log('Data source changed:', this.selectedDataSource);
@@ -408,6 +433,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
         // 触发数据刷新
         this.onTimeRangeApplied(startTime, endTime);
+    this.persistState();
     }
 
     calculateStartTime(rangeValue: string, endTime: Date): Date {
@@ -435,6 +461,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             label: currentRange.label,
             filePath: this.selectedDataSource.value
         });
+    this.persistState();
     }
 
     ngOnDestroy(): void {
@@ -628,6 +655,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         if (formatted !== this.lastAppliedRange) {
             this.lastAppliedRange = formatted;
             this.onTimeRangeApplied(parsed.start, parsed.end);
+            this.persistState();
         }
         // 关闭菜单: 触发一次 body click (hlMenu OutsideClick) 或使用更安全方式
         try {
@@ -742,6 +770,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                 dataSourceLabel: this.selectedDataSource.label
             });
 
+            // 成功处理后立即持久化（确保数据源切换后时间范围被保存）
+            this.persistState();
+
         } catch (error) {
             console.error('Error processing data source time range:', error);
             this.setDefaultTimeRange();
@@ -765,6 +796,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         this.customRangeValue = '';
 
         console.log('Default time range set (1 hour)');
+
+    // 默认时间范围设定后持久化
+    this.persistState();
     }
 
     // 检查并启动自动更新
@@ -840,6 +874,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         this.autoUpdateStartTime = null;
 
         console.log('Auto update stopped');
+    // 停止自动更新后持久化状态
+    this.persistState();
     }
 
     // 手动切换自动更新状态
@@ -870,6 +906,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             status: this.selectedDataSource.status,
             hasInterval: !!this.autoUpdateInterval
         });
+    // 切换自动更新后持久化状态
+    this.persistState();
     }
 
     // 更新结束时间为当前时间
@@ -930,6 +968,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             usingFixedStartTime: this.selectedDataSource.status === 'running',
             updateType: this.autoUpdateInterval ? 'scheduled' : 'immediate'
         });
+    // 自动更新结束时间后持久化（保持实时显示刷新后的时间范围）
+    this.persistState();
     }
 
     // 检查是否应该禁用时间选择
@@ -1126,5 +1166,84 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             formattedStart,
             formattedEnd
         };
+    }
+
+    // ================= 持久化逻辑 =================
+    private persistState(skipFrequent?: boolean) {
+        try {
+            const current = (this.timeRangeService as any).getCurrentTimeRange?.();
+            let start: Date | undefined = current?.startTime;
+            let end: Date | undefined = current?.endTime;
+
+            // 如果服务里还没有时间范围（例如刚切换数据源尚未返回），尝试从UI状态推导
+            if (!start || !end) {
+                if (this.isCustomTimeRange && this.customRangeValue.includes(' to ')) {
+                    const parsed = this.parseRangeString(this.customRangeValue);
+                    if (parsed) { start = parsed.start; end = parsed.end; }
+                } else if (this.selectedQuickRange) {
+                    end = new Date();
+                    start = this.calculateStartTime(this.selectedQuickRange, end);
+                } else {
+                    // fallback 默认24h
+                    end = new Date();
+                    start = new Date(end.getTime() - 24*60*60*1000);
+                }
+            }
+
+            if (!start || !end) return; // 仍无法推导则放弃
+
+            const state = {
+                dataSource: this.selectedDataSource?.value ? this.selectedDataSource : null,
+                rangeMode: this.isAutoUpdateEnabled ? 'live' : (this.isCustomTimeRange ? 'custom' : 'quick'),
+                quickValue: this.isCustomTimeRange ? '' : this.selectedQuickRange,
+                customRangeValue: (this.isCustomTimeRange || this.isAutoUpdateEnabled) ? this.customRangeValue : '',
+                startTime: start.toISOString(),
+                endTime: end.toISOString(),
+                isAutoUpdateEnabled: this.isAutoUpdateEnabled,
+                autoUpdateStartTime: this.autoUpdateStartTime ? this.autoUpdateStartTime.toISOString() : null
+            };
+            localStorage.setItem('header_state_v1', JSON.stringify(state));
+        } catch (e) {
+            console.warn('Persist state failed', e);
+        }
+    }
+
+    private restorePersistedState(): boolean {
+        try {
+            const raw = localStorage.getItem('header_state_v1');
+            if (!raw) return false;
+            const state = JSON.parse(raw);
+            if (!state || !state.startTime || !state.endTime) return false;
+            if (state.dataSource) {
+                this.selectedDataSource = { ...state.dataSource };
+            }
+            this.isAutoUpdateEnabled = !!state.isAutoUpdateEnabled;
+            this.autoUpdateStartTime = state.autoUpdateStartTime ? new Date(state.autoUpdateStartTime) : null;
+            if (state.rangeMode === 'custom' || state.rangeMode === 'live') {
+                this.isCustomTimeRange = true;
+                this.selectedQuickRange = '';
+                this.customRangeValue = state.customRangeValue || '';
+            } else {
+                this.isCustomTimeRange = false;
+                this.selectedQuickRange = state.quickValue || '24h';
+                this.customRangeValue = '';
+            }
+            const start = new Date(state.startTime);
+            const end = new Date(state.endTime);
+            this.timeRangeService.updateTimeRange(start, end, state.rangeMode, state.rangeMode, this.selectedDataSource?.value);
+            if (state.rangeMode === 'custom' || state.rangeMode === 'live') {
+                this.customRangeValue = this.formatDateLocal(start) + ' to ' + this.formatDateLocal(end);
+            }
+            return true;
+        } catch (e) {
+            console.warn('Restore state failed', e);
+            return false;
+        }
+    }
+
+    private restoreStateIfNeeded() {
+        if (!this.customRangeValue && !this.selectedQuickRange) {
+            this.restorePersistedState();
+        }
     }
 }
