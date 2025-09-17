@@ -126,6 +126,7 @@ export class SidebarComponent implements OnInit {
         // 检查是否是系统设置相关路径
         if (currentPath.includes('/user-management') || 
             currentPath.includes('/role-management') || 
+            currentPath.includes('/notification-settings') ||
             currentPath.includes('/system-time') || 
             currentPath.includes('/asset-book') || 
             currentPath.includes('/interface-management')) {

@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild 
 import { animate, style, transition, trigger } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 import { TimeRange, TimeRangeService } from '../../services/time-range.service';
 
@@ -108,7 +109,7 @@ export class EventComponent implements OnInit, OnDestroy {
     private aiMarkdownRaw = '';
     private aiLines: string[] = [];
 
-    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private timeRangeService: TimeRangeService) {
+    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private timeRangeService: TimeRangeService, private translate: TranslateService) {
         this.initChart();
     }
 
@@ -125,6 +126,11 @@ export class EventComponent implements OnInit, OnDestroy {
                 this.loadTrendingData();
                 this.loadData();
             });
+        });
+
+        // 订阅语言变化，重新初始化图表以更新下载按钮文本
+        this.translate.onLangChange.subscribe(() => {
+            this.initChart();
         });
 
         // 初始加载（如果有默认时间范围）
@@ -147,14 +153,43 @@ export class EventComponent implements OnInit, OnDestroy {
     // 初始化趋势图配置（参考 BaseProtocol）
     private initChart() {
         const self = this;
+        const currentLang = this.translate.currentLang || this.translate.defaultLang || 'en';
+        
         this.revenueChart = {
             series: [{ name: 'Events', data: [] }],
             chart: {
                 height: 325,
                 type: 'line',
                 animations: { enabled: true },
-                toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: false, reset: true }, autoSelected: 'zoom' },
+                toolbar: { 
+                    show: true, 
+                    tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: false, reset: true }, 
+                    autoSelected: 'zoom' 
+                },
                 zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
+                defaultLocale: currentLang === 'zh' ? 'zh' : 'en',
+                locales: [
+                    {
+                        name: 'en',
+                        options: {
+                            toolbar: {
+                                exportToSVG: 'Download SVG',
+                                exportToPNG: 'Download PNG',
+                                exportToCSV: 'Download CSV'
+                            }
+                        }
+                    },
+                    {
+                        name: 'zh',
+                        options: {
+                            toolbar: {
+                                exportToSVG: '下载 SVG',
+                                exportToPNG: '下载 PNG',
+                                exportToCSV: '下载 CSV'
+                            }
+                        }
+                    }
+                ],
                 events: {
                     selection: (_chart: any, ctx: any) => {
                         if (ctx?.xaxis?.min != null && ctx?.xaxis?.max != null) {

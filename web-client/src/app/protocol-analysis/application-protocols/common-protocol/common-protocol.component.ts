@@ -6,6 +6,7 @@ import { ZeekLogAttribute, ZeekLogType, ZeekConfigService } from '../../../servi
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TimeRangeService } from 'src/app/services/time-range.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-common-protocol',
@@ -42,10 +43,11 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
     private route: ActivatedRoute,
     private router2: Router,
         protected override zeekConfigService: ZeekConfigService,
-        private timeRangeService2: TimeRangeService
+        private timeRangeService2: TimeRangeService,
+        translate: TranslateService
     ) {
     // 传递 router 给父类
-    super(http, cdr, zeekConfigService, timeRangeService2, router2);
+    super(http, cdr, zeekConfigService, timeRangeService2, router2, translate);
 
         // 监听路由参数变化
     this.routeParamSubscription = this.route.params.subscribe(params => {

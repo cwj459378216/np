@@ -22,7 +22,7 @@
                     <div class="relative">
                         <input type="text" placeholder="{{ 'Search Rules' | translate }}"
                             class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchTerm"
-                            (ngModelChange)="searchRules()" />
+                            (ngModelChange)="searchPolicies()" />
                         <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
                             <icon-search class="mx-auto" />
                         </div>
@@ -42,7 +42,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngFor="let policy of policies">
+                            <tr *ngFor="let policy of filteredPolicies">
                                 <td>{{policy.name}}</td>
                                 <td>{{policy.description}}</td>
                                 <td>
@@ -63,6 +63,11 @@
                                         <button type="button" class="btn btn-sm btn-outline-danger"
                                             (click)="deleteRule(policy.id!)">{{ 'general.delete' | translate }}</button>
                                     </div>
+                                </td>
+                            </tr>
+                            <tr *ngIf="!filteredPolicies.length">
+                                <td colspan="5" class="text-center text-white-dark py-4">
+                                    {{ 'general.noData' | translate }}
                                 </td>
                             </tr>
                         </tbody>

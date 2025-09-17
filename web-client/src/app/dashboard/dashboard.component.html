@@ -205,18 +205,18 @@
         </div>
   <p class="text-lg dark:text-white-light/90">{{ 'Flow Count' | translate }}<span class="ml-2 text-primary">{{ networkProtocolFlowCount | number }}</span></p>
         <div class="relative overflow-hidden">
-          <apx-chart [series]="tcpTrending.series" [chart]="tcpTrending.chart"
+          <apx-chart *ngIf="tcpTrending" [series]="tcpTrending.series" [chart]="tcpTrending.chart"
             [dataLabels]="tcpTrending.dataLabels" [stroke]="tcpTrending.stroke"
             [colors]="tcpTrending.colors" [markers]="tcpTrending.markers" [labels]="tcpTrending.labels"
             [xaxis]="tcpTrending.xaxis" [yaxis]="tcpTrending.yaxis" [grid]="tcpTrending.grid"
             [legend]="tcpTrending.legend" [tooltip]="tcpTrending.tooltip" [fill]="tcpTrending.fill"
             class="rounded-lg bg-white dark:bg-black">
-            <!-- loader -->
-            <div class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
-              <span
-                class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
-            </div>
           </apx-chart>
+          <!-- loader -->
+          <div *ngIf="!tcpTrending" class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+            <span
+              class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+          </div>
         </div>
       </div>
 

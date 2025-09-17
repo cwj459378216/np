@@ -4,6 +4,7 @@ import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { RulesPolicyService } from '../../../services/rules-policy.service';
 import { RulesPolicy, Rule } from '../../../models/rules-policy.model';
 import Swal from 'sweetalert2';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-rules-policy',
@@ -34,6 +35,7 @@ export class RulesPolicyComponent implements AfterViewInit {
   selectedRules: Rule[] = [];
   availableRules: Rule[] = [];
   policies: RulesPolicy[] = [];
+  filteredPolicies: RulesPolicy[] = [];
 
   // 分页相关属性
   currentPage = 1;
@@ -93,7 +95,8 @@ export class RulesPolicyComponent implements AfterViewInit {
   constructor(
     private fb: FormBuilder,
     private rulesPolicyService: RulesPolicyService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private translate: TranslateService
   ) {
     this.policyForm = this.fb.group({
       id: [''],
@@ -112,6 +115,7 @@ export class RulesPolicyComponent implements AfterViewInit {
     this.rulesPolicyService.getAllPolicies().subscribe(
       (policies: RulesPolicy[]) => {
         this.policies = policies;
+        this.searchPolicies(); // 初始化时执行搜索以设置过滤结果
         console.log('Loaded policies with rules:', policies.map(policy => ({
           id: policy.id,
           name: policy.name,
@@ -282,37 +286,54 @@ export class RulesPolicyComponent implements AfterViewInit {
 
   deleteRule(id: number): void {
     // 显示确认对话框
-    Swal.fire({
-        title: 'Delete Policy',
-        text: 'Are you sure you want to delete this policy?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Delete',
-        cancelButtonText: 'Cancel',
-        padding: '2em',
-    }).then((result) => {
-        if (result.value) {
-            // 用户确认删除
-            this.rulesPolicyService.deletePolicy(id).subscribe(
-                () => {
-                    console.log('Policy deleted');
-                    // 从本地数组中移除被删除的策略
-                    this.policies = this.policies.filter(policy => policy.id !== id);
-                    // 显示成功消息
-                    this.showMessage('Policy has been deleted successfully');
-                },
-                (error: Error) => {
-                    console.error('Error deleting policy:', error);
-                    // 显示错误消息
-                    this.showMessage('Failed to delete policy', 'error');
-                }
-            );
-        }
-    });
+    this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Cancel', 'Policy has been deleted successfully', 'Failed to delete policy'])
+      .subscribe(translations => {
+        Swal.fire({
+            title: translations['Are you sure?'],
+            text: translations["You won't be able to revert this!"],
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: translations['Yes, delete it!'],
+            cancelButtonText: translations['Cancel'],
+            padding: '2em',
+        }).then((result) => {
+            if (result.value) {
+                // 用户确认删除
+                this.rulesPolicyService.deletePolicy(id).subscribe(
+                    () => {
+                        console.log('Policy deleted');
+                        // 从本地数组中移除被删除的策略
+                        this.policies = this.policies.filter(policy => policy.id !== id);
+                        // 更新过滤后的策略列表
+                        this.searchPolicies();
+                        // 显示成功消息
+                        this.showMessage(translations['Policy has been deleted successfully']);
+                    },
+                    (error: Error) => {
+                        console.error('Error deleting policy:', error);
+                        // 显示错误消息
+                        this.showMessage(translations['Failed to delete policy'], 'error');
+                    }
+                );
+            }
+        });
+      });
   }
 
   searchRules() {
-    // 实现搜索规则的逻辑
+    // 实现搜索策略的逻辑
+    this.searchPolicies();
+  }
+
+  searchPolicies() {
+    this.filteredPolicies = this.policies.filter((policy) => {
+      if (!policy || !policy.name) {
+        return false;
+      }
+      const searchLower = this.searchTerm.toLowerCase();
+      return policy.name.toLowerCase().includes(searchLower) ||
+             (policy.description && policy.description.toLowerCase().includes(searchLower));
+    });
   }
 
   toggleStatus(id: number, event: Event): void {
@@ -354,7 +375,9 @@ export class RulesPolicyComponent implements AfterViewInit {
           console.error('Error disabling other policies:', error);
           // 发生错误时恢复复选框状态
           target.checked = false;
-          this.showMessage('Failed to update policy status', 'error');
+          this.translate.get('Failed to update policy status').subscribe(message => {
+            this.showMessage(message, 'error');
+          });
         });
       } else {
         // 没有其他策略需要禁用，直接启用当前策略
@@ -371,12 +394,16 @@ export class RulesPolicyComponent implements AfterViewInit {
       () => {
         console.log('Policy enabled successfully');
         policyToUpdate.enabled = true;
-        this.showMessage(`Policy "${policyToUpdate.name}" enabled successfully`);
+        this.translate.get('Policy "{{name}}" enabled successfully', { name: policyToUpdate.name }).subscribe(message => {
+          this.showMessage(message);
+        });
       },
       (error: Error) => {
         console.error('Error enabling policy:', error);
         target.checked = false;
-        this.showMessage('Failed to enable policy', 'error');
+        this.translate.get('Failed to enable policy').subscribe(message => {
+          this.showMessage(message, 'error');
+        });
       }
     );
   }
@@ -386,13 +413,17 @@ export class RulesPolicyComponent implements AfterViewInit {
       () => {
         console.log('Policy disabled successfully');
         policyToUpdate.enabled = false;
-        this.showMessage(`Policy "${policyToUpdate.name}" disabled successfully`);
+        this.translate.get('Policy "{{name}}" disabled successfully', { name: policyToUpdate.name }).subscribe(message => {
+          this.showMessage(message);
+        });
       },
       (error: Error) => {
         console.error('Error disabling policy:', error);
         target.checked = true;
         policyToUpdate.enabled = true;
-        this.showMessage('Failed to disable policy', 'error');
+        this.translate.get('Failed to disable policy').subscribe(message => {
+          this.showMessage(message, 'error');
+        });
       }
     );
   }
@@ -453,7 +484,9 @@ export class RulesPolicyComponent implements AfterViewInit {
       this.rulesPolicyService.createPolicy(policy).subscribe(
         (response) => {
           console.log('Created policy:', response);
-          this.showMessage('Policy has been created successfully');
+          this.translate.get('Policy has been created successfully').subscribe(message => {
+            this.showMessage(message);
+          });
           this.addRuleModal.close();
           this.loadPolicies();
           this.selectedRules = [];
@@ -461,7 +494,9 @@ export class RulesPolicyComponent implements AfterViewInit {
         },
         (error) => {
           console.error('Error creating policy:', error);
-          this.showMessage('Error creating policy', 'error');
+          this.translate.get('Error creating policy').subscribe(message => {
+            this.showMessage(message, 'error');
+          });
         }
       );
     }

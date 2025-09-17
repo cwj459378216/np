@@ -6,6 +6,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { Store } from '@ngrx/store';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
+import { TranslateService } from '@ngx-translate/core';
 import { CollectorService } from 'src/app/services/collector.service';
 import { DashboardDataService, BandwidthTrendsResponse, TrendingData } from '../services/dashboard-data.service';
 import { Collector, StorageStrategy, CaptureRequest, CaptureResponse, CaptureFileItem, SessionConnStats, SessionEventCount, SessionTrafficItem } from '../services/collector.service';
@@ -110,8 +111,9 @@ export class CollectorComponent implements OnInit {
     private http: HttpClient,
     public fb: FormBuilder,
     public storeData: Store<any>,
-  private collectorService: CollectorService,
-  private dashboardDataService: DashboardDataService
+    private collectorService: CollectorService,
+    private dashboardDataService: DashboardDataService,
+    private translate: TranslateService
   ) {
     this.initStore();
     this.isLoading = false;
@@ -144,10 +146,16 @@ export class CollectorComponent implements OnInit {
   // 处理 tab 切换（模板中直接赋值 tab2，这里监听并在切到 profile 时加载文件）
   setTab(tab: string) {
     this.tab2 = tab;
+    // 切换标签页时重置表格显示类型为 list
+    this.displayType = 'list';
+    // 重置搜索输入框内容
+    this.searchUser = '';
+    
     if (this.tab2.toLowerCase() === 'profile') {
-  // 切换到 Storage Strategy 默认显示表格
-  this.displayType = 'list';
       this.loadCaptureFiles();
+    } else if (this.tab2.toLowerCase() === 'home') {
+      // 切换到 Collector Analyzer 时重新执行搜索以重置过滤结果
+      this.searchContacts();
     }
   }
 
@@ -464,7 +472,7 @@ export class CollectorComponent implements OnInit {
         protocolAnalysisEnabled: this.params.value.protocolAnalysisEnabled || false,
         idsEnabled: this.params.value.idsEnabled || false,
   filePath: this.params.value.filePath || undefined,
-        status: this.params.value.id ? 'completed' : 'start',
+        status: this.params.value.id ? this.params.value.status : 'start',
         creationTime: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
 
@@ -496,80 +504,86 @@ export class CollectorComponent implements OnInit {
   }
 
   deleteUser(user: ContactList) {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, delete it!',
-        padding: '2em'
-    }).then((result) => {
-        if (result.value) {
-            // 1) Start async ES deletion
-            Swal.fire({
-              title: 'Deleting... Please wait',
-              html: 'Deleting related data from Elasticsearch. This may take a while.',
-              allowOutsideClick: false,
-              didOpen: () => Swal.showLoading()
-            });
+    this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Cancel', 'Deleting... Please wait', 'Deleting related data from Elasticsearch. This may take a while.'])
+      .subscribe(translations => {
+        Swal.fire({
+            title: translations['Are you sure?'],
+            text: translations["You won't be able to revert this!"],
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: translations['Yes, delete it!'],
+            cancelButtonText: translations['Cancel'],
+            padding: '2em'
+        }).then((result) => {
+            if (result.value) {
+                // 1) Start async ES deletion
+                Swal.fire({
+                  title: translations['Deleting... Please wait'],
+                  html: translations['Deleting related data from Elasticsearch. This may take a while.'],
+                  allowOutsideClick: false,
+                  didOpen: () => Swal.showLoading()
+                });
 
-            this.collectorService.startEsDelete(user.id).subscribe({
-              next: ({ taskId }) => {
-                // 2) Poll status until DONE/FAILED
-                const pollInterval = 3000;
-                const poller = setInterval(() => {
-                  this.collectorService.getEsDeleteStatus(taskId).subscribe({
-                    next: (s) => {
-                      if (!s || !s.state) return;
-                      if (s.state === 'DONE') {
-                        clearInterval(poller);
-                        // 3) After ES deletion, delete the collector record
-                        this.collectorService.deleteCollector(user.id).subscribe({
-                          next: () => {
+                this.collectorService.startEsDelete(user.id).subscribe({
+                  next: ({ taskId }) => {
+                    // 2) Poll status until DONE/FAILED
+                    const pollInterval = 3000;
+                    const poller = setInterval(() => {
+                      this.collectorService.getEsDeleteStatus(taskId).subscribe({
+                        next: (s) => {
+                          if (!s || !s.state) return;
+                          if (s.state === 'DONE') {
+                            clearInterval(poller);
+                            // 3) After ES deletion, delete the collector record
+                            this.collectorService.deleteCollector(user.id).subscribe({
+                              next: () => {
+                                Swal.close();
+                                this.loadCollectors();
+                                this.showMessage('Collector has been deleted successfully.');
+                              },
+                              error: () => {
+                                Swal.close();
+                                this.showMessage('Error deleting collector record', 'error');
+                              }
+                            });
+                          } else if (s.state === 'FAILED') {
+                            clearInterval(poller);
                             Swal.close();
-                            this.loadCollectors();
-                            this.showMessage('Collector has been deleted successfully.');
-                          },
-                          error: () => {
-                            Swal.close();
-                            this.showMessage('Error deleting collector record', 'error');
+                            this.showMessage(`ES deletion failed: ${s.errorMessage || ''}`, 'error');
                           }
-                        });
-                      } else if (s.state === 'FAILED') {
-                        clearInterval(poller);
-                        Swal.close();
-                        this.showMessage(`ES deletion failed: ${s.errorMessage || ''}`, 'error');
-                      }
-                    },
-                    error: () => {
-                      clearInterval(poller);
-                      Swal.close();
-                      this.showMessage('Failed to query deletion status', 'error');
-                    }
-                  });
-                }, pollInterval);
-              },
-              error: () => {
-                Swal.close();
-                this.showMessage('Failed to start ES deletion task', 'error');
-              }
-            });
-        }
-    });
+                        },
+                        error: () => {
+                          clearInterval(poller);
+                          Swal.close();
+                          this.showMessage('Failed to query deletion status', 'error');
+                        }
+                      });
+                    }, pollInterval);
+                  },
+                  error: () => {
+                    Swal.close();
+                    this.showMessage('Failed to start ES deletion task', 'error');
+                  }
+                });
+            }
+        });
+      });
   }
 
   showMessage(msg = '', type = 'success') {
-    const toast: any = Swal.mixin({
-      toast: true,
-      position: 'top',
-      showConfirmButton: false,
-      timer: 3000,
-      customClass: { container: 'toast' },
-    });
-    toast.fire({
-      icon: type,
-      title: msg,
-      padding: '10px 20px',
+    this.translate.get(msg).subscribe(translatedMessage => {
+      const toast: any = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: false,
+        timer: 3000,
+        customClass: { container: 'toast' },
+      });
+      toast.fire({
+        icon: type,
+        title: translatedMessage,
+        padding: '10px 20px',
+      });
     });
   }
   onAdapterChange(event: any) {
@@ -919,26 +933,30 @@ export class CollectorComponent implements OnInit {
   }
 
   deleteStorageStrategy(strategy: StorageStrategy) {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, delete it!',
-        padding: '2em'
-    }).then((result) => {
-        if (result.value) {
-            this.collectorService.deleteStorageStrategy(strategy.id).subscribe(
-                () => {
-                    this.loadStorageStrategies();
-                    this.showMessage('Storage strategy has been deleted successfully.');
-                },
-                error => {
-                    this.showMessage('Error deleting storage strategy', 'error');
-                }
-            );
-        }
-    });
+    this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Cancel'])
+      .subscribe(translations => {
+        Swal.fire({
+            title: translations['Are you sure?'],
+            text: translations["You won't be able to revert this!"],
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: translations['Yes, delete it!'],
+            cancelButtonText: translations['Cancel'],
+            padding: '2em'
+        }).then((result) => {
+            if (result.value) {
+                this.collectorService.deleteStorageStrategy(strategy.id).subscribe(
+                    () => {
+                        this.loadStorageStrategies();
+                        this.showMessage('Storage strategy has been deleted successfully.');
+                    },
+                    error => {
+                        this.showMessage('Error deleting storage strategy', 'error');
+                    }
+                );
+            }
+        });
+      });
   }
 
   // 添加 Storage Strategy 的搜索功能
@@ -1019,7 +1037,9 @@ export class CollectorComponent implements OnInit {
       c.id !== collector.id && c.interfaceName === adapter && (c.status === 'running' || c.status === 'STATUS_STARTED')
     );
     if (hasRunningSameAdapter) {
-      this.showMessage(`Adapter ${adapter} already has a running task.`, 'error');
+      this.translate.get('Adapter {{adapter}} already has a running task.', { adapter: adapter }).subscribe(message => {
+        this.showMessage(message, 'error');
+      });
       return;
     }
 
@@ -1249,11 +1269,13 @@ export class CollectorComponent implements OnInit {
     this.stopStatusPolling(collector.id);
 
     // 显示加载中
-    Swal.fire({
-      title: 'Stopping...',
-      html: 'Waiting for stop to complete.',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
+    this.translate.get(['Stopping...', 'Waiting for stop to complete.']).subscribe(translations => {
+      Swal.fire({
+        title: translations['Stopping...'],
+        html: translations['Waiting for stop to complete.'],
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
     });
 
     this.collectorService.stopCapture(sessionId).subscribe(
@@ -1294,18 +1316,21 @@ export class CollectorComponent implements OnInit {
   }
 
   confirmStopCapture(collector: ContactList) {
-    Swal.fire({
-      title: 'Stop Capture',
-      text: 'Are you sure you want to stop the capture?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, stop it!',
-      cancelButtonText: 'No, keep it running',
-      padding: '2em'
-    }).then((result) => {
-      if (result.value) {
-        this.stopCapture(collector);
-      }
-    });
+    this.translate.get(['Stop Capture', 'Are you sure you want to stop the capture?', 'Yes, stop it!', 'No, keep it running'])
+      .subscribe(translations => {
+        Swal.fire({
+          title: translations['Stop Capture'],
+          text: translations['Are you sure you want to stop the capture?'],
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: translations['Yes, stop it!'],
+          cancelButtonText: translations['No, keep it running'],
+          padding: '2em'
+        }).then((result) => {
+          if (result.value) {
+            this.stopCapture(collector);
+          }
+        });
+      });
   }
 }

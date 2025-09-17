@@ -15,7 +15,14 @@
                     <div class="flex gap-3">
                         <div>
                             <button type="button" class="btn btn-primary" (click)="updateRules()">
-                                <icon-settings class="h-5 w-5" />
+                                <icon-settings class="h-5 w-5 ltr:mr-2 rtl:ml-2" />
+                                {{ 'Configure Update' | translate }}
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-success" (click)="executeUpdate()">
+                                <icon-refresh class="h-5 w-5 ltr:mr-2 rtl:ml-2" />
+                                {{ 'Update Now' | translate }}
                             </button>
                         </div>
                     </div>
@@ -35,21 +42,41 @@
                         <thead>
                             <tr>
                                 <th>{{ 'Last Update Time' | translate }}</th>
+                                <th>{{ 'Update Mode' | translate }}</th>
                                 <th>{{ 'Total Rules' | translate }}</th>
+                                <th>{{ 'Status' | translate }}</th>
                                 <th class="!text-center">{{ 'Actions' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngIf="currentConfig">
-                                <td>{{currentConfig.lastUpdateTime | date:'yyyy-MM-dd HH:mm:ss'}}</td>
-                                <td>{{currentConfig.totalRules | number}}</td>
+                            <tr *ngFor="let update of filteredUpdates">
+                                <td>{{update.lastUpdateTime | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                                <td>{{update.updateMode | titlecase}}</td>
+                                <td>{{update.totalRules | number}}</td>
+                                <td>
+                                    <span class="badge" [ngClass]="{
+                                        'bg-success': update.status === 'completed',
+                                        'bg-danger': update.status === 'failed',
+                                        'bg-warning': update.status === 'running'
+                                    }">
+                                        {{update.status | titlecase}}
+                                    </span>
+                                </td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
-                                            (click)="executeUpdate()">{{ 'Update Now' | translate }}</button>
+                                            (click)="viewDetails(update)">{{ 'Details' | translate }}</button>
                                         <button type="button" class="btn btn-sm btn-outline-secondary"
-                                            (click)="viewDetails()">{{ 'Details' | translate }}</button>
+                                            *ngIf="update.status === 'completed'"
+                                            (click)="rollbackUpdate(update)">{{ 'Rollback' | translate }}</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            (click)="deleteUpdate(update)">{{ 'Delete' | translate }}</button>
                                     </div>
+                                </td>
+                            </tr>
+                            <tr *ngIf="!filteredUpdates.length">
+                                <td colspan="5" class="text-center text-white-dark py-4">
+                                    {{ 'general.noData' | translate }}
                                 </td>
                             </tr>
                         </tbody>

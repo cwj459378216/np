@@ -12,6 +12,7 @@ import { TimeRangeService, TimeRange } from 'src/app/services/time-range.service
 import { Subscription } from 'rxjs';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-base-protocol',
@@ -166,6 +167,7 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
 
     private timeRangeSubscription?: Subscription;
     private routeSubscription?: Subscription; // 监听URL变化
+    private languageSubscription?: Subscription; // 监听语言变化
     private currentTimeRange?: TimeRange;
     // 图表选择的时间范围（通过拖拽或缩放）
     private selectedStartTime?: number;
@@ -176,28 +178,9 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
         protected cdr: ChangeDetectorRef,
         protected zeekConfigService: ZeekConfigService,
         private timeRangeService: TimeRangeService,
-        private router: Router
+        private router: Router,
+        private translate: TranslateService
     ) {
-        // 初始化图表事件，用于捕获用户在趋势图上的拖拽选择和缩放
-        // 使用 any 避免类型约束问题
-        (this.revenueChart.chart as any).events = {
-            selection: (_chart: any, ctx: any) => {
-                const xaxis = ctx?.xaxis;
-                if (xaxis?.min != null && xaxis?.max != null) {
-                    this.onChartRangeSelected(Math.round(xaxis.min), Math.round(xaxis.max));
-                }
-            },
-            zoomed: (_chart: any, ctx: any) => {
-                const xaxis = ctx?.xaxis;
-                if (xaxis?.min != null && xaxis?.max != null) {
-                    this.onChartRangeSelected(Math.round(xaxis.min), Math.round(xaxis.max));
-                }
-            },
-            beforeResetZoom: () => {
-                this.clearChartRangeSelection();
-            }
-        };
-
         // 监听路由变化：URL切换时初始化状态（需求2）
         this.routeSubscription = this.router.events
             .pipe(filter(e => e instanceof NavigationEnd))
@@ -250,6 +233,14 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
         console.log('当前 rows:', this.rows);
         console.log('当前 cols:', this.cols);
 
+        // 初始化图表配置
+        this.initChart();
+
+        // 监听语言变化，重新初始化图表
+        this.languageSubscription = this.translate.onLangChange.subscribe(() => {
+            this.initChart();
+        });
+
         // 预加载资产数据，用于 SrcIP/DstIp 替换显示
         this.loadAssetsForMapping();
 
@@ -278,11 +269,70 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
         }
     }
 
+    private initChart() {
+        const currentLang = this.translate.currentLang || this.translate.defaultLang || 'en';
+        
+        // 重新配置图表以支持本地化
+        this.revenueChart = {
+            ...this.baseChartConfig,
+            series: this.revenueChart.series || [{ name: '', data: [] }],
+            chart: {
+                ...this.baseChartConfig.chart,
+                defaultLocale: currentLang === 'zh' ? 'zh' : 'en',
+                locales: [
+                    {
+                        name: 'en',
+                        options: {
+                            toolbar: {
+                                exportToSVG: 'Download SVG',
+                                exportToPNG: 'Download PNG',
+                                exportToCSV: 'Download CSV'
+                            }
+                        }
+                    },
+                    {
+                        name: 'zh',
+                        options: {
+                            toolbar: {
+                                exportToSVG: '下载 SVG',
+                                exportToPNG: '下载 PNG',
+                                exportToCSV: '下载 CSV'
+                            }
+                        }
+                    }
+                ],
+                events: {
+                    selection: (_chart: any, ctx: any) => {
+                        const xaxis = ctx?.xaxis;
+                        if (xaxis?.min != null && xaxis?.max != null) {
+                            this.onChartRangeSelected(Math.round(xaxis.min), Math.round(xaxis.max));
+                        }
+                    },
+                    zoomed: (_chart: any, ctx: any) => {
+                        const xaxis = ctx?.xaxis;
+                        if (xaxis?.min != null && xaxis?.max != null) {
+                            this.onChartRangeSelected(Math.round(xaxis.min), Math.round(xaxis.max));
+                        }
+                    },
+                    beforeResetZoom: () => {
+                        this.clearChartRangeSelection();
+                    }
+                }
+            },
+            yaxis: {
+                title: {
+                    text: ''
+                }
+            }
+        };
+    }
+
     ngOnDestroy() {
     // 不再需要定时器：已移除自动刷新
     if (this.refreshInterval) { clearInterval(this.refreshInterval); }
         this.timeRangeSubscription?.unsubscribe();
     this.routeSubscription?.unsubscribe();
+    this.languageSubscription?.unsubscribe();
     }
 
     private addDefaultFieldDescriptions() {

@@ -16,6 +16,8 @@ export class RuleUpdateComponent implements OnInit {
   updateForm!: FormGroup;
   isAutomaticMode: boolean = true;
   currentConfig: RuleUpdateConfig | null = null;
+  updateHistory: RuleUpdateConfig[] = [];
+  filteredUpdates: RuleUpdateConfig[] = [];
   
   updateModes = [
     { name: 'Automatic', value: 'automatic' },
@@ -31,6 +33,7 @@ export class RuleUpdateComponent implements OnInit {
 
   ngOnInit() {
     this.loadCurrentConfig();
+    this.loadUpdateHistory();
   }
 
   initForm() {
@@ -61,6 +64,34 @@ export class RuleUpdateComponent implements OnInit {
         this.showMessage('Failed to load configuration', 'error');
       }
     });
+  }
+
+  loadUpdateHistory() {
+    // 模拟加载更新历史记录，实际项目中应该从服务获取
+    this.updateHistory = [
+      {
+        id: 1,
+        updateMode: 'automatic',
+        lastUpdateTime: new Date('2024-01-15 10:30:00'),
+        totalRules: 1250,
+        status: 'completed'
+      },
+      {
+        id: 2,
+        updateMode: 'manual',
+        lastUpdateTime: new Date('2024-01-10 14:20:00'),
+        totalRules: 1180,
+        status: 'completed'
+      },
+      {
+        id: 3,
+        updateMode: 'automatic',
+        lastUpdateTime: new Date('2024-01-05 09:15:00'),
+        totalRules: 1150,
+        status: 'failed'
+      }
+    ];
+    this.filteredUpdates = [...this.updateHistory];
   }
 
   updateRules() {
@@ -127,12 +158,69 @@ export class RuleUpdateComponent implements OnInit {
     }
   }
 
-  viewDetails() {
+  viewDetails(update?: RuleUpdateConfig) {
     // 实现查看详情的逻辑
+    if (update) {
+      console.log('Viewing details for update:', update);
+      // 这里可以打开一个详情模态框或导航到详情页面
+    }
+  }
+
+  rollbackUpdate(update: RuleUpdateConfig) {
+    // 实现回滚更新的逻辑
+    if (update.id) {
+      console.log('Rolling back update:', update.id);
+      this.showMessage('Rollback functionality not implemented yet', 'error');
+    }
+  }
+
+  deleteUpdate(update: RuleUpdateConfig) {
+    if (!update.id) return;
+    
+    // 显示确认对话框
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'This action cannot be undone!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // 从历史记录中删除
+        this.updateHistory = this.updateHistory.filter(u => u.id !== update.id);
+        this.searchUpdates(); // 重新应用搜索过滤
+        
+        this.showMessage('Update record deleted successfully');
+        
+        // 这里应该调用服务来删除服务器端的记录
+        // this.ruleUpdateService.deleteUpdate(update.id).subscribe({
+        //   next: () => {
+        //     this.loadUpdateHistory();
+        //     this.showMessage('Update record deleted successfully');
+        //   },
+        //   error: (error) => {
+        //     console.error('Failed to delete update:', error);
+        //     this.showMessage('Failed to delete update record', 'error');
+        //   }
+        // });
+      }
+    });
   }
 
   searchUpdates() {
-    // 实现搜索更新的逻辑
+    if (!this.searchTerm.trim()) {
+      this.filteredUpdates = [...this.updateHistory];
+    } else {
+      const searchLower = this.searchTerm.toLowerCase();
+      this.filteredUpdates = this.updateHistory.filter(update => 
+        update.updateMode?.toLowerCase().includes(searchLower) ||
+        update.status?.toLowerCase().includes(searchLower) ||
+        update.totalRules?.toString().includes(searchLower)
+      );
+    }
   }
 
   showMessage(message: string, type: 'success' | 'error' = 'success'): void {

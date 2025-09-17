@@ -13,7 +13,7 @@
             <div class="mt-3 flex flex-wrap">
                 <a href="javascript:;"
                     class="-mb-[1px] block rounded p-3.5 py-2 !outline-none transition duration-300 hover:bg-primary hover:text-white ltr:mr-2 rtl:ml-2"
-                    [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'home' }" (click)="tab2 = 'home'">
+                    [ngClass]="{ 'bg-primary text-white': tab2.toLowerCase() == 'home' }" (click)="setTab('home')">
                     {{ 'Collector Analyzer' | translate }}
                 </a>
 
@@ -427,15 +427,15 @@
                                     </div>
                                     <!-- <div>
                                         <button type="button" class="btn btn-outline-primary p-2"
-                                            [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
-                                            (click)="displayType = 'list'">
+                                                [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
+                                                (click)="displayType = 'list'">
                                             <icon-list-check />
                                         </button>
                                     </div>
                                     <div>
                                         <button type="button" class="btn btn-outline-primary p-2"
-                                            [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
-                                            (click)="displayType = 'grid'">
+                                                [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
+                                                (click)="displayType = 'grid'">
                                             <icon-layout-grid />
                                         </button>
                                     </div> -->
@@ -443,10 +443,11 @@
 
                                 <div class="relative">
                                     <input type="text" placeholder="{{ 'collector.searchStrategies' | translate }}"
-                                        class="peer form-input py-2 ltr:pr-11 rtl:pl-11" [(ngModel)]="searchUser"
-                                        name="searchUser" (ngModelChange)="searchContacts()" />
-                                    <div
-                                        class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
+                                           class="peer form-input py-2 ltr:pr-11 rtl:pl-11"
+                                           name="searchUser"
+                                           [(ngModel)]="searchUser"
+                                           (ngModelChange)="0" />
+                                    <div class="absolute top-1/2 -translate-y-1/2 peer-focus:text-primary ltr:right-[11px] rtl:left-[11px]">
                                         <icon-search class="mx-auto" />
                                     </div>
                                 </div>
@@ -458,32 +459,37 @@
                                     <table class="table-striped table-hover">
                                         <thead>
                                             <tr>
-                                                <th>{{ 'Name' | translate }}</th>
-                                                <th>{{ 'Creation Time' | translate }}</th>
-                                                <th>{{ 'File Size' | translate }}</th>
-                                                <th>{{ 'File Count' | translate }}</th>
-                                                <th>{{ 'Out of Disk Action' | translate }}</th>
-                                                <th>{{ 'File Type' | translate }}</th>
-                                                <!-- Hidden: Trigger Type column removed per request -->
+                                                <th>{{ 'collector.strategyName' | translate }}</th>
+                                                <th>{{ 'collector.fileSize' | translate }}</th>
+                                                <th>{{ 'collector.fileCount' | translate }}</th>
+                                                <th>{{ 'collector.outOfDiskAction' | translate }}</th>
+                                                <th>{{ 'collector.fileType' | translate }}</th>
                                                 <th class="!text-center">{{ 'Actions' | translate }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr *ngFor="let strategy of storageStrategies">
+                                            <tr *ngFor="let strategy of searchStorageStrategies()">
                                                 <td>{{ strategy.name }}</td>
-                                                <td>{{ formatDate(strategy.creationTime) }}</td>
                                                 <td>{{ strategy.fileSize }}</td>
                                                 <td>{{ strategy.fileCount }}</td>
                                                 <td>{{ strategy.outOfDiskAction }}</td>
                                                 <td>{{ strategy.fileType }}</td>
-                                                <!-- Trigger Type cell hidden -->
-                                                <td>
-                                                    <div class="flex items-center justify-center gap-4">
-                                                        <button type="button" class="btn btn-sm btn-outline-primary"
-                                                            (click)="editStorageStrategy(strategy)">{{ 'collector.edit' | translate }}</button>
-                                                        <button type="button" class="btn btn-sm btn-outline-danger"
-                                                            (click)="deleteStorageStrategy(strategy)">{{ 'Delete' | translate }}</button>
+                                                <td class="!text-center">
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary w-20"
+                                                                (click)="editStorageStrategy(strategy)">
+                                                            {{ 'collector.edit' | translate }}
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger w-20"
+                                                                (click)="deleteStorageStrategy(strategy)">
+                                                            {{ 'Delete' | translate }}
+                                                        </button>
                                                     </div>
+                                                </td>
+                                            </tr>
+                                            <tr *ngIf="!searchStorageStrategies().length">
+                                                <td colspan="6" class="text-center text-white-dark py-4">
+                                                    {{ 'general.noData' | translate }}
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -493,59 +499,23 @@
 
                             <ng-container *ngIf="displayType === 'grid'">
                                 <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                                    <div *ngFor="let strategy of storageStrategies"
-                                        class="relative overflow-hidden rounded-md bg-white text-center shadow dark:bg-[#1c232f]">
-                                        <div class="rounded-t-md bg-white/40 bg-[url('/assets/images/notification-bg.png')] bg-cover bg-center p-6 pb-0">
-                                            <div class="relative overflow-hidden">
-                                                <apx-chart [series]="revenueChart.series" [chart]="revenueChart.chart"
-                                                    [dataLabels]="revenueChart.dataLabels" [stroke]="revenueChart.stroke"
-                                                    [colors]="revenueChart.colors" [markers]="revenueChart.markers"
-                                                    [labels]="revenueChart.labels" [xaxis]="revenueChart.xaxis"
-                                                    [yaxis]="revenueChart.yaxis" [grid]="revenueChart.grid"
-                                                    [legend]="revenueChart.legend" [tooltip]="revenueChart.tooltip"
-                                                    [fill]="revenueChart.fill" class="rounded-lg bg-white dark:bg-black">
-                                                </apx-chart>
-                                            </div>
+                                    <div *ngFor="let strategy of searchStorageStrategies()" class="panel p-4">
+                                        <h5 class="font-semibold mb-2">{{ strategy.name }}</h5>
+                                        <ul class="text-xs space-y-1 text-white-dark">
+                                            <li>{{ 'collector.fileSize' | translate }}: {{ strategy.fileSize }}</li>
+                                            <li>{{ 'collector.fileCount' | translate }}: {{ strategy.fileCount }}</li>
+                                            <li>{{ 'collector.outOfDiskAction' | translate }}: {{ strategy.outOfDiskAction }}</li>
+                                            <li>{{ 'collector.fileType' | translate }}: {{ strategy.fileType }}</li>
+                                        </ul>
+                                        <div class="mt-3 flex gap-2">
+                                            <button type="button" class="btn btn-xs btn-outline-primary flex-1"
+                                                    (click)="editStorageStrategy(strategy)">{{ 'collector.edit' | translate }}</button>
+                                            <button type="button" class="btn btn-xs btn-outline-danger flex-1"
+                                                    (click)="deleteStorageStrategy(strategy)">{{ 'Delete' | translate }}</button>
                                         </div>
-                                        <div class="relative -mt-10 px-6 pb-24">
-                                            <div class="rounded-md bg-white px-2 py-4 shadow-md dark:bg-gray-900">
-                                                <div class="text-xl">{{ strategy.name }}</div>
-                                                <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-                                                    <div class="flex-auto">
-                                                        <div class="text-info">{{ strategy.fileSize }}</div>
-                                                        <div>{{ 'collector.fileSize' | translate }}</div>
-                                                    </div>
-                                                    <div class="flex-auto">
-                                                        <div class="text-info">{{ strategy.fileCount }}</div>
-                                                        <div>{{ 'collector.fileCount' | translate }}</div>
-                                                    </div>
-                                                    <div class="flex-auto">
-                                                        <div class="text-info">{{ strategy.fileType }}</div>
-                                                        <div>{{ 'collector.fileType' | translate }}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="mt-6 grid grid-cols-1 gap-4 ltr:text-left rtl:text-right">
-                                                <div class="flex items-center">
-                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'collector.creationTime' | translate }}:</div>
-                                                    <div class="truncate text-white-dark">{{ formatDate(strategy.creationTime) }}</div>
-                                                </div>
-                                                <div class="flex items-center">
-                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'collector.triggerType' | translate }}:</div>
-                                                    <div class="text-white-dark">{{ strategy.triggerType }}</div>
-                                                </div>
-                                                <div class="flex items-center">
-                                                    <div class="flex-none ltr:mr-2 rtl:ml-2">{{ 'collector.outOfDiskAction' | translate }}:</div>
-                                                    <div class="text-white-dark">{{ strategy.outOfDiskAction }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
-                                            <button type="button" class="btn btn-outline-primary w-1/2"
-                                                (click)="editStorageStrategy(strategy)">{{ 'collector.edit' | translate }}</button>
-                                            <button type="button" class="btn btn-outline-danger w-1/2"
-                                                (click)="deleteStorageStrategy(strategy)">{{ 'general.delete' | translate }}</button>
-                                        </div>
+                                    </div>
+                                    <div *ngIf="!searchStorageStrategies().length" class="col-span-full text-center text-white-dark py-6">
+                                        {{ 'general.noData' | translate }}
                                     </div>
                                 </div>
                             </ng-container>

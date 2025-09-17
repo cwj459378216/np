@@ -74,6 +74,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.currentTimeRange = this.timeRangeService.getCurrentTimeRange();
     console.log('Dashboard initial time range:', this.currentTimeRange);
 
+    // 确保在初始化时就加载数据
+    if (this.currentTimeRange) {
+      this.loadDataForTimeRange(this.currentTimeRange);
+    } else {
+      // 如果没有获取到时间范围，使用默认时间范围
+      console.warn('No initial time range found, using default time range');
+      const endTime = new Date();
+      const startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // 默认24小时
+      const defaultTimeRange: TimeRange = {
+        startTime,
+        endTime,
+        label: 'Last 24 Hours',
+        value: '24h',
+        filePath: undefined
+      };
+      this.currentTimeRange = defaultTimeRange;
+      this.loadDataForTimeRange(defaultTimeRange);
+    }
+
     this.loadSystemInfo();
 
     // 每30秒更新一次系统信息
@@ -132,6 +151,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error loading network protocol trends:', err);
+          // 提供默认的空图表
+          this.initDefaultNetworkProtocolChart();
         }
       });
   }
@@ -271,7 +292,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         error: (error) => {
           console.error('Error loading protocol trends data:', error);
           // 如果API调用失败，设置默认值并使用模拟数据
-          this.initCharts();
+          this.initDefaultProtocolTrendingChart();
         }
       });
   }
@@ -697,6 +718,311 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.averageBandwidth = 45.5;
   }
 
+  initDefaultNetworkProtocolChart() {
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+    const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
+
+    // 设置默认的网络协议流量计数
+    this.networkProtocolFlowCount = 0;
+
+    this.tcpTrending = {
+      chart: {
+        height: 350,
+        type: 'area',
+        fontFamily: 'Nunito, sans-serif',
+        zoom: {
+          enabled: false,
+        },
+        toolbar: {
+          show: false,
+        },
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      stroke: {
+        show: true,
+        curve: 'smooth',
+        width: 2,
+        lineCap: 'square',
+      },
+      dropShadow: {
+        enabled: true,
+        opacity: 0.2,
+        blur: 10,
+        left: -7,
+        top: 22,
+      },
+      colors: isDark ? ['#1b55e2', '#e7515a', '#00ab55'] : ['#2196f3', '#e7515a', '#00ab55'],
+      markers: {
+        size: 0,
+        colors: ['#1b55e2', '#e7515a', '#00ab55'],
+        strokeColor: '#fff',
+        strokeWidth: 2,
+        shape: 'circle',
+        hover: {
+          size: 6,
+          sizeOffset: 3,
+        },
+      },
+      xaxis: {
+        type: 'datetime',
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+        crosshairs: {
+          show: true,
+        },
+        labels: {
+          offsetX: isRtl ? 2 : 0,
+          offsetY: 5,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-xaxis-title',
+          },
+          formatter: (value: number) => this.formatChartLabel(value),
+        },
+      },
+      yaxis: {
+        tickAmount: 5,
+        labels: {
+          formatter: (v: number) => v.toString(),
+          offsetX: isRtl ? -30 : -10,
+          offsetY: 0,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-yaxis-title',
+          },
+        },
+        opposite: isRtl ? true : false,
+      },
+      grid: {
+        borderColor: isDark ? '#191e3a' : '#e0e6ed',
+        strokeDashArray: 5,
+        xaxis: {
+          lines: {
+            show: true,
+          },
+        },
+        yaxis: {
+          lines: {
+            show: false,
+          },
+        },
+        padding: {
+          top: 0,
+          right: 20,
+          bottom: 0,
+          left: 0,
+        },
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        fontSize: '16px',
+        markers: {
+          width: 10,
+          height: 10,
+          offsetX: -2,
+        },
+        itemMargin: {
+          horizontal: 10,
+          vertical: 5,
+        },
+      },
+      tooltip: {
+        marker: {
+          show: true,
+        },
+        x: {
+          show: false,
+        },
+      },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          inverseColors: false,
+          opacityFrom: isDark ? 0.19 : 0.28,
+          opacityTo: 0.05,
+          stops: isDark ? [100, 100] : [45, 100],
+        },
+      },
+      series: [
+        {
+          name: 'TCP',
+          data: [],
+        },
+        {
+          name: 'UDP',
+          data: [],
+        },
+        {
+          name: 'ICMP',
+          data: [],
+        },
+      ],
+    };
+  }
+
+  initDefaultProtocolTrendingChart() {
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+    const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
+
+    // 设置默认的总流量计数
+    this.totalFlowCount = 0;
+
+    this.protocolTrending = {
+      chart: {
+        height: 350,
+        type: 'area',
+        fontFamily: 'Nunito, sans-serif',
+        zoom: {
+          enabled: false,
+        },
+        toolbar: {
+          show: false,
+        },
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      stroke: {
+        show: true,
+        curve: 'smooth',
+        width: 2,
+        lineCap: 'square',
+      },
+      dropShadow: {
+        enabled: true,
+        opacity: 0.2,
+        blur: 10,
+        left: -7,
+        top: 22,
+      },
+      colors: isDark ? ['#2196f3', '#e7515a', '#00ab55'] : ['#1b55e2', '#e7515a', '#00ab55'],
+      markers: {
+        size: 0,
+        colors: ['#1b55e2', '#e7515a', '#00ab55'],
+        strokeColor: '#fff',
+        strokeWidth: 2,
+        shape: 'circle',
+        hover: {
+          size: 6,
+          sizeOffset: 3,
+        },
+      },
+      xaxis: {
+        type: 'datetime',
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+        crosshairs: {
+          show: true,
+        },
+        labels: {
+          offsetX: isRtl ? 2 : 0,
+          offsetY: 5,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-xaxis-title',
+          },
+          formatter: (value: number) => this.formatChartLabel(value),
+        },
+      },
+      yaxis: {
+        tickAmount: 5,
+        labels: {
+          formatter: (value: number) => {
+            return value.toString();
+          },
+          offsetX: isRtl ? -30 : -10,
+          offsetY: 0,
+          style: {
+            fontSize: '12px',
+            cssClass: 'apexcharts-yaxis-title',
+          },
+        },
+        opposite: isRtl ? true : false,
+      },
+      grid: {
+        borderColor: isDark ? '#191e3a' : '#e0e6ed',
+        strokeDashArray: 5,
+        xaxis: {
+          lines: {
+            show: true,
+          },
+        },
+        yaxis: {
+          lines: {
+            show: false,
+          },
+        },
+        padding: {
+          top: 0,
+          right: 20,
+          bottom: 0,
+          left: 0,
+        },
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        fontSize: '16px',
+        markers: {
+          width: 10,
+          height: 10,
+          offsetX: -2,
+        },
+        itemMargin: {
+          horizontal: 10,
+          vertical: 5,
+        },
+      },
+      tooltip: {
+        marker: {
+          show: true,
+        },
+        x: {
+          show: false,
+        },
+      },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          inverseColors: false,
+          opacityFrom: isDark ? 0.19 : 0.28,
+          opacityTo: 0.05,
+          stops: isDark ? [100, 100] : [45, 100],
+        },
+      },
+      series: [
+        {
+          name: 'HTTP',
+          data: [],
+        },
+        {
+          name: 'DNS',
+          data: [],
+        },
+        {
+          name: 'Others',
+          data: [],
+        },
+      ],
+    };
+
+    // 如果数据加载成功，初始化其他图表
+    this.initCharts();
+  }
+
   private generateColors(count: number, isDark: boolean): string[] {
     const lightColors = ['#1b55e2', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#5c1ac3', '#2196f3', '#ffbb44'];
     const darkColors = ['#2196f3', '#e7515a', '#00ab55', '#e2a03f', '#4361ee', '#5c1ac3', '#1b55e2', '#ffbb44'];
@@ -950,6 +1276,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // 如果还没有 revenueChart 数据（即带宽数据），则初始化默认的带宽图表
     if (!this.revenueChart) {
       this.initDefaultBandwidthChart();
+    }
+
+    // 如果还没有 protocolTrending 数据，则初始化默认的协议趋势图表
+    if (!this.protocolTrending) {
+      this.initDefaultProtocolTrendingChart();
+      return; // 避免重复初始化
+    }
+
+    // 如果还没有 tcpTrending 数据，则初始化默认的网络协议图表
+    if (!this.tcpTrending) {
+      this.initDefaultNetworkProtocolChart();
+    }
+
+    // 如果还没有 salesByCategory 数据，则初始化默认的应用协议图表
+    if (!this.salesByCategory) {
+      this.setEmptyServiceNameChart();
     }
 
     // statistics
