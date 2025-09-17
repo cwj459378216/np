@@ -219,6 +219,21 @@ public class NotificationRuleExecutorService {
         // ISO-8601 with offset
         try { return OffsetDateTime.parse(s).toInstant().toEpochMilli(); } catch (Exception ignored) {}
 
+        // Custom: support formats like 2025-09-17T00:44:56.588024+0000 (offset without colon, 6 fraction digits)
+        DateTimeFormatter[] offsetCustom = new DateTimeFormatter[] {
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXX"), // +0000
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXX"), // also +0000
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX"), // +00:00
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXX"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXXX"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX")
+        };
+        for (DateTimeFormatter f : offsetCustom) {
+            try {
+                return OffsetDateTime.parse(s, f).toInstant().toEpochMilli();
+            } catch (Exception ignored) {}
+        }
+
         // Allow space separator and fractional seconds
         String s2 = (s.contains(" ") && !s.contains("T")) ? s.replace(' ', 'T') : s;
         DateTimeFormatter[] fmts = new DateTimeFormatter[] {

@@ -110,6 +110,27 @@ public class NotificationRuleSchedulerService {
                 NotificationRule latest = ruleService.findById(ruleId);
                 LocalDateTime newBase = (latest != null && latest.getUpdatedAt() != null)
                         ? latest.getUpdatedAt() : fBase.plus(fWindow);
+
+                // 如果下一次触发时间(newBase + window)已经落后当前时间，按窗口长度跳过过期周期，避免短时间内重复触发
+                try {
+                    LocalDateTime now = LocalDateTime.now();
+                    LocalDateTime nextFire = newBase.plus(fWindow);
+                    if (nextFire.isBefore(now)) {
+                        long windowMillis = fWindow.toMillis();
+                        if (windowMillis > 0) {
+                            long behindMillis = java.time.Duration.between(nextFire, now).toMillis();
+                            long cycles = (behindMillis / windowMillis) + 1; // 需要跳过的完整周期数
+                            newBase = newBase.plus(fWindow.multipliedBy(cycles));
+                        } else {
+                            // 安全兜底：窗口异常(<=0)时直接不再重复调度
+                            log.warn("Window duration invalid ({}), skip further scheduling for rule {}", fWindow, ruleId);
+                            return;
+                        }
+                    }
+                } catch (Exception adjustEx) {
+                    log.warn("Adjust next schedule base failed for rule {}", ruleId, adjustEx);
+                }
+
                 scheduleRule(ruleId, newBase);
             } catch (Exception ex) {
                 log.error("Rule schedule task failed, ruleId={}", ruleId, ex);
@@ -165,6 +186,26 @@ public class NotificationRuleSchedulerService {
                 NotificationRule latest = ruleService.findById(ruleId);
                 LocalDateTime newBase = (latest != null && latest.getUpdatedAt() != null)
                         ? latest.getUpdatedAt() : fBase.plus(fWindow);
+
+                // 避免紧接着再次快速触发：如果下一轮时间已过，用窗口长度向前推进到最近的未来
+                try {
+                    LocalDateTime now = LocalDateTime.now();
+                    LocalDateTime nextFire = newBase.plus(fWindow);
+                    if (nextFire.isBefore(now)) {
+                        long windowMillis = fWindow.toMillis();
+                        if (windowMillis > 0) {
+                            long behindMillis = java.time.Duration.between(nextFire, now).toMillis();
+                            long cycles = (behindMillis / windowMillis) + 1;
+                            newBase = newBase.plus(fWindow.multipliedBy(cycles));
+                        } else {
+                            log.warn("Window duration invalid ({}), skip further scheduling for rule {}", fWindow, ruleId);
+                            return;
+                        }
+                    }
+                } catch (Exception adjustEx) {
+                    log.warn("Adjust next schedule base failed for rule {}", ruleId, adjustEx);
+                }
+
                 scheduleRule(ruleId, newBase);
             } catch (Exception ex) {
                 log.error("Rule schedule task failed, ruleId={}", ruleId, ex);
