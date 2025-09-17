@@ -261,51 +261,65 @@ public class ElasticsearchController {
             return String.valueOf(value);
         };
 
-        // 构建查询条件，只根据filePath过滤，不限制时间
-        Query query = Query.of(q -> q
-            .bool(b -> b
-                .must(m -> m
-                    .match(t -> t
-                        .field("filePath")
-                        .query(filePath)
-                    )
-                )
-            )
-        );
+        // ===== 构建 filePath 精确过滤 =====
+        // 问题背景: 原先使用 match(filePath) 可能因分词/分析器导致模糊匹配, 引入非该 session 的旧文档, 造成最早时间异常 (如 1970…).
+        // 修复策略: 优先使用 term 查询 filePath.keyword (exact), 失败则回退 term(filePath), 再回退 match(filePath)。
+        Query termKeyword = Query.of(q -> q.term(t -> t.field("filePath.keyword").value(v -> v.stringValue(filePath))));
+        Query termPlain = Query.of(q -> q.term(t -> t.field("filePath").value(v -> v.stringValue(filePath))));
+        Query matchPlain = Query.of(q -> q.match(m -> m.field("filePath").query(filePath)));
 
-        // 查询第一条数据（最早时间）- 使用升序排序
-        SearchResponse<JsonData> firstResponse = esClient.search(s -> s
+    // 下面需要在 lambda 中赋值, 变量需保持 effectively final, 使用单元素数组承载引用
+    // 使用简单 Holder 避免泛型数组的 unchecked 警告
+    class Holder<T> { T v; }
+    final Holder<Query> selectedQueryRef = new Holder<>();
+    final Holder<SearchResponse<JsonData>> firstResponseRef = new Holder<>();
+    SearchResponse<JsonData> lastResponse = null; // 不在 lambda 内部重新赋值
+    String queryMode = null; // 仅用于调试输出，可帮助确认命中哪种方式
+
+    for (var candidate : new Query[]{termKeyword, termPlain, matchPlain}) {
+        SearchResponse<JsonData> testFirst = esClient.search(s -> s
             .index(index)
-            .query(query)
+            .query(candidate)
             .size(1)
-            .sort(sort -> sort
-                .field(f -> f
-                    .field("timestamp")
-                    .order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)
-                )
-            ),
-            JsonData.class
-        );
-        
-        // 查询最后一条数据（最晚时间）- 使用降序排序
-        SearchResponse<JsonData> lastResponse = esClient.search(s -> s
+            .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)))
+        , JsonData.class);
+        if (testFirst.hits() != null && !testFirst.hits().hits().isEmpty()) {
+                selectedQueryRef.v = candidate;
+                firstResponseRef.v = testFirst;
+        queryMode = (candidate == termKeyword) ? "term:filePath.keyword" : (candidate == termPlain ? "term:filePath" : "match:filePath");
+        break;
+        }
+    }
+
+    if (selectedQueryRef.v == null) {
+        // 没有任何命中: 兜底执行 match 以便后续逻辑仍可继续
+            selectedQueryRef.v = matchPlain;
+            firstResponseRef.v = esClient.search(s -> s
             .index(index)
-            .query(query)
+                    .query(selectedQueryRef.v)
             .size(1)
-            .sort(sort -> sort
-                .field(f -> f
-                    .field("timestamp")
-                    .order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)
-                )
-            ),
-            JsonData.class
-        );
+            .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)))
+        , JsonData.class);
+        queryMode = "fallback:match";
+    }
+
+    lastResponse = esClient.search(s -> s
+        .index(index)
+                .query(selectedQueryRef.v)
+        .size(1)
+        .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)))
+    , JsonData.class);
+
+        if (log.isDebugEnabled()) {
+            log.debug("/query-by-filepath using query mode: {} for filePath={} index={}", queryMode, filePath, index);
+        }
 
         // 提取时间戳
         String firstTimestamp = null;
         String lastTimestamp = null;
         
-        if (firstResponse.hits().hits().size() > 0) {
+    SearchResponse<JsonData> firstResponse = firstResponseRef.v;
+        if (firstResponse != null && firstResponse.hits() != null && firstResponse.hits().hits().size() > 0) {
             var firstHit = firstResponse.hits().hits().get(0);
             var firstSrc = firstHit.source();
             if (firstSrc != null) {
@@ -316,7 +330,7 @@ public class ElasticsearchController {
             }
         }
         
-        if (lastResponse.hits().hits().size() > 0) {
+    if (lastResponse != null && lastResponse.hits() != null && lastResponse.hits().hits().size() > 0) {
             var lastHit = lastResponse.hits().hits().get(0);
             var lastSrc = lastHit.source();
             if (lastSrc != null) {

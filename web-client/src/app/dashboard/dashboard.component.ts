@@ -121,7 +121,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             dropShadow: { enabled: true, opacity: 0.2, blur: 10, left: -7, top: 22 },
             colors: colors.slice(0, series.length),
             markers: { size: 0, colors, strokeColor: '#fff', strokeWidth: 2, shape: 'circle', hover: { size: 6, sizeOffset: 3 } },
-            xaxis: { type: 'datetime', axisBorder: { show: false }, axisTicks: { show: false }, crosshairs: { show: true }, labels: { offsetX: isRtl ? 2 : 0, offsetY: 5, style: { fontSize: '12px', cssClass: 'apexcharts-xaxis-title' }, formatter: (value: number) => { const date = new Date(value); const f = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); return f.format(date); } } },
+            xaxis: { type: 'datetime', axisBorder: { show: false }, axisTicks: { show: false }, crosshairs: { show: true }, labels: { offsetX: isRtl ? 2 : 0, offsetY: 5, style: { fontSize: '12px', cssClass: 'apexcharts-xaxis-title' }, formatter: (value: number) => this.formatChartLabel(value) } },
             yaxis: { tickAmount: 5, labels: { formatter: (v: number) => v.toString(), offsetX: isRtl ? -30 : -10, offsetY: 0, style: { fontSize: '12px', cssClass: 'apexcharts-yaxis-title' } }, opposite: isRtl ? true : false },
             grid: { borderColor: isDark ? '#191e3a' : '#e0e6ed', strokeDashArray: 5, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } }, padding: { top: 0, right: 20, bottom: 0, left: 0 } },
             legend: { position: 'top', horizontalAlign: 'right', fontSize: '16px', markers: { width: 10, height: 10, offsetX: -2 }, itemMargin: { horizontal: 10, vertical: 5 } },
@@ -434,15 +434,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             fontSize: '12px',
             cssClass: 'apexcharts-xaxis-title',
           },
-          formatter: (value: number) => {
-            const date = new Date(value);
-            const formatter = new Intl.DateTimeFormat('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            });
-            return formatter.format(date);
-          },
+          formatter: (value: number) => this.formatChartLabel(value),
         },
       },
       yaxis: {
@@ -594,15 +586,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             fontSize: '12px',
             cssClass: 'apexcharts-xaxis-title',
           },
-          formatter: (value: number) => {
-            const date = new Date(value);
-            const formatter = new Intl.DateTimeFormat('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            });
-            return formatter.format(date);
-          },
+          formatter: (value: number) => this.formatChartLabel(value),
         },
       },
       yaxis: {
@@ -885,15 +869,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             fontSize: '12px',
             cssClass: 'apexcharts-xaxis-title',
           },
-          formatter: (value: number) => {
-            const date = new Date(value);
-            const formatter = new Intl.DateTimeFormat('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            });
-            return formatter.format(date);
-          },
+          formatter: (value: number) => this.formatChartLabel(value),
         },
       },
       yaxis: {
@@ -1723,16 +1699,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             fontSize: '12px',
             cssClass: 'apexcharts-xaxis-title',
           },
-          formatter: (value: number) => {
-            // 使用固定格式化的日期
-            const date = new Date(value);
-            const formatter = new Intl.DateTimeFormat('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            });
-            return formatter.format(date); // 返回固定格式
-          },
+          formatter: (value: number) => this.formatChartLabel(value),
         },
       },
       yaxis: {
@@ -1883,16 +1850,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             fontSize: '12px',
             cssClass: 'apexcharts-xaxis-title',
           },
-          formatter: (value: number) => {
-            // 使用固定格式化的日期
-            const date = new Date(value);
-            const formatter = new Intl.DateTimeFormat('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            });
-            return formatter.format(date); // 返回固定格式
-          },
+          formatter: (value: number) => this.formatChartLabel(value),
         },
       },
       yaxis: {
@@ -2045,16 +2003,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             fontSize: '12px',
             cssClass: 'apexcharts-xaxis-title',
           },
-          formatter: (value: number) => {
-            // 使用固定格式化的日期
-            const date = new Date(value);
-            const formatter = new Intl.DateTimeFormat('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric'
-            });
-            return formatter.format(date); // 返回固定格式
-          },
+          formatter: (value: number) => this.formatChartLabel(value),
         },
       },
       yaxis: {
@@ -2181,4 +2130,36 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ================= 自定义时间格式化 =================
+  /**
+   * 依据当前选定时间范围决定是否包含日期。
+   * >= 1 天: yyyy/M/d HH:mm:ss
+   * <  1 天: HH:mm:ss
+   */
+  private formatChartLabel(timestamp: number): string {
+    try {
+      const date = new Date(Number(timestamp));
+      if (isNaN(date.getTime())) return '';
+      const span = this.currentTimeRange ? (this.currentTimeRange.endTime.getTime() - this.currentTimeRange.startTime.getTime()) : null;
+      const showDate = span == null || span >= 24 * 60 * 60 * 1000; // 没有范围信息时默认显示日期
+      const Y = date.getFullYear();
+      const M = date.getMonth() + 1; // 不补零，符合示例格式 2025/9/10
+      const D = date.getDate();
+      const hh = this.pad(date.getHours());
+      const mm = this.pad(date.getMinutes());
+      const ss = this.pad(date.getSeconds());
+      if (showDate) {
+        return `${Y}/${M}/${D} ${hh}:${mm}:${ss}`;
+      }
+      return `${hh}:${mm}:${ss}`;
+    } catch {
+      return '';
+    }
+  }
+
+  private pad(n: number): string { return n < 10 ? '0' + n : '' + n; }
+
 }
+
+
+  // ================= 自定义时间格式化 =================
