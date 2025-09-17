@@ -12,6 +12,7 @@ import { TimeRangeService } from 'src/app/services/time-range.service';
 import { DashboardDataService } from 'src/app/services/dashboard-data.service';
 import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { AuthService } from 'src/app/services/auth/auth.service';
 
 @Component({
     selector: 'header',
@@ -126,6 +127,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
     private _flatpickrGuardsAdded = false;
 
+    currentUser: any = null;
+
     constructor(
         public translate: TranslateService,
         public storeData: Store<any>,
@@ -135,6 +138,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         private collectorService: CollectorService,
         private timeRangeService: TimeRangeService,
         private dashboardDataService: DashboardDataService,
+        private auth: AuthService,
     ) {
         this.initStore();
     }
@@ -147,6 +151,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     }
 
     ngOnInit() {
+    this.currentUser = this.auth.getCurrentUser();
         this.setActiveDropdown();
         this.router.events.subscribe((event) => {
             if (event instanceof NavigationEnd) {
@@ -163,6 +168,12 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     const restored = this.restorePersistedState();
     this.loadCollectors();
     if (!restored) this.initializeDefaultTimeRange();
+    }
+
+    logout() {
+        this.auth.logout();
+        this.currentUser = null;
+        this.router.navigate(['/auth/boxed-signin']);
     }
 
     ngAfterViewInit(): void {

@@ -3,7 +3,7 @@ import { BaseProtocolComponent } from '../../base-protocol/base-protocol.compone
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { ZeekLogAttribute, ZeekLogType, ZeekConfigService } from '../../../services/zeek-config.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TimeRangeService } from 'src/app/services/time-range.service';
 
@@ -29,7 +29,8 @@ import { TimeRangeService } from 'src/app/services/time-range.service';
     ]
 })
 export class CommonProtocolComponent extends BaseProtocolComponent implements OnDestroy {
-    private routeSubscription: Subscription;
+    // 重命名以避免与基类 private routeSubscription 冲突
+    private routeParamSubscription: Subscription;
     override protocolName: string = '';
     override indexName: string = '';
     attributes: ZeekLogAttribute[] = [];
@@ -38,14 +39,16 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
     constructor(
         http: HttpClient,
         cdr: ChangeDetectorRef,
-        private route: ActivatedRoute,
+    private route: ActivatedRoute,
+    private router2: Router,
         protected override zeekConfigService: ZeekConfigService,
         private timeRangeService2: TimeRangeService
     ) {
-        super(http, cdr, zeekConfigService, timeRangeService2);
+    // 传递 router 给父类
+    super(http, cdr, zeekConfigService, timeRangeService2, router2);
 
         // 监听路由参数变化
-        this.routeSubscription = this.route.params.subscribe(params => {
+    this.routeParamSubscription = this.route.params.subscribe(params => {
             const protocol = params['protocol'];
             if (protocol) {
                 this.loadProtocolConfig(protocol);
@@ -154,9 +157,9 @@ export class CommonProtocolComponent extends BaseProtocolComponent implements On
     }
 
     override ngOnDestroy() {
-        // 清理订阅
-        if (this.routeSubscription) {
-            this.routeSubscription.unsubscribe();
+        super.ngOnDestroy();
+        if (this.routeParamSubscription) {
+            this.routeParamSubscription.unsubscribe();
         }
     }
 

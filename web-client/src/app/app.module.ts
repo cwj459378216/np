@@ -3,7 +3,7 @@ import { BrowserModule, Title } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { HttpBackend, HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpBackend, HttpClient, HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
 import { NgxEchartsModule } from 'ngx-echarts';
 
@@ -86,6 +86,7 @@ import { RuleUpdateService } from './services/rule-update.service';
 import { LocalRuleService } from './services/local-rule.service';
 import { SystemTimeService } from './services/system-time.service';
 import { PreviewModule } from './shared/preview.module';
+import { AuthInterceptor } from './services/auth/auth.interceptor';
 
 @NgModule({
     imports: [
@@ -111,7 +112,7 @@ import { PreviewModule } from './shared/preview.module';
         PreviewModule,
         AnalyzeAnimationComponent,
     ],
-    declarations: [	
+    declarations: [
         AppComponent,
         HeaderComponent,
         FooterComponent,
@@ -152,7 +153,14 @@ import { PreviewModule } from './shared/preview.module';
       NotificationSettingsComponent,
     ],
 
-    providers: [Title, RulesPolicyService, RuleUpdateService, LocalRuleService, SystemTimeService],
+    providers: [
+        Title,
+        RulesPolicyService,
+        RuleUpdateService,
+        LocalRuleService,
+        SystemTimeService,
+        { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+    ],
     bootstrap: [AppComponent],
 })
 export class AppModule {}

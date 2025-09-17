@@ -32,7 +32,7 @@ export class AppComponent {
                 }),
                 tap((data: any) => {
                     let title = data.title;
-                    title = (title ? title + ' | ' : '') + 'NetGenie - Multipurpose Tailwind Dashboard Template';
+                    title = (title ? title + ' | ' : '') + 'NetGenie';
                     this.titleService.setTitle(title);
                 }),
             )

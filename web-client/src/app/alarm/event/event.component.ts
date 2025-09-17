@@ -141,7 +141,7 @@ export class EventComponent implements OnInit, OnDestroy {
                 height: 325,
                 type: 'line',
                 animations: { enabled: true },
-                toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true }, autoSelected: 'zoom' },
+                toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: false, reset: true }, autoSelected: 'zoom' },
                 zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
                 events: {
                     selection: (_chart: any, ctx: any) => {

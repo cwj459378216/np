@@ -62,14 +62,14 @@
                 <div class="mx-auto w-full max-w-[440px]">
                     <div class="mb-10">
                         <h1 class="text-3xl font-extrabold uppercase !leading-snug text-primary md:text-4xl">{{ 'auth.signIn' | translate }}</h1>
-                        <p class="text-base font-bold leading-normal text-white-dark">{{ 'auth.enterEmailPassword' | translate }}</p>
+                        <p class="text-base font-bold leading-normal text-white-dark">{{ 'auth.enterUserPassword' | translate }}</p>
                     </div>
-                    <form class="space-y-5 dark:text-white" >
+                    <form class="space-y-5 dark:text-white" (ngSubmit)="submit()" #loginForm="ngForm">
                         <!-- <form class="space-y-5 dark:text-white" (submit)="router.navigate(['/'])"> -->
                         <div>
-                            <label for="Email">{{ 'auth.email' | translate }}</label>
+                            <label for="Email">{{ 'auth.username' | translate }}</label>
                             <div class="relative text-white-dark">
-                                <input id="Email" [(ngModel)]="inputEmail" name="user" type="email" placeholder="{{ 'auth.enterEmail' | translate }}" class="form-input ps-10 placeholder:text-white-dark" />
+                                <input id="Email" [(ngModel)]="inputEmail" name="user" type="email" placeholder="{{ 'auth.enterUsername' | translate }}" class="form-input ps-10 placeholder:text-white-dark" />
                                 <span class="absolute start-4 top-1/2 -translate-y-1/2">
                                     <icon-user [fill]="true" />
                                 </span>
@@ -90,15 +90,15 @@
                                 <span class="text-white-dark">{{ 'auth.subscribeNewsletter' | translate }}</span>
                             </label>
                         </div>
-                        <button type="submit" (click)="submit()" class="btn btn-gradient !mt-6 w-full border-0 uppercase shadow-[0_10px_20px_-10px_rgba(67,97,238,0.44)]">
+                        <button type="submit" class="btn btn-gradient !mt-6 w-full border-0 uppercase shadow-[0_10px_20px_-10px_rgba(67,97,238,0.44)]">
                             {{ 'auth.signIn' | translate }}
                         </button>
                     </form>
-                    <div class="relative my-7 text-center md:mb-9">
+                    <!-- <div class="relative my-7 text-center md:mb-9">
                         <span class="absolute inset-x-0 top-1/2 h-px w-full -translate-y-1/2 bg-white-light dark:bg-white-dark"></span>
                         <span class="relative bg-white px-2 font-bold uppercase text-white-dark dark:bg-dark dark:text-white-light">{{ 'auth.or' | translate }}</span>
-                    </div>
-                    <div class="mb-10 md:mb-[60px]">
+                    </div> -->
+                    <!-- <div class="mb-10 md:mb-[60px]">
                         <ul class="flex justify-center gap-3.5 text-white">
                             <li>
                                 <a
@@ -143,7 +143,7 @@
                         <a routerLink="/auth/boxed-signup" class="uppercase text-primary underline transition hover:text-black dark:hover:text-white">
                             {{ 'auth.signUpButton' | translate }}
                         </a>
-                    </div>
+                    </div> -->
                 </div>
             </div>
         </div>

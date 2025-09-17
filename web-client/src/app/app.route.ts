@@ -32,6 +32,7 @@ import { FaqComponent } from './pages/faq';
 import {DashboardComponent} from './dashboard/dashboard.component'
 import { CollectorComponent } from './collector/collector.component';
 import { authGuard } from 'src/share/auth/auth.guard';
+import { noAuthGuard } from 'src/share/auth/no-auth.guard';
 import { UserManagementComponent } from './system-settings/user-management/user-management.component';
 import { RoleManagementComponent } from './system-settings/role-management/role-management.component';
 import { SystemTimeComponent } from './system-settings/system-time/system-time.component';
@@ -63,6 +64,7 @@ export const routes: Routes = [
     {
         path: 'auth',
         component: AuthLayout,
+        canActivate: [noAuthGuard],
         children: [
             {
                 path: '',

@@ -10,6 +10,8 @@ import { ZeekConfigService, ZeekLogType } from 'src/app/services/zeek-config.ser
 import { co } from '@fullcalendar/core/internal-common';
 import { TimeRangeService, TimeRange } from 'src/app/services/time-range.service';
 import { Subscription } from 'rxjs';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
 @Component({
     selector: 'app-base-protocol',
@@ -81,7 +83,8 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
                     zoom: true,
                     zoomin: true,
                     zoomout: true,
-                    pan: true,
+                    // 隐藏平移(pan)图标
+                    pan: false,
                     reset: true
                 },
                 autoSelected: 'zoom'
@@ -160,6 +163,7 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
     };
 
     private timeRangeSubscription?: Subscription;
+    private routeSubscription?: Subscription; // 监听URL变化
     private currentTimeRange?: TimeRange;
     // 图表选择的时间范围（通过拖拽或缩放）
     private selectedStartTime?: number;
@@ -169,7 +173,8 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         protected http: HttpClient,
         protected cdr: ChangeDetectorRef,
         protected zeekConfigService: ZeekConfigService,
-        private timeRangeService: TimeRangeService
+        private timeRangeService: TimeRangeService,
+        private router: Router
     ) {
         // 初始化图表事件，用于捕获用户在趋势图上的拖拽选择和缩放
         // 使用 any 避免类型约束问题
@@ -190,6 +195,13 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
                 this.clearChartRangeSelection();
             }
         };
+
+        // 监听路由变化：URL切换时初始化状态（需求2）
+        this.routeSubscription = this.router.events
+            .pipe(filter(e => e instanceof NavigationEnd))
+            .subscribe(() => {
+                this.resetForUrlChange();
+            });
     }
 
     // 处理趋势图选择的时间范围
@@ -258,18 +270,14 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
         if (this.protocolName && this.indexName) {
             this.loadTrendingData();
             this.loadData();
-
-            this.refreshInterval = setInterval(() => {
-                this.loadTrendingData();
-            }, 60000);
         }
     }
 
     ngOnDestroy() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-        }
+    // 不再需要定时器：已移除自动刷新
+    if (this.refreshInterval) { clearInterval(this.refreshInterval); }
         this.timeRangeSubscription?.unsubscribe();
+    this.routeSubscription?.unsubscribe();
     }
 
     private addDefaultFieldDescriptions() {
@@ -409,6 +417,27 @@ export class BaseProtocolComponent implements OnInit, OnDestroy, OnChanges {
                 this.cdr.detectChanges();
             }
         });
+    }
+
+    // URL切换时重置状态 & 重新加载
+    private resetForUrlChange() {
+        // 重置分页、搜索、排序、图表选择范围
+        this.currentPage = 1;
+        this.pageSize = 10;
+        this.search = '';
+        this.sortField = undefined;
+        this.sortOrder = undefined;
+        this.selectedStartTime = undefined;
+        this.selectedEndTime = undefined;
+        // 清空数据表与趋势图数据
+        this.rows = [];
+        this.total = 0;
+        this.revenueChart.series = [{ name: `${this.protocolName} Sessions`, data: [] }];
+        this.cdr.detectChanges();
+        if (this.protocolName && this.indexName) {
+            this.loadTrendingData();
+            this.loadData();
+        }
     }
 
     // 使用当前时间范围加载表格数据

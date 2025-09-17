@@ -1,12 +1,13 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { AppService } from 'src/app/service/app.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { AuthService } from 'src/app/services/auth/auth.service';
 import Swal from 'sweetalert2';
 import { IconModule } from 'src/app/shared/icon/icon.module';
 
@@ -28,12 +29,16 @@ export class BoxedSigninComponent {
     inputEmail: any;
     inputPassword: any;
 
+    private returnUrl: string = '/dashboard';
+
     constructor(
         public translate: TranslateService,
         public storeData: Store<any>,
         public router: Router,
+        private route: ActivatedRoute,
         private appSetting: AppService,
-        private http: HttpClient
+    private http: HttpClient,
+    private auth: AuthService
     ) {
         this.initStore();
     }
@@ -58,24 +63,28 @@ export class BoxedSigninComponent {
     }
 
     async submit() {
-        try {
-            const response = await this.http.post<{token: string; user: any}>(`${environment.apiUrl}/users/login`, {
-                username: this.inputEmail,
-                password: this.inputPassword
-            }).toPromise();
-
-            if (response) {
-                localStorage.setItem('auth_token', response.token);
-                localStorage.setItem('user_info', JSON.stringify(response.user));
-                this.router.navigate(['/dashboard']);
-            }
-        } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: '登录失败',
-                text: '用户名或密码错误',
-                confirmButtonText: '确定'
-            });
+        if (!this.inputEmail || !this.inputPassword) {
+            Swal.fire({ icon: 'warning', title: '提示', text: '请输入用户名和密码', confirmButtonText: '确定' });
+            return;
         }
+        // 解析路由中的 returnUrl（如果用户因守卫被重定向）
+        if (!this.returnUrl) {
+            const q = this.route.snapshot.queryParamMap.get('returnUrl');
+            if (q) this.returnUrl = q;
+        }
+        this.auth.login(this.inputEmail, this.inputPassword).subscribe({
+            next: () => {
+                // 登录成功跳转目标：returnUrl 或 dashboard
+                this.router.navigate([this.returnUrl || '/dashboard']);
+            },
+            error: () => {
+                Swal.fire({
+                    icon: 'error',
+                    title: '登录失败',
+                    text: '用户名或密码错误',
+                    confirmButtonText: '确定'
+                });
+            }
+        });
     }
 }
