@@ -3,7 +3,7 @@
     "version": 1,
     "newProjectRoot": "projects",
     "projects": {
-        "WaveSight-angular": {
+        "NetGenie-angular": {
             "projectType": "application",
             "schematics": {
                 "@schematics/angular:application": {
@@ -63,10 +63,10 @@
                     "builder": "@angular-devkit/build-angular:dev-server",
                     "configurations": {
                         "production": {
-                            "buildTarget": "WaveSight-angular:build:production"
+                            "buildTarget": "NetGenie-angular:build:production"
                         },
                         "development": {
-                            "buildTarget": "WaveSight-angular:build:development"
+                            "buildTarget": "NetGenie-angular:build:development"
                         }
                     },
                     "defaultConfiguration": "development"
@@ -74,7 +74,7 @@
                 "extract-i18n": {
                     "builder": "@angular-devkit/build-angular:extract-i18n",
                     "options": {
-                        "buildTarget": "WaveSight-angular:build"
+                        "buildTarget": "NetGenie-angular:build"
                     }
                 },
                 "test": {

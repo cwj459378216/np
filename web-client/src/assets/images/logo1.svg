@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="28" viewBox="0 0 32 28" fill="none">
+  <!-- 颜色变量：如果要改色，替换 fill="#0A74E6" 和 stroke="#075BB8" -->
+  <!-- 透明背景（默认） -->
+
+  <!-- 头部（圆） -->
+  <circle cx="12.5" cy="6.5" r="2.2" fill="#0A74E6"/>
+
+  <!-- 头巾装饰（羽毛） -->
+  <path d="M10 4.0c1.2-1.6 3.6-1.8 4.6-1.0" fill="none" stroke="#075BB8" stroke-linecap="round" stroke-width="0.9"/>
+
+  <!-- 身体与手臂（整体轮廓）-->
+  <path d="M9.2 8.0
+           C7.8 9.2, 7.4 11.0, 8.0 12.4
+           C8.6 13.8, 10.2 14.6, 11.6 14.4
+           C13.0 14.2, 14.0 13.2, 15.2 12.6
+           C16.4 12.0, 17.6 11.8, 18.8 12.0
+           C20.0 12.2, 21.0 12.8, 21.6 13.4
+           L22.8 12.8
+           C21.2 11.2, 19.4 10.4, 17.6 10.2
+           C16.2 10.0, 14.8 9.6, 13.6 9.0
+           C12.4 8.4, 11.4 7.6, 9.2 8.0 Z"
+        fill="#0A74E6" stroke="#075BB8" stroke-width="0.6" stroke-linejoin="round"/>
+
+  <!-- 右手托举的手掌（托 wifi）-->
+  <path d="M22.6 12.6
+           c0.9 0.3 1.6 0.9 1.8 1.6
+           c-1.2 0.2-2.4 0.4-3.6 0.4
+           c0.1-0.9 0.5-1.7 1.8-2.0z"
+        fill="#0A74E6" stroke="#075BB8" stroke-width="0.5" stroke-linejoin="round"/>
+
+  <!-- 下半身/尾巴 -->
+  <path d="M11.2 15.2
+           C10.2 16.8, 9.6 18.6, 10.2 19.6
+           C11.0 21.0, 13.0 21.2, 14.2 20.6
+           C15.4 20.0, 16.0 18.8, 16.8 17.6
+           C17.6 16.4, 18.6 15.6, 19.8 15.0
+           C21.0 14.4, 22.2 13.8, 23.6 13.2
+           C22.8 14.2, 21.6 15.8, 20.0 17.6
+           C18.4 19.4, 16.6 21.0, 14.2 21.8
+           C12.0 22.5, 9.8 22.2, 8.6 21.0
+           C7.4 19.8, 7.8 18.2, 9.2 16.8"
+        fill="#0A74E6" stroke="#075BB8" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- 表情（微笑弧线） -->
+  <path d="M11.0 7.2q0.8 0.7 1.6 0" fill="none" stroke="#075BB8" stroke-linecap="round" stroke-width="0.5"/>
+
+  <!-- Wi-Fi 标志：三道弧线 + 中心小圆 -->
+  <path d="M23.6 12.8q-0.9 0.0 -1.8 0.8" fill="none" stroke="#075BB8" stroke-width="0.9" stroke-linecap="round"/>
+  <path d="M24.2 11.6q-1.6 0.0 -3.2 1.2" fill="none" stroke="#075BB8" stroke-width="0.9" stroke-linecap="round"/>
+  <path d="M25.0 10.6q-2.4 0.0 -4.6 1.8" fill="none" stroke="#075BB8" stroke-width="0.9" stroke-linecap="round"/>
+  <circle cx="23.6" cy="14.0" r="0.8" fill="#075BB8"/>
+
+  <!-- 可选：在非常小的图标上增强边界（用较淡描边） -->
+  <rect x="0" y="0" width="32" height="28" fill="transparent"/>
+</svg>

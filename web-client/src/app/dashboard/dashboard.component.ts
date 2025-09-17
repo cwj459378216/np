@@ -317,7 +317,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadAssetsData(startTime?: number, endTime?: number, filePath?: string, size: number = 10) {
+  loadAssetsData(startTime?: number, endTime?: number, filePath?: string, size: number = 5) {
     if (!startTime || !endTime) {
       const end = Date.now();
       const start = end - 24 * 60 * 60 * 1000;
