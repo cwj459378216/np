@@ -216,10 +216,13 @@
                             {{ 'Click "Reanalyze" to start AI analysis...' | translate }}
                         </div>
 
-                        <!-- 实时显示AI返回的内容 -->
-                        <div *ngIf="aiContent" class="prose dark:prose-invert max-w-none">
-                            <div class="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-800 dark:text-gray-200">{{aiContent}}</div>
+                        <!-- 实时显示AI返回的内容 (Markdown 渲染) -->
+                        <div *ngIf="aiHtml; else plainAI" class="prose dark:prose-invert max-w-none text-sm leading-relaxed">
+                            <div [innerHTML]="aiHtml"></div>
                         </div>
+                        <ng-template #plainAI>
+                            <div *ngIf="aiContent" class="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-800 dark:text-gray-200">{{aiContent}}</div>
+                        </ng-template>
 
                         <!-- 正在输入的指示器 -->
                         <div *ngIf="aiLoading && aiContent" class="inline-block mt-2">
