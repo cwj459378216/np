@@ -55,6 +55,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private timeRangeSubscription: Subscription = new Subscription();
   private currentTimeRange: TimeRange | null = null;
 
+  // 语言切换订阅
+  private languageSubscription: Subscription = new Subscription();
+
   constructor(public storeData: Store<any>, private dashboardDataService: DashboardDataService, private translate: TranslateService, private timeRangeService: TimeRangeService) {
     this.initStore();
     this.isLoading = false;
@@ -68,6 +71,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       console.log('Dashboard received time range update:', timeRange);
       this.currentTimeRange = timeRange;
       this.loadDataForTimeRange(timeRange);
+    });
+
+    // 订阅语言切换变化
+    this.languageSubscription = this.translate.onLangChange.subscribe(() => {
+      console.log('Dashboard language changed, refreshing charts...');
+      // 重新初始化图表以应用新的语言设置
+      this.refreshChartsAfterLanguageChange();
     });
 
     // 初始化时间范围
@@ -164,6 +174,38 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.timeRangeSubscription) {
       this.timeRangeSubscription.unsubscribe();
     }
+    if (this.languageSubscription) {
+      this.languageSubscription.unsubscribe();
+    }
+  }
+
+  // 语言切换后刷新图表
+  private refreshChartsAfterLanguageChange(): void {
+    console.log('Refreshing all charts after language change...');
+
+    // 重新初始化所有图表（会应用新的主题和语言设置）
+    this.initCharts();
+
+    // 使用延迟来确保DOM更新完成后再刷新图表
+    setTimeout(() => {
+      // 如果有已加载的带宽数据，重新应用到图表
+      if (this.cachedBandwidthData) {
+        this.updateBandwidthChart(this.cachedBandwidthData);
+      }
+
+      // 如果有已加载的ServiceName数据，重新应用到图表（这会更新翻译的标签）
+      if (this.serviceNameData) {
+        this.updateServiceNameChart(this.serviceNameData);
+      } else {
+        // 如果没有数据，确保空图表也使用正确的翻译
+        this.setEmptyServiceNameChart();
+      }
+
+      // 重新加载当前时间范围的数据以刷新所有图表
+      if (this.currentTimeRange) {
+        this.loadDataForTimeRange(this.currentTimeRange);
+      }
+    }, 150);
   }
 
   // 根据时间范围加载数据
@@ -1039,19 +1081,193 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   updateServiceNameChart(data: ServiceNameAggregationResponse) {
     console.log('Updating service name chart with data:', data);
-    if (!data || !data.data || !Array.isArray(data.data)) { console.error('Invalid service name data:', data); this.setEmptyServiceNameChart(); return; }
-    if (data.data.length === 0) { console.warn('Empty service name data received'); this.setEmptyServiceNameChart(); return; }
+
+    if (!data || !data.data || !Array.isArray(data.data)) {
+      console.error('Invalid service name data:', data);
+      this.setEmptyServiceNameChart();
+      return;
+    }
+
+    if (data.data.length === 0) {
+      console.warn('Empty service name data received');
+      this.setEmptyServiceNameChart();
+      return;
+    }
+
     const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
     const labels = data.data.map(item => (item && typeof item.serviceName === 'string') ? item.serviceName : 'Unknown');
     const series = data.data.map(item => (item && typeof item.count === 'number') ? Number(item.count) : 0);
-    if (labels.length !== series.length || labels.length === 0 || series.length === 0 || series.every(v => v === 0)) { this.setEmptyServiceNameChart(); return; }
-    this.salesByCategory = { chart: { type: 'donut', height: 520, fontFamily: 'Nunito, sans-serif' }, dataLabels: { enabled: false }, stroke: { show: true, width: 2, colors: [isDark ? '#0e1726' : '#fff'] }, legend: { position: 'bottom', horizontalAlign: 'center', fontSize: '14px', markers: { width: 5, height: 5, offsetX: -2 }, height: 80, offsetY: 10, itemMargin: { horizontal: 10, vertical: 8 } }, plotOptions: { pie: { donut: { size: '65%', background: 'transparent', labels: { show: true, name: { show: true, fontSize: '29px', offsetY: -10 }, value: { show: true, fontSize: '26px', color: isDark ? '#bfc9d4' : undefined, offsetY: 16, formatter: (val: number) => String(val) }, total: { show: true, label: this.translate.instant('Total'), color: '#888ea8', fontSize: '29px', formatter: (w: any) => w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0) } } } } }, states: { hover: { filter: { type: 'none', value: 0.15 } }, active: { filter: { type: 'none', value: 0.15 } } }, labels: labels, colors: isDark ? ['#5c1ac3','#e2a03f','#e7515a','#00ab55','#4361ee','#f59e0b','#10b981','#ef4444','#3b82f6','#9333ea'] : ['#e2a03f','#5c1ac3','#e7515a','#00ab55','#4361ee','#f97316','#14b8a6','#dc2626','#2563eb','#7c3aed'], series: series };
+
+    if (labels.length !== series.length || labels.length === 0 || series.length === 0 || series.every(v => v === 0)) {
+      this.setEmptyServiceNameChart();
+      return;
+    }
+
+    this.salesByCategory = {
+      chart: {
+        type: 'donut',
+        height: 520,
+        fontFamily: 'Nunito, sans-serif'
+      },
+      dataLabels: {
+        enabled: false
+      },
+      stroke: {
+        show: true,
+        width: 2,
+        colors: [isDark ? '#0e1726' : '#fff']
+      },
+      legend: {
+        position: 'bottom',
+        horizontalAlign: 'center',
+        fontSize: '14px',
+        markers: {
+          width: 5,
+          height: 5,
+          offsetX: -2
+        },
+        height: 80,
+        offsetY: 10,
+        itemMargin: {
+          horizontal: 10,
+          vertical: 8
+        }
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '65%',
+            background: 'transparent',
+            labels: {
+              show: true,
+              name: {
+                show: true,
+                fontSize: '29px',
+                offsetY: -10
+              },
+              value: {
+                show: true,
+                fontSize: '26px',
+                color: isDark ? '#bfc9d4' : undefined,
+                offsetY: 16,
+                formatter: (val: number) => String(val)
+              },
+              total: {
+                show: true,
+                label: this.translate.instant('Total'),
+                color: '#888ea8',
+                fontSize: '29px',
+                formatter: (w: any) => w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0)
+              }
+            }
+          }
+        }
+      },
+      states: {
+        hover: {
+          filter: {
+            type: 'none',
+            value: 0.15
+          }
+        },
+        active: {
+          filter: {
+            type: 'none',
+            value: 0.15
+          }
+        }
+      },
+      labels: labels,
+      colors: isDark ?
+        ['#5c1ac3','#e2a03f','#e7515a','#00ab55','#4361ee','#f59e0b','#10b981','#ef4444','#3b82f6','#9333ea'] :
+        ['#e2a03f','#5c1ac3','#e7515a','#00ab55','#4361ee','#f97316','#14b8a6','#dc2626','#2563eb','#7c3aed'],
+      series: series
+    };
   }
 
   // 空的 ServiceName 图表（无数据）
   private setEmptyServiceNameChart() {
     const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
-    this.salesByCategory = { chart: { type: 'donut', height: 460, fontFamily: 'Nunito, sans-serif' }, dataLabels: { enabled: false }, stroke: { show: true, width: 2, colors: [isDark ? '#0e1726' : '#fff'] }, legend: { position: 'bottom', horizontalAlign: 'center', fontSize: '14px', markers: { width: 5, height: 5, offsetX: -2 }, height: 60, offsetY: 10, itemMargin: { horizontal: 10, vertical: 4 } }, plotOptions: { pie: { donut: { size: '65%', background: 'transparent', labels: { show: true, name: { show: true, fontSize: '22px', offsetY: -5, formatter: () => this.translate.instant('No Data') }, value: { show: true, fontSize: '20px', color: isDark ? '#bfc9d4' : undefined, offsetY: 10, formatter: () => '0' }, total: { show: true, label: this.translate.instant('Total'), color: '#888ea8', fontSize: '22px', formatter: () => 0 } } } } }, states: { hover: { filter: { type: 'none', value: 0.15 } }, active: { filter: { type: 'none', value: 0.15 } } }, labels: [], colors: [], series: [] };
+
+    this.salesByCategory = {
+      chart: {
+        type: 'donut',
+        height: 460,
+        fontFamily: 'Nunito, sans-serif'
+      },
+      dataLabels: {
+        enabled: false
+      },
+      stroke: {
+        show: true,
+        width: 2,
+        colors: [isDark ? '#0e1726' : '#fff']
+      },
+      legend: {
+        position: 'bottom',
+        horizontalAlign: 'center',
+        fontSize: '14px',
+        markers: {
+          width: 5,
+          height: 5,
+          offsetX: -2
+        },
+        height: 60,
+        offsetY: 10,
+        itemMargin: {
+          horizontal: 10,
+          vertical: 4
+        }
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '65%',
+            background: 'transparent',
+            labels: {
+              show: true,
+              name: {
+                show: true,
+                fontSize: '22px',
+                offsetY: -5,
+                formatter: () => this.translate.instant('No Data')
+              },
+              value: {
+                show: true,
+                fontSize: '20px',
+                color: isDark ? '#bfc9d4' : undefined,
+                offsetY: 10,
+                formatter: () => '0'
+              },
+              total: {
+                show: true,
+                label: this.translate.instant('Total'),
+                color: '#888ea8',
+                fontSize: '22px',
+                formatter: () => 0
+              }
+            }
+          }
+        }
+      },
+      states: {
+        hover: {
+          filter: {
+            type: 'none',
+            value: 0.15
+          }
+        },
+        active: {
+          filter: {
+            type: 'none',
+            value: 0.15
+          }
+        }
+      },
+      labels: [],
+      colors: [],
+      series: []
+    };
   }
 
   loadBandwidthChartTheme() {
