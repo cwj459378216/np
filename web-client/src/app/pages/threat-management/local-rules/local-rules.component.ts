@@ -1,6 +1,7 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
+import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
 import { LocalRule } from './local-rule.interface';
 import { LocalRuleService } from '../../../services/local-rule.service';
@@ -18,6 +19,15 @@ import { LocalRuleService } from '../../../services/local-rule.service';
         ::ng-deep .custom-modal {
             overflow: visible !important;
         }
+        .rule-content-cell {
+            max-width: 300px;
+        }
+        .rule-content-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: help;
+        }
     `]
 })
 export class LocalRulesComponent implements OnInit {
@@ -27,17 +37,39 @@ export class LocalRulesComponent implements OnInit {
     searchTerm = '';
 
     categories = ['Custom', 'System', 'Network', 'Security'];
+    translatedCategories: {value: string, label: string}[] = [];
     localRules: LocalRule[] = [];
 
     constructor(
         private fb: FormBuilder,
-        private localRuleService: LocalRuleService
+        private localRuleService: LocalRuleService,
+        private translate: TranslateService
     ) {
         this.initForm();
     }
 
     ngOnInit(): void {
         this.loadRules();
+        this.loadTranslatedCategories();
+    }
+
+    loadTranslatedCategories() {
+        this.translate.get(this.categories).subscribe(translations => {
+            this.translatedCategories = this.categories.map(category => ({
+                value: category,
+                label: translations[category]
+            }));
+        });
+
+        // 监听语言变化
+        this.translate.onLangChange.subscribe(() => {
+            this.translate.get(this.categories).subscribe(translations => {
+                this.translatedCategories = this.categories.map(category => ({
+                    value: category,
+                    label: translations[category]
+                }));
+            });
+        });
     }
 
     initForm() {
@@ -46,7 +78,7 @@ export class LocalRulesComponent implements OnInit {
             rule_content: ['', Validators.required],
             category: ['', Validators.required],
             status: ['Enabled'],
-            created_date: [new Date().toISOString().split('T')[0]],
+            created_date: [new Date().toISOString().slice(0, 19).replace('T', ' ')],
             last_updated: [new Date().toISOString().slice(0, 19).replace('T', ' ')]
         });
     }
@@ -111,11 +143,13 @@ export class LocalRulesComponent implements OnInit {
         this.localRuleService.testRule(rule.rule_content).subscribe({
             next: (result: { success: boolean; message?: string }) => {
                 if (!result?.success) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Rule Test Failed',
-                        text: result?.message || 'The rule syntax is invalid. Please check and try again.',
-                        confirmButtonText: 'OK'
+                    this.translate.get(['Rule Test Failed', 'The rule syntax is invalid. Please check and try again.', 'OK']).subscribe(translations => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: translations['Rule Test Failed'],
+                            text: result?.message || translations['The rule syntax is invalid. Please check and try again.'],
+                            confirmButtonText: translations['OK']
+                        });
                     });
                     return;
                 }
@@ -156,26 +190,28 @@ export class LocalRulesComponent implements OnInit {
     }
 
     deleteRule(rule: LocalRule) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            padding: '2em'
-        }).then((result) => {
-            if (result.value) {
-                this.localRuleService.deleteRule(rule.id).subscribe(
-                    () => {
-                        this.localRules = this.localRules.filter(r => r.id !== rule.id);
-                        this.searchRules();
-                        this.showMessage('Rule has been deleted successfully.');
-                    },
-                    error => {
-                        this.showMessage('Failed to delete rule', 'error');
-                    }
-                );
-            }
+        this.translate.get(['Are you sure?', 'You won\'t be able to revert this!', 'Yes, delete it!']).subscribe(translations => {
+            Swal.fire({
+                title: translations['Are you sure?'],
+                text: translations['You won\'t be able to revert this!'],
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: translations['Yes, delete it!'],
+                padding: '2em'
+            }).then((result) => {
+                if (result.value) {
+                    this.localRuleService.deleteRule(rule.id).subscribe(
+                        () => {
+                            this.localRules = this.localRules.filter(r => r.id !== rule.id);
+                            this.searchRules();
+                            this.showMessage('Rule has been deleted successfully.');
+                        },
+                        error => {
+                            this.showMessage('Failed to delete rule', 'error');
+                        }
+                    );
+                }
+            });
         });
     }
 
@@ -205,17 +241,19 @@ export class LocalRulesComponent implements OnInit {
     }
 
     showMessage(msg = '', type = 'success') {
-        const toast: any = Swal.mixin({
-            toast: true,
-            position: 'top',
-            showConfirmButton: false,
-            timer: 3000,
-            customClass: { container: 'toast' },
-        });
-        toast.fire({
-            icon: type,
-            title: msg,
-            padding: '10px 20px',
+        this.translate.get(msg).subscribe(translatedMessage => {
+            const toast: any = Swal.mixin({
+                toast: true,
+                position: 'top',
+                showConfirmButton: false,
+                timer: 3000,
+                customClass: { container: 'toast' },
+            });
+            toast.fire({
+                icon: type,
+                title: translatedMessage,
+                padding: '10px 20px',
+            });
         });
     }
 
@@ -225,41 +263,43 @@ export class LocalRulesComponent implements OnInit {
             return;
         }
 
-        Swal.fire({
-            title: 'Testing Rule',
-            text: 'Please wait while we test the rule...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
+        this.translate.get(['Testing Rule', 'Please wait while we test the rule...', 'Rule Test Successful', 'The rule syntax is valid and can be used.', 'Rule Test Failed', 'The rule syntax is invalid. Please check and try again.', 'Test Failed', 'An error occurred while testing the rule.', 'OK']).subscribe(translations => {
+            Swal.fire({
+                title: translations['Testing Rule'],
+                text: translations['Please wait while we test the rule...'],
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
 
-        this.localRuleService.testRule(this.params.value.rule_content).subscribe({
-            next: (result: { success: boolean; message?: string }) => {
-                if (result?.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Rule Test Successful',
-                        text: 'The rule syntax is valid and can be used.',
-                        confirmButtonText: 'OK'
-                    });
-                } else {
+            this.localRuleService.testRule(this.params.value.rule_content).subscribe({
+                next: (result: { success: boolean; message?: string }) => {
+                    if (result?.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: translations['Rule Test Successful'],
+                            text: translations['The rule syntax is valid and can be used.'],
+                            confirmButtonText: translations['OK']
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: translations['Rule Test Failed'],
+                            text: result?.message || translations['The rule syntax is invalid. Please check and try again.'],
+                            confirmButtonText: translations['OK']
+                        });
+                    }
+                },
+                error: (error: Error) => {
                     Swal.fire({
                         icon: 'error',
-                        title: 'Rule Test Failed',
-                        text: result?.message || 'The rule syntax is invalid. Please check and try again.',
-                        confirmButtonText: 'OK'
+                        title: translations['Test Failed'],
+                        text: (error as any)?.error?.message || translations['An error occurred while testing the rule.'],
+                        confirmButtonText: translations['OK']
                     });
                 }
-            },
-            error: (error: Error) => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Test Failed',
-                    text: (error as any)?.error?.message || 'An error occurred while testing the rule.',
-                    confirmButtonText: 'OK'
-                });
-            }
+            });
         });
     }
 }

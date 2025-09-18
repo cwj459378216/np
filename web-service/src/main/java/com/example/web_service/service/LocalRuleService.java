@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,7 +51,11 @@ public class LocalRuleService {
     }
     
     public LocalRuleDTO createRule(LocalRuleDTO ruleDTO) {
-        LocalRule rule = convertToEntity(ruleDTO);
+        LocalRule rule = new LocalRule();
+        rule.setRuleContent(ruleDTO.getRule_content());
+        rule.setCategory(ruleDTO.getCategory());
+        rule.setStatus(ruleDTO.getStatus());
+        rule.setCreatedDate(LocalDateTime.now().toLocalDate()); // Set created date to current date
         rule.setLastUpdated(LocalDateTime.now());
         LocalRule saved = localRuleRepository.save(rule);
         syncEnabledRulesToFile();
@@ -175,11 +180,33 @@ public class LocalRuleService {
     private LocalRule convertToEntity(LocalRuleDTO dto) {
         LocalRule rule = new LocalRule();
         rule.setRuleContent(dto.getRule_content());
-        LocalDateTime createdDateTime = LocalDateTime.parse(dto.getCreated_date(), DATE_TIME_FORMATTER);
-        rule.setCreatedDate(createdDateTime.toLocalDate());
         rule.setStatus(dto.getStatus());
         rule.setCategory(dto.getCategory());
-        rule.setLastUpdated(LocalDateTime.parse(dto.getLast_updated(), DATE_TIME_FORMATTER));
+        
+        // Handle created_date - if it contains time, parse as datetime; if only date, parse as date
+        try {
+            if (dto.getCreated_date().length() > 10) {
+                // Full datetime format
+                LocalDateTime createdDateTime = LocalDateTime.parse(dto.getCreated_date(), DATE_TIME_FORMATTER);
+                rule.setCreatedDate(createdDateTime.toLocalDate());
+            } else {
+                // Date only format
+                LocalDate createdDate = LocalDate.parse(dto.getCreated_date());
+                rule.setCreatedDate(createdDate);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse created_date '{}', using current date: {}", dto.getCreated_date(), e.getMessage());
+            rule.setCreatedDate(LocalDate.now());
+        }
+        
+        // Handle last_updated
+        try {
+            rule.setLastUpdated(LocalDateTime.parse(dto.getLast_updated(), DATE_TIME_FORMATTER));
+        } catch (Exception e) {
+            log.warn("Failed to parse last_updated '{}', using current time: {}", dto.getLast_updated(), e.getMessage());
+            rule.setLastUpdated(LocalDateTime.now());
+        }
+        
         return rule;
     }
 

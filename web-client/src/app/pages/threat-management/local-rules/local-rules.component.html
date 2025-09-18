@@ -35,7 +35,7 @@
                         <thead>
                             <tr>
                                 <th>{{ 'Rule ID' | translate }}</th>
-                                <th>{{ 'Rule Content' | translate }}</th>
+                                <th class="w-80">{{ 'Rule Content' | translate }}</th>
                                 <th>{{ 'Created Date' | translate }}</th>
                                 <th>{{ 'Enable' | translate }}</th>
                                 <th>{{ 'Category' | translate }}</th>
@@ -46,7 +46,11 @@
                         <tbody>
                             <tr *ngFor="let rule of filteredRulesList">
                                 <td>{{rule.id}}</td>
-                                <td>{{rule.rule_content}}</td>
+                                <td class="rule-content-cell">
+                                    <div class="rule-content-text" [title]="rule.rule_content">
+                                        {{rule.rule_content}}
+                                    </div>
+                                </td>
                                 <td>{{rule.created_date}}</td>
                                 <td>
                                     <label class="w-12 h-6 relative">
@@ -59,7 +63,7 @@
                                         <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300"></span>
                                     </label>
                                 </td>
-                                <td>{{rule.category}}</td>
+                                <td>{{rule.category | translate}}</td>
                                 <td>{{rule.last_updated}}</td>
                                 <td>
                                     <div class="flex items-center justify-center gap-4">
@@ -88,7 +92,8 @@
                         </div>
                         <div class="mb-5">
                             <label for="category">{{ 'Category' | translate }}</label>
-                            <ng-select id="category" [items]="categories" formControlName="category" [clearable]="false"
+                            <ng-select id="category" [items]="translatedCategories" bindLabel="label" bindValue="value"
+                                formControlName="category" [clearable]="false"
                                 placeholder="{{ 'Select a category' | translate }}" class="custom-multiselect flex-1">
                             </ng-select>
                         </div>
