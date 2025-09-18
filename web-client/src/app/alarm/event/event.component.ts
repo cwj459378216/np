@@ -154,17 +154,17 @@ export class EventComponent implements OnInit, OnDestroy {
     private initChart() {
         const self = this;
         const currentLang = this.translate.currentLang || this.translate.defaultLang || 'en';
-        
+
         this.revenueChart = {
             series: [{ name: 'Events', data: [] }],
             chart: {
                 height: 325,
                 type: 'line',
                 animations: { enabled: true },
-                toolbar: { 
-                    show: true, 
-                    tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: false, reset: true }, 
-                    autoSelected: 'zoom' 
+                toolbar: {
+                    show: true,
+                    tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: false, reset: true },
+                    autoSelected: 'zoom'
                 },
                 zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
                 defaultLocale: currentLang === 'zh' ? 'zh' : 'en',
@@ -548,18 +548,27 @@ export class EventComponent implements OnInit, OnDestroy {
             category: row.category
         };
         let dataStr = '';
-        try { dataStr = JSON.stringify(rawData, null, 2); } catch { dataStr = '[无法序列化数据]'; }
-        return `你是资深网络安全分析专家。请对以下入侵/事件告警数据进行专业中文分析：\n\n` +
-            `数据 JSON:\n${dataStr}\n\n` +
-            `请分条说明：\n` +
-            `1. 基本要素：时间(timestamp)、源/目的 IP 与端口、协议(proto/app_proto)、签名(signature/signature_id)、严重级别(severity)。\n` +
-            `2. 签名和分类(category)说明：攻击/行为含义，常见触发原因。\n` +
-            `3. 危害评估：基于 severity 与 signature 给出风险等级与潜在影响。\n` +
-            `4. 溯源与影响面：可能的攻击阶段、是否内外网行为、是否横向移动迹象。\n` +
-            `5. 误报可能：哪些字段组合可能导致误报，需要人工核实的点。\n` +
-            `6. 建议的处置步骤：包含立即动作、进一步调查、加固/防护建议。\n` +
-            `7. 如果必要，给出简短可执行的调查命令示例(不包含破坏性命令)。\n` +
-            `请避免重复字段原文，注重解释与推理。`;
+        try {
+            dataStr = JSON.stringify(rawData, null, 2);
+        } catch {
+            dataStr = this.translate.instant('aiAssistant.eventAnalysisPrompt.serializationError');
+        }
+
+        // 使用翻译服务构建提示词
+        const prompt = this.translate.instant('aiAssistant.eventAnalysisPrompt');
+
+        return `${prompt.expertRole}\n\n` +
+            `${prompt.dataSection}\n${dataStr}\n\n` +
+            `${prompt.analysisInstructions}\n` +
+            `${prompt.basicElements}\n` +
+            `${prompt.signatureAnalysis}\n` +
+            `${prompt.threatAssessment}\n` +
+            `${prompt.attribution}\n` +
+            `${prompt.falsePositive}\n` +
+            `${prompt.recommendations}\n` +
+            `${prompt.commands}\n` +
+            `${prompt.guidance}\n\n` +
+            `${prompt.languageInstruction}`;
     }
 
     private callAiStream(prompt: string) {

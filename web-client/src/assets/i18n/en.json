@@ -765,6 +765,38 @@
     "quickQuestion1": "How to configure firewall rules?",
     "quickQuestion2": "Explain network protocol analysis",
     "quickQuestion3": "Best practices for threat detection",
-    "quickQuestion4": "System log analysis methods"
+    "quickQuestion4": "System log analysis methods",
+    "eventAnalysisPrompt": {
+      "expertRole": "You are a senior network security analysis expert. Please provide professional analysis of the following intrusion/event alert data in English:",
+      "dataSection": "Data JSON:",
+      "analysisInstructions": "Please explain in sections:",
+      "basicElements": "1. Basic Elements: timestamp, source/destination IP and ports, protocols (proto/app_proto), signature (signature/signature_id), severity level.",
+      "signatureAnalysis": "2. Signature and Category Analysis: attack/behavior meaning, common triggers.",
+      "threatAssessment": "3. Threat Assessment: risk level and potential impact based on severity and signature.",
+      "attribution": "4. Attribution and Impact Scope: possible attack stages, internal/external behavior, lateral movement indicators.",
+      "falsePositive": "5. False Positive Possibility: field combinations that may cause false positives, points requiring manual verification.",
+      "recommendations": "6. Recommended Response Steps: immediate actions, further investigation, hardening/protection recommendations.",
+      "commands": "7. If necessary, provide brief executable investigation command examples (no destructive commands).",
+      "guidance": "Please avoid repeating raw field content, focus on interpretation and reasoning.",
+      "serializationError": "[Unable to serialize data]",
+      "languageInstruction": "Please answer in English."
+    },
+    "protocolAnalysisPrompt": {
+      "analysisRequest": "Please analyze the following {protocol} protocol network traffic data and provide detailed explanations:",
+      "dataContent": "Data Content:",
+      "fieldDocumentation": "Field Documentation:",
+      "fieldDescription": "Description",
+      "noDescription": "No description",
+      "analysisAspects": "Please analyze from the following aspects:",
+      "basicInfo": "1. Basic packet information interpretation (source IP, destination IP, ports, etc.)",
+      "protocolFields": "2. Protocol-specific field meanings and functions (detailed explanation with field documentation)",
+      "securityRisks": "3. Possible security risks or anomaly identification",
+      "performance": "4. Network performance observations (latency, throughput, etc.)",
+      "geolocation": "5. Geographic location and ISP information analysis",
+      "recommendations": "6. Recommended follow-up actions or optimization suggestions",
+      "guidance": "Please answer in English and maintain professionalism and accuracy. When explaining fields, please refer to the field documentation provided above. If any anomalies or suspicious patterns are found, please highlight them specifically.",
+      "defaultProtocol": "Network",
+      "languageInstruction": "Please answer in English."
+    }
   }
 }

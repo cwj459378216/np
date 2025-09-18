@@ -271,7 +271,7 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
 
     private initChart() {
         const currentLang = this.translate.currentLang || this.translate.defaultLang || 'en';
-        
+
         // 重新配置图表以支持本地化
         this.revenueChart = {
             ...this.baseChartConfig,
@@ -954,36 +954,43 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
     }
 
     private buildAiPrompt(rowData: any): string {
-        const protocol = this.protocolName || rowData.protocol || '网络';
+        const protocol = this.protocolName || rowData.protocol || this.translate.instant('aiAssistant.protocolAnalysisPrompt.defaultProtocol');
         const dataStr = JSON.stringify(rowData, null, 2);
 
         // 构建字段说明文档
         let fieldDocumentation = '';
         console.log(this.fieldDescriptions);
         if (this.fieldDescriptions && this.fieldDescriptions.length > 0) {
-            fieldDocumentation = '\n\n字段说明文档：\n';
+            const prompt = this.translate.instant('aiAssistant.protocolAnalysisPrompt');
+            fieldDocumentation = `\n\n${prompt.fieldDocumentation}\n`;
             this.fieldDescriptions.forEach((field, index) => {
                 console.log(`字段 ${index + 1}:`, field);
                 fieldDocumentation += `${index + 1}. ${field.keyAlias}:\n`;
-                fieldDocumentation += `   - 说明: ${field.description || '无描述'}\n`;
+                fieldDocumentation += `   - ${prompt.fieldDescription}: ${field.description || prompt.noDescription}\n`;
                 fieldDocumentation += '\n';
             });
         }
         console.log('构建的字段说明文档:', fieldDocumentation);
-        return `请分析以下${protocol}协议的网络流量数据，并提供详细的解释说明：
 
-数据内容：
+        // 使用翻译服务构建提示词
+        const prompt = this.translate.instant('aiAssistant.protocolAnalysisPrompt');
+
+        return `${prompt.analysisRequest.replace('{protocol}', protocol)}
+
+${prompt.dataContent}
 ${dataStr}${fieldDocumentation}
 
-请从以下几个方面进行分析：
-1. 数据包的基本信息解读（源IP、目标IP、端口等）
-2. 协议特定字段的含义和作用（结合字段说明文档进行详细解释）
-3. 可能的安全风险或异常情况识别
-4. 网络性能相关的观察（延迟、吞吐量等）
-5. 地理位置和运营商信息分析
-6. 建议的后续处理措施或优化建议
+${prompt.analysisAspects}
+${prompt.basicInfo}
+${prompt.protocolFields}
+${prompt.securityRisks}
+${prompt.performance}
+${prompt.geolocation}
+${prompt.recommendations}
 
-请用中文回答，并保持专业性和准确性。在解释字段时，请参考上面提供的字段说明文档。如果发现任何异常或可疑的模式，请特别指出。`;
+${prompt.guidance}
+
+${prompt.languageInstruction}`;
     }
 
     private callAiStream(prompt: string) {

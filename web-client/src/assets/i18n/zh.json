@@ -766,6 +766,38 @@
     "quickQuestion1": "如何配置防火墙规则？",
     "quickQuestion2": "解释一下网络协议分析",
     "quickQuestion3": "威胁检测的最佳实践",
-    "quickQuestion4": "系统日志分析方法"
+    "quickQuestion4": "系统日志分析方法",
+    "eventAnalysisPrompt": {
+      "expertRole": "你是资深网络安全分析专家。请对以下入侵/事件告警数据进行专业中文分析：",
+      "dataSection": "数据 JSON:",
+      "analysisInstructions": "请分条说明：",
+      "basicElements": "1. 基本要素：时间(timestamp)、源/目的 IP 与端口、协议(proto/app_proto)、签名(signature/signature_id)、严重级别(severity)。",
+      "signatureAnalysis": "2. 签名和分类(category)说明：攻击/行为含义，常见触发原因。",
+      "threatAssessment": "3. 危害评估：基于 severity 与 signature 给出风险等级与潜在影响。",
+      "attribution": "4. 溯源与影响面：可能的攻击阶段、是否内外网行为、是否横向移动迹象。",
+      "falsePositive": "5. 误报可能：哪些字段组合可能导致误报，需要人工核实的点。",
+      "recommendations": "6. 建议的处置步骤：包含立即动作、进一步调查、加固/防护建议。",
+      "commands": "7. 如果必要，给出简短可执行的调查命令示例(不包含破坏性命令)。",
+      "guidance": "请避免重复字段原文，注重解释与推理。",
+      "serializationError": "[无法序列化数据]",
+      "languageInstruction": "请用中文回答。"
+    },
+    "protocolAnalysisPrompt": {
+      "analysisRequest": "请分析以下{protocol}协议的网络流量数据，并提供详细的解释说明：",
+      "dataContent": "数据内容：",
+      "fieldDocumentation": "字段说明文档：",
+      "fieldDescription": "说明",
+      "noDescription": "无描述",
+      "analysisAspects": "请从以下几个方面进行分析：",
+      "basicInfo": "1. 数据包的基本信息解读（源IP、目标IP、端口等）",
+      "protocolFields": "2. 协议特定字段的含义和作用（结合字段说明文档进行详细解释）",
+      "securityRisks": "3. 可能的安全风险或异常情况识别",
+      "performance": "4. 网络性能相关的观察（延迟、吞吐量等）",
+      "geolocation": "5. 地理位置和运营商信息分析",
+      "recommendations": "6. 建议的后续处理措施或优化建议",
+      "guidance": "请用中文回答，并保持专业性和准确性。在解释字段时，请参考上面提供的字段说明文档。如果发现任何异常或可疑的模式，请特别指出。",
+      "defaultProtocol": "网络",
+      "languageInstruction": "请用中文回答。"
+    }
   }
 }
