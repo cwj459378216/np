@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
+import { AuthService } from '../../../services/auth/auth.service';
 
 // 首先定义 GridsterItem 接口
 interface CustomGridsterItem extends GridsterItem {
@@ -129,7 +130,8 @@ export class AddComponent implements OnInit {
     constructor(
         private http: HttpClient,
         private router: Router,
-        private translate: TranslateService
+        private translate: TranslateService,
+        private authService: AuthService
     ) {}
 
     ngOnInit() {
@@ -157,7 +159,7 @@ export class AddComponent implements OnInit {
             this.titleOptions = [];  // 也清空表格字段选项
             return;
         }
-        
+
         // Load all fields for filter fields and y-axis candidates
         this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields`).subscribe({
             next: (fields) => {
@@ -172,7 +174,7 @@ export class AddComponent implements OnInit {
                 const keywordFields = options.filter(o => o.type === 'keyword');
                 this.yAxisCandidates = [...this.dateFields, ...keywordFields].map(o => ({ value: o.value, label: o.label }));
                 console.log('yAxisCandidates:', this.yAxisCandidates);
-                
+
                 // default selections
                 if (!this.formData.yField && this.yAxisCandidates.length) {
                     this.formData.yField = this.yAxisCandidates[0].value;
@@ -181,7 +183,7 @@ export class AddComponent implements OnInit {
             },
             error: () => {}
         });
-        
+
         // Load numeric fields specifically for aggregation (Metric Field)
         this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields/filtered?fieldType=numeric`).subscribe({
             next: (numericFields) => {
@@ -202,7 +204,7 @@ export class AddComponent implements OnInit {
                 });
             }
         });
-        
+
         // Load text fields specifically for pie chart categories
         this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.formData.index}/fields/filtered?fieldType=text`).subscribe({
             next: (textFields) => {
@@ -259,7 +261,7 @@ export class AddComponent implements OnInit {
             this.translate.get('Please select Y Axis Field').subscribe(msg => this.showMessage(msg, 'error'));
             return;
         }
-        
+
         // Validate table requirements
         if (this.formData.type === 'table') {
             if (!this.formData.index) {
@@ -267,7 +269,7 @@ export class AddComponent implements OnInit {
                 return;
             }
         }
-        
+
         // Validate pie chart requirements
         if (this.formData.type === 'pie') {
             if (!this.formData.aggregationField) {
@@ -307,10 +309,10 @@ export class AddComponent implements OnInit {
 
             case 'table':
                 // 如果没有选择列，默认选择前5个字段或所有字段（如果少于5个）
-                const defaultTitles = this.selectedTitles && this.selectedTitles.length > 0 
-                    ? this.selectedTitles 
+                const defaultTitles = this.selectedTitles && this.selectedTitles.length > 0
+                    ? this.selectedTitles
                     : this.titleOptions.slice(0, Math.min(5, this.titleOptions.length)).map(opt => opt.value);
-                
+
                 newItem = {
                     cols: 6, rows: 3, y: 0, x: 0,
                     type: 'table', uniqueId, id: uniqueId,
@@ -358,10 +360,10 @@ export class AddComponent implements OnInit {
             filters: (item as any).filters || [],
             yField: (item as any).yField || ''  // Add yField to request
         };
-        
+
         // Debug log request
         console.log('Sending widget query request:', req);
-        
+
         this.http.post(`${environment.apiUrl}/es/widget/query`, req).subscribe({
             next: (res: any) => {
                 if (item.type === 'chart') {
@@ -369,7 +371,7 @@ export class AddComponent implements OnInit {
                         const x: any[] = res.x || [];
                         const y: any[] = res.y || [];
                         let categories: string[];
-                        
+
                         // Check if this is a category-based chart or time-based chart
                         if (res.chartType === 'category') {
                             // For category charts, x contains category names directly
@@ -378,7 +380,7 @@ export class AddComponent implements OnInit {
                             // For time charts, x contains timestamps that need formatting
                             categories = x.map(v => new Date(v).toLocaleString());
                         }
-                        
+
                         item.chartConfig = {
                             title: { text: item['name'] || item.uniqueId },
                             tooltip: { trigger: 'axis' },
@@ -518,7 +520,7 @@ export class AddComponent implements OnInit {
                     return acc;
                 }, {})
             },
-            creator: 'Current User',
+            creator: this.authService.getCurrentUser()?.username || this.authService.getCurrentUser()?.name || 'Unknown User',
             createdAt: new Date().toISOString()
         };
 
@@ -575,7 +577,7 @@ export class AddComponent implements OnInit {
             const aggType = this.formData.aggregationType || 'count';
             return `${aggType}(${field}) by categories`;
         }
-        
+
         if (this.formData.type === 'line' || this.formData.type === 'bar') {
             const xAxis = this.formData.yField || 'time/category';
             const yField = this.formData.aggregationField || 'count';
@@ -583,7 +585,7 @@ export class AddComponent implements OnInit {
             const yAxisLabel = this.formData.aggregationField ? `${yType}(${yField})` : 'count';
             return `${xAxis} vs ${yAxisLabel}`;
         }
-        
+
         return 'Select configuration';
     }
 
@@ -592,7 +594,7 @@ export class AddComponent implements OnInit {
         if (value === null || value === undefined) {
             return '';
         }
-        
+
         // 特殊处理 timestamp 字段
         if (fieldName && (fieldName.toLowerCase() === 'timestamp' || fieldName.toLowerCase().includes('time'))) {
             // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
@@ -618,7 +620,7 @@ export class AddComponent implements OnInit {
                 });
             }
         }
-        
+
         // 如果是时间戳（数字且大于某个阈值，比如2000年以后）
         if (typeof value === 'number' && value > 946684800000) {
             return new Date(value).toLocaleString('zh-CN', {
@@ -630,12 +632,12 @@ export class AddComponent implements OnInit {
                 second: '2-digit'
             });
         }
-        
+
         // 如果是对象，转换为JSON字符串
         if (typeof value === 'object') {
             return JSON.stringify(value);
         }
-        
+
         return String(value);
     }
 
@@ -644,7 +646,7 @@ export class AddComponent implements OnInit {
         if (!header) {
             return '';
         }
-        
+
         // 处理驼峰命名和下划线命名
         let formatted = header
             // 处理驼峰命名：在大写字母前添加空格
@@ -658,7 +660,7 @@ export class AddComponent implements OnInit {
             .split(' ')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
-        
+
         return formatted;
     }
 }

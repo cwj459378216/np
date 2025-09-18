@@ -677,12 +677,16 @@
 
   "validation": {
     "required": "此字段为必填项",
-    "minLength": "最小长度为 {length} 个字符",
-    "maxLength": "最大长度为 {length} 个字符",
+    "minLength": "最小长度为 {{length}} 个字符",
+    "maxLength": "最大长度为 {{length}} 个字符",
     "email": "请输入有效的邮箱地址",
     "pattern": "请输入有效的格式"
   }
   ,
   "File Name": "文件名",
-  "Size": "大小"
+  "Size": "大小",
+  "Executing...": "正在执行…",
+  "datatable": {
+    "paginationInfo": "显示第 {0} 到第 {1} 条，共 {2} 条"
+  }
 }

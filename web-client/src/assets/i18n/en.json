@@ -676,12 +676,16 @@
 
   "validation": {
     "required": "This field is required",
-    "minLength": "Minimum length is {length} characters",
-    "maxLength": "Maximum length is {length} characters",
+    "minLength": "Minimum length is {{length}} characters",
+    "maxLength": "Maximum length is {{length}} characters",
     "email": "Please enter a valid email address",
     "pattern": "Please enter a valid format"
   }
   ,
   "File Name": "File Name",
-  "Size": "Size"
+  "Size": "Size",
+  "Executing...": "Executing…",
+  "datatable": {
+    "paginationInfo": "Showing {0} to {1} of {2} entries"
+  }
 }
