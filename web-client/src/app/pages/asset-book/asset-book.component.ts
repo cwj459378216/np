@@ -5,6 +5,7 @@ import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { TranslateService } from '@ngx-translate/core';
 
 interface Asset {
     id: number;
@@ -41,7 +42,8 @@ interface Asset {
 export class AssetBookComponent {
     constructor(
         public fb: FormBuilder,
-        private http: HttpClient
+        private http: HttpClient,
+        private translate: TranslateService
     ) {}
 
     displayType = 'list';
@@ -100,7 +102,7 @@ export class AssetBookComponent {
             },
             error => {
                 console.error('Error loading assets:', error);
-                this.showMessage('Error loading assets', 'error');
+                this.showMessage(this.translate.instant('assetBook.errorLoadingAssets'), 'error');
             }
         );
     }
@@ -136,7 +138,7 @@ export class AssetBookComponent {
 
     saveUser() {
         if (!this.params.valid) {
-            this.showMessage('Please fill all required fields.', 'error');
+            this.showMessage(this.translate.instant('assetBook.pleaseAllRequiredFields'), 'error');
             return;
         }
 
@@ -147,32 +149,33 @@ export class AssetBookComponent {
         this.http[method](url, asset).subscribe(
             (response: any) => {
                 this.loadAssets();
-                this.showMessage('Asset has been saved successfully.');
+                this.showMessage(this.translate.instant('assetBook.assetSavedSuccessfully'));
                 this.addContactModal.close();
             },
             error => {
-                this.showMessage('Error saving asset', 'error');
+                this.showMessage(this.translate.instant('assetBook.errorSavingAsset'), 'error');
             }
         );
     }
 
     deleteUser(asset: any) {
         Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
+            title: this.translate.instant('assetBook.areYouSure'),
+            text: this.translate.instant('assetBook.deleteConfirmText'),
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
+            confirmButtonText: this.translate.instant('assetBook.yesDeleteIt'),
+            cancelButtonText: this.translate.instant('general.cancel'),
             padding: '2em'
         }).then((result) => {
             if (result.value) {
                 this.http.delete(`${environment.apiUrl}/assets/${asset.id}`).subscribe(
                     () => {
                         this.loadAssets();
-                        this.showMessage('Asset has been deleted successfully.');
+                        this.showMessage(this.translate.instant('assetBook.assetDeletedSuccessfully'));
                     },
                     error => {
-                        this.showMessage('Error deleting asset', 'error');
+                        this.showMessage(this.translate.instant('assetBook.errorDeletingAsset'), 'error');
                     }
                 );
             }
@@ -187,11 +190,13 @@ export class AssetBookComponent {
         const url = `${environment.apiUrl}/assets/${asset.id}`;
         this.http.put(url, { ...asset, status: nextStatus }).subscribe({
             next: () => {
-                this.showMessage(nextStatus === 'Active' ? 'Asset enabled successfully.' : 'Asset disabled successfully.');
+                this.showMessage(nextStatus === 'Active' ?
+                    this.translate.instant('assetBook.assetEnabledSuccessfully') :
+                    this.translate.instant('assetBook.assetDisabledSuccessfully'));
             },
             error: () => {
                 asset.status = prevStatus; // rollback
-                this.showMessage('Failed to update asset status', 'error');
+                this.showMessage(this.translate.instant('assetBook.errorUpdatingAssetStatus'), 'error');
             }
         });
     }

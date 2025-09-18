@@ -62,7 +62,14 @@
                             <tr *ngFor="let setting of filteredSettings">
                                 <td>{{ setting.name }}</td>
                                 <td>{{ setting.description }}</td>
-                                <td>{{ setting.service }}</td>
+                                <td>
+                                    <ng-container *ngIf="setting.service === 'email'">
+                                        {{ 'notification.email' | translate }}
+                                    </ng-container>
+                                    <ng-container *ngIf="setting.service === 'syslog'">
+                                        {{ 'notification.syslog' | translate }}
+                                    </ng-container>
+                                </td>
                                 <td>
                                     <ng-container *ngIf="setting.service === 'email'">
                                         {{ setting.mailServer }}

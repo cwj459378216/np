@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
+import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
 
 interface User {
@@ -36,7 +37,8 @@ export class UserManagementComponent implements OnInit {
 
     constructor(
         private fb: FormBuilder,
-        private http: HttpClient
+        private http: HttpClient,
+        private translate: TranslateService
     ) {
         this.initForm();
     }
@@ -66,7 +68,7 @@ export class UserManagementComponent implements OnInit {
             },
             (error) => {
                 console.error('Error loading users:', error);
-                this.showMessage('Error loading users', 'error');
+                this.showMessage(this.translate.instant('users.errorLoadingUsers'), 'error');
             }
         );
     }
@@ -78,7 +80,7 @@ export class UserManagementComponent implements OnInit {
             },
             (error) => {
                 console.error('Error loading roles:', error);
-                this.showMessage('Error loading roles', 'error');
+                this.showMessage(this.translate.instant('users.errorLoadingRoles'), 'error');
             }
         );
     }
@@ -114,7 +116,7 @@ export class UserManagementComponent implements OnInit {
 
     saveUser() {
         if (!this.params.valid) {
-            this.showMessage('Please fill all required fields.', 'error');
+            this.showMessage(this.translate.instant('users.pleaseAllRequiredFields'), 'error');
             return;
         }
 
@@ -134,34 +136,35 @@ export class UserManagementComponent implements OnInit {
         this.http[method](url, user).subscribe(
             () => {
                 this.loadUsers();
-                this.showMessage('User has been saved successfully.');
+                this.showMessage(this.translate.instant('users.userSavedSuccessfully'));
                 this.addContactModal.close();
             },
             error => {
                 console.error('Error saving user:', error);
-                this.showMessage('Error saving user', 'error');
+                this.showMessage(this.translate.instant('users.errorSavingUser'), 'error');
             }
         );
     }
 
     deleteUser(user: User) {
         Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
+            title: this.translate.instant('users.areYouSure'),
+            text: this.translate.instant('users.deleteConfirmText'),
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: this.translate.instant('general.cancel'),
+            confirmButtonText: this.translate.instant('users.yesDeleteIt'),
             padding: '2em'
         }).then((result) => {
             if (result.value) {
                 this.http.delete(`${environment.apiUrl}/users/${user.id}`).subscribe(
                     () => {
                         this.loadUsers();
-                        this.showMessage('User has been deleted successfully.');
+                        this.showMessage(this.translate.instant('users.userDeletedSuccessfully'));
                     },
                     error => {
                         console.error('Error deleting user:', error);
-                        this.showMessage('Error deleting user', 'error');
+                        this.showMessage(this.translate.instant('users.errorDeletingUser'), 'error');
                     }
                 );
             }
@@ -177,11 +180,11 @@ export class UserManagementComponent implements OnInit {
         if (!payload.password) delete payload.password;
         this.http.put(`${environment.apiUrl}/users/${user.id}`, payload).subscribe({
             next: () => {
-                this.showMessage(nextStatus ? 'User enabled successfully.' : 'User disabled successfully.');
+                this.showMessage(nextStatus ? this.translate.instant('users.userEnabledSuccessfully') : this.translate.instant('users.userDisabledSuccessfully'));
             },
             error: () => {
                 user.status = prevStatus; // rollback
-                this.showMessage('Failed to update user status', 'error');
+                this.showMessage(this.translate.instant('users.failedUpdateUserStatus'), 'error');
             }
         });
     }

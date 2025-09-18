@@ -5,6 +5,7 @@ import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { TranslateService } from '@ngx-translate/core';
 
 interface NetworkInterface {
     interface_name: string;
@@ -24,7 +25,8 @@ interface NetworkInterface {
 export class InterfaceManagementComponent {
   constructor(
     public fb: FormBuilder,
-    private http: HttpClient
+    private http: HttpClient,
+    private translate: TranslateService
   ) {}
 
   displayType = 'list';
@@ -50,7 +52,7 @@ export class InterfaceManagementComponent {
         this.searchInterfaces();
       },
       error => {
-        this.showMessage('Error loading interfaces', 'error');
+        this.showMessage(this.translate.instant('interface.errorLoadingInterfaces'), 'error');
       }
     );
   }
@@ -108,7 +110,7 @@ export class InterfaceManagementComponent {
 
   saveInterface() {
     if (!this.params.valid) {
-        this.showMessage('Please fill all required fields.', 'error');
+        this.showMessage(this.translate.instant('interface.pleaseAllRequiredFields'), 'error');
         return;
     }
 
@@ -123,7 +125,7 @@ export class InterfaceManagementComponent {
         if (!this.isValidIpFormat(iface.ip_address) ||
             !this.isValidIpFormat(iface.netmask) ||
             !this.isValidIpFormat(iface.gateway)) {
-            this.showMessage('Please enter valid IP addresses', 'error');
+            this.showMessage(this.translate.instant('interface.pleaseEnterValidIPAddresses'), 'error');
             return;
         }
     }
@@ -132,12 +134,12 @@ export class InterfaceManagementComponent {
     this.http.put(url, iface).subscribe(
         (response: any) => {
             this.loadInterfaces();
-            this.showMessage('Interface has been saved successfully.');
+            this.showMessage(this.translate.instant('interface.interfaceSavedSuccessfully'));
             this.editInterfaceModal.close();
         },
         error => {
             console.error('Error saving interface:', error);
-            this.showMessage('Error saving interface', 'error');
+            this.showMessage(this.translate.instant('interface.errorSavingInterface'), 'error');
         }
     );
   }

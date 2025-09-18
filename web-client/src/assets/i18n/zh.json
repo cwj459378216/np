@@ -104,7 +104,8 @@
     "download": "下载",
     "apply": "应用",
     "save": "保存",
-    "addAddress": "添加地址"
+    "addAddress": "添加地址",
+    "ok": "确定"
   },
   "collector": {
     "collectorName": "收集器名称",
@@ -162,7 +163,20 @@
     "leaveBlankKeepPassword": "留空则保留当前密码",
     "selectRole": "选择角色",
     "enterDescription": "输入描述",
-    "password": "密码"
+    "password": "密码",
+    "errorLoadingUsers": "加载用户失败",
+    "errorLoadingRoles": "加载角色失败",
+    "pleaseAllRequiredFields": "请填写所有必填字段。",
+    "userSavedSuccessfully": "用户保存成功。",
+    "errorSavingUser": "保存用户失败",
+    "areYouSure": "您确定吗？",
+    "deleteConfirmText": "删除后将无法恢复！",
+    "yesDeleteIt": "是的，删除！",
+    "userDeletedSuccessfully": "用户删除成功。",
+    "errorDeletingUser": "删除用户失败",
+    "userEnabledSuccessfully": "用户启用成功。",
+    "userDisabledSuccessfully": "用户禁用成功。",
+    "failedUpdateUserStatus": "更新用户状态失败"
   },
   "roles": {
     "name": "名称",
@@ -178,7 +192,16 @@
     "createdAt": "创建时间",
     "permissions": "权限",
     "readWrite": "读写",
-    "readOnly": "只读"
+    "readOnly": "只读",
+    "errorLoadingRoles": "加载角色失败",
+    "pleaseAllRequiredFields": "请填写所有必填字段。",
+    "roleSavedSuccessfully": "角色保存成功。",
+    "errorSavingRole": "保存角色失败",
+    "areYouSure": "您确定吗？",
+    "deleteConfirmText": "删除后将无法恢复！",
+    "yesDeleteIt": "是的，删除！",
+    "roleDeletedSuccessfully": "角色删除成功。",
+    "errorDeletingRole": "删除角色失败"
   },
   "auth": {
     "signIn": "登录",
@@ -212,7 +235,13 @@
     "ntpServer": "NTP服务器",
     "timeZone": "时区",
     "enterNtpServer": "输入NTP服务器",
-    "selectTimeZone": "选择时区"
+    "selectTimeZone": "选择时区",
+    "areYouSure": "您确定吗？",
+    "actionWarning": "此操作可能会影响系统时间设置！",
+    "yesProceed": "是的，继续！",
+    "pleaseSelectTimeZone": "请选择时区",
+    "settingsUpdatedSuccessfully": "系统时间设置已成功更新",
+    "updateFailed": "更新系统时间设置失败。请重试。"
   },
   "userSettings": {
     "accountSettings": "账户设置",
@@ -536,7 +565,12 @@
     "pleaseEnterValidNetmask": "请输入有效的子网掩码",
     "ipAddressPlaceholder": "例如：192.168.1.1",
     "netmaskPlaceholder": "例如：255.255.255.0",
-    "gatewayPlaceholder": "例如：192.168.1.1"
+    "gatewayPlaceholder": "例如：192.168.1.1",
+    "errorLoadingInterfaces": "加载接口失败",
+    "pleaseAllRequiredFields": "请填写所有必填字段。",
+    "interfaceSavedSuccessfully": "接口保存成功。",
+    "errorSavingInterface": "保存接口失败",
+    "pleaseEnterValidIPAddresses": "请输入有效的IP地址"
   },
   "notification": {
     "addSetting": "添加设置",
@@ -574,7 +608,24 @@
     "syslogPlaceholders": {
       "host": "192.168.1.100",
       "port": "514"
-    }
+    },
+    "errorLoadingSettings": "加载设置失败",
+    "pleaseAllRequiredFields": "请填写所有必填字段。",
+    "settingSavedSuccessfully": "设置保存成功。",
+    "errorSavingSetting": "保存设置失败",
+    "areYouSure": "您确定吗？",
+    "deleteConfirmText": "删除后将无法恢复！",
+    "yesDeleteIt": "是的，删除！",
+    "settingDeletedSuccessfully": "设置删除成功。",
+    "errorDeletingSetting": "删除设置失败",
+    "pleaseAllRequiredFieldsTesting": "请在测试前填写所有必填字段。",
+    "testingNotification": "测试通知",
+    "testingWaitMessage": "请稍候，我们正在测试通知设置...",
+    "testSuccessful": "测试成功",
+    "testSuccessMessage": "通知设置运行正常。",
+    "testFailed": "测试失败",
+    "testFailedMessage": "发送测试通知失败。请检查您的设置。",
+    "testErrorMessage": "测试通知设置时发生错误。"
   },
   "assetBook": {
     "addAsset": "添加资产",
@@ -591,7 +642,22 @@
     "inactive": "非活跃",
     "selectType": "选择类型",
     "ipPlaceholder": "___.___.___.___",
-    "macPlaceholder": "XX:XX:XX:XX:XX:XX"
+    "macPlaceholder": "XX:XX:XX:XX:XX:XX",
+    "errorLoadingAssets": "加载资产失败",
+    "pleaseAllRequiredFields": "请填写所有必填字段。",
+    "assetSavedSuccessfully": "资产保存成功。",
+    "errorSavingAsset": "保存资产失败",
+    "areYouSure": "您确定吗？",
+    "deleteConfirmText": "删除后将无法恢复！",
+    "yesDeleteIt": "是的，删除！",
+    "assetDeletedSuccessfully": "资产删除成功。",
+    "errorDeletingAsset": "删除资产失败",
+    "assetEnabledSuccessfully": "资产启用成功。",
+    "assetDisabledSuccessfully": "资产禁用成功。",
+    "errorUpdatingAssetStatus": "更新资产状态失败",
+    "pleaseEnterValidIPv4": "请输入有效的IPv4地址（例如：192.168.1.10）",
+    "pleaseEnterValidMAC": "请输入有效的MAC地址（例如：AA:BB:CC:DD:EE:FF）",
+    "pleaseAtLeastOneAddress": "请至少填写IP地址或MAC地址之一"
   },
   "log": {
     "title": "日志",
@@ -681,12 +747,25 @@
     "maxLength": "最大长度为 {{length}} 个字符",
     "email": "请输入有效的邮箱地址",
     "pattern": "请输入有效的格式"
-  }
-  ,
+  },
   "File Name": "文件名",
   "Size": "大小",
   "Executing...": "正在执行…",
   "datatable": {
     "paginationInfo": "显示第 {0} 到第 {1} 条，共 {2} 条"
+  },
+  "aiAssistant": {
+    "title": "AI 助手",
+    "description": "与AI助手进行对话，获取帮助和建议",
+    "thinking": "AI正在思考...",
+    "inputPlaceholder": "输入您的问题...",
+    "quickQuestions": "快速问题",
+    "welcomeMessage": "你好！我是AI助手，有什么可以帮助你的吗？",
+    "errorMessage": "抱歉，服务暂时不可用，请稍后再试。",
+    "tempSession": "临时会话",
+    "quickQuestion1": "如何配置防火墙规则？",
+    "quickQuestion2": "解释一下网络协议分析",
+    "quickQuestion3": "威胁检测的最佳实践",
+    "quickQuestion4": "系统日志分析方法"
   }
 }

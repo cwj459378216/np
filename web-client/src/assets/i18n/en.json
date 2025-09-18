@@ -162,7 +162,20 @@
     "leaveBlankKeepPassword": "Leave blank to keep current password",
     "selectRole": "Select Role",
     "enterDescription": "Enter Description",
-    "password": "Password"
+    "password": "Password",
+    "errorLoadingUsers": "Error loading users",
+    "errorLoadingRoles": "Error loading roles",
+    "pleaseAllRequiredFields": "Please fill all required fields.",
+    "userSavedSuccessfully": "User has been saved successfully.",
+    "errorSavingUser": "Error saving user",
+    "areYouSure": "Are you sure?",
+    "deleteConfirmText": "You won't be able to revert this!",
+    "yesDeleteIt": "Yes, delete it!",
+    "userDeletedSuccessfully": "User has been deleted successfully.",
+    "errorDeletingUser": "Error deleting user",
+    "userEnabledSuccessfully": "User enabled successfully.",
+    "userDisabledSuccessfully": "User disabled successfully.",
+    "failedUpdateUserStatus": "Failed to update user status"
   },
   "roles": {
     "name": "Name",
@@ -178,7 +191,16 @@
     "createdAt": "Created At",
     "permissions": "Permissions",
     "readWrite": "Read/Write",
-    "readOnly": "Read Only"
+    "readOnly": "Read Only",
+    "errorLoadingRoles": "Error loading roles",
+    "pleaseAllRequiredFields": "Please fill all required fields.",
+    "roleSavedSuccessfully": "Role has been saved successfully.",
+    "errorSavingRole": "Error saving role",
+    "areYouSure": "Are you sure?",
+    "deleteConfirmText": "You won't be able to revert this!",
+    "yesDeleteIt": "Yes, delete it!",
+    "roleDeletedSuccessfully": "Role has been deleted successfully.",
+    "errorDeletingRole": "Error deleting role"
   },
   "auth": {
     "signIn": "Sign in",
@@ -211,7 +233,13 @@
     "ntpServer": "NTP Server",
     "timeZone": "Time Zone",
     "enterNtpServer": "Enter NTP Server",
-    "selectTimeZone": "Select Time Zone"
+    "selectTimeZone": "Select Time Zone",
+    "areYouSure": "Are you sure?",
+    "actionWarning": "This action may affect system time settings!",
+    "yesProceed": "Yes, proceed!",
+    "pleaseSelectTimeZone": "Please select a time zone",
+    "settingsUpdatedSuccessfully": "System time settings have been updated successfully",
+    "updateFailed": "Failed to update system time settings. Please try again."
   },
   "userSettings": {
     "accountSettings": "Account Settings",
@@ -535,7 +563,12 @@
     "pleaseEnterValidNetmask": "Please enter a valid netmask",
     "ipAddressPlaceholder": "e.g., 192.168.1.1",
     "netmaskPlaceholder": "e.g., 255.255.255.0",
-    "gatewayPlaceholder": "e.g., 192.168.1.1"
+    "gatewayPlaceholder": "e.g., 192.168.1.1",
+    "errorLoadingInterfaces": "Error loading interfaces",
+    "pleaseAllRequiredFields": "Please fill all required fields.",
+    "interfaceSavedSuccessfully": "Interface has been saved successfully.",
+    "errorSavingInterface": "Error saving interface",
+    "pleaseEnterValidIPAddresses": "Please enter valid IP addresses"
   },
   "notification": {
     "addSetting": "Add Setting",
@@ -573,7 +606,24 @@
     "syslogPlaceholders": {
       "host": "192.168.1.100",
       "port": "514"
-    }
+    },
+    "errorLoadingSettings": "Error loading settings",
+    "pleaseAllRequiredFields": "Please fill all required fields.",
+    "settingSavedSuccessfully": "Setting has been saved successfully.",
+    "errorSavingSetting": "Error saving setting",
+    "areYouSure": "Are you sure?",
+    "deleteConfirmText": "You won't be able to revert this!",
+    "yesDeleteIt": "Yes, delete it!",
+    "settingDeletedSuccessfully": "Setting has been deleted successfully.",
+    "errorDeletingSetting": "Error deleting setting",
+    "pleaseAllRequiredFieldsTesting": "Please fill all required fields before testing.",
+    "testingNotification": "Testing Notification",
+    "testingWaitMessage": "Please wait while we test the notification settings...",
+    "testSuccessful": "Test Successful",
+    "testSuccessMessage": "The notification settings are working correctly.",
+    "testFailed": "Test Failed",
+    "testFailedMessage": "Failed to send test notification. Please check your settings.",
+    "testErrorMessage": "An error occurred while testing the notification settings."
   },
   "assetBook": {
     "addAsset": "Add Asset",
@@ -590,7 +640,22 @@
     "inactive": "Inactive",
     "selectType": "Select Type",
     "ipPlaceholder": "___.___.___.___",
-    "macPlaceholder": "XX:XX:XX:XX:XX:XX"
+    "macPlaceholder": "XX:XX:XX:XX:XX:XX",
+    "errorLoadingAssets": "Error loading assets",
+    "pleaseAllRequiredFields": "Please fill all required fields.",
+    "assetSavedSuccessfully": "Asset has been saved successfully.",
+    "errorSavingAsset": "Error saving asset",
+    "areYouSure": "Are you sure?",
+    "deleteConfirmText": "You won't be able to revert this!",
+    "yesDeleteIt": "Yes, delete it!",
+    "assetDeletedSuccessfully": "Asset has been deleted successfully.",
+    "errorDeletingAsset": "Error deleting asset",
+    "assetEnabledSuccessfully": "Asset enabled successfully.",
+    "assetDisabledSuccessfully": "Asset disabled successfully.",
+    "errorUpdatingAssetStatus": "Failed to update asset status",
+    "pleaseEnterValidIPv4": "Please enter a valid IPv4 address (e.g., 192.168.1.10)",
+    "pleaseEnterValidMAC": "Please enter a valid MAC address (e.g., AA:BB:CC:DD:EE:FF)",
+    "pleaseAtLeastOneAddress": "Please fill at least one of IP Address or MAC Address"
   },
   "log": {
     "title": "Log",
@@ -687,5 +752,19 @@
   "Executing...": "Executing…",
   "datatable": {
     "paginationInfo": "Showing {0} to {1} of {2} entries"
+  },
+  "aiAssistant": {
+    "title": "AI Assistant",
+    "description": "Chat with AI assistant to get help and advice",
+    "thinking": "AI is thinking...",
+    "inputPlaceholder": "Enter your question...",
+    "quickQuestions": "Quick Questions",
+    "welcomeMessage": "Hello! I'm the AI assistant. How can I help you?",
+    "errorMessage": "Sorry, the service is temporarily unavailable. Please try again later.",
+    "tempSession": "Temporary Session",
+    "quickQuestion1": "How to configure firewall rules?",
+    "quickQuestion2": "Explain network protocol analysis",
+    "quickQuestion3": "Best practices for threat detection",
+    "quickQuestion4": "System log analysis methods"
   }
 }

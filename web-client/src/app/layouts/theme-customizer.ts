@@ -1,7 +1,9 @@
-﻿import { Component, AfterViewChecked, ElementRef, ViewChild } from '@angular/core';
+﻿import { Component, AfterViewChecked, ElementRef, ViewChild, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { TranslateService } from '@ngx-translate/core';
+import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 interface ChatMessage {
@@ -22,7 +24,7 @@ interface ChatSession {
     selector: 'setting',
     templateUrl: './theme-customizer.html',
 })
-export class ThemeCustomizerComponent implements AfterViewChecked {
+export class ThemeCustomizerComponent implements AfterViewChecked, OnDestroy {
     store: any;
     showCustomizer = false;
 
@@ -32,23 +34,21 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
     isLoading = false;
     currentSessionId: string = '';
     currentUserId: string = 'user123'; // 临时用户ID，实际应该从认证服务获取
-    quickQuestions = [
-        '如何配置防火墙规则？',
-        '解释一下网络协议分析',
-        '威胁检测的最佳实践',
-        '系统日志分析方法'
-    ];
+    quickQuestions: string[] = [];
 
     @ViewChild('chatContainer', { static: false }) chatContainer!: ElementRef;
     private shouldScrollToBottom = false;
+    private langChangeSubscription?: Subscription;
 
     constructor(
         public storeData: Store<any>,
         public router: Router,
-        private http: HttpClient
+        private http: HttpClient,
+        private translate: TranslateService
     ) {
         this.initStore();
         this.initChat();
+        this.initTranslations();
     }
 
     async initStore() {
@@ -57,6 +57,31 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
             .subscribe((d) => {
                 this.store = d;
             });
+    }
+
+    initTranslations() {
+        // 监听语言变化
+        this.langChangeSubscription = this.translate.onLangChange.subscribe(() => {
+            this.updateQuickQuestions();
+        });
+
+        // 初始化快速问题
+        this.updateQuickQuestions();
+    }
+
+    ngOnDestroy() {
+        if (this.langChangeSubscription) {
+            this.langChangeSubscription.unsubscribe();
+        }
+    }
+
+    updateQuickQuestions() {
+        this.quickQuestions = [
+            this.translate.instant('aiAssistant.quickQuestion1'),
+            this.translate.instant('aiAssistant.quickQuestion2'),
+            this.translate.instant('aiAssistant.quickQuestion3'),
+            this.translate.instant('aiAssistant.quickQuestion4')
+        ];
     }
 
     reloadRoute() {
@@ -87,7 +112,7 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
             this.currentSessionId = 'temp-session-' + Date.now();
             return {
                 id: this.currentSessionId,
-                title: '临时会话',
+                title: this.translate.instant('aiAssistant.tempSession'),
                 createdAt: new Date(),
                 lastActivityAt: new Date(),
                 messageCount: 0
@@ -97,7 +122,7 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
 
     addWelcomeMessage() {
         this.chatMessages.push({
-            content: '你好！我是AI助手，有什么可以帮助你的吗？',
+            content: this.translate.instant('aiAssistant.welcomeMessage'),
             isUser: false,
             timestamp: new Date()
         });
@@ -405,7 +430,7 @@ export class ThemeCustomizerComponent implements AfterViewChecked {
 
     private addErrorMessage() {
         this.chatMessages.push({
-            content: '抱歉，服务暂时不可用，请稍后再试。',
+            content: this.translate.instant('aiAssistant.errorMessage'),
             isUser: false,
             timestamp: new Date()
         });

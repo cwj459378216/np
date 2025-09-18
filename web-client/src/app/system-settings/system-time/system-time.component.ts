@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { FlatpickrDefaultsInterface } from 'angularx-flatpickr';
 import { SystemTimeService, SystemTime } from '../../services/system-time.service';
+import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -43,9 +44,10 @@ export class SystemTimeComponent implements OnInit {
   form2!: FormGroup;
 
   constructor(
-    public storeData: Store<any>, 
+    public storeData: Store<any>,
     public fb: FormBuilder,
-    private systemTimeService: SystemTimeService
+    private systemTimeService: SystemTimeService,
+    private translate: TranslateService
   ) {
     this.initStore();
     this.form2 = this.fb.group({
@@ -111,11 +113,12 @@ export class SystemTimeComponent implements OnInit {
 
   confirmAction(action: () => void) {
     Swal.fire({
-      title: 'Are you sure?',
-      text: "This action may affect system time settings!",
+      title: this.translate.instant('systemTime.areYouSure'),
+      text: this.translate.instant('systemTime.actionWarning'),
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Yes, proceed!',
+      confirmButtonText: this.translate.instant('systemTime.yesProceed'),
+      cancelButtonText: this.translate.instant('general.cancel'),
       padding: '2em'
     }).then((result) => {
       if (result.value) {
@@ -126,7 +129,7 @@ export class SystemTimeComponent implements OnInit {
 
   onSubmit() {
     if (!this.input5) {
-      this.showMessage('Please select a time zone', 'error');
+      this.showMessage(this.translate.instant('systemTime.pleaseSelectTimeZone'), 'error');
       return;
     }
 
@@ -139,7 +142,7 @@ export class SystemTimeComponent implements OnInit {
     const settings: SystemTime = {
       timeSettingMethod: this.timeSettingMethod,
       timeZone: this.input5,
-      manualTime: this.timeSettingMethod === 'manual' ? 
+      manualTime: this.timeSettingMethod === 'manual' ?
         adjustedDate.toISOString().slice(0, 19) : undefined,
       ntpServer: this.timeSettingMethod === 'ntp' ? this.ntpServer : undefined,
     };
@@ -148,11 +151,11 @@ export class SystemTimeComponent implements OnInit {
       this.systemTimeService.updateSettings(settings).subscribe({
         next: (response) => {
           console.log('Settings updated successfully', response);
-          this.showMessage('System time settings have been updated successfully');
+          this.showMessage(this.translate.instant('systemTime.settingsUpdatedSuccessfully'));
         },
         error: (error) => {
           console.error('Error updating settings:', error);
-          this.showMessage('Failed to update system time settings. Please try again.', 'error');
+          this.showMessage(this.translate.instant('systemTime.updateFailed'), 'error');
         }
       });
     });
@@ -179,7 +182,7 @@ export class SystemTimeComponent implements OnInit {
       timeZone: timezone,
       timeZoneName: 'shortOffset'
     }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || '';
-    
+
     return utcOffset.replace('GMT', '');
   }
 

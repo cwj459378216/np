@@ -60,7 +60,7 @@ export class ListComponent implements OnInit {
     }
 
     deleteRow(id: number | null = null) {
-        this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Template has been deleted successfully', 'Templates have been deleted successfully', 'Error deleting template', 'Error deleting templates'])
+        this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Template has been deleted successfully', 'Templates have been deleted successfully', 'Error deleting template', 'Error deleting templates', 'Cancel'])
         .subscribe(translations => {
             Swal.fire({
                 title: translations['Are you sure?'],
@@ -68,6 +68,7 @@ export class ListComponent implements OnInit {
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: translations['Yes, delete it!'],
+                cancelButtonText: translations['Cancel'],
                 padding: '2em'
             }).then((result) => {
                 if (result.value) {
@@ -93,11 +94,11 @@ export class ListComponent implements OnInit {
                     } else {
                         let selectedRows = this.datatable.getSelectedRows();
                         const ids: number[] = selectedRows.map((d: any) => d.id);
-                        
+
                         // 批量删除
                         let hasErrors = false;
                         let errorMessages: string[] = [];
-                        
+
                         Promise.allSettled(
                             ids.map((id: number) =>
                                 this.http.delete(`${environment.apiUrl}/templates/${id}`).toPromise()
@@ -118,10 +119,10 @@ export class ListComponent implements OnInit {
                                     errorMessages.push(errorMsg);
                                 }
                             });
-                            
+
                             this.loadTemplates();
                             this.datatable.clearSelectedRows();
-                            
+
                             if (hasErrors) {
                                 // 显示详细的错误信息
                                 const detailedError = errorMessages.join('\n');
@@ -144,7 +145,7 @@ export class ListComponent implements OnInit {
             timer: type === 'error' ? 5000 : 3000, // 错误消息显示更长时间
             customClass: { container: 'toast' },
         });
-        
+
         // 如果是错误消息且包含多行，使用弹窗而不是toast
         if (type === 'error' && msg.includes('\n')) {
             Swal.fire({

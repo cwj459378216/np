@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { slideDownUp, toggleAnimation } from 'src/app/shared/animations';
+import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
 import { animate, style, transition, trigger } from '@angular/animations';
 
@@ -235,7 +236,8 @@ export class RoleManagementComponent implements OnInit {
 
     constructor(
         private fb: FormBuilder,
-        private http: HttpClient
+        private http: HttpClient,
+        private translate: TranslateService
     ) {
         this.initForm();
     }
@@ -261,7 +263,7 @@ export class RoleManagementComponent implements OnInit {
             },
             error => {
                 console.error('Error loading roles:', error);
-                this.showMessage('Error loading roles', 'error');
+                this.showMessage(this.translate.instant('roles.errorLoadingRoles'), 'error');
             }
         );
     }
@@ -330,7 +332,7 @@ export class RoleManagementComponent implements OnInit {
 
     saveRole() {
         if (!this.params.valid) {
-            this.showMessage('Please fill all required fields.', 'error');
+            this.showMessage(this.translate.instant('roles.pleaseAllRequiredFields'), 'error');
             return;
         }
 
@@ -347,12 +349,12 @@ export class RoleManagementComponent implements OnInit {
         this.http[method](url, role).subscribe(
             () => {
                 this.loadRoles();
-                this.showMessage('Role has been saved successfully.');
+                this.showMessage(this.translate.instant('roles.roleSavedSuccessfully'));
                 this.addContactModal.close();
             },
             error => {
                 console.error('Error saving role:', error);
-                this.showMessage('Error saving role', 'error');
+                this.showMessage(this.translate.instant('roles.errorSavingRole'), 'error');
             }
         );
     }
@@ -375,22 +377,23 @@ export class RoleManagementComponent implements OnInit {
 
     deleteRole(role: Role) {
         Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
+            title: this.translate.instant('roles.areYouSure'),
+            text: this.translate.instant('roles.deleteConfirmText'),
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: this.translate.instant('general.cancel'),
+            confirmButtonText: this.translate.instant('roles.yesDeleteIt'),
             padding: '2em'
         }).then((result) => {
             if (result.value) {
                 this.http.delete(`${environment.apiUrl}/roles/${role.id}`).subscribe(
                     () => {
                         this.loadRoles();
-                        this.showMessage('Role has been deleted successfully.');
+                        this.showMessage(this.translate.instant('roles.roleDeletedSuccessfully'));
                     },
                     error => {
                         console.error('Error deleting role:', error);
-                        this.showMessage('Error deleting role', 'error');
+                        this.showMessage(this.translate.instant('roles.errorDeletingRole'), 'error');
                     }
                 );
             }
@@ -429,6 +432,36 @@ export class RoleManagementComponent implements OnInit {
                 this.updateChildrenPermissions(child.children, type, checked);
             }
         });
+    }
+
+    getPageTranslation(pageName: string): string {
+        // 创建页面名称到翻译键的映射
+        const pageTranslationMap: { [key: string]: string } = {
+            'Dashboard': 'navigation.dashboard',
+            'Collector': 'navigation.collector',
+            'Collector Analyzer': 'navigation.collectorAnalyzer',
+            'Filter': 'navigation.filter',
+            'Event Alarm': 'navigation.eventAlarm',
+            'Event': 'navigation.event',
+            'Alarm Settings': 'navigation.alarmSettings',
+            'Protocol Analysis': 'navigation.protocolAnalysis',
+            'Session Info': 'navigation.sessionInfo',
+            'Application Protocols': 'navigation.applicationProtocols',
+            'HTTP': 'HTTP',
+            'SMTP': 'SMTP',
+            'FTP': 'FTP',
+            'Settings': 'navigation.settings',
+            'Report': 'navigation.report',
+            'System Settings': 'navigation.systemSettings',
+            'User Management': 'navigation.userManagement',
+            'Role Management': 'navigation.roleManagement',
+            'System Time': 'navigation.systemTime',
+            'Interface Management': 'navigation.interfaceManagement',
+            'Log': 'navigation.log'
+        };
+
+        const translationKey = pageTranslationMap[pageName];
+        return translationKey ? this.translate.instant(translationKey) : pageName;
     }
 
     showMessage(msg = '', type = 'success') {

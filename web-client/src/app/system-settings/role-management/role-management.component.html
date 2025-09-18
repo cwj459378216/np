@@ -159,13 +159,13 @@
                     [class]="'w-5 h-5 text-primary inline relative -top-1 ltr:mr-2 rtl:ml-2 ' + [node.expanded ? 'rotate-180': '' ]"
                 />
                 <icon-folder class="relative -top-1 inline text-primary ltr:mr-2 rtl:ml-2" />
-                {{node.page}}
+                {{getPageTranslation(node.page)}}
             </button>
             <ng-container *ngIf="!node.showIcon">
                 <div class="flex items-center justify-between w-full">
                     <div class="flex items-center min-w-[200px]">
                         <icon-txt-file class="inline h-4.5 w-4.5 text-primary ltr:mr-2 rtl:ml-2" />
-                        <span>{{node.page}}</span>
+                        <span>{{getPageTranslation(node.page)}}</span>
                     </div>
                     <div class="flex items-center gap-8">
                         <div class="flex items-center gap-2 min-w-[120px]">

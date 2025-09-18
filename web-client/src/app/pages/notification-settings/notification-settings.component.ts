@@ -1,8 +1,10 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
+import { TranslateService } from '@ngx-translate/core';
+import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 import { NotificationSettingService } from '../../services/notification-setting.service';
 
@@ -28,17 +30,14 @@ interface NotificationSetting {
     selector: 'app-notification-settings',
     templateUrl: './notification-settings.component.html'
 })
-export class NotificationSettingsComponent implements OnInit {
+export class NotificationSettingsComponent implements OnInit, OnDestroy {
     @ViewChild('addSettingModal') addSettingModal!: NgxCustomModalComponent;
 
     displayType: string = 'list';
     searchText: string = '';
     params!: FormGroup;
 
-    serviceOptions = [
-        { value: 'email', label: 'Email' },
-        { value: 'syslog', label: 'Syslog' }
-    ];
+    serviceOptions: { value: string, label: string }[] = [];
 
     securityOptions = [
         { value: 'none', label: 'None' },
@@ -49,16 +48,39 @@ export class NotificationSettingsComponent implements OnInit {
     settings: NotificationSetting[] = [];
     filteredSettings: NotificationSetting[] = [];
 
+    private langChangeSubscription?: Subscription;
+
     constructor(
         private fb: FormBuilder,
         private http: HttpClient,
-        private notificationSettingService: NotificationSettingService
+        private notificationSettingService: NotificationSettingService,
+        private translate: TranslateService
     ) {
         this.initForm();
     }
 
     ngOnInit(): void {
+        // 等待翻译加载后再初始化选项
+        this.langChangeSubscription = this.translate.onLangChange.subscribe(() => {
+            this.initializeOptions();
+        });
+
+        // 立即初始化一次（如果翻译已经加载）
+        this.initializeOptions();
         this.loadSettings();
+    }
+
+    ngOnDestroy(): void {
+        if (this.langChangeSubscription) {
+            this.langChangeSubscription.unsubscribe();
+        }
+    }
+
+    initializeOptions() {
+        this.serviceOptions = [
+            { value: 'email', label: this.translate.instant('notification.email') || 'Email' },
+            { value: 'syslog', label: this.translate.instant('notification.syslog') || 'Syslog' }
+        ];
     }
 
     initForm() {
@@ -109,7 +131,7 @@ export class NotificationSettingsComponent implements OnInit {
             },
             error => {
                 console.error('Error loading settings:', error);
-                this.showMessage('Error loading settings', 'error');
+                this.showMessage(this.translate.instant('notification.errorLoadingSettings'), 'error');
             }
         );
     }
@@ -154,7 +176,7 @@ export class NotificationSettingsComponent implements OnInit {
 
     saveSetting() {
         if (!this.params.valid) {
-            this.showMessage('Please fill all required fields.', 'error');
+            this.showMessage(this.translate.instant('notification.pleaseAllRequiredFields'), 'error');
             return;
         }
 
@@ -165,34 +187,35 @@ export class NotificationSettingsComponent implements OnInit {
         this.http[method](url, setting).subscribe(
             () => {
                 this.loadSettings();
-                this.showMessage('Setting has been saved successfully.');
+                this.showMessage(this.translate.instant('notification.settingSavedSuccessfully'));
                 this.addSettingModal.close();
             },
             error => {
                 console.error('Error saving setting:', error);
-                this.showMessage('Error saving setting', 'error');
+                this.showMessage(this.translate.instant('notification.errorSavingSetting'), 'error');
             }
         );
     }
 
     deleteSetting(setting: NotificationSetting) {
         Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
+            title: this.translate.instant('notification.areYouSure'),
+            text: this.translate.instant('notification.deleteConfirmText'),
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
+            confirmButtonText: this.translate.instant('notification.yesDeleteIt'),
+            cancelButtonText: this.translate.instant('general.cancel'),
             padding: '2em'
         }).then((result) => {
             if (result.value) {
                 this.http.delete(`${environment.apiUrl}/notifications/${setting.id}`).subscribe(
                     () => {
                         this.loadSettings();
-                        this.showMessage('Setting has been deleted successfully.');
+                        this.showMessage(this.translate.instant('notification.settingDeletedSuccessfully'));
                     },
                     error => {
                         console.error('Error deleting setting:', error);
-                        this.showMessage('Error deleting setting', 'error');
+                        this.showMessage(this.translate.instant('notification.errorDeletingSetting'), 'error');
                     }
                 );
             }
@@ -216,13 +239,13 @@ export class NotificationSettingsComponent implements OnInit {
 
     testSetting(): void {
         if (!this.params.valid) {
-            this.showMessage('Please fill all required fields before testing.', 'error');
+            this.showMessage(this.translate.instant('notification.pleaseAllRequiredFieldsTesting'), 'error');
             return;
         }
 
         Swal.fire({
-            title: 'Testing Notification',
-            text: 'Please wait while we test the notification settings...',
+            title: this.translate.instant('notification.testingNotification'),
+            text: this.translate.instant('notification.testingWaitMessage'),
             allowOutsideClick: false,
             didOpen: () => {
                 Swal.showLoading();
@@ -234,25 +257,25 @@ export class NotificationSettingsComponent implements OnInit {
                 if (isValid) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Test Successful',
-                        text: 'The notification settings are working correctly.',
-                        confirmButtonText: 'OK'
+                        title: this.translate.instant('notification.testSuccessful'),
+                        text: this.translate.instant('notification.testSuccessMessage'),
+                        confirmButtonText: this.translate.instant('general.ok')
                     });
                 } else {
                     Swal.fire({
                         icon: 'error',
-                        title: 'Test Failed',
-                        text: 'Failed to send test notification. Please check your settings.',
-                        confirmButtonText: 'OK'
+                        title: this.translate.instant('notification.testFailed'),
+                        text: this.translate.instant('notification.testFailedMessage'),
+                        confirmButtonText: this.translate.instant('general.ok')
                     });
                 }
             },
             error: (error: Error) => {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Test Failed',
-                    text: 'An error occurred while testing the notification settings.',
-                    confirmButtonText: 'OK'
+                    title: this.translate.instant('notification.testFailed'),
+                    text: this.translate.instant('notification.testErrorMessage'),
+                    confirmButtonText: this.translate.instant('general.ok')
                 });
             }
         });

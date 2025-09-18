@@ -98,7 +98,7 @@ export class ReportListComponent implements OnInit, OnDestroy {
     }
 
     deleteRow(id: number | null = null) {
-        this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Report has been deleted successfully', 'Reports have been deleted successfully', 'Error deleting report', 'Error deleting reports'])
+        this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Report has been deleted successfully', 'Reports have been deleted successfully', 'Error deleting report', 'Error deleting reports', 'Cancel'])
         .subscribe(translations => {
             Swal.fire({
                 title: translations['Are you sure?'],
@@ -106,6 +106,7 @@ export class ReportListComponent implements OnInit, OnDestroy {
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: translations['Yes, delete it!'],
+                cancelButtonText: translations['Cancel'],
                 padding: '2em'
             }).then((result) => {
                 if (result.value) {
