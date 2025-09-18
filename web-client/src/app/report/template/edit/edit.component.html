@@ -28,12 +28,12 @@
                     [item]="item"
                 >
                     <div class="panel flex flex-col h-full w-full">
-                        <div class="flex justify-between mb-2">
+                        <!-- <div class="flex justify-between mb-2">
                             <span class="text-base font-medium">{{ item.type === 'table' ? 'Table' : (item.chartType | titlecase) + ' Chart' }}</span>
                             <button class="hover:text-danger" (click)="removeWidget(item)">
                                 <icon-x class="h-5 w-5" />
                             </button>
-                        </div>
+                        </div> -->
                         <div class="flex-1 gridster-item-content">
                             <div *ngIf="item['type'] === 'chart'" class="w-full h-full">
                                 <div [id]="'chart_' + item.uniqueId"
