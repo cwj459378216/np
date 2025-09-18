@@ -69,7 +69,7 @@ public class ReportScheduleExecutorService {
             for (ReportScheduler scheduler : activeSchedulers) {
                 if (shouldExecuteNow(scheduler, now)) {
                     logger.info("Executing scheduler: {} at {}", scheduler.getName(), now);
-                    executeReport(scheduler);
+                    executeReport(scheduler, "System Scheduler");
                     
                     // 记录最后执行时间
                     lastExecutionTimes.put(scheduler.getId(), now);
@@ -84,12 +84,19 @@ public class ReportScheduleExecutorService {
      * 手动执行调度器
      */
     public void executeSchedulerManually(ReportScheduler scheduler) {
+        executeSchedulerManually(scheduler, "System");
+    }
+    
+    /**
+     * 手动执行调度器（带用户信息）
+     */
+    public void executeSchedulerManually(ReportScheduler scheduler, String currentUser) {
         try {
-            logger.info("Manually executing scheduler: {}", scheduler.getName());
-            executeReport(scheduler);
-            logger.info("Manual execution completed for scheduler: {}", scheduler.getName());
+            logger.info("Manually executing scheduler: {} by user: {}", scheduler.getName(), currentUser);
+            executeReport(scheduler, currentUser);
+            logger.info("Manual execution completed for scheduler: {} by user: {}", scheduler.getName(), currentUser);
         } catch (Exception e) {
-            logger.error("Error in manual execution for scheduler: {}", scheduler.getName(), e);
+            logger.error("Error in manual execution for scheduler: {} by user: {}", scheduler.getName(), currentUser, e);
             throw new RuntimeException("Failed to execute scheduler: " + e.getMessage(), e);
         }
     }
@@ -136,9 +143,9 @@ public class ReportScheduleExecutorService {
     }
     
     /**
-     * 执行报告生成和发送
+     * 执行报告生成和发送（带用户信息）
      */
-    private void executeReport(ReportScheduler scheduler) {
+    private void executeReport(ReportScheduler scheduler, String currentUser) {
         try {
             logger.info("Starting report execution for scheduler: {}", scheduler.getName());
             
@@ -196,7 +203,7 @@ public class ReportScheduleExecutorService {
                 now.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
             );
             
-            savePdfReport(scheduler, pdfContent, fileName);
+            savePdfReport(scheduler, pdfContent, fileName, currentUser);
             
             // 发送报告
             sendReportWithAttachment(scheduler, pdfContent, fileName);
@@ -298,9 +305,9 @@ public class ReportScheduleExecutorService {
     }
     
     /**
-     * 保存PDF报告到数据库和文件系统
+     * 保存PDF报告到数据库和文件系统（带用户信息）
      */
-    private Report savePdfReport(ReportScheduler scheduler, byte[] pdfContent, String fileName) throws Exception {
+    private Report savePdfReport(ReportScheduler scheduler, byte[] pdfContent, String fileName, String currentUser) throws Exception {
         // 确保存储目录存在
         java.nio.file.Path storageDir = java.nio.file.Paths.get(reportStoragePath);
         if (!java.nio.file.Files.exists(storageDir)) {
@@ -322,7 +329,7 @@ public class ReportScheduleExecutorService {
         report.setTemplateId(parseTemplateId(scheduler.getTemplate()));
         report.setFilePath(filePath);
         report.setTriggerMode("Scheduled");
-        report.setCreator("System Scheduler");
+        report.setCreator(currentUser);
         report.setCreatedAt(LocalDateTime.now());
         
         Report savedReport = reportService.save(report);

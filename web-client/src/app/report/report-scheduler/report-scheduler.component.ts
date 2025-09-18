@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReportSchedulerService } from '../../services/report-scheduler.service';
 import { TemplateService } from '../../services/template.service';
 import { NotificationSettingService } from '../../services/notification-setting.service';
+import { AuthService } from '../../services/auth/auth.service';
 import { environment } from '../../../environments/environment';
 import { TranslateService } from '@ngx-translate/core';
 import Swal from 'sweetalert2';
@@ -31,6 +32,7 @@ export class ReportSchedulerComponent implements OnInit {
         private reportSchedulerService: ReportSchedulerService,
         private templateService: TemplateService,
         private notificationSettingService: NotificationSettingService,
+        private authService: AuthService,
         private translate: TranslateService
     ) {
         this.initForm();
@@ -177,11 +179,12 @@ export class ReportSchedulerComponent implements OnInit {
                     this.executingIds.add(scheduler.id);
                     Swal.fire({
                         title: translations['Execute Scheduler'],
-                        html: '<div style="font-size:14px;opacity:.8">正在执行…</div>',
+                        html: `<div style="font-size:14px;opacity:.8">${this.translate.instant('Executing...')}</div>`,
                         allowOutsideClick: false,
                         didOpen: () => { Swal.showLoading(); }
                     });
-                    this.reportSchedulerService.executeScheduler(scheduler.id).subscribe({
+                    const currentUser = this.authService.getCurrentUser();
+                    this.reportSchedulerService.executeScheduler(scheduler.id, currentUser).subscribe({
                         next: (response: any) => {
                             console.log('Scheduler execution response:', response);
                             this.showMessage(translations['Scheduler executed successfully']);

@@ -76,15 +76,29 @@ public class ReportSchedulerController {
     
     @PostMapping(value = "/{id}/execute", produces = "application/json;charset=UTF-8")
     @Operation(summary = "手动执行调度器")
-    public ResponseEntity<String> executeScheduler(@PathVariable Long id) {
+    public ResponseEntity<String> executeScheduler(@PathVariable Long id, @RequestBody(required = false) java.util.Map<String, Object> request) {
         try {
             ReportScheduler scheduler = reportSchedulerService.findById(id);
             if (scheduler == null) {
                 return ResponseEntity.notFound().build();
             }
             
-            // 手动执行调度器
-            reportScheduleExecutorService.executeSchedulerManually(scheduler);
+            // 获取当前用户信息
+            String currentUser = "System"; // 默认值
+            if (request != null && request.containsKey("currentUser")) {
+                Object userObj = request.get("currentUser");
+                if (userObj instanceof java.util.Map) {
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String, Object> userMap = (java.util.Map<String, Object>) userObj;
+                    Object username = userMap.get("username");
+                    if (username != null) {
+                        currentUser = username.toString();
+                    }
+                }
+            }
+            
+            // 手动执行调度器，传入当前用户信息
+            reportScheduleExecutorService.executeSchedulerManually(scheduler, currentUser);
             return ResponseEntity.ok("调度器执行成功");
         } catch (Exception e) {
             logger.error("Error executing scheduler with ID: {}", id, e);

@@ -43,7 +43,8 @@ export class ReportSchedulerService {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
-    executeScheduler(id: number): Observable<any> {
-        return this.http.post(`${this.apiUrl}/${id}/execute`, {}, { responseType: 'text' });
+    executeScheduler(id: number, currentUser?: any): Observable<any> {
+        const body = currentUser ? { currentUser } : {};
+        return this.http.post(`${this.apiUrl}/${id}/execute`, body, { responseType: 'text' });
     }
 }
