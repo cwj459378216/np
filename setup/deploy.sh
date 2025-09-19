@@ -151,6 +151,7 @@ xpack.security.enabled: false
 xpack.security.enrollment.enabled: false
 xpack.security.http.ssl.enabled: false
 xpack.security.transport.ssl.enabled: false
+action.destructive_requires_name: false
 EOF
 
 sudo systemctl start elasticsearch
@@ -172,7 +173,7 @@ echo "Configuring Kibana..."
 # Create basic Kibana configuration
 sudo tee /etc/kibana/kibana.yml > /dev/null <<EOF
 server.port: 5601
-server.host: "localhost"
+server.host: "0.0.0.0"
 elasticsearch.hosts: ["http://localhost:9200"]
 EOF
 
