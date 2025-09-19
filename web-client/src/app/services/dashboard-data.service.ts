@@ -62,12 +62,14 @@ export interface SystemInfo {
     used: number; // 已使用内存 (GB)
     free: number; // 空闲内存 (GB)
   };
-  disk: {
+  disks: Array<{
+    name: string; // 磁盘名称
+    mountPoint: string; // 挂载点
     usage: number; // 磁盘使用率百分比
     total: number; // 总磁盘空间 (GB)
     used: number; // 已使用磁盘空间 (GB)
     free: number; // 空闲磁盘空间 (GB)
-  };
+  }>;
   network: {
     interfaces: NetworkInterface[];
   };

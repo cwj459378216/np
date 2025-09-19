@@ -1,6 +1,5 @@
 package com.example.web_service.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
@@ -9,7 +8,7 @@ import java.util.List;
 public class SystemInfoDto {
     private CpuInfo cpu;
     private MemoryInfo memory;
-    private DiskInfo disk;
+    private List<DiskInfo> disks; // 改为支持多个磁盘
     private NetworkInfo network;
     private SystemDetails system;
 
@@ -30,6 +29,8 @@ public class SystemInfoDto {
 
     @Data
     public static class DiskInfo {
+        private String name; // 磁盘名称或挂载点
+        private String mountPoint; // 挂载点
         private double usage;
         private double total;
         private double used;

@@ -12,12 +12,18 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 public class SystemInfoService {
+
+    public SystemInfoService() {
+        // 专门针对Ubuntu 24系统
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (!osName.contains("linux")) {
+            log.warn("当前系统不是Linux系统，可能会影响系统信息获取的准确性。当前系统: {}", osName);
+        }
+    }
 
     public SystemInfoDto getSystemInfo() {
         try {
@@ -30,7 +36,7 @@ public class SystemInfoService {
             dto.setMemory(getMemoryInfo());
             
             // 磁盘信息
-            dto.setDisk(getDiskInfo());
+            dto.setDisks(getDisksInfo());
             
             // 网络信息
             dto.setNetwork(getNetworkInfo());
@@ -49,38 +55,7 @@ public class SystemInfoService {
         SystemInfoDto.CpuInfo cpuInfo = new SystemInfoDto.CpuInfo();
         
         try {
-            // 获取CPU使用率 - 使用top命令
-            String cpuUsageStr = executeCommand("top -l 1 -n 0 | grep 'CPU usage'");
-            if (cpuUsageStr != null && !cpuUsageStr.isEmpty()) {
-                // 解析CPU使用率
-                Pattern pattern = Pattern.compile("(\\d+\\.\\d+)%\\s+user");
-                Matcher matcher = pattern.matcher(cpuUsageStr);
-                if (matcher.find()) {
-                    double usage = Double.parseDouble(matcher.group(1));
-                    cpuInfo.setUsage(Math.round(usage * 100.0) / 100.0);
-                } else {
-                    cpuInfo.setUsage(65.0); // 默认值
-                }
-            } else {
-                cpuInfo.setUsage(65.0); // 默认值
-            }
-            
-            // 获取CPU核心数
-            String coresStr = executeCommand("sysctl -n hw.ncpu");
-            if (coresStr != null && !coresStr.isEmpty()) {
-                cpuInfo.setCores(Integer.parseInt(coresStr.trim()));
-            } else {
-                cpuInfo.setCores(8); // 默认值
-            }
-            
-            // 获取CPU型号
-            String modelStr = executeCommand("sysctl -n machdep.cpu.brand_string");
-            if (modelStr != null && !modelStr.isEmpty()) {
-                cpuInfo.setModel(modelStr.trim());
-            } else {
-                cpuInfo.setModel("Unknown CPU");
-            }
-            
+            getCpuInfoLinux(cpuInfo);
         } catch (Exception e) {
             log.error("获取CPU信息失败", e);
             cpuInfo.setUsage(65.0);
@@ -91,41 +66,64 @@ public class SystemInfoService {
         return cpuInfo;
     }
 
+    private void getCpuInfoLinux(SystemInfoDto.CpuInfo cpuInfo) {
+        try {
+            // 获取CPU使用率 - 读取/proc/stat
+            String cpuStat = readFile("/proc/stat");
+            if (cpuStat != null) {
+                String[] lines = cpuStat.split("\\n");
+                if (lines.length > 0 && lines[0].startsWith("cpu ")) {
+                    String[] values = lines[0].split("\\s+");
+                    if (values.length >= 8) {
+                        long idle = Long.parseLong(values[4]);
+                        long total = 0;
+                        for (int i = 1; i < Math.min(values.length, 8); i++) {
+                            total += Long.parseLong(values[i]);
+                        }
+                        double usage = total > 0 ? ((total - idle) * 100.0) / total : 0;
+                        cpuInfo.setUsage(Math.round(usage * 100.0) / 100.0);
+                    }
+                }
+            }
+            
+            // 获取CPU核心数 - 读取/proc/cpuinfo
+            String cpuInfoStr = readFile("/proc/cpuinfo");
+            if (cpuInfoStr != null) {
+                String[] lines = cpuInfoStr.split("\\n");
+                int cores = 0;
+                String model = "Unknown CPU";
+                
+                for (String line : lines) {
+                    if (line.startsWith("processor")) {
+                        cores++;
+                    } else if (line.startsWith("model name") && model.equals("Unknown CPU")) {
+                        String[] parts = line.split(":");
+                        if (parts.length > 1) {
+                            model = parts[1].trim();
+                        }
+                    }
+                }
+                
+                cpuInfo.setCores(cores > 0 ? cores : 8);
+                cpuInfo.setModel(model);
+            }
+            
+            if (cpuInfo.getUsage() == 0.0) {
+                cpuInfo.setUsage(65.0);
+            }
+        } catch (Exception e) {
+            log.error("获取Linux CPU信息失败", e);
+            cpuInfo.setUsage(65.0);
+            cpuInfo.setCores(8);
+            cpuInfo.setModel("Unknown CPU");
+        }
+    }
+
     private SystemInfoDto.MemoryInfo getMemoryInfo() {
         SystemInfoDto.MemoryInfo memoryInfo = new SystemInfoDto.MemoryInfo();
         
         try {
-            // 获取内存信息 - 使用vm_stat命令
-            String memStats = executeCommand("vm_stat");
-            if (memStats != null && !memStats.isEmpty()) {
-                // 解析内存统计信息
-                long pageSize = 4096; // macOS页面大小通常是4KB
-                
-                // 提取各种页面数量
-                long freePages = extractPages(memStats, "Pages free:");
-                long activePages = extractPages(memStats, "Pages active:");
-                long inactivePages = extractPages(memStats, "Pages inactive:");
-                long wiredPages = extractPages(memStats, "Pages wired down:");
-                
-                long totalPages = freePages + activePages + inactivePages + wiredPages;
-                long usedPages = activePages + inactivePages + wiredPages;
-                
-                double totalGB = (totalPages * pageSize) / (1024.0 * 1024.0 * 1024.0);
-                double usedGB = (usedPages * pageSize) / (1024.0 * 1024.0 * 1024.0);
-                double freeGB = (freePages * pageSize) / (1024.0 * 1024.0 * 1024.0);
-                double usage = totalPages > 0 ? (usedPages * 100.0) / totalPages : 0;
-                
-                memoryInfo.setTotal(Math.round(totalGB * 100.0) / 100.0);
-                memoryInfo.setUsed(Math.round(usedGB * 100.0) / 100.0);
-                memoryInfo.setFree(Math.round(freeGB * 100.0) / 100.0);
-                memoryInfo.setUsage(Math.round(usage * 100.0) / 100.0);
-            } else {
-                // 默认值
-                memoryInfo.setTotal(16.0);
-                memoryInfo.setUsed(6.4);
-                memoryInfo.setFree(9.6);
-                memoryInfo.setUsage(40.0);
-            }
+            getMemoryInfoLinux(memoryInfo);
         } catch (Exception e) {
             log.error("获取内存信息失败", e);
             memoryInfo.setTotal(16.0);
@@ -137,49 +135,140 @@ public class SystemInfoService {
         return memoryInfo;
     }
 
-    private SystemInfoDto.DiskInfo getDiskInfo() {
+    private void getMemoryInfoLinux(SystemInfoDto.MemoryInfo memoryInfo) {
+        try {
+            // 读取/proc/meminfo
+            String memInfo = readFile("/proc/meminfo");
+            if (memInfo != null) {
+                String[] lines = memInfo.split("\\n");
+                long totalKB = 0, freeKB = 0, availableKB = 0, buffersKB = 0, cachedKB = 0;
+                
+                for (String line : lines) {
+                    if (line.startsWith("MemTotal:")) {
+                        totalKB = extractMemoryValue(line);
+                    } else if (line.startsWith("MemFree:")) {
+                        freeKB = extractMemoryValue(line);
+                    } else if (line.startsWith("MemAvailable:")) {
+                        availableKB = extractMemoryValue(line);
+                    } else if (line.startsWith("Buffers:")) {
+                        buffersKB = extractMemoryValue(line);
+                    } else if (line.startsWith("Cached:")) {
+                        cachedKB = extractMemoryValue(line);
+                    }
+                }
+                
+                double totalGB = totalKB / (1024.0 * 1024.0);
+                double availableGB = availableKB > 0 ? availableKB / (1024.0 * 1024.0) : 
+                    (freeKB + buffersKB + cachedKB) / (1024.0 * 1024.0);
+                double usedGB = totalGB - availableGB;
+                double usage = totalGB > 0 ? (usedGB * 100.0) / totalGB : 0;
+                
+                memoryInfo.setTotal(Math.round(totalGB * 100.0) / 100.0);
+                memoryInfo.setUsed(Math.round(usedGB * 100.0) / 100.0);
+                memoryInfo.setFree(Math.round(availableGB * 100.0) / 100.0);
+                memoryInfo.setUsage(Math.round(usage * 100.0) / 100.0);
+            }
+        } catch (Exception e) {
+            log.error("获取Linux内存信息失败", e);
+            memoryInfo.setTotal(16.0);
+            memoryInfo.setUsed(6.4);
+            memoryInfo.setFree(9.6);
+            memoryInfo.setUsage(40.0);
+        }
+    }
+
+    private List<SystemInfoDto.DiskInfo> getDisksInfo() {
+        List<SystemInfoDto.DiskInfo> disksList = new ArrayList<>();
+        
+        // 定义需要监控的挂载点
+        String[] mountPoints = {"/", "/datastore/pcap/upload", "/datastore/pcap/capture"};
+        String[] diskNames = {"OS", "Upload", "Capture"};
+        
+        for (int i = 0; i < mountPoints.length; i++) {
+            SystemInfoDto.DiskInfo diskInfo = getDiskInfoForMountPoint(mountPoints[i], diskNames[i]);
+            disksList.add(diskInfo);
+        }
+        
+        return disksList;
+    }
+
+    private SystemInfoDto.DiskInfo getDiskInfoForMountPoint(String mountPoint, String diskName) {
         SystemInfoDto.DiskInfo diskInfo = new SystemInfoDto.DiskInfo();
+        diskInfo.setName(diskName);
+        diskInfo.setMountPoint(mountPoint);
         
         try {
             // 获取磁盘信息 - 使用df命令
-            String diskStats = executeCommand("df -h /");
+            String diskStats = executeCommand("df -h " + mountPoint);
             if (diskStats != null && !diskStats.isEmpty()) {
                 String[] lines = diskStats.split("\\n");
                 if (lines.length > 1) {
-                    String[] parts = lines[1].trim().split("\\s+");
-                    if (parts.length >= 5) {
-                        String totalStr = parts[1].replace("Gi", "").replace("G", "");
-                        String usedStr = parts[2].replace("Gi", "").replace("G", "");
-                        String availStr = parts[3].replace("Gi", "").replace("G", "");
-                        String usageStr = parts[4].replace("%", "");
-                        
-                        double total = Double.parseDouble(totalStr);
-                        double used = Double.parseDouble(usedStr);
-                        double free = Double.parseDouble(availStr);
-                        double usage = Double.parseDouble(usageStr);
-                        
-                        diskInfo.setTotal(Math.round(total * 100.0) / 100.0);
-                        diskInfo.setUsed(Math.round(used * 100.0) / 100.0);
-                        diskInfo.setFree(Math.round(free * 100.0) / 100.0);
-                        diskInfo.setUsage(Math.round(usage * 100.0) / 100.0);
+                    // 有时df命令输出可能跨行，需要处理
+                    String dataLine = lines[1];
+                    if (lines.length > 2 && !dataLine.contains("%")) {
+                        // 如果第二行不包含百分号，说明数据跨行了
+                        dataLine = dataLine + " " + lines[2];
                     }
+                    
+                    String[] parts = dataLine.trim().split("\\s+");
+                    if (parts.length >= 5) {
+                        try {
+                            double total = parseSize(parts[1]);
+                            double used = parseSize(parts[2]);
+                            double free = parseSize(parts[3]);
+                            double usage = Double.parseDouble(parts[4].replace("%", ""));
+                            
+                            diskInfo.setTotal(Math.round(total * 100.0) / 100.0);
+                            diskInfo.setUsed(Math.round(used * 100.0) / 100.0);
+                            diskInfo.setFree(Math.round(free * 100.0) / 100.0);
+                            diskInfo.setUsage(Math.round(usage * 100.0) / 100.0);
+                        } catch (NumberFormatException e) {
+                            log.warn("解析磁盘大小失败，使用默认值: " + mountPoint, e);
+                            setDefaultDiskInfo(diskInfo);
+                        }
+                    } else {
+                        setDefaultDiskInfo(diskInfo);
+                    }
+                } else {
+                    setDefaultDiskInfo(diskInfo);
                 }
             } else {
-                // 默认值
-                diskInfo.setTotal(500.0);
-                diskInfo.setUsed(125.0);
-                diskInfo.setFree(375.0);
-                diskInfo.setUsage(25.0);
+                setDefaultDiskInfo(diskInfo);
             }
         } catch (Exception e) {
-            log.error("获取磁盘信息失败", e);
-            diskInfo.setTotal(500.0);
-            diskInfo.setUsed(125.0);
-            diskInfo.setFree(375.0);
-            diskInfo.setUsage(25.0);
+            log.error("获取磁盘信息失败: " + mountPoint, e);
+            setDefaultDiskInfo(diskInfo);
         }
         
         return diskInfo;
+    }
+
+    private void setDefaultDiskInfo(SystemInfoDto.DiskInfo diskInfo) {
+        diskInfo.setTotal(500.0);
+        diskInfo.setUsed(125.0);
+        diskInfo.setFree(375.0);
+        diskInfo.setUsage(25.0);
+    }
+
+    private double parseSize(String sizeStr) {
+        if (sizeStr == null || sizeStr.isEmpty()) {
+            return 0.0;
+        }
+        
+        String numStr = sizeStr.replaceAll("[^0-9.]", "");
+        double size = Double.parseDouble(numStr);
+        
+        if (sizeStr.contains("T") || sizeStr.contains("t")) {
+            return size * 1024; // TB to GB
+        } else if (sizeStr.contains("G") || sizeStr.contains("g")) {
+            return size; // GB
+        } else if (sizeStr.contains("M") || sizeStr.contains("m")) {
+            return size / 1024; // MB to GB
+        } else if (sizeStr.contains("K") || sizeStr.contains("k")) {
+            return size / (1024 * 1024); // KB to GB
+        } else {
+            return size / (1024 * 1024 * 1024); // Bytes to GB
+        }
     }
 
     private SystemInfoDto.NetworkInfo getNetworkInfo() {
@@ -238,16 +327,22 @@ public class SystemInfoService {
         systemDetails.setPlatform(System.getProperty("os.name"));
         systemDetails.setRelease(System.getProperty("os.version"));
         
-        // 获取系统运行时间
+        // 获取系统运行时间 - 读取/proc/uptime
         try {
-            String uptimeStr = executeCommand("uptime");
-            if (uptimeStr != null && uptimeStr.contains("up")) {
-                // 简化：设置默认运行时间
-                systemDetails.setUptime(86400); // 1天的秒数
+            String uptimeStr = readFile("/proc/uptime");
+            if (uptimeStr != null && !uptimeStr.isEmpty()) {
+                String[] parts = uptimeStr.split("\\s+");
+                if (parts.length > 0) {
+                    double uptimeSeconds = Double.parseDouble(parts[0]);
+                    systemDetails.setUptime((long) uptimeSeconds);
+                } else {
+                    systemDetails.setUptime(86400);
+                }
             } else {
                 systemDetails.setUptime(86400);
             }
         } catch (Exception e) {
+            log.error("获取系统运行时间失败", e);
             systemDetails.setUptime(86400);
         }
         
@@ -256,7 +351,14 @@ public class SystemInfoService {
 
     private String executeCommand(String command) {
         try {
-            Process process = Runtime.getRuntime().exec(command);
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                processBuilder.command("cmd.exe", "/c", command);
+            } else {
+                processBuilder.command("sh", "-c", command);
+            }
+            
+            Process process = processBuilder.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             StringBuilder output = new StringBuilder();
             String line;
@@ -273,19 +375,23 @@ public class SystemInfoService {
         }
     }
 
-    private long extractPages(String vmStat, String key) {
+    private String readFile(String filePath) {
         try {
-            String[] lines = vmStat.split("\\n");
-            for (String line : lines) {
-                if (line.contains(key)) {
-                    String[] parts = line.split("\\s+");
-                    if (parts.length >= 3) {
-                        return Long.parseLong(parts[2].replace(".", ""));
-                    }
-                }
+            return java.nio.file.Files.readString(java.nio.file.Paths.get(filePath));
+        } catch (Exception e) {
+            log.error("读取文件失败: " + filePath, e);
+            return null;
+        }
+    }
+
+    private long extractMemoryValue(String line) {
+        try {
+            String[] parts = line.split("\\s+");
+            if (parts.length >= 2) {
+                return Long.parseLong(parts[1]);
             }
         } catch (Exception e) {
-            log.error("解析页面数失败: " + key, e);
+            log.error("解析内存值失败: " + line, e);
         }
         return 0;
     }
@@ -309,12 +415,36 @@ public class SystemInfoService {
         dto.setMemory(memory);
         
         // 设置默认磁盘信息
-        SystemInfoDto.DiskInfo disk = new SystemInfoDto.DiskInfo();
-        disk.setUsage(25.0);
-        disk.setTotal(500.0);
-        disk.setUsed(125.0);
-        disk.setFree(375.0);
-        dto.setDisk(disk);
+        List<SystemInfoDto.DiskInfo> disks = new ArrayList<>();
+        
+        SystemInfoDto.DiskInfo osDisk = new SystemInfoDto.DiskInfo();
+        osDisk.setName("OS");
+        osDisk.setMountPoint("/");
+        osDisk.setUsage(25.0);
+        osDisk.setTotal(500.0);
+        osDisk.setUsed(125.0);
+        osDisk.setFree(375.0);
+        disks.add(osDisk);
+        
+        SystemInfoDto.DiskInfo uploadDisk = new SystemInfoDto.DiskInfo();
+        uploadDisk.setName("Upload");
+        uploadDisk.setMountPoint("/datastore/pcap/upload");
+        uploadDisk.setUsage(15.0);
+        uploadDisk.setTotal(1000.0);
+        uploadDisk.setUsed(150.0);
+        uploadDisk.setFree(850.0);
+        disks.add(uploadDisk);
+        
+        SystemInfoDto.DiskInfo captureDisk = new SystemInfoDto.DiskInfo();
+        captureDisk.setName("Capture");
+        captureDisk.setMountPoint("/datastore/pcap/capture");
+        captureDisk.setUsage(20.0);
+        captureDisk.setTotal(2000.0);
+        captureDisk.setUsed(400.0);
+        captureDisk.setFree(1600.0);
+        disks.add(captureDisk);
+        
+        dto.setDisks(disks);
         
         // 设置默认网络信息
         SystemInfoDto.NetworkInfo network = new SystemInfoDto.NetworkInfo();

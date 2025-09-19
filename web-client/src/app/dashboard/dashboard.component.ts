@@ -40,7 +40,32 @@ export class DashboardComponent implements OnInit, OnDestroy {
   systemInfo: SystemInfo | null = null;
   cpuUsage: number = 0;
   memoryUsage: number = 0;
-  diskUsage: number = 0;
+  diskInfos: Array<{name: string, mountPoint: string, usage: number, total: number, used: number, free: number}> = [];
+
+  // 颜色计算方法
+  getUsageColor(usage: number): string {
+    if (usage <= 30) {
+      return '#10b981'; // 绿色
+    } else if (usage <= 60) {
+      return '#f59e0b'; // 黄色
+    } else if (usage <= 80) {
+      return '#f97316'; // 橙色
+    } else {
+      return '#ef4444'; // 红色
+    }
+  }
+
+  getUsageGradient(usage: number): string {
+    if (usage <= 30) {
+      return 'from-[#10b981] to-[#34d399]'; // 绿色渐变
+    } else if (usage <= 60) {
+      return 'from-[#f59e0b] to-[#fbbf24]'; // 黄色渐变
+    } else if (usage <= 80) {
+      return 'from-[#f97316] to-[#fb923c]'; // 橙色渐变
+    } else {
+      return 'from-[#ef4444] to-[#f87171]'; // 红色渐变
+    }
+  }
 
   // ServiceName聚合数据属性
   serviceNameData: ServiceNameAggregationResponse | null = null;
@@ -305,14 +330,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.systemInfo = data;
           this.cpuUsage = data.cpu.usage;
           this.memoryUsage = data.memory.usage;
-          this.diskUsage = data.disk.usage;
+          this.diskInfos = data.disks || [];
         },
         error: (error) => {
           console.error('Error loading system info:', error);
           // 设置默认值
           this.cpuUsage = 65;
           this.memoryUsage = 40;
-          this.diskUsage = 25;
+          this.diskInfos = [
+            { name: 'OS', mountPoint: '/', usage: 25, total: 500, used: 125, free: 375 },
+            { name: 'Upload', mountPoint: '/datastore/pcap/upload', usage: 15, total: 1000, used: 150, free: 850 },
+            { name: 'Capture', mountPoint: '/datastore/pcap/capture', usage: 20, total: 2000, used: 400, free: 1600 }
+          ];
         }
       });
   }

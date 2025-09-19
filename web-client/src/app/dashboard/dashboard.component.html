@@ -25,7 +25,9 @@
               </div>
               <div>
                 <div class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
-                  <div class="relative h-full w-full rounded-full bg-gradient-to-r from-[#1b55e2] to-[#17c1e8] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5" [style.width.%]="cpuUsage"></div>
+                  <div class="relative h-full w-full rounded-full before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
+                       [style.width.%]="cpuUsage"
+                       [style.background]="'linear-gradient(to right, ' + getUsageColor(cpuUsage) + ', ' + getUsageColor(cpuUsage) + '80)'"></div>
                 </div>
               </div>
             </div>
@@ -44,13 +46,15 @@
               </div>
               <div>
                 <div class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
-                  <div class="relative h-full w-full rounded-full bg-gradient-to-r from-[#e7515a] to-[#f7b731] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5" [style.width.%]="memoryUsage"></div>
+                  <div class="relative h-full w-full rounded-full before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
+                       [style.width.%]="memoryUsage"
+                       [style.background]="'linear-gradient(to right, ' + getUsageColor(memoryUsage) + ', ' + getUsageColor(memoryUsage) + '80)'"></div>
                 </div>
               </div>
             </div>
           </div>
-          <!-- Disk -->
-          <div class="flex items-center">
+          <!-- Disks -->
+          <div *ngFor="let disk of diskInfos" class="flex items-center">
             <div class="h-9 w-9">
               <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10 text-warning dark:bg-warning dark:text-white-light">
                 <icon-globe class="h-5 w-5" />
@@ -58,12 +62,15 @@
             </div>
             <div class="w-full flex-initial px-3">
               <div class="w-summary-info mb-1 flex justify-between font-semibold text-white-dark">
-                <h6>{{ 'Disk' | translate }}</h6>
-                <p class="text-xs ltr:ml-auto rtl:mr-auto">{{ diskUsage | number:'1.0-0' }}%</p>
+                <h6>{{ disk.name }} {{ 'Disk' | translate }}</h6>
+                <p class="text-xs ltr:ml-auto rtl:mr-auto">{{ disk.usage | number:'1.0-0' }}%</p>
               </div>
+              <div class="text-xs text-gray-500 mb-1">{{ disk.mountPoint }}</div>
               <div>
                 <div class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
-                  <div class="relative h-full w-full rounded-full bg-gradient-to-r from-[#fe5f75] to-[#fc9842] before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5" [style.width.%]="diskUsage"></div>
+                  <div class="relative h-full w-full rounded-full before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
+                       [style.width.%]="disk.usage"
+                       [style.background]="'linear-gradient(to right, ' + getUsageColor(disk.usage) + ', ' + getUsageColor(disk.usage) + '80)'"></div>
                 </div>
               </div>
             </div>
