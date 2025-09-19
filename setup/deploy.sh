@@ -195,6 +195,7 @@ sudo systemctl restart np-web-service.service || sudo systemctl start np-web-ser
 NGINX_SITE="/etc/nginx/sites-available/np"
 NGINX_CONTENT="server {
     listen 8000;
+    client_max_body_size 4096M;
     server_name ${SERVER_NAME};
     root ${WWW_DIR};
     index index.html;

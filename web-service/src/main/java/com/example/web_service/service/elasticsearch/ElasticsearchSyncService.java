@@ -466,12 +466,35 @@ public class ElasticsearchSyncService {
             return Set.of();
         }
 
-        var longTerms = ports.lterms();
-        var buckets = longTerms.buckets().array();
-        
-        Set<Integer> portSet = buckets.stream()
-                .map(bucket -> (int) bucket.key())
-                .collect(Collectors.toSet());
+        // 检查聚合结果的类型，支持 Long 和 String 类型
+        Set<Integer> portSet = new java.util.HashSet<>();
+        try {
+            // 尝试作为 Long terms 处理
+            var longTerms = ports.lterms();
+            var buckets = longTerms.buckets().array();
+            portSet = buckets.stream()
+                    .map(bucket -> (int) bucket.key())
+                    .collect(Collectors.toSet());
+        } catch (IllegalStateException e) {
+            try {
+                // 如果失败，尝试作为 String terms 处理
+                var stringTerms = ports.sterms();
+                var buckets = stringTerms.buckets().array();
+                portSet = buckets.stream()
+                    .map(bucket -> {
+                        try {
+                            return Integer.parseInt(bucket.key().stringValue());
+                        } catch (NumberFormatException ex) {
+                            return 0; // 无法解析的端口号，返回0作为默认值
+                        }
+                    })
+                    .filter(port -> port > 0) // 过滤掉无效的端口号
+                    .collect(Collectors.toSet());
+            } catch (IllegalStateException e2) {
+                // 如果两种类型都不匹配，返回空集合
+                return Set.of();
+            }
+        }
         
         return portSet;
     }
@@ -511,8 +534,33 @@ public class ElasticsearchSyncService {
         if (response.aggregations() == null) return Set.of();
         var ports = response.aggregations().get("ports");
         if (ports == null) return Set.of();
-        var buckets = ports.lterms().buckets().array();
-        return buckets.stream().map(b -> (int)b.key()).collect(Collectors.toSet());
+        
+        // 检查聚合结果的类型，支持 Long 和 String 类型
+        Set<Integer> portSet = new java.util.HashSet<>();
+        try {
+            // 尝试作为 Long terms 处理
+            var buckets = ports.lterms().buckets().array();
+            portSet = buckets.stream().map(b -> (int)b.key()).collect(Collectors.toSet());
+        } catch (IllegalStateException e) {
+            try {
+                // 如果失败，尝试作为 String terms 处理
+                var buckets = ports.sterms().buckets().array();
+                portSet = buckets.stream()
+                    .map(b -> {
+                        try {
+                            return Integer.parseInt(b.key().stringValue());
+                        } catch (NumberFormatException ex) {
+                            return 0; // 无法解析的端口号，返回0作为默认值
+                        }
+                    })
+                    .filter(port -> port > 0) // 过滤掉无效的端口号
+                    .collect(Collectors.toSet());
+            } catch (IllegalStateException e2) {
+                // 如果两种类型都不匹配，返回空集合
+                return Set.of();
+            }
+        }
+        return portSet;
     }
 
     @SuppressWarnings("unused")
@@ -1880,16 +1928,17 @@ public class ElasticsearchSyncService {
 
         var resp = esClient.search(srb.build(), Void.class);
         var sevAgg = resp.aggregations().get("by_sev");
-        if (sevAgg == null || sevAgg.lterms() == null || sevAgg.lterms().buckets() == null) {
-            return Map.of("total", 0, "data", List.of());
-        }
-        var sevBuckets = sevAgg.lterms().buckets().array();
-        java.util.List<Map<String, Object>> rows = new java.util.ArrayList<>();
-        // 固定 severity 顺序 1 -> 2 -> 3
-        int[] sevOrder = new int[] {1, 2, 3};
-        for (int sevWanted : sevOrder) {
-            // 找到对应 severity 的 bucket
-            var optBucket = sevBuckets.stream().filter(b -> (int)b.key() == sevWanted).findFirst();
+        try {
+            if (sevAgg == null || sevAgg.lterms() == null || sevAgg.lterms().buckets() == null) {
+                return Map.of("total", 0, "data", List.of());
+            }
+            var sevBuckets = sevAgg.lterms().buckets().array();
+            java.util.List<Map<String, Object>> rows = new java.util.ArrayList<>();
+            // 固定 severity 顺序 1 -> 2 -> 3
+            int[] sevOrder = new int[] {1, 2, 3};
+            for (int sevWanted : sevOrder) {
+                // 找到对应 severity 的 bucket
+                var optBucket = sevBuckets.stream().filter(b -> (int)b.key() == sevWanted).findFirst();
             if (optBucket.isEmpty()) continue;
             var bSev = optBucket.get();
             var bySrc = bSev.aggregations() != null ? bSev.aggregations().get("by_src") : null;
@@ -1944,6 +1993,11 @@ public class ElasticsearchSyncService {
             "total", rows.size(),
             "data", rows
         );
+        } catch (IllegalStateException e) {
+            // 如果 lterms() 失败，说明字段类型不匹配，返回空结果
+            log.warn("Failed to process severity aggregation as Long terms: {}", e.getMessage());
+            return Map.of("total", 0, "data", List.of());
+        }
     }
 
     /**
@@ -1976,11 +2030,12 @@ public class ElasticsearchSyncService {
             resp = esClient.search(req2, Void.class);
         }
     var sevAgg = resp.aggregations().get("by_sev");
-        if (sevAgg == null || sevAgg.lterms() == null || sevAgg.lterms().buckets() == null) {
-            return Map.of("total", 0, "data", java.util.List.of());
-        }
+        try {
+            if (sevAgg == null || sevAgg.lterms() == null || sevAgg.lterms().buckets() == null) {
+                return Map.of("total", 0, "data", java.util.List.of());
+            }
 
-        var sevBuckets = sevAgg.lterms().buckets().array();
+            var sevBuckets = sevAgg.lterms().buckets().array();
         java.util.List<Map<String, Object>> rows = new java.util.ArrayList<>();
         int[] sevOrder = new int[]{1, 2, 3};
         for (int sevWanted : sevOrder) {
@@ -2039,6 +2094,11 @@ public class ElasticsearchSyncService {
             "total", rows.size(),
             "data", rows
         );
+        } catch (IllegalStateException e) {
+            // 如果 lterms() 失败，说明字段类型不匹配，返回空结果
+            log.warn("Failed to process severity aggregation as Long terms: {}", e.getMessage());
+            return Map.of("total", 0, "data", java.util.List.of());
+        }
     }
 
     // 根据是否使用 keyword 字段构建告警聚合请求

@@ -662,7 +662,7 @@ export class CollectorComponent implements OnInit {
       this.showMessage('Selected file is empty', 'error');
       return;
     }
-    const target = '/datastore/admin/pcap';
+    const target = '/datastore/pcap/upload';
     this.collectorService.uploadPcap(this.selectedFile, target).subscribe({
       next: (resp) => {
         this.params.patchValue({ filePath: resp.path });

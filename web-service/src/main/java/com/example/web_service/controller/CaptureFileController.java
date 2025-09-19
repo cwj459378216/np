@@ -42,7 +42,7 @@ public class CaptureFileController {
     // 目标目录，按需求也可以迁移到配置文件
     private static final String BASE_DIR = "/datastore/pcap/capture/";
     // 上传文件的默认目录（用于 File 适配器手动上传）
-    private static final String DEFAULT_UPLOAD_DIR = "/datastore/admin/pcap";
+    private static final String DEFAULT_UPLOAD_DIR = "/datastore/pcap/upload/";
 
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_INSTANT;
 
