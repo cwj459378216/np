@@ -1,4 +1,7 @@
 
+-- 设置postgres用户密码
+ALTER USER postgres PASSWORD 'postgres';
+
 -- 创建日志表
 CREATE TABLE system_logs (
     id SERIAL PRIMARY KEY,
@@ -64,6 +67,54 @@ CREATE TABLE users (
     created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );
 
+
+-- 插入一些测试数据
+INSERT INTO roles (name, description, permissions) VALUES
+(
+    'Administrator', 
+    'Full system access', 
+    '{
+        "dashboard": {"readWrite": true, "readOnly": false},
+        "collector": {
+            "readWrite": true,
+            "readOnly": false,
+            "children": {
+                "collectorAnalyzer": {"readWrite": true, "readOnly": false},
+                "filter": {"readWrite": true, "readOnly": false}
+            }
+        },
+        "eventAlarm": {
+            "readWrite": true,
+            "readOnly": false,
+            "children": {
+                "event": {"readWrite": true, "readOnly": false},
+                "alarmSettings": {"readWrite": true, "readOnly": false}
+            }
+        }
+    }'
+),
+(
+    'Operator',
+    'Basic operation permissions',
+    '{
+        "dashboard": {"readWrite": false, "readOnly": true},
+        "collector": {
+            "readWrite": false,
+            "readOnly": true,
+            "children": {
+                "collectorAnalyzer": {"readWrite": false, "readOnly": true},
+                "filter": {"readWrite": false, "readOnly": true}
+            }
+        }
+    }'
+);
+
+-- 插入一些测试数据
+INSERT INTO users (username, password, email, role_id, description, status) VALUES
+('admin', '$2a$10$46rdxR82sJ7yy1X0kWRaquxwNdwQVu30VmwqSx2VQy006GqbUPb0S', 'admin@example.com', 
+ (SELECT id FROM roles WHERE name = 'Administrator'), 'System administrator', true),
+('operator', '$2a$10$BqWZyqrZ0Kg3pxqL0q.RXOyYzXbWFM3U8AFZZ6mJywX5/pXNL4rMi', 'operator@example.com', 
+ (SELECT id FROM roles WHERE name = 'Operator'), 'System operator', true); 
 -- 创建模板表
 CREATE TABLE IF NOT EXISTS templates (
     id SERIAL PRIMARY KEY,

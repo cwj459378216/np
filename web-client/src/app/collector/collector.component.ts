@@ -106,7 +106,7 @@ export class CollectorComponent implements OnInit {
   private statusPollingMap = new Map<number, any>(); // 存储轮询定时器
   // 文件列表相关
   captureFiles: CaptureFileItem[] = [];
-  readonly captureBasePath = '/datastore/neteyez/datastore/pcap/capture/';
+  readonly captureBasePath = '/datastore/pcap/capture/';
   constructor(
     private http: HttpClient,
     public fb: FormBuilder,
@@ -150,7 +150,7 @@ export class CollectorComponent implements OnInit {
     this.displayType = 'list';
     // 重置搜索输入框内容
     this.searchUser = '';
-    
+
     if (this.tab2.toLowerCase() === 'profile') {
       this.loadCaptureFiles();
     } else if (this.tab2.toLowerCase() === 'home') {
