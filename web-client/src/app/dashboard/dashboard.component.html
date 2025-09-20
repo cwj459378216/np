@@ -54,7 +54,7 @@
             </div>
           </div>
           <!-- Disks -->
-          <div *ngFor="let disk of diskInfos" class="flex items-center">
+          <div class="flex items-center">
             <div class="h-9 w-9">
               <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10 text-warning dark:bg-warning dark:text-white-light">
                 <icon-globe class="h-5 w-5" />
@@ -62,15 +62,19 @@
             </div>
             <div class="w-full flex-initial px-3">
               <div class="w-summary-info mb-1 flex justify-between font-semibold text-white-dark">
-                <h6>{{ disk.name }} {{ 'Disk' | translate }}</h6>
-                <p class="text-xs ltr:ml-auto rtl:mr-auto">{{ disk.usage | number:'1.0-0' }}%</p>
+                <h6>{{ 'Disk Usage' | translate }}</h6>
               </div>
-              <div class="text-xs text-gray-500 mb-1">{{ disk.mountPoint }}</div>
-              <div>
-                <div class="h-5 w-full overflow-hidden rounded-full bg-dark-light p-1 shadow-3xl dark:bg-dark-light/10 dark:shadow-none">
-                  <div class="relative h-full w-full rounded-full before:absolute before:inset-y-0 before:m-auto before:h-2 before:w-2 before:rounded-full before:bg-white ltr:before:right-0.5 rtl:before:left-0.5"
-                       [style.width.%]="disk.usage"
-                       [style.background]="'linear-gradient(to right, ' + getUsageColor(disk.usage) + ', ' + getUsageColor(disk.usage) + '80)'"></div>
+              <div class="space-y-2">
+                <div *ngFor="let disk of diskInfos" class="flex items-center">
+                  <div class="w-16 text-xs text-gray-600 dark:text-gray-300 flex-shrink-0">{{ disk.name }}</div>
+                  <div class="flex-1 mx-3">
+                    <div class="h-2 w-full overflow-hidden rounded-full bg-dark-light/50 dark:bg-dark-light/20">
+                      <div class="h-full rounded-full"
+                           [style.width.%]="disk.usage"
+                           [style.background]="'linear-gradient(to right, ' + getUsageColor(disk.usage) + ', ' + getUsageColor(disk.usage) + '80)'"></div>
+                    </div>
+                  </div>
+                  <div class="w-10 text-xs text-gray-600 dark:text-gray-300 text-right flex-shrink-0">{{ disk.usage | number:'1.0-0' }}%</div>
                 </div>
               </div>
             </div>
