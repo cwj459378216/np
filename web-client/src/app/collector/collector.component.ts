@@ -775,7 +775,7 @@ export class CollectorComponent implements OnInit {
     });
 
     // 计算首末时间 -> 计算 interval -> 传给 ES 的 date_histogram
-    this.collectorService.getEsTimeRangeByFilePath(sessionId, 'octopusx-data-*').subscribe({
+    this.collectorService.getEsTimeRangeByFilePath(sessionId, '*').subscribe({
       next: (range) => {
         if (!range || !range.hasData || !range.firstTimestamp || !range.lastTimestamp) {
           // 回退到旧逻辑（直接20点原始数据）

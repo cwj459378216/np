@@ -224,9 +224,9 @@ public class ElasticsearchController {
             @RequestParam String filePath,
             @RequestParam(defaultValue = "*") String index
     ) throws IOException {
-        // 统一输出格式为: yyyy-MM-dd'T'HH:mm:ss （UTC，无小数，无时区后缀）
+        // 统一输出格式为: yyyy-MM-dd'T'HH:mm:ss.SSS （UTC，包含毫秒，无时区后缀）
         final java.time.format.DateTimeFormatter targetFormatter =
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
                 .withZone(java.time.ZoneOffset.UTC);
 
         // 将不同格式的时间戳（ISO字符串/epoch毫秒/epoch秒(含小数)）统一到上述格式
@@ -237,9 +237,29 @@ public class ElasticsearchController {
             try {
                 if (value instanceof String) {
                     String text = ((String) value).trim();
-                    // 先尝试按ISO-8601解析
+                    // 先尝试按ISO-8601解析（支持微秒格式）
                     try {
-                        java.time.Instant instant = java.time.Instant.parse(text);
+                        java.time.Instant instant;
+                        // 处理可能包含微秒的时间戳格式（如 2025-07-14T01:10:39.377460）
+                        if (text.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}")) {
+                            // 微秒格式，需要转换为纳秒
+                            instant = java.time.LocalDateTime.parse(text, 
+                                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"))
+                                .atZone(java.time.ZoneOffset.UTC).toInstant();
+                        } else if (text.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}")) {
+                            // 毫秒格式
+                            instant = java.time.LocalDateTime.parse(text, 
+                                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"))
+                                .atZone(java.time.ZoneOffset.UTC).toInstant();
+                        } else if (text.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}")) {
+                            // 秒格式
+                            instant = java.time.LocalDateTime.parse(text, 
+                                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+                                .atZone(java.time.ZoneOffset.UTC).toInstant();
+                        } else {
+                            // 标准ISO格式
+                            instant = java.time.Instant.parse(text);
+                        }
                         return targetFormatter.format(instant);
                     } catch (Exception ignore) { /* fallback to numeric parsing */ }
 
@@ -288,47 +308,66 @@ public class ElasticsearchController {
         Query termPlain = Query.of(q -> q.term(t -> t.field("filePath").value(v -> v.stringValue(filePath))));
         Query matchPlain = Query.of(q -> q.match(m -> m.field("filePath").query(filePath)));
 
-    // 下面需要在 lambda 中赋值, 变量需保持 effectively final, 使用单元素数组承载引用
-    // 使用简单 Holder 避免泛型数组的 unchecked 警告
-    class Holder<T> { T v; }
-    final Holder<Query> selectedQueryRef = new Holder<>();
-    final Holder<SearchResponse<JsonData>> firstResponseRef = new Holder<>();
-    SearchResponse<JsonData> lastResponse = null; // 不在 lambda 内部重新赋值
-    String queryMode = null; // 仅用于调试输出，可帮助确认命中哪种方式
+        // 下面需要在 lambda 中赋值, 变量需保持 effectively final, 使用单元素数组承载引用
+        // 使用简单 Holder 避免泛型数组的 unchecked 警告
+        class Holder<T> { T v; }
+        final Holder<Query> selectedQueryRef = new Holder<>();
+        final Holder<SearchResponse<JsonData>> firstResponseRef = new Holder<>();
+        SearchResponse<JsonData> lastResponse = null; // 不在 lambda 内部重新赋值
+        String queryMode = null; // 仅用于调试输出，可帮助确认命中哪种方式
 
-    for (var candidate : new Query[]{termKeyword, termPlain, matchPlain}) {
-        SearchResponse<JsonData> testFirst = esClient.search(s -> s
-            .index(index)
-            .query(candidate)
-            .size(1)
-            .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)))
-        , JsonData.class);
-        if (testFirst.hits() != null && !testFirst.hits().hits().isEmpty()) {
-                selectedQueryRef.v = candidate;
-                firstResponseRef.v = testFirst;
-        queryMode = (candidate == termKeyword) ? "term:filePath.keyword" : (candidate == termPlain ? "term:filePath" : "match:filePath");
-        break;
+        // 逐一尝试查询策略，找到第一个有结果的
+        for (var candidate : new Query[]{termKeyword, termPlain, matchPlain}) {
+            try {
+                SearchResponse<JsonData> testFirst = esClient.search(s -> s
+                    .index(index)
+                    .query(candidate)
+                    .size(1)
+                    .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)))
+                , JsonData.class);
+                
+                if (testFirst.hits() != null && !testFirst.hits().hits().isEmpty()) {
+                    selectedQueryRef.v = candidate;
+                    firstResponseRef.v = testFirst;
+                    queryMode = (candidate == termKeyword) ? "term:filePath.keyword" : 
+                               (candidate == termPlain) ? "term:filePath" : "match:filePath";
+                    break;
+                }
+            } catch (Exception e) {
+                log.warn("Query strategy failed for filePath={}, trying next approach", filePath, e);
+                // 继续尝试下一种策略
+            }
         }
-    }
 
-    if (selectedQueryRef.v == null) {
-        // 没有任何命中: 兜底执行 match 以便后续逻辑仍可继续
+        if (selectedQueryRef.v == null) {
+            // 没有任何命中: 兜底执行 match 以便后续逻辑仍可继续
             selectedQueryRef.v = matchPlain;
-            firstResponseRef.v = esClient.search(s -> s
-            .index(index)
+            try {
+                firstResponseRef.v = esClient.search(s -> s
+                    .index(index)
                     .query(selectedQueryRef.v)
-            .size(1)
-            .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)))
-        , JsonData.class);
-        queryMode = "fallback:match";
-    }
+                    .size(1)
+                    .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Asc)))
+                , JsonData.class);
+            } catch (Exception e) {
+                log.warn("Fallback query also failed for filePath={}", filePath, e);
+                firstResponseRef.v = null;
+            }
+            queryMode = "fallback:match";
+        }
 
-    lastResponse = esClient.search(s -> s
-        .index(index)
+        // 使用相同的查询策略获取最后一条记录
+        try {
+            lastResponse = esClient.search(s -> s
+                .index(index)
                 .query(selectedQueryRef.v)
-        .size(1)
-        .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)))
-    , JsonData.class);
+                .size(1)
+                .sort(sort -> sort.field(f -> f.field("timestamp").order(co.elastic.clients.elasticsearch._types.SortOrder.Desc)))
+            , JsonData.class);
+        } catch (Exception e) {
+            log.warn("Failed to get last record for filePath={}", filePath, e);
+            lastResponse = null;
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("/query-by-filepath using query mode: {} for filePath={} index={}", queryMode, filePath, index);
@@ -366,15 +405,17 @@ public class ElasticsearchController {
             java.time.Instant now = java.time.Instant.now();
             java.time.Instant oneDayAgo = now.minus(java.time.Duration.ofDays(1));
             
-            firstTimestamp = oneDayAgo.toString();
-            lastTimestamp = now.toString();
+            // 使用与其他时间戳相同的格式
+            firstTimestamp = targetFormatter.format(oneDayAgo);
+            lastTimestamp = targetFormatter.format(now);
             
             return Map.of(
                 "filePath", filePath,
                 "firstTimestamp", firstTimestamp,
                 "lastTimestamp", lastTimestamp,
                 "hasData", false,
-                "isDefaultRange", true
+                "isDefaultRange", true,
+                "queryMode", queryMode != null ? queryMode : "no-data"
             );
         }
 
@@ -383,7 +424,8 @@ public class ElasticsearchController {
             "firstTimestamp", firstTimestamp,
             "lastTimestamp", lastTimestamp,
             "hasData", true,
-            "isDefaultRange", false
+            "isDefaultRange", false,
+            "queryMode", queryMode
         );
     }
 
