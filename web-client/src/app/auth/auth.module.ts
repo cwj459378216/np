@@ -12,6 +12,8 @@ import { AUTH_ROUTES } from './auth.routes';
         FormsModule,
         RouterModule.forChild(AUTH_ROUTES),
         SharedModule,
+    ],
+    declarations: [
         BoxedSigninComponent
     ]
 })

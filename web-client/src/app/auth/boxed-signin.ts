@@ -1,28 +1,18 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Component } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import { AppService } from 'src/app/service/app.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import Swal from 'sweetalert2';
-import { IconModule } from 'src/app/shared/icon/icon.module';
+import { toggleAnimation } from 'src/app/shared/animations';
 
 @Component({
     selector: 'app-boxed-signin',
     templateUrl: './boxed-signin.html',
-    standalone: true,
-    imports: [
-        CommonModule,
-        FormsModule,
-        RouterModule,
-        IconModule,
-        TranslateModule
-    ],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    animations: [toggleAnimation],
 })
 export class BoxedSigninComponent {
     store: any;

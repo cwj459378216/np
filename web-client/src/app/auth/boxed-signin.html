@@ -11,9 +11,17 @@
         <img src="/assets/images/auth/coming-soon-object3.png" alt="image" class="absolute right-0 top-0 h-[300px]" />
         <img src="/assets/images/auth/polygon-object.svg" alt="image" class="absolute bottom-0 end-[28%]" />
         <div
-            class="relative w-full max-w-[870px] rounded-md bg-[linear-gradient(45deg,#fff9f9_0%,rgba(255,255,255,0)_25%,rgba(255,255,255,0)_75%,_#fff9f9_100%)] p-2 dark:bg-[linear-gradient(52.22deg,#0E1726_0%,rgba(14,23,38,0)_18.66%,rgba(14,23,38,0)_51.04%,rgba(14,23,38,0)_80.07%,#0E1726_100%)]"
+            class="relative w-full max-w-[870px] rounded-2xl p-[1.5px] bg-[linear-gradient(45deg,#ffffff_0%,rgba(255,255,255,0.6)_25%,rgba(255,255,255,0.25)_75%,_#ffffff_100%)] dark:bg-[linear-gradient(52.22deg,rgba(255,255,255,0.25)_0%,rgba(14,23,38,0)_18.66%,rgba(14,23,38,0)_51.04%,rgba(14,23,38,0)_80.07%,rgba(255,255,255,0.25)_100%)]"
         >
-            <div class="relative flex flex-col justify-center rounded-md bg-white/60 px-6 py-20 backdrop-blur-lg dark:bg-black/50 lg:min-h-[500px]">
+          <div>
+                     <a routerLink="/" class="main-logo flex items-center justify-center mx-auto gap-2 md:gap-3">
+                        <img class="inline w-10 md:w-12" src="/assets/images/logo1.svg" alt="" />
+                        <span class="hidden md:inline align-middle text-2xl md:text-3xl font-semibold transition-all duration-300 dark:text-white-light">
+                            NetGenie
+                        </span>
+                    </a>
+                </div>
+            <div class="relative flex flex-col justify-center rounded-2xl bg-white/50 dark:bg-black/40  px-8 py-12 md:px-10 md:py-14 ring-1 ring-white/40 dark:ring-white/10 shadow-xl lg:min-h-[500px]">
                 <div class="absolute end-6 top-6">
                     <div class="dropdown">
                         <div hlMenu>
@@ -39,11 +47,11 @@
                                 @toggleAnimation
                                 class="top-11 grid w-[280px] grid-cols-2 gap-2 !px-2 font-semibold text-dark ltr:-right-14 rtl:-left-14 dark:text-white-dark dark:text-white-light/90 sm:ltr:-right-2 sm:rtl:-left-2"
                             >
-                                <li *ngFor="let item of store.languageList;">
+                                <li *ngFor="let item of store?.languageList">
                                     <button
                                         *hlMenuItem="let menuItem"
                                         type="button"
-                                        class="w-full hover:text-primary"
+                                        class="w-full hover:text-primary flex items-center p-2 rounded"
                                         [ngClass]="{ 'bg-primary/10 text-primary': translate.currentLang === item.code }"
                                         (click)="changeLanguage(item)"
                                     >
@@ -59,17 +67,26 @@
                         </div>
                     </div>
                 </div>
+              
                 <div class="mx-auto w-full max-w-[440px]">
-                    <div class="mb-10">
+                    <!-- <div class="mb-10">
                         <h1 class="text-3xl font-extrabold uppercase !leading-snug text-primary md:text-4xl">{{ 'auth.signIn' | translate }}</h1>
                         <p class="text-base font-bold leading-normal text-white-dark">{{ 'auth.enterUserPassword' | translate }}</p>
-                    </div>
-                    <form class="space-y-5 dark:text-white" (ngSubmit)="submit()" #loginForm="ngForm">
-                        <!-- <form class="space-y-5 dark:text-white" (submit)="router.navigate(['/'])"> -->
+                    </div> -->
+                   
+                    <!-- <div class="mt-6 mb-8 text-center">
+                        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-fuchsia-500">
+                            {{ 'auth.signIn' | translate }}
+                        </h1>
+                        <p class="mt-2 text-sm md:text-base font-medium text-white-dark dark:text-white/70">
+                            {{ 'auth.enterUserPassword' | translate }}
+                        </p>
+                    </div> -->
+                    <form class="space-y-6 dark:text-white" (ngSubmit)="submit()" #loginForm="ngForm">
                         <div>
                             <label for="Email">{{ 'auth.username' | translate }}</label>
                             <div class="relative text-white-dark">
-                                <input id="Email" [(ngModel)]="inputEmail" name="user" type="email" placeholder="{{ 'auth.enterUsername' | translate }}" class="form-input ps-10 placeholder:text-white-dark" />
+                                <input id="Email" [(ngModel)]="inputEmail" name="user" type="email" placeholder="{{ 'auth.enterUsername' | translate }}" class="form-input ps-10 placeholder:text-white-dark rounded-xl bg-white/70 dark:bg-white/5 shadow-inner focus:ring-2 focus:ring-primary/60 focus:border-transparent transition" />
                                 <span class="absolute start-4 top-1/2 -translate-y-1/2">
                                     <icon-user [fill]="true" />
                                 </span>
@@ -78,19 +95,13 @@
                         <div>
                             <label for="Password">{{ 'auth.password' | translate }}</label>
                             <div class="relative text-white-dark">
-                                <input id="Password" type="password" [(ngModel)]="inputPassword" name="password" placeholder="{{ 'auth.enterPassword' | translate }}" class="form-input ps-10 placeholder:text-white-dark" />
+                                <input id="Password" type="password" [(ngModel)]="inputPassword" name="password" placeholder="{{ 'auth.enterPassword' | translate }}" class="form-input ps-10 placeholder:text-white-dark rounded-xl bg-white/70 dark:bg-white/5 shadow-inner focus:ring-2 focus:ring-primary/60 focus:border-transparent transition" />
                                 <span class="absolute start-4 top-1/2 -translate-y-1/2">
                                     <icon-lock-dots [fill]="true" />
                                 </span>
                             </div>
                         </div>
-                        <div>
-                            <label class="flex cursor-pointer items-center">
-                                <input type="checkbox" class="form-checkbox bg-white dark:bg-black" />
-                                <span class="text-white-dark">{{ 'auth.subscribeNewsletter' | translate }}</span>
-                            </label>
-                        </div>
-                        <button type="submit" class="btn btn-gradient !mt-6 w-full border-0 uppercase shadow-[0_10px_20px_-10px_rgba(67,97,238,0.44)]">
+                        <button type="submit" class="btn btn-gradient !mt-6 w-full h-12 text-base font-semibold tracking-wide border-0 uppercase shadow-lg shadow-primary/30 hover:shadow-primary/50">
                             {{ 'auth.signIn' | translate }}
                         </button>
                     </form>
