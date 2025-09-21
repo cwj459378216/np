@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { toggleAnimation } from 'src/app/shared/animations';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -113,7 +114,8 @@ export class CollectorComponent implements OnInit {
     public storeData: Store<any>,
     private collectorService: CollectorService,
     private dashboardDataService: DashboardDataService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private router: Router
   ) {
     this.initStore();
     this.isLoading = false;
@@ -166,7 +168,9 @@ export class CollectorComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading capture files:', err);
-        this.showMessage('Error loading capture files', 'error');
+        this.translate.get('collectorMessages.errorLoadingCaptureFiles').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
       }
     });
   }
@@ -185,7 +189,9 @@ export class CollectorComponent implements OnInit {
       },
       error: (err) => {
         console.error('Download failed:', err);
-        this.showMessage('Download failed', 'error');
+        this.translate.get('collectorMessages.downloadFailed').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
       }
     });
   }
@@ -229,7 +235,7 @@ export class CollectorComponent implements OnInit {
         },
       },
       noData: {
-        text: 'No data'
+        text: this.translate.instant('general.noData')
       },
       dataLabels: {
         enabled: false,
@@ -445,18 +451,24 @@ export class CollectorComponent implements OnInit {
 
   saveUser() {
     if (!this.params.valid) {
-        this.showMessage('Please fill all required fields.', 'error');
+        this.translate.get('collectorMessages.pleaseFillRequiredFields').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
         return;
     }
 
   if (this.params.value.interfaceName === 'File' && !this.params.value.filePath) {
-    this.showMessage('Please upload a file for File adapter', 'error');
+    this.translate.get('collectorMessages.pleaseUploadFileForAdapter').subscribe(msg => {
+      this.showMessage(msg, 'error');
+    });
     return;
   }
 
   // 非 File 适配器必须选择 Storage Strategy
   if (this.params.value.interfaceName !== 'File' && !this.params.value.storageStrategy) {
-    this.showMessage('Please choose a Storage Strategy', 'error');
+    this.translate.get('collectorMessages.pleaseChooseStorageStrategy').subscribe(msg => {
+      this.showMessage(msg, 'error');
+    });
     return;
   }
 
@@ -480,24 +492,32 @@ export class CollectorComponent implements OnInit {
         // 更新
         this.collectorService.updateCollector(this.params.value.id, collectorData).subscribe(
             response => {
-                this.showMessage('Collector has been updated successfully.');
+                this.translate.get('collectorMessages.collectorUpdatedSuccessfully').subscribe(msg => {
+                  this.showMessage(msg);
+                });
                 this.loadCollectors();
                 this.addContactModal.close();
             },
             error => {
-                this.showMessage('Error updating collector.', 'error');
+                this.translate.get('collectorMessages.errorUpdatingCollector').subscribe(msg => {
+                  this.showMessage(msg, 'error');
+                });
             }
         );
     } else {
         // 创建新的
         this.collectorService.createCollector(collectorData).subscribe(
             response => {
-                this.showMessage('Collector has been created successfully.');
+                this.translate.get('collectorMessages.collectorCreatedSuccessfully').subscribe(msg => {
+                  this.showMessage(msg);
+                });
                 this.loadCollectors();
                 this.addContactModal.close();
             },
             error => {
-                this.showMessage('Error creating collector.', 'error');
+                this.translate.get('collectorMessages.errorCreatingCollector').subscribe(msg => {
+                  this.showMessage(msg, 'error');
+                });
             }
         );
     }
@@ -539,30 +559,40 @@ export class CollectorComponent implements OnInit {
                               next: () => {
                                 Swal.close();
                                 this.loadCollectors();
-                                this.showMessage('Collector has been deleted successfully.');
+                                this.translate.get('collectorMessages.collectorDeletedSuccessfully').subscribe(msg => {
+                                  this.showMessage(msg);
+                                });
                               },
                               error: () => {
                                 Swal.close();
-                                this.showMessage('Error deleting collector record', 'error');
+                                this.translate.get('collectorMessages.errorDeletingCollectorRecord').subscribe(msg => {
+                                  this.showMessage(msg, 'error');
+                                });
                               }
                             });
                           } else if (s.state === 'FAILED') {
                             clearInterval(poller);
                             Swal.close();
-                            this.showMessage(`ES deletion failed: ${s.errorMessage || ''}`, 'error');
+                            this.translate.get('collectorMessages.esDeletionFailed', { errorMessage: s.errorMessage || '' }).subscribe(msg => {
+                              this.showMessage(msg, 'error');
+                            });
                           }
                         },
                         error: () => {
                           clearInterval(poller);
                           Swal.close();
-                          this.showMessage('Failed to query deletion status', 'error');
+                          this.translate.get('collectorMessages.failedToQueryDeletionStatus').subscribe(msg => {
+                            this.showMessage(msg, 'error');
+                          });
                         }
                       });
                     }, pollInterval);
                   },
                   error: () => {
                     Swal.close();
-                    this.showMessage('Failed to start ES deletion task', 'error');
+                    this.translate.get('collectorMessages.failedToStartEsDeletionTask').subscribe(msg => {
+                      this.showMessage(msg, 'error');
+                    });
                   }
                 });
             }
@@ -655,20 +685,30 @@ export class CollectorComponent implements OnInit {
   // 上传文件到固定目录并保存路径
   uploadSelectedFile() {
     if (!this.selectedFile) {
-      this.showMessage('Please choose a file first', 'error');
+      this.translate.get('collectorMessages.pleaseChooseFileFirst').subscribe(msg => {
+        this.showMessage(msg, 'error');
+      });
       return;
     }
     if (this.selectedFile.size === 0) {
-      this.showMessage('Selected file is empty', 'error');
+      this.translate.get('collectorMessages.selectedFileEmpty').subscribe(msg => {
+        this.showMessage(msg, 'error');
+      });
       return;
     }
     const target = '/datastore/pcap/upload';
     this.collectorService.uploadPcap(this.selectedFile, target).subscribe({
       next: (resp) => {
         this.params.patchValue({ filePath: resp.path });
-        this.showMessage('File uploaded successfully');
+        this.translate.get('collectorMessages.fileUploadedSuccessfully').subscribe(msg => {
+          this.showMessage(msg);
+        });
       },
-      error: () => this.showMessage('File upload failed', 'error')
+      error: () => {
+        this.translate.get('collectorMessages.fileUploadFailed').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
+      }
     });
   }
 
@@ -713,7 +753,9 @@ export class CollectorComponent implements OnInit {
                   // 持久化状态，但不清理 sessionId
                   this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
                   // 提示分析完成
-                  this.showMessage('Analysis completed');
+                  this.translate.get('collectorMessages.analysisCompleted').subscribe(msg => {
+                    this.showMessage(msg);
+                  });
                 } else {
                   collector.status = response.status;
                 }
@@ -862,7 +904,9 @@ export class CollectorComponent implements OnInit {
       },
       error => {
         console.error('Error loading storage strategies:', error);
-        this.showMessage('Error loading storage strategies', 'error');
+        this.translate.get('collectorMessages.errorLoadingStorageStrategies').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
       }
     );
   }
@@ -888,7 +932,9 @@ export class CollectorComponent implements OnInit {
 
   saveStorageStrategy() {
     if (!this.storageParams.valid) {
-        this.showMessage('Please fill all required fields.', 'error');
+        this.translate.get('collectorMessages.pleaseFillRequiredFields').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
         return;
     }
 
@@ -909,24 +955,32 @@ export class CollectorComponent implements OnInit {
         // 更新
         this.collectorService.updateStorageStrategy(this.storageParams.value.id, strategyData).subscribe(
             response => {
-                this.showMessage('Storage strategy has been updated successfully.');
+                this.translate.get('collectorMessages.storageStrategyUpdatedSuccessfully').subscribe(msg => {
+                  this.showMessage(msg);
+                });
                 this.loadStorageStrategies();
                 this.storageStrategyModal.close();
             },
             error => {
-                this.showMessage('Error updating storage strategy.', 'error');
+                this.translate.get('collectorMessages.errorUpdatingStorageStrategy').subscribe(msg => {
+                  this.showMessage(msg, 'error');
+                });
             }
         );
     } else {
         // 创建新的
         this.collectorService.createStorageStrategy(strategyData).subscribe(
             response => {
-                this.showMessage('Storage strategy has been created successfully.');
+                this.translate.get('collectorMessages.storageStrategyCreatedSuccessfully').subscribe(msg => {
+                  this.showMessage(msg);
+                });
                 this.loadStorageStrategies();
                 this.storageStrategyModal.close();
             },
             error => {
-                this.showMessage('Error creating storage strategy.', 'error');
+                this.translate.get('collectorMessages.errorCreatingStorageStrategy').subscribe(msg => {
+                  this.showMessage(msg, 'error');
+                });
             }
         );
     }
@@ -948,10 +1002,14 @@ export class CollectorComponent implements OnInit {
                 this.collectorService.deleteStorageStrategy(strategy.id).subscribe(
                     () => {
                         this.loadStorageStrategies();
-                        this.showMessage('Storage strategy has been deleted successfully.');
+                        this.translate.get('collectorMessages.storageStrategyDeletedSuccessfully').subscribe(msg => {
+                          this.showMessage(msg);
+                        });
                     },
                     error => {
-                        this.showMessage('Error deleting storage strategy', 'error');
+                        this.translate.get('collectorMessages.errorDeletingStorageStrategy').subscribe(msg => {
+                          this.showMessage(msg, 'error');
+                        });
                     }
                 );
             }
@@ -990,12 +1048,19 @@ export class CollectorComponent implements OnInit {
     this.collectorService.updateCollectorEnabled(collector.id, 'protocol-analysis', enabled).subscribe(
         () => {
             collector.protocolAnalysisEnabled = enabled;
-            this.showMessage(`Protocol Analysis has been ${enabled ? 'enabled' : 'disabled'}.`);
+            const statusKey = enabled ? 'collectorMessages.enabled' : 'collectorMessages.disabled';
+            this.translate.get(statusKey).subscribe(status => {
+              this.translate.get('collectorMessages.protocolAnalysisStatusChanged', { status }).subscribe(msg => {
+                this.showMessage(msg);
+              });
+            });
         },
         error => {
             // 恢复开关状态
             event.target.checked = !enabled;
-            this.showMessage('Error updating Protocol Analysis status.', 'error');
+            this.translate.get('collectorMessages.errorUpdatingProtocolAnalysisStatus').subscribe(msg => {
+              this.showMessage(msg, 'error');
+            });
         }
     );
   }
@@ -1005,12 +1070,19 @@ export class CollectorComponent implements OnInit {
     this.collectorService.updateCollectorEnabled(collector.id, 'ids', enabled).subscribe(
         () => {
             collector.idsEnabled = enabled;
-            this.showMessage(`IDS has been ${enabled ? 'enabled' : 'disabled'}.`);
+            const statusKey = enabled ? 'collectorMessages.enabled' : 'collectorMessages.disabled';
+            this.translate.get(statusKey).subscribe(status => {
+              this.translate.get('collectorMessages.idsStatusChanged', { status }).subscribe(msg => {
+                this.showMessage(msg);
+              });
+            });
         },
         error => {
             // 恢复开关状态
             event.target.checked = !enabled;
-            this.showMessage('Error updating IDS status.', 'error');
+            this.translate.get('collectorMessages.errorUpdatingIdsStatus').subscribe(msg => {
+              this.showMessage(msg, 'error');
+            });
         }
     );
   }
@@ -1025,7 +1097,9 @@ export class CollectorComponent implements OnInit {
       },
       error => {
         console.error('Error loading network interfaces:', error);
-        this.showMessage('Error loading network interfaces', 'error');
+        this.translate.get('collectorMessages.errorLoadingNetworkInterfaces').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
       }
     );
   }
@@ -1048,7 +1122,9 @@ export class CollectorComponent implements OnInit {
     if (collector.interfaceName !== 'File') {
       storageStrategy = this.storageStrategies.find(s => s.name === collector.storageStrategy);
       if (!storageStrategy) {
-        this.showMessage('Storage strategy not found', 'error');
+        this.translate.get('collectorMessages.storageStrategyNotFound').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
         return;
       }
     }
@@ -1115,7 +1191,9 @@ export class CollectorComponent implements OnInit {
     if (collector.interfaceName === 'File') {
       const fp = (collector as any).filePath;
       if (!fp) {
-        this.showMessage('No file selected. Please upload a file in edit dialog first.', 'error');
+        this.translate.get('collectorMessages.noFileSelectedUploadFirst').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
         return;
       }
       request.filePath = fp;
@@ -1123,7 +1201,9 @@ export class CollectorComponent implements OnInit {
 
     this.collectorService.startCapture(request as CaptureRequest).subscribe(
       (response: CaptureResponse) => {
-        this.showMessage('Capture started successfully');
+        this.translate.get('collectorMessages.captureStartedSuccessfully').subscribe(msg => {
+          this.showMessage(msg);
+        });
         collector.status = 'running';
         collector.sessionId = response.uuid;
 
@@ -1140,7 +1220,9 @@ export class CollectorComponent implements OnInit {
       },
       error => {
         console.error('Error starting capture:', error);
-        this.showMessage('Error starting capture', 'error');
+        this.translate.get('collectorMessages.errorStartingCapture').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
       }
     );
   }
@@ -1222,14 +1304,18 @@ export class CollectorComponent implements OnInit {
                 // 持久化完成状态，但不清理 sessionId
                 this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
                 // 提示分析完成
-                this.showMessage('Analysis completed');
+                this.translate.get('collectorMessages.analysisCompleted').subscribe(msg => {
+                  this.showMessage(msg);
+                });
                 // 刷新列表以反映UI变化
                 this.searchContacts();
               }
 
               // 仅在未完成时显示错误
               if (response.error !== 0 && !isFinished) {
-                this.showMessage(`Capture error: ${response.message || 'Unknown error'}`, 'error');
+                this.translate.get('collectorMessages.captureError', { message: response.message || 'Unknown error' }).subscribe(msg => {
+                  this.showMessage(msg, 'error');
+                });
               }
             }
           },
@@ -1258,7 +1344,9 @@ export class CollectorComponent implements OnInit {
   // 添加停止抓包的方法
   stopCapture(collector: ContactList) {
     if (!collector.sessionId) {
-      this.showMessage('No active capture session', 'error');
+      this.translate.get('collectorMessages.noActiveCaptureSession').subscribe(msg => {
+        this.showMessage(msg, 'error');
+      });
       return;
     }
 
@@ -1289,11 +1377,15 @@ export class CollectorComponent implements OnInit {
           collector.analysisCompleted = true;
           this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
           this.searchContacts();
-          this.showMessage('Capture stopped successfully');
+          this.translate.get('collectorMessages.captureStoppedSuccessfully').subscribe(msg => {
+            this.showMessage(msg);
+          });
         } else if (response.error !== 0) {
           // 停止失败，恢复为运行态并提示
           collector.status = 'running';
-          this.showMessage(`Stop failed: ${response.message || 'Unknown error'}`, 'error');
+          this.translate.get('collectorMessages.stopFailed', { message: response.message || 'Unknown error' }).subscribe(msg => {
+            this.showMessage(msg, 'error');
+          });
           // 不再继续轮询，避免状态不一致
         } else {
           // 未返回完成，但也未报错，保持服务器返回状态（可能为null），不轮询
@@ -1304,7 +1396,9 @@ export class CollectorComponent implements OnInit {
         Swal.close();
         console.error('Error stopping capture:', error);
         // 失败则保持原状态（通常仍在运行），不再轮询
-        this.showMessage('Failed to stop capture', 'error');
+        this.translate.get('collectorMessages.failedToStopCapture').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
       }
     );
   }
@@ -1332,5 +1426,49 @@ export class CollectorComponent implements OnInit {
           }
         });
       });
+  }
+
+  // 跳转到 dashboard 并设置数据源
+  navigateToDashboard(collector: ContactList) {
+    // 检查 collector 是否有有效的 sessionId
+    if (!collector.sessionId) {
+      this.translate.get('collectorMessages.noSessionDataAvailable').subscribe(message => {
+        this.showMessage(message, 'error');
+      });
+      return;
+    }
+
+    // 构造数据源信息
+    const dataSource = {
+      label: collector.name,
+      value: collector.sessionId,
+      status: collector.status || 'completed'
+    };
+
+    // 将数据源信息存储到 localStorage，供 header 组件使用
+    try {
+      localStorage.setItem('selected_data_source', JSON.stringify(dataSource));
+      
+      // 跳转到 dashboard
+      this.router.navigate(['/']).then(() => {
+        // 显示成功消息
+        this.translate.get('collectorMessages.switchedToDataSource')
+          .subscribe(message => {
+            const successMessage = `${message || 'Switched to data source'}: ${collector.name}`;
+            console.log('Navigating to dashboard with data source:', collector.name);
+            this.showMessage(successMessage, 'success');
+          });
+      }).catch(error => {
+        console.error('Navigation error:', error);
+        this.translate.get('collectorMessages.errorNavigatingToDashboard').subscribe(msg => {
+          this.showMessage(msg, 'error');
+        });
+      });
+    } catch (error) {
+      console.error('Error saving data source:', error);
+      this.translate.get('collectorMessages.errorNavigatingToDashboard').subscribe(msg => {
+        this.showMessage(msg, 'error');
+      });
+    }
   }
 }

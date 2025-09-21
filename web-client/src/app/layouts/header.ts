@@ -160,6 +160,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         // 先尝试恢复（如果本次导航还没恢复过）
         const restored = this.restorePersistedState();
         this.loadCollectors();
+        
+        // 检查是否有从 collector 页面传递过来的数据源
+        this.checkForNavigatedDataSource();
             }
         });
 
@@ -168,6 +171,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     const restored = this.restorePersistedState();
     this.loadCollectors();
     if (!restored) this.initializeDefaultTimeRange();
+    
+    // 检查是否有从 collector 页面传递过来的数据源
+    this.checkForNavigatedDataSource();
     }
 
     logout() {
@@ -993,7 +999,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         if (this.selectedDataSource.status !== 'running') {
             return '';
         }
-        return this.isAutoUpdateEnabled ? 'Auto Update: ON' : 'Auto Update: OFF';
+        const onText = this.translate.instant('collectorStatus.autoUpdateOn') || 'Auto Update: ON';
+        const offText = this.translate.instant('collectorStatus.autoUpdateOff') || 'Auto Update: OFF';
+        return this.isAutoUpdateEnabled ? onText : offText;
     }
 
     // 获取当前时间范围的开始时间
@@ -1177,6 +1185,51 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             formattedStart,
             formattedEnd
         };
+    }
+
+    // 检查并应用从其他页面传递过来的数据源
+    private checkForNavigatedDataSource() {
+        try {
+            const savedDataSource = localStorage.getItem('selected_data_source');
+            if (savedDataSource) {
+                const dataSource = JSON.parse(savedDataSource);
+                console.log('Found navigated data source:', dataSource);
+                
+                // 验证数据源格式
+                if (dataSource && dataSource.label && dataSource.value) {
+                    // 等待 collectors 加载完成后再设置数据源
+                    const checkCollectors = () => {
+                        if (this.dataSources && this.dataSources.length > 0) {
+                            // 查找匹配的数据源
+                            const matchedDataSource = this.dataSources.find(ds => ds.value === dataSource.value);
+                            if (matchedDataSource) {
+                                console.log('Setting data source from navigation:', matchedDataSource);
+                                this.onDataSourceChange(matchedDataSource);
+                            } else {
+                                console.warn('Navigated data source not found in available sources:', dataSource);
+                            }
+                        } else {
+                            // 如果 collectors 还没加载完，等待一段时间后重试
+                            setTimeout(checkCollectors, 500);
+                        }
+                    };
+                    
+                    checkCollectors();
+                }
+                
+                // 清除 localStorage 中的数据源信息，避免重复应用
+                localStorage.removeItem('selected_data_source');
+            }
+        } catch (error) {
+            console.error('Error processing navigated data source:', error);
+            // 清除可能损坏的数据
+            localStorage.removeItem('selected_data_source');
+        }
+    }
+
+    // 获取翻译后的状态文本
+    getStatusText(status: string): string {
+        return this.translate.instant(`collectorStatus.${status}`) || status;
     }
 
     // ================= 持久化逻辑 =================

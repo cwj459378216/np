@@ -92,7 +92,18 @@
                                             <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
                                                 <tr>
                                                     <td>
-                                                        {{ contact.name }}
+                                                        <a href="javascript:;" 
+                                                           class="text-primary hover:text-primary-dark hover:underline cursor-pointer font-medium transition-colors duration-200"
+                                                           (click)="navigateToDashboard(contact)"
+                                                           [title]="contact.sessionId ? ('collectorMessages.clickToViewInDashboard' | translate) : ('collectorMessages.noSessionDataAvailable' | translate)"
+                                                           [class.opacity-50]="!contact.sessionId"
+                                                           [class.cursor-not-allowed]="!contact.sessionId"
+                                                           [class.pointer-events-none]="!contact.sessionId">
+                                                            {{ contact.name }}
+                                                        </a>
+                                                        <span *ngIf="!contact.sessionId" class="text-xs text-gray-500 block mt-1">
+                                                            {{ 'collectorMessages.noSessionDataAvailable' | translate }}
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         {{ formatDate(contact.creationTime) }}
@@ -209,8 +220,29 @@
                                             <div class="rounded-md bg-white px-2 py-4 shadow-md dark:bg-gray-900">
                                                 <div class="text-xl">{{ contact.name }}</div>
                                                 <div class="text-white-dark">{{ contact.role }}</div>
-                                                <div class="mt-2" *ngIf="contact.status === 'error'">
-                                                    <span class="inline-block rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">{{ 'collectorStatus.partial' | translate }}</span>
+                                                
+                                                <!-- 状态显示 -->
+                                                <div class="mt-2">
+                                                    <!-- 错误状态 -->
+                                                    <span class="inline-block rounded bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-500/20 dark:text-red-300" 
+                                                          *ngIf="contact.status === 'error'">
+                                                        {{ 'collectorStatus.partial' | translate }}
+                                                    </span>
+                                                    <!-- 运行中状态 -->
+                                                    <span class="inline-block rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-500/20 dark:text-blue-300" 
+                                                          *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
+                                                        {{ 'Running' | translate }}
+                                                    </span>
+                                                    <!-- 已完成状态 -->
+                                                    <span class="inline-block rounded bg-green-100 px-2 py-0.5 text-xs text-green-700 dark:bg-green-500/20 dark:text-green-300" 
+                                                          *ngIf="contact.status === 'completed' || contact.status === 'STATUS_FINISHED' || contact.analysisCompleted">
+                                                        {{ 'collectorMessages.analyzed' | translate }}
+                                                    </span>
+                                                    <!-- 已创建但未启动状态 -->
+                                                    <span class="inline-block rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-500/20 dark:text-gray-300" 
+                                                          *ngIf="!contact.status || contact.status === 'start'">
+                                                        {{ 'Ready' | translate }}
+                                                    </span>
                                                 </div>
                                                 <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
                                                     <div class="flex-auto">
@@ -544,7 +576,7 @@
                                             </td>
                                         </tr>
                                         <tr *ngIf="!captureFiles.length">
-                                            <td colspan="4" class="text-center text-white-dark py-4">{{ 'No Data' | translate }}</td>
+                                            <td colspan="4" class="text-center text-white-dark py-4">{{ 'general.noData' | translate }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
