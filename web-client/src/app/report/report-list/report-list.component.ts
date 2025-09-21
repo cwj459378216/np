@@ -36,10 +36,9 @@ export class ReportListComponent implements OnInit, OnDestroy {
     }
 
     initializeColumns() {
-        this.translate.get(['Name', 'Description', 'Creation Time', 'Creator', 'Trigger Mode', 'Actions']).subscribe(translations => {
+        this.translate.get(['Name', 'Creation Time', 'Creator', 'Trigger Mode', 'Actions']).subscribe(translations => {
             this.cols = [
                 { field: 'name', title: translations['Name'] },
-                { field: 'description', title: translations['Description'] },
                 { field: 'createTime', title: translations['Creation Time'] },
                 { field: 'creator', title: translations['Creator'] },
                 { field: 'triggerMode', title: translations['Trigger Mode'] },
@@ -160,5 +159,29 @@ export class ReportListComponent implements OnInit, OnDestroy {
 
     downloadReport(id: number) {
         window.location.href = `${environment.apiUrl}/reports/download/${id}`;
+    }
+
+    getCreatorDisplayText(creator: string): string {
+        if (!creator) return '';
+        
+        if (creator.toLowerCase() === 'system') {
+            return this.translate.instant('System');
+        }
+        if (creator.toLowerCase() === 'system scheduler') {
+            return this.translate.instant('System Scheduler');
+        }
+        return creator;
+    }
+
+    getTriggerModeDisplayText(triggerMode: string): string {
+        if (!triggerMode) return '';
+        
+        if (triggerMode.toLowerCase() === 'manual') {
+            return this.translate.instant('Manual');
+        }
+        if (triggerMode.toLowerCase() === 'scheduled') {
+            return this.translate.instant('Scheduled');
+        }
+        return triggerMode;
     }
 }

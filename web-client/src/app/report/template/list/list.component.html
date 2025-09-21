@@ -49,8 +49,8 @@
                 <ng-template slot="description" let-value="data">
                     <div class="text-gray-600 dark:text-gray-400">{{ value.description }}</div>
                 </ng-template>
-                <ng-template slot="createTime" let-value="data">
-                    <div>{{ value.createTime }}</div>
+                <ng-template slot="createdAt" let-value="data">
+                    <div>{{ formatDate(value.createdAt) }}</div>
                 </ng-template>
                 <ng-template slot="creator" let-value="data">
                     <div class="flex items-center">

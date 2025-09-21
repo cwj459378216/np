@@ -220,4 +220,25 @@ export class ListComponent implements OnInit {
                 }
             });
     }
+
+    formatDate(dateString: string): string {
+        if (!dateString) return '';
+        
+        try {
+            const date = new Date(dateString);
+            // 格式化为本地时间 YYYY-MM-DD HH:MM:SS
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return dateString;
+        }
+    }
 }

@@ -136,16 +136,7 @@ export class AddComponent implements OnInit {
     editSelectedTitles: string[] = [];
     currentEditingWidget: CustomGridsterItem | null = null;
 
-    filterOperators = [
-        { value: 'exists', label: 'Exists' },
-        { value: 'not_exists', label: 'Not Exists' },
-        { value: 'eq', label: '=' },
-        { value: 'neq', label: '!=' },
-        { value: 'gt', label: '>' },
-        { value: 'gte', label: '>=' },
-        { value: 'lt', label: '<' },
-        { value: 'lte', label: '<=' }
-    ];
+    filterOperators: any[] = [];
 
     constructor(
         private http: HttpClient,
@@ -157,7 +148,26 @@ export class AddComponent implements OnInit {
     ngOnInit() {
         this.dashboard = [];
         this.initializeGridsterOptions();
+        this.initializeFilterOperators();
         this.loadIndices();
+        
+        // 监听语言变化，重新初始化翻译相关的数据
+        this.translate.onLangChange.subscribe(() => {
+            this.initializeFilterOperators();
+        });
+    }
+
+    initializeFilterOperators() {
+        this.filterOperators = [
+            { value: 'exists', label: this.translate.instant('Exists') },
+            { value: 'not_exists', label: this.translate.instant('Not Exists') },
+            { value: 'eq', label: '=' },
+            { value: 'neq', label: '!=' },
+            { value: 'gt', label: '>' },
+            { value: 'gte', label: '>=' },
+            { value: 'lt', label: '<' },
+            { value: 'lte', label: '<=' }
+        ];
     }
 
     loadIndices() {
@@ -361,7 +371,6 @@ export class AddComponent implements OnInit {
 
     private buildBaseChartConfig(title: string) {
         return {
-            title: { text: title },
             tooltip: { trigger: 'axis' },
             legend: { data: ['Data'] },
             xAxis: { type: 'category', data: [] },
@@ -402,7 +411,6 @@ export class AddComponent implements OnInit {
                         }
 
                         item.chartConfig = {
-                            title: { text: item['name'] || item.uniqueId },
                             tooltip: { trigger: 'axis' },
                             xAxis: { type: 'category', data: categories },
                             yAxis: { type: 'value' },
@@ -412,7 +420,6 @@ export class AddComponent implements OnInit {
                         const labels: string[] = res.labels || [];
                         const values: number[] = res.values || [];
                         item.chartConfig = {
-                            title: { text: item['name'] || item.uniqueId },
                             tooltip: { trigger: 'item' },
                             legend: { orient: 'vertical', left: 'left' },
                             series: [{

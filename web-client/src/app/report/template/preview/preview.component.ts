@@ -284,7 +284,6 @@ export class PreviewComponent implements OnInit {
                         }
 
                         item.chartConfig = {
-                            title: { text: (item as any).name || item.uniqueId },
                             tooltip: { trigger: 'axis' },
                             xAxis: { type: 'category', data: categories },
                             yAxis: { type: 'value' },
@@ -294,7 +293,6 @@ export class PreviewComponent implements OnInit {
                         const labels: string[] = res.labels || [];
                         const values: number[] = res.values || [];
                         item.chartConfig = {
-                            title: { text: (item as any).name || item.uniqueId },
                             tooltip: { trigger: 'item' },
                             legend: { orient: 'vertical', left: 'left' },
                             series: [{

@@ -29,7 +29,7 @@
                 >
                     <div class="panel flex flex-col h-full w-full">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-base font-medium">{{ item['name'] || (item.type === 'table' ? 'Table' : (item.chartType | titlecase) + ' Chart') }}</span>
+                            <span class="text-base font-medium">{{ item['name'] || (item.type === 'table' ? ('Table' | translate) : (item.chartType | titlecase) + ' ' + ('Chart' | translate)) }}</span>
                             <div class="flex gap-2">
                                 <button class="hover:text-primary" (click)="editWidget(item)" title="{{ 'Edit Widget' | translate }}">
                                     <icon-edit class="h-4 w-4" />
@@ -99,7 +99,7 @@
                         id="description"
                         class="form-input"
                         rows="3"
-                        placeholder="Enter description"
+                        placeholder="{{ 'Enter description' | translate }}"
                         [(ngModel)]="description"
                     ></textarea>
                 </div>
@@ -193,8 +193,8 @@
                             <option *ngFor="let op of filterOperators" [value]="op.value">{{op.label}}</option>
                         </select>
                         <input *ngIf="requiresValue(filter.operator)" class="form-input flex-1" [name]="'filterValue' + i" [(ngModel)]="filter.value" placeholder="{{ 'Value' | translate }}" />
-                        <button type="button" class="btn btn-danger px-2" (click)="removeFilter(i)" *ngIf="filters.length > 1">-</button>
-                        <button type="button" class="btn btn-primary px-2" (click)="addFilter()" *ngIf="i === filters.length -1">+</button>
+                        <button type="button" class="btn btn-danger px-2" (click)="removeFilter(i)" *ngIf="filters.length > 1" title="{{ 'Remove Filter' | translate }}">-</button>
+                        <button type="button" class="btn btn-primary px-2" (click)="addFilter()" *ngIf="i === filters.length -1" title="{{ 'Add Filter' | translate }}">+</button>
                     </div>
                 </div>
             </div>
@@ -475,8 +475,8 @@
                             <option *ngFor="let op of filterOperators" [value]="op.value">{{op.label}}</option>
                         </select>
                         <input *ngIf="requiresValue(filter.operator)" class="form-input flex-1" [name]="'editFilterValue' + i" [(ngModel)]="filter.value" placeholder="{{ 'Value' | translate }}" />
-                        <button type="button" class="btn btn-danger px-2" (click)="removeEditFilter(i)" *ngIf="editFilters.length > 1">-</button>
-                        <button type="button" class="btn btn-primary px-2" (click)="addEditFilter()" *ngIf="i === editFilters.length -1">+</button>
+                        <button type="button" class="btn btn-danger px-2" (click)="removeEditFilter(i)" *ngIf="editFilters.length > 1" title="{{ 'Remove Filter' | translate }}">-</button>
+                        <button type="button" class="btn btn-primary px-2" (click)="addEditFilter()" *ngIf="i === editFilters.length -1" title="{{ 'Add Filter' | translate }}">+</button>
                     </div>
                 </div>
             </div>

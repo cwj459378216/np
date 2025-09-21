@@ -23,16 +23,9 @@ export class NotificationRuleComponent implements OnInit {
         { value: '30 days', label: '30 Days' }
     ];
 
-    timeUnits = [
-        { value: 'minutes', label: 'Minutes' },
-        { value: 'hours', label: 'Hours' },
-        { value: 'days', label: 'Days' }
-    ];
+    timeUnits: { value: string; label: string }[] = [];
 
-    triggerConditionOptions = [
-        { value: 'new_event', label: 'On New Event' },
-        { value: 'condition', label: 'On Specific Condition' }
-    ];
+    triggerConditionOptions: { value: string; label: string }[] = [];
 
     // 由通知设置动态生成
     notificationMethodOptions: { value: string | number; label: string }[] = [];
@@ -66,13 +59,7 @@ export class NotificationRuleComponent implements OnInit {
     filteredRules: any[] = [];
 
     filters: any[] = [{ field: '', value: '' }];
-    filterFields = [
-        { value: 'severity', label: 'Severity' },
-        { value: 'signature', label: 'Signature' },
-        { value: 'dest_ip', label: 'Destination IP' },
-        { value: 'src_ip', label: 'Source IP' },
-        { value: 'app_proto', label: 'Application Protocol' }
-    ];
+    filterFields: { value: string; label: string }[] = [];
 
     constructor(
         private fb: FormBuilder,
@@ -84,9 +71,41 @@ export class NotificationRuleComponent implements OnInit {
     }
 
     ngOnInit(): void {
-    // 并行加载通知设置与规则
-    this.loadNotificationSettings();
-    this.loadRules();
+        // 初始化翻译选项
+        this.initTranslatedOptions();
+        // 并行加载通知设置与规则
+        this.loadNotificationSettings();
+        this.loadRules();
+    }
+
+    initTranslatedOptions() {
+        this.translate.get([
+            'On New Event',
+            'On Specific Condition',
+            'Severity',
+            'Destination IP',
+            'Source IP',
+            'Minutes',
+            'Hours',
+            'Days'
+        ]).subscribe(translations => {
+            this.triggerConditionOptions = [
+                { value: 'new_event', label: translations['On New Event'] },
+                { value: 'condition', label: translations['On Specific Condition'] }
+            ];
+
+            this.filterFields = [
+                { value: 'severity', label: translations['Severity'] },
+                { value: 'dest_ip', label: translations['Destination IP'] },
+                { value: 'src_ip', label: translations['Source IP'] }
+            ];
+
+            this.timeUnits = [
+                { value: 'minutes', label: translations['Minutes'] },
+                { value: 'hours', label: translations['Hours'] },
+                { value: 'days', label: translations['Days'] }
+            ];
+        });
     }
 
     initForm() {
@@ -211,7 +230,9 @@ export class NotificationRuleComponent implements OnInit {
         const invalidFields = requiredFields.filter(field => !this.params.get(field)?.valid);
 
         if (invalidFields.length > 0) {
-            this.showMessage(`Please fill the following fields: ${invalidFields.join(', ')}`, 'error');
+            this.translate.get('Please fill the following fields').subscribe(message => {
+                this.showMessage(`${message}: ${invalidFields.join(', ')}`, 'error');
+            });
             return;
         }
 
@@ -327,11 +348,16 @@ export class NotificationRuleComponent implements OnInit {
         const url = `${environment.apiUrl}/notification-rules/${rule.id}`;
         this.http.put(url, { ...rule, status: nextStatus }).subscribe({
             next: () => {
-                this.showMessage(nextStatus === 'Active' ? 'Rule enabled successfully' : 'Rule disabled successfully', 'success');
+                const successKey = nextStatus === 'Active' ? 'Rule enabled successfully' : 'Rule disabled successfully';
+                this.translate.get(successKey).subscribe(message => {
+                    this.showMessage(message, 'success');
+                });
             },
             error: () => {
                 rule.status = prevStatus; // rollback
-                this.showMessage('Failed to update rule status', 'error');
+                this.translate.get('Failed to update rule status').subscribe(message => {
+                    this.showMessage(message, 'error');
+                });
             }
         });
     }

@@ -34,16 +34,31 @@
         </div>
     </ng-container>
 
-    <!-- Gridster布局 -->
-    <gridster [options]="options" [ngClass]="{'h-[800px]': !isStandalone, 'h-screen': isStandalone}" class="!bg-transparent">
+    <div class="flex flex-col gap-2.5 xl:flex-row">
+        <div class="flex-1 px-0 py-6 ltr:xl:mr-6 rtl:xl:ml-6">
+            <!-- 在独立模式下显示标题和打印按钮 -->
+            <div *ngIf="isStandalone" class="px-6 mb-6 flex justify-between items-center">
+                <h5 class="text-lg font-semibold dark:text-white-light">{{ 'Template Preview' | translate }}</h5>
+                <button type="button" class="btn btn-primary" (click)="printTemplate()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 ltr:mr-2 rtl:ml-2">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    {{ '打印' | translate }}
+                </button>
+            </div>
+
+            <!-- Gridster布局 -->
+            <gridster [options]="options" [ngClass]="{'h-[800px]': !isStandalone, 'h-screen': isStandalone}" class="!bg-transparent">
         <gridster-item
             *ngFor="let item of dashboard"
             [item]="item"
         >
             <div class="panel flex flex-col h-full w-full">
-                <!-- <div class="flex justify-between mb-2">
-                    <span class="text-base font-medium">{{ item.type === 'table' ? ('Table' | translate) : (item.chartType | titlecase) + ' ' + ('Chart' | translate) }}</span>
-                </div> -->
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-base font-medium">{{ item['name'] || (item.type === 'table' ? ('Table' | translate) : (item.chartType | titlecase) + ' ' + ('Chart' | translate)) }}</span>
+                </div>
                 <div class="flex-1 gridster-item-content">
                     <!-- 图表内容 -->
                     <div *ngIf="item['type'] === 'chart'" class="w-full h-full">
@@ -55,7 +70,7 @@
                         </div>
                     </div>
                     <!-- 表格内容 -->
-                    <div *ngIf="item['type'] === 'table'" class="overflow-x-auto">
+                    <div *ngIf="item['type'] === 'table'" class="w-full h-full overflow-auto">
                         <table class="w-full table-auto">
                             <thead>
                                 <tr>
@@ -72,6 +87,12 @@
                                         {{formatTableCellValue(row[header], header)}}
                                     </td>
                                 </tr>
+                                <tr *ngIf="!item['tableData'] || item['tableData'].length === 0">
+                                    <td [attr.colspan]="getTableHeaders(item).length"
+                                        class="border-b border-[#e5e7eb] p-4 text-center text-gray-500 dark:border-[#191e3a]">
+                                        {{ 'No data available' | translate }}
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                         <!-- 显示表格信息 -->
@@ -80,14 +101,11 @@
                             {{ '显示' | translate }} {{item['tableData'].length}} {{ '条记录' | translate }}
                             <span *ngIf="item['topN']">（{{ 'top' | translate }} {{item['topN']}}）</span>
                         </div>
-                        <!-- 无数据提示 -->
-                        <div *ngIf="!item['tableData'] || item['tableData'].length === 0"
-                             class="text-center text-gray-500 dark:text-gray-400 py-8">
-                            {{ '暂无数据' | translate }}
-                        </div>
                     </div>
                 </div>
             </div>
         </gridster-item>
     </gridster>
+        </div>
+    </div>
 </div>

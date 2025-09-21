@@ -414,12 +414,12 @@ export class CollectorComponent implements OnInit {
 
   searchContacts() {
     this.filterdContactsList = this.contactList.filter((d) => {
-        if (!d || !d.name || !d.interfaceName || !d.storageStrategy) {
+        if (!d || !d.name || !d.interfaceName) {
             return false;
         }
         return d.name.toLowerCase().includes(this.searchUser.toLowerCase()) ||
             d.interfaceName.toLowerCase().includes(this.searchUser.toLowerCase()) ||
-            d.storageStrategy.toLowerCase().includes(this.searchUser.toLowerCase());
+            (d.storageStrategy && d.storageStrategy.toLowerCase().includes(this.searchUser.toLowerCase()));
     });
   }
 
@@ -464,13 +464,7 @@ export class CollectorComponent implements OnInit {
     return;
   }
 
-  // 非 File 适配器必须选择 Storage Strategy
-  if (this.params.value.interfaceName !== 'File' && !this.params.value.storageStrategy) {
-    this.translate.get('collectorMessages.pleaseChooseStorageStrategy').subscribe(msg => {
-      this.showMessage(msg, 'error');
-    });
-    return;
-  }
+  // Storage Strategy 不是必填字段，移除验证
 
   const isFile = this.params.value.interfaceName === 'File';
   // 后端 storage_strategy NOT NULL：File 模式写入占位值

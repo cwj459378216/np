@@ -68,9 +68,16 @@ export class SidebarComponent implements OnInit {
         
         // 检查是否是 report 相关路径
         if (currentPath.includes('/report')) {
-            // 确保 report 菜单展开
-            if (!this.activeDropdown.includes('report')) {
-                this.activeDropdown = [...this.activeDropdown, 'report'];
+            // 如果是 notification-rule，应该展开 eventAlarm 而不是 report
+            if (currentPath.includes('/report/notification-rule')) {
+                if (!this.activeDropdown.includes('eventAlarm')) {
+                    this.activeDropdown = [...this.activeDropdown, 'eventAlarm'];
+                }
+            } else {
+                // 其他 report 路径展开 report 菜单
+                if (!this.activeDropdown.includes('report')) {
+                    this.activeDropdown = [...this.activeDropdown, 'report'];
+                }
             }
 
             // 根据不同的子路径设置对应的 active 状态

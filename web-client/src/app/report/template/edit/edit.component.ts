@@ -114,16 +114,7 @@ export class EditComponent implements OnInit {
     // 过滤器（与 AddComponent 一致）
     filters: WidgetFilter[] = [];
 
-    filterOperators = [
-        { value: 'exists', label: 'Exists' },
-        { value: 'not_exists', label: 'Not Exists' },
-        { value: 'eq', label: '=' },
-        { value: 'neq', label: '!=' },
-        { value: 'gt', label: '>' },
-        { value: 'gte', label: '>=' },
-        { value: 'lt', label: '<' },
-        { value: 'lte', label: '<=' }
-    ];
+    filterOperators: any[] = [];
 
     // 添加可选的字段列表
     filterFields = [
@@ -204,7 +195,14 @@ export class EditComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.initializeFilterOperators();
         this.loadIndices();
+        
+        // 监听语言变化，重新初始化翻译相关的数据
+        this.translate.onLangChange.subscribe(() => {
+            this.initializeFilterOperators();
+        });
+        
         this.route.queryParams.subscribe(params => {
             // 模板 id
             this.id = params['id'];
@@ -218,6 +216,19 @@ export class EditComponent implements OnInit {
                 this.loadTemplate();
             }
         });
+    }
+
+    initializeFilterOperators() {
+        this.filterOperators = [
+            { value: 'exists', label: this.translate.instant('Exists') },
+            { value: 'not_exists', label: this.translate.instant('Not Exists') },
+            { value: 'eq', label: '=' },
+            { value: 'neq', label: '!=' },
+            { value: 'gt', label: '>' },
+            { value: 'gte', label: '>=' },
+            { value: 'lt', label: '<' },
+            { value: 'lte', label: '<=' }
+        ];
     }
 
     loadIndices() {
@@ -572,7 +583,6 @@ export class EditComponent implements OnInit {
 
     private buildBaseChartConfig(title: string) {
         return {
-            title: { text: title },
             tooltip: { trigger: 'axis' },
             legend: { data: ['Data'] },
             xAxis: { type: 'category', data: [] },
@@ -619,7 +629,6 @@ export class EditComponent implements OnInit {
                             categories = x.map(v => new Date(v).toLocaleString());
                         }
                         item.chartConfig = {
-                            title: { text: (item as any)['name'] || item.uniqueId },
                             tooltip: { trigger: 'axis' },
                             xAxis: { type: 'category', data: categories },
                             yAxis: { type: 'value' },
@@ -629,7 +638,6 @@ export class EditComponent implements OnInit {
                         const labels: string[] = res.labels || [];
                         const values: number[] = res.values || [];
                         item.chartConfig = {
-                            title: { text: (item as any)['name'] || item.uniqueId },
                             tooltip: { trigger: 'item' },
                             legend: { orient: 'vertical', left: 'left' },
                             series: [{
@@ -653,9 +661,6 @@ export class EditComponent implements OnInit {
 
     private generateChartConfig(chartType: string) {
         const config: any = {
-            title: {
-                text: this.formData.name || 'Chart'
-            },
             tooltip: {
                 trigger: 'axis'
             },
