@@ -80,6 +80,7 @@ export class EditComponent implements OnInit {
     selectedFile = null;
 
     @ViewChild('addChartModal') addChartModal: any;
+    @ViewChild('editChartModal') editChartModal: any;
     @ViewChild('widgetFormRef') widgetFormRef: any;
 
     // 表单数据
@@ -142,6 +143,25 @@ export class EditComponent implements OnInit {
 
     // 选中的标题
     selectedTitles: string[] = [];
+
+    // 编辑相关属性
+    editFormData: FormData = {
+        name: '',
+        type: '',
+        chartType: '',
+        index: '',
+        filter: '',
+        aggregationField: '',
+        aggregationType: 'count',
+        xField: '',
+        yField: '',
+        topN: 10,
+        sortField: '',
+        sortOrder: 'desc'
+    };
+    editFilters: WidgetFilter[] = [];
+    editSelectedTitles: string[] = [];
+    currentEditingWidget: CustomGridsterItem | null = null;
 
     // 表格数据
     tableData = [
@@ -710,6 +730,145 @@ export class EditComponent implements OnInit {
         this.dashboard = this.dashboard.filter(widget => widget.uniqueId !== item.uniqueId);
     }
 
+    // 编辑Widget
+    editWidget(item: CustomGridsterItem) {
+        this.currentEditingWidget = item;
+        
+        // 填充编辑表单数据
+        // 判断实际的widget类型：如果是chart类型，使用chartType，否则使用type
+        const actualType = item.type === 'chart' ? item.chartType : item.type;
+        
+        this.editFormData = {
+            name: (item as any).name || '',
+            type: actualType as 'line' | 'bar' | 'pie' | 'table' | '',
+            chartType: item.chartType || '',
+            index: (item as any).index || '',
+            filter: (item as any).filter || '',
+            aggregationField: item.aggregation?.field || '',
+            aggregationType: item.aggregation?.type || 'count',
+            metricField: (item as any).metricField || '',
+            xField: (item as any).xField || '',
+            yField: (item as any).yField || '',
+            topN: (item as any).topN || 10,
+            sortField: (item as any).sortField || '',
+            sortOrder: (item as any).sortOrder || 'desc'
+        };
+
+        // 填充过滤器
+        this.editFilters = (item as any).filters ? [...(item as any).filters] : [{ field: '', operator: 'eq', value: '' }];
+        
+        // 填充表格标题
+        this.editSelectedTitles = item.titles ? [...item.titles] : [];
+
+        // 如果有索引，加载相关字段
+        if (this.editFormData.index) {
+            this.onEditIndexChange();
+        }
+
+        this.editChartModal.open();
+    }
+
+    // 更新Widget
+    updateWidget() {
+        if (!this.currentEditingWidget) return;
+
+        // 验证必填字段
+        if (!this.editFormData.type) {
+            this.showMessage('Please select widget type', 'error');
+            return;
+        }
+
+        // 更新widget数据
+        const updatedItem = this.currentEditingWidget;
+        (updatedItem as any).name = this.editFormData.name;
+        // 如果是图表类型，设置chartType并保持type为chart
+        if (['line', 'bar', 'pie'].includes(this.editFormData.type)) {
+            updatedItem.type = 'chart';
+            updatedItem.chartType = this.editFormData.type;
+        } else {
+            updatedItem.type = this.editFormData.type;
+        }
+        (updatedItem as any).index = this.editFormData.index;
+        (updatedItem as any).filter = this.editFormData.filter;
+        updatedItem.aggregation = {
+            field: this.editFormData.aggregationField,
+            type: this.editFormData.aggregationType
+        };
+        (updatedItem as any).metricField = this.editFormData.metricField;
+        (updatedItem as any).xField = this.editFormData.xField;
+        (updatedItem as any).yField = this.editFormData.yField;
+        (updatedItem as any).topN = this.editFormData.topN;
+        (updatedItem as any).sortField = this.editFormData.sortField;
+        (updatedItem as any).sortOrder = this.editFormData.sortOrder;
+        (updatedItem as any).filters = this.editFilters;
+        updatedItem.titles = this.editSelectedTitles;
+
+        // 重新加载数据
+        this.loadWidgetData(updatedItem);
+
+        this.editChartModal.close();
+        this.showMessage('Widget updated successfully');
+    }
+
+    // 编辑索引变更
+    onEditIndexChange() {
+        if (!this.editFormData.index) {
+            this.filterFields = [];
+            this.aggregationFields = [];
+            this.categoryFields = [];
+            this.dateFields = [];
+            this.yAxisCandidates = [];
+            this.titleOptions = [];
+            return;
+        }
+
+        // 与 onIndexChange 相同的逻辑
+        this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.editFormData.index}/fields`).subscribe({
+            next: (fields) => {
+                const options = fields.map(f => ({ value: f.name, label: f.name, type: f.type }));
+                this.filterFields = options;
+                this.dateFields = options.filter(o => o.type === 'date');
+                this.titleOptions = options.map(o => ({ value: o.value, label: o.label }));
+                
+                const keywordFields = options.filter(o => o.type === 'keyword');
+                this.yAxisCandidates = [...this.dateFields, ...keywordFields].map(o => ({ value: o.value, label: o.label }));
+
+                if (!this.editFormData.yField && this.yAxisCandidates.length) {
+                    this.editFormData.yField = this.yAxisCandidates[0].value;
+                }
+            },
+            error: () => {}
+        });
+
+        // 数值字段（度量）
+        this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.editFormData.index}/fields/filtered?fieldType=numeric`).subscribe({
+            next: (numericFields) => {
+                this.aggregationFields = numericFields.map(f => ({ value: f.name, label: f.name }));
+            },
+            error: () => {}
+        });
+
+        // 文本字段（饼图分类）
+        this.http.get<Array<{name: string; type: string}>>(`${environment.apiUrl}/es/indices/${this.editFormData.index}/fields/filtered?fieldType=text`).subscribe({
+            next: (textFields) => {
+                this.categoryFields = textFields.map(f => ({ value: f.name, label: f.name }));
+            },
+            error: () => {}
+        });
+    }
+
+    // 编辑过滤器相关方法
+    addEditFilter() {
+        this.editFilters.push({ field: '', operator: 'eq', value: '' });
+    }
+
+    removeEditFilter(index: number) {
+        this.editFilters.splice(index, 1);
+        if (this.editFilters.length === 0) {
+            this.editFilters.push({ field: '', operator: 'eq', value: '' });
+        }
+    }
+
     addFilter() {
         this.filters.push({ field: '', operator: 'eq', value: '' });
     }
@@ -916,5 +1075,46 @@ export class EditComponent implements OnInit {
             .join(' ');
 
         return formatted;
+    }
+
+    // 编辑模式的方法
+    onEditYFieldChange() {
+        console.log('Edit Y Field changed to:', this.editFormData.yField);
+    }
+
+    onEditAggFieldChange() {
+        console.log('Edit Aggregation Field changed to:', this.editFormData.aggregationField);
+    }
+
+    onEditWidgetTypeChange() {
+        console.log('Edit Widget Type changed to:', this.editFormData.type);
+        // 当widget类型改变时，可能需要重置某些配置
+        if (this.editFormData.type === 'table') {
+            // 如果切换到表格，清除图表相关配置
+            this.editFormData.aggregationField = '';
+            this.editFormData.aggregationType = 'count';
+            this.editFormData.yField = '';
+        } else if (['line', 'bar', 'pie'].includes(this.editFormData.type)) {
+            // 如果切换到图表，清除表格相关配置
+            this.editSelectedTitles = [];
+        }
+    }
+
+    getEditAxisPreview(): string {
+        if (this.editFormData.type === 'pie') {
+            const field = this.editFormData.aggregationField || 'field';
+            const aggType = this.editFormData.aggregationType || 'count';
+            return `${aggType}(${field}) by categories`;
+        }
+
+        if (this.editFormData.type === 'line' || this.editFormData.type === 'bar') {
+            const xAxis = this.editFormData.yField || 'time/category';
+            const yField = this.editFormData.aggregationField || 'count';
+            const yType = this.editFormData.aggregationType || 'count';
+            const yAxisLabel = this.editFormData.aggregationField ? `${yType}(${yField})` : 'count';
+            return `${xAxis} vs ${yAxisLabel}`;
+        }
+
+        return 'Select configuration';
     }
 }

@@ -28,12 +28,17 @@
                     [item]="item"
                 >
                     <div class="panel flex flex-col h-full w-full">
-                        <!-- <div class="flex justify-between mb-2">
-                            <span class="text-base font-medium">{{ item.type === 'table' ? 'Table' : (item.chartType | titlecase) + ' Chart' }}</span>
-                            <button class="hover:text-danger" (click)="removeWidget(item)">
-                                <icon-x class="h-5 w-5" />
-                            </button>
-                        </div> -->
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-base font-medium">{{ item['name'] || (item.type === 'table' ? 'Table' : (item.chartType | titlecase) + ' Chart') }}</span>
+                            <div class="flex gap-2">
+                                <button class="hover:text-primary" (click)="editWidget(item)" title="{{ 'Edit Widget' | translate }}">
+                                    <icon-edit class="h-4 w-4" />
+                                </button>
+                                <button class="hover:text-danger" (click)="removeWidget(item)" title="{{ 'Delete Widget' | translate }}">
+                                    <icon-x class="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
                         <div class="flex-1 gridster-item-content">
                             <div *ngIf="item['type'] === 'chart'" class="w-full h-full">
                                 <div [id]="'chart_' + item.uniqueId"
@@ -391,6 +396,284 @@
                     [disabled]="!widgetFormRef.valid"
                 >
                     {{ 'Add Widget' | translate }}
+                </button>
+            </div>
+        </form>
+    </ng-template>
+</ngx-custom-modal>
+
+<!-- Edit Widget Modal -->
+<ngx-custom-modal #editChartModal customClass="modal-top">
+    <ng-template #modalHeader>
+        <div>{{ 'Edit Widget' | translate }}</div>
+    </ng-template>
+    <ng-template #modalBody>
+        <form class="space-y-5" (ngSubmit)="updateWidget()" #editWidgetFormRef="ngForm">
+            <!-- Widget Name -->
+            <div>
+                <label for="editWidgetName">{{ 'Widget Name' | translate }}</label>
+                <input
+                    id="editWidgetName"
+                    type="text"
+                    name="editName"
+                    class="form-input"
+                    placeholder="{{ 'Enter widget name' | translate }}"
+                    [(ngModel)]="editFormData.name"
+                    required
+                />
+            </div>
+
+            <!-- Widget Type -->
+            <div>
+                <label for="editWidgetType">{{ 'Widget Type' | translate }}</label>
+                <select
+                    id="editWidgetType"
+                    name="editType"
+                    class="form-select"
+                    [(ngModel)]="editFormData.type"
+                    (change)="onEditWidgetTypeChange()"
+                    required
+                >
+                    <option value="">{{ 'Select Type' | translate }}</option>
+                    <option value="line">{{ 'Line Chart' | translate }}</option>
+                    <option value="bar">{{ 'Bar Chart' | translate }}</option>
+                    <option value="pie">{{ 'Pie Chart' | translate }}</option>
+                    <option value="table">{{ 'Table' | translate }}</option>
+                </select>
+            </div>
+
+            <!-- Index -->
+            <div>
+                <label for="editIndex">{{ 'Data Source' | translate }}</label>
+                <select
+                    id="editIndex"
+                    name="editIndex"
+                    class="form-select"
+                    [(ngModel)]="editFormData.index"
+                    (change)="onEditIndexChange()"
+                    required
+                >
+                    <option value="">{{ 'Select Index' | translate }}</option>
+                    <option *ngFor="let idx of indexList" [value]="idx.value">
+                        {{idx.label}}
+                    </option>
+                </select>
+            </div>
+
+            <!-- Filter -->
+            <div>
+                <label>{{ 'Filter' | translate }}</label>
+                <div class="space-y-3">
+                    <div *ngFor="let filter of editFilters; let i = index" class="flex gap-2 items-center">
+                        <select class="form-select flex-1" [name]="'editFilterField' + i" [(ngModel)]="filter.field">
+                            <option value="">{{ 'Select Field' | translate }}</option>
+                            <option *ngFor="let f of filterFields" [value]="f.value">{{f.label}}</option>
+                        </select>
+                        <select class="form-select w-28" [name]="'editFilterOp' + i" [(ngModel)]="filter.operator">
+                            <option *ngFor="let op of filterOperators" [value]="op.value">{{op.label}}</option>
+                        </select>
+                        <input *ngIf="requiresValue(filter.operator)" class="form-input flex-1" [name]="'editFilterValue' + i" [(ngModel)]="filter.value" placeholder="{{ 'Value' | translate }}" />
+                        <button type="button" class="btn btn-danger px-2" (click)="removeEditFilter(i)" *ngIf="editFilters.length > 1">-</button>
+                        <button type="button" class="btn btn-primary px-2" (click)="addEditFilter()" *ngIf="i === editFilters.length -1">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Configuration (仅在选择 table 时显示) -->
+            <div *ngIf="editFormData.type === 'table'">
+                <label class="text-base font-semibold text-primary">{{ 'Table Configuration' | translate }}</label>
+
+                <div class="bg-gray-50 dark:bg-gray-900/20 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mt-3 space-y-3">
+                    <!-- Table Titles -->
+                    <div>
+                        <label for="editTableTitles">{{ 'Table Columns' | translate }}</label>
+                        <ng-select
+                            id="editTableTitles"
+                            [items]="titleOptions"
+                            [(ngModel)]="editSelectedTitles"
+                            [multiple]="true"
+                            [clearable]="false"
+                            [dropdownPosition]="'top'"
+                            placeholder="{{ 'Select table columns' | translate }}"
+                            name="editTableTitles"
+                            bindLabel="label"
+                            bindValue="value"
+                            class="custom-multiselect"
+                        >
+                        </ng-select>
+                        <p class="text-xs text-gray-500 mt-1">{{ 'Choose which fields to display as table columns' | translate }}</p>
+                    </div>
+
+                    <!-- Top N Records -->
+                    <div>
+                        <label for="editTopN">{{ 'Number of Records' | translate }}</label>
+                        <select
+                            id="editTopN"
+                            name="editTopN"
+                            class="form-select"
+                            [(ngModel)]="editFormData.topN"
+                        >
+                            <option value="3">3</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">{{ 'Maximum number of records to display' | translate }}</p>
+                    </div>
+
+                    <!-- Sort Field -->
+                    <div>
+                        <label for="editSortField">{{ 'Sort Field' | translate }}</label>
+                        <select
+                            id="editSortField"
+                            name="editSortField"
+                            class="form-select"
+                            [(ngModel)]="editFormData.sortField"
+                        >
+                            <option value="">{{ 'Default (timestamp desc)' | translate }}</option>
+                            <option *ngFor="let field of titleOptions" [value]="field.value">{{field.label}}</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">{{ 'Field to sort the table by' | translate }}</p>
+                    </div>
+
+                    <!-- Sort Order -->
+                    <div>
+                        <label for="editSortOrder">{{ 'Sort Order' | translate }}</label>
+                        <select
+                            id="editSortOrder"
+                            name="editSortOrder"
+                            class="form-select"
+                            [(ngModel)]="editFormData.sortOrder"
+                        >
+                            <option value="desc">{{ 'Descending (Newest first)' | translate }}</option>
+                            <option value="asc">{{ 'Ascending (Oldest first)' | translate }}</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">{{ 'Order to sort the records' | translate }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Configuration (仅在不选择 table 时显示) -->
+            <div *ngIf="editFormData.type && editFormData.type !== 'table'">
+                <label class="text-base font-semibold text-primary">{{ 'Chart Configuration' | translate }}</label>
+
+                <!-- Pie Chart Configuration -->
+                <div *ngIf="editFormData.type === 'pie'" class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 mt-3">
+                    <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+                        </svg>
+                        {{ 'Pie Chart Settings' | translate }}
+                    </h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Category Field (Pie Slices)' | translate }}</label>
+                            <select class="form-select mt-1" name="editAggregationField" [(ngModel)]="editFormData.aggregationField" required>
+                                <option value="">{{ 'Select field to group by' | translate }}</option>
+                                <option *ngFor="let cf of categoryFields" [value]="cf.value">{{cf.label}}</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">{{ 'Field to create pie slices (text fields only)' | translate }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Value Calculation' | translate }}</label>
+                            <select class="form-select mt-1" name="editAggregationType" [(ngModel)]="editFormData.aggregationType" required>
+                                <option value="count">{{ 'Count of Records' | translate }}</option>
+                                <ng-container *ngFor="let t of aggregationTypes">
+                                    <option *ngIf="t.value !== 'count'" [value]="t.value">{{t.label || t.value}}</option>
+                                </ng-container>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">{{ 'How to calculate slice sizes' | translate }}</p>
+                        </div>
+
+                        <!-- Metric Field for non-count aggregations -->
+                        <div *ngIf="editFormData.aggregationType && editFormData.aggregationType !== 'count'">
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Metric Field' | translate }}</label>
+                            <select class="form-select mt-1" name="editMetricField" [(ngModel)]="editFormData.metricField" required>
+                                <option value="">{{ 'Select numeric field for calculation' | translate }}</option>
+                                <option *ngFor="let af of aggregationFields" [value]="af.value">{{af.label}}</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">{{ 'Numeric field to apply' | translate }} {{editFormData.aggregationType}} {{ 'calculation on' | translate }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line/Bar Chart Configuration -->
+                <div *ngIf="editFormData.type === 'line' || editFormData.type === 'bar'" class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-700 mt-3">
+                    <h4 class="text-sm font-medium text-green-800 dark:text-green-200 mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        {{ editFormData.type === 'line' ? 'Line Chart Axes' : 'Bar Chart Axes' | translate }}
+                    </h4>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- X-Axis Configuration -->
+                        <div class="bg-white dark:bg-gray-800 p-3 rounded-md border border-gray-200 dark:border-gray-600">
+                            <div class="flex items-center mb-2">
+                                <div class="w-6 h-6 bg-blue-500 text-white text-xs flex items-center justify-center rounded mr-2 font-bold">X</div>
+                                <label class="text-sm font-semibold text-blue-600 dark:text-blue-400">{{ 'X-Axis (Horizontal)' | translate }}</label>
+                            </div>
+                            <select class="form-select w-full text-sm" name="editYField" [(ngModel)]="editFormData.yField" (change)="onEditYFieldChange()" required>
+                                <option value="">{{ 'Select X-axis field' | translate }}</option>
+                                <option *ngFor="let f of yAxisCandidates" [value]="f.value">{{f.label}}</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">{{ 'Time series or categories' | translate }}</p>
+                        </div>
+
+                        <!-- Y-Axis Configuration -->
+                        <div class="bg-white dark:bg-gray-800 p-3 rounded-md border border-gray-200 dark:border-gray-600">
+                            <div class="flex items-center mb-2">
+                                <div class="w-6 h-6 bg-green-500 text-white text-xs flex items-center justify-center rounded mr-2 font-bold">Y</div>
+                                <label class="text-sm font-semibold text-green-600 dark:text-green-400">{{ 'Y-Axis (Vertical)' | translate }}</label>
+                            </div>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="text-xs text-gray-600 dark:text-gray-400">{{ 'Metric Field' | translate }}</label>
+                                    <select class="form-select w-full text-sm" name="editAggregationField" [(ngModel)]="editFormData.aggregationField" (change)="onEditAggFieldChange()">
+                                        <option value="">{{ 'Document Count' | translate }}</option>
+                                        <option *ngFor="let af of aggregationFields" [value]="af.value">{{af.label}}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-600 dark:text-gray-400">{{ 'Calculation' | translate }}</label>
+                                    <select class="form-select w-full text-sm" name="editAggregationType" [(ngModel)]="editFormData.aggregationType">
+                                        <option value="count">{{ 'Count' | translate }}</option>
+                                        <ng-container *ngFor="let t of aggregationTypes">
+                                            <option *ngIf="t.value !== 'count'" [value]="t.value">{{t.label || t.value}}</option>
+                                        </ng-container>
+                                    </select>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">{{ 'Values to display on Y-axis' | translate }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Chart Preview Info -->
+                    <div class="mt-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs">
+                        <div class="flex items-center text-gray-600 dark:text-gray-300">
+                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>{{ 'Chart will show' | translate }}:
+                                <span class="font-medium text-blue-600 dark:text-blue-400">{{getEditAxisPreview()}}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="flex justify-end gap-4">
+                <button type="button" class="btn btn-outline-danger" (click)="editChartModal.close()">
+                    {{ 'Cancel' | translate }}
+                </button>
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    [disabled]="!editWidgetFormRef.valid"
+                >
+                    {{ 'Update Widget' | translate }}
                 </button>
             </div>
         </form>
