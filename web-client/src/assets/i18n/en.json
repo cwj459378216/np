@@ -105,7 +105,15 @@
     "save": "Save",
     "addAddress": "Add Address",
     "ok": "OK",
-    "noData": "No Data"
+    "noData": "No Data",
+    "ID": "ID",
+    "SID": "SID",
+    "Protocol": "Protocol",
+    "Message": "Message",
+    "ClassType": "Class Type",
+    "Priority": "Priority",
+    "CVE": "CVE",
+    "File": "File"
   },
   "collector": {
     "collectorName": "Collector Name",

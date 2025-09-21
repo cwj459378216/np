@@ -106,7 +106,15 @@
     "save": "保存",
     "addAddress": "添加地址",
     "ok": "确定",
-    "noData": "无数据"
+    "noData": "无数据",
+    "ID": "ID",
+    "SID": "规则ID",
+    "Protocol": "协议",
+    "Message": "消息",
+    "ClassType": "分类类型",
+    "Priority": "优先级",
+    "CVE": "CVE",
+    "File": "文件"
   },
   "collector": {
     "collectorName": "收集器名称",

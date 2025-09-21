@@ -45,20 +45,8 @@ export class RulesPolicyComponent implements AfterViewInit {
   loading = false;
   needsSelectionUpdate = false;
 
-  // 修改表格列配置
-  ruleColumns = [
-    { field: 'id', title: 'ID', hide: true },
-    { field: 'sid', title: 'SID', hide: false },
-    { field: 'protocol', title: 'Protocol', hide: false },
-    { field: 'direction', title: 'Direction', hide: false },
-    { field: 'srcPort', title: 'Src.Port', hide: false },
-    { field: 'dstPort', title: 'Dst.Port', hide: false },
-    { field: 'msg', title: 'Message', hide: false },
-    { field: 'classType', title: 'ClassType', hide: false },
-    { field: 'priority', title: 'Priority', hide: false },
-    { field: 'cve', title: 'CVE', hide: false },
-    { field: 'filename', title: 'File', hide: true }
-  ];
+  // 表格列配置 - 将在构造函数中初始化
+  ruleColumns: any[] = [];
 
   // 添加策略规则数据
   /*
@@ -103,12 +91,45 @@ export class RulesPolicyComponent implements AfterViewInit {
       name: [''],
       description: ['']
     });
+    
+    // 等待翻译服务加载完成后初始化列配置
+    this.translate.onLangChange.subscribe(() => {
+      this.initializeColumns();
+    });
+    
+    // 立即尝试初始化一次
+    setTimeout(() => {
+      this.initializeColumns();
+    }, 100);
+    
     this.loadPolicies();
     this.loadRules();
   }
 
   ngAfterViewInit() {
     console.log('View initialized');
+    // 确保在视图初始化后列配置已经正确设置
+    this.initializeColumns();
+  }
+
+  // 初始化表格列配置
+  private initializeColumns(): void {
+    // 使用异步翻译来确保翻译文件已加载
+    this.translate.get(['general.ID', 'general.SID', 'general.Protocol', 'general.Message', 'general.ClassType', 'general.Priority', 'general.CVE', 'general.File']).subscribe(translations => {
+      this.ruleColumns = [
+        { field: 'id', title: translations['general.ID'], hide: true },
+        { field: 'sid', title: translations['general.SID'], hide: false },
+        { field: 'protocol', title: translations['general.Protocol'], hide: false },
+        { field: 'msg', title: translations['general.Message'], hide: false },
+        { field: 'classType', title: translations['general.ClassType'], hide: false },
+        { field: 'priority', title: translations['general.Priority'], hide: false },
+        { field: 'cve', title: translations['general.CVE'], hide: false },
+        { field: 'filename', title: translations['general.File'], hide: true }
+      ];
+      
+      // 强制触发变更检测以更新视图
+      this.cdr.detectChanges();
+    });
   }
 
   loadPolicies(): void {
