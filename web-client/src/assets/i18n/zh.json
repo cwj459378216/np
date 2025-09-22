@@ -159,6 +159,7 @@
     "autoUpdateOff": "自动更新: 关闭"
   },
   "collectorMessages": {
+    "waitingForAnalysis": "等待分析",
     "cannotModifyDuringAnalysis": "分析过程中无法修改",
     "analyzed": "已分析",
     "noSessionDataAvailable": "此收集器没有可用的会话数据",

@@ -142,6 +142,7 @@
             [legend]="protocolTrending.legend" [tooltip]="protocolTrending.tooltip" [fill]="protocolTrending.fill"
             class="rounded-lg bg-white dark:bg-black">
           </apx-chart>
+          <!-- 加载中状态 -->
           <div *ngIf="!protocolTrending" class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
             <span
               class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>

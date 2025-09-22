@@ -36,28 +36,39 @@ public class ElasticsearchController {
     private static final String INDEX_NAME = "conn-realtime";
 
     private static String autoIntervalFromSpan(long spanMillis, int desiredPoints) {
+        // 目标：最小 1m，最大 1y，尽量让桶数量接近 desiredPoints
         if (spanMillis <= 0) return "1m";
         long targetBucketMs = Math.max(60_000L, spanMillis / Math.max(1, desiredPoints));
-        // Snap to common intervals
-        long[] steps = new long[]{
-                60_000L,       // 1m
-                5 * 60_000L,   // 5m
-                15 * 60_000L,  // 15m
-                30 * 60_000L,  // 30m
-                60 * 60_000L,  // 1h
-                3 * 60 * 60_000L,  // 3h
-                6 * 60 * 60_000L,  // 6h
-                12 * 60 * 60_000L, // 12h
-                24 * 60 * 60_000L, // 1d
-                7 * 24 * 60 * 60_000L // 7d
+
+        // 采用固定与日历混合候选，label 与 ElasticsearchSyncService.applyInterval 完全兼容
+        // 计算用近似毫秒，选择用 label
+        class Cand { long ms; String label; Cand(long ms, String label){ this.ms=ms; this.label=label; } }
+        long MIN = 60_000L;
+        long H = 60 * 60_000L, D = 24 * H;
+        Cand[] cands = new Cand[]{
+            new Cand(1 * MIN, "1m"),
+            new Cand(5 * MIN, "5m"),
+            new Cand(15 * MIN, "15m"),
+            new Cand(30 * MIN, "30m"),
+            new Cand(1 * H, "1h"),
+            new Cand(3 * H, "3h"),
+            new Cand(6 * H, "6h"),
+            new Cand(12 * H, "12h"),
+            new Cand(1 * D, "1d"),
+            new Cand(3 * D, "3d"),
+            new Cand(7 * D, "7d"),
+            new Cand(14 * D, "14d"),
+            // 月/季/年用日历型，近似 30/90/365 天作比较
+            new Cand(30 * D, "1mon"),
+            new Cand(90 * D, "1q"),
+            new Cand(180 * D, "180d"), // 半年可用 fixed 180d
+            new Cand(365 * D, "1y")
         };
-        String[] labels = new String[]{
-                "1m","5m","15m","30m","1h","3h","6h","12h","1d","7d"
-        };
-        for (int i = 0; i < steps.length; i++) {
-            if (steps[i] >= targetBucketMs) return labels[i];
+        for (Cand c : cands) {
+            if (c.ms >= targetBucketMs) return c.label;
         }
-        return "7d";
+        // 超过一年仍然返回 1y，避免无限增大
+        return "1y";
     }
 
     @GetMapping("/search")

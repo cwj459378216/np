@@ -89,6 +89,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   // 语言切换订阅
   private languageSubscription: Subscription = new Subscription();
 
+  // 记录最近一次使用的数据源文件路径，用于判断是否切换了 datasource
+  private lastFilePath: string | undefined;
+
   constructor(public storeData: Store<any>, private dashboardDataService: DashboardDataService, private translate: TranslateService, private timeRangeService: TimeRangeService) {
     this.initStore();
     this.isLoading = false;
@@ -100,6 +103,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     // 订阅时间范围变化
     this.timeRangeSubscription = this.timeRangeService.timeRange$.subscribe(timeRange => {
       console.log('Dashboard received time range update:', timeRange);
+      // 如果 filePath 发生变化，说明切换了数据源：先清空协议趋势图再加载
+      const prevFile = this.lastFilePath;
+      const newFile = timeRange?.filePath;
+      if (prevFile !== newFile) {
+        console.log('Data source changed, clearing Protocol Transaction Trends before reload:', { prevFile, newFile });
+        this.clearProtocolTrending();
+        this.lastFilePath = newFile;
+      }
       this.currentTimeRange = timeRange;
       this.loadDataForTimeRange(timeRange);
     });
@@ -113,6 +124,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // 初始化时间范围
     this.currentTimeRange = this.timeRangeService.getCurrentTimeRange();
+  this.lastFilePath = this.currentTimeRange?.filePath;
     console.log('Dashboard initial time range:', this.currentTimeRange);
 
     // 确保在初始化时就加载数据
@@ -174,9 +186,27 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       const ids = ['bandwidthChart', 'protocolTrendingChart', 'serviceNameChart', 'tcpTrendingChart'];
       ids.forEach((id) => {
         try {
+          // 先尝试更新选项来触发重绘
           ApexCharts.exec(id, 'updateOptions', {} as any, false, true);
+          // 再手动触发重新渲染
+          setTimeout(() => {
+            try {
+              ApexCharts.exec(id, 'render');
+            } catch { /* 忽略 render 异常 */ }
+          }, 10);
         } catch { /* 忽略单个 chart 的异常 */ }
       });
+
+      // 3) 额外的 DOM 操作，确保容器可见性
+      setTimeout(() => {
+        const chartContainers = document.querySelectorAll('.apexcharts-canvas');
+        chartContainers.forEach((container: any) => {
+          if (container && container.style) {
+            container.style.visibility = 'visible';
+            container.style.display = 'block';
+          }
+        });
+      }, 50);
     } catch { /* 忽略 */ }
   }
 
@@ -395,11 +425,19 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       .subscribe({
         next: (data: ProtocolTrendsResponse) => {
           this.updateProtocolTrendingChart(data);
+          // 数据加载成功后，确保图表可见性
+          setTimeout(() => {
+            this.ensureChartsVisibility();
+          }, 50);
         },
         error: (error) => {
           console.error('Error loading protocol trends data:', error);
           // 如果API调用失败，设置默认值并使用模拟数据
           this.initDefaultProtocolTrendingChart();
+          // 错误情况下也要确保图表显示
+          setTimeout(() => {
+            this.ensureChartsVisibility();
+          }, 50);
         }
       });
   }
@@ -516,6 +554,46 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       if (steps[i] >= targetBucketMs) return labels[i];
     }
     return '1y';
+  }
+
+  // 在切换数据源时，先清空“Protocol Transaction Trends”的显示
+  private clearProtocolTrending(): void {
+    // 重置计数
+    this.totalFlowCount = 0;
+    // 设置一个空的图表配置，避免 *ngIf 抹掉节点导致闪烁
+    const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
+    const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
+    this.protocolTrending = {
+      chart: { height: 350, type: 'area', fontFamily: 'Nunito, sans-serif', id: 'protocolTrendingChart', zoom: { enabled: false }, toolbar: { show: false } },
+      dataLabels: { enabled: false },
+      stroke: { show: true, curve: 'smooth', width: 2, lineCap: 'square' },
+      dropShadow: { enabled: true, opacity: 0.2, blur: 10, left: -7, top: 22 },
+      colors: isDark ? ['#2196f3', '#e7515a', '#00ab55'] : ['#1b55e2', '#e7515a', '#00ab55'],
+      markers: { size: 0, colors: ['#1b55e2', '#e7515a', '#00ab55'], strokeColor: '#fff', strokeWidth: 2, shape: 'circle', hover: { size: 6, sizeOffset: 3 } },
+      xaxis: { type: 'datetime', axisBorder: { show: false }, axisTicks: { show: false }, crosshairs: { show: true }, labels: { offsetX: isRtl ? 2 : 0, offsetY: 5, style: { fontSize: '12px', cssClass: 'apexcharts-xaxis-title' }, formatter: (value: number) => this.formatChartLabel(value) } },
+      yaxis: { tickAmount: 5, labels: { formatter: (v: number) => v.toString(), offsetX: isRtl ? -30 : -10, offsetY: 0, style: { fontSize: '12px', cssClass: 'apexcharts-yaxis-title' } }, opposite: isRtl ? true : false },
+      grid: { borderColor: isDark ? '#191e3a' : '#e0e6ed', strokeDashArray: 5, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } }, padding: { top: 0, right: 20, bottom: 0, left: 0 } },
+      legend: { position: 'top', horizontalAlign: 'right', fontSize: '16px', markers: { width: 10, height: 10, offsetX: -2 }, itemMargin: { horizontal: 10, vertical: 5 } },
+      tooltip: { marker: { show: true }, x: { show: false } },
+      fill: { type: 'gradient', gradient: { shadeIntensity: 1, inverseColors: false, opacityFrom: isDark ? 0.19 : 0.28, opacityTo: 0.05, stops: isDark ? [100, 100] : [45, 100] } },
+      series: [
+        { name: 'HTTP', data: [] },
+        { name: 'DNS', data: [] },
+        { name: 'Others', data: [] }
+      ]
+    };
+
+    // 先销毁现有图表实例，避免冲突
+    try {
+      ApexCharts.exec('protocolTrendingChart', 'destroy');
+    } catch (e) {
+      // 忽略销毁错误
+    }
+
+    // 延迟一点时间再重绘，确保DOM更新完毕
+    setTimeout(() => {
+      this.ensureChartsVisibility();
+    }, 100);
   }
 
   updateProtocolTrendingChart(data: ProtocolTrendsResponse) {
@@ -678,8 +756,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       ],
     };
 
-    // 如果数据加载成功，初始化其他图表
-    this.initCharts();
+    // 直接触发图表重绘，确保在数据源切换后立即显示
     this.ensureChartsVisibility();
   }
 
@@ -750,6 +827,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         },
       },
       yaxis: {
+        // 默认空图时也至少展示 5 个刻度
+        min: 0,
+        max: 4,
         tickAmount: 5,
         labels: {
           formatter: (value: number) => this.formatBps(value),
@@ -1434,6 +1514,36 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       ? allBps.reduce((sum, v) => sum + v, 0) / allBps.length
       : 0;
 
+    // 计算 Y 轴范围，确保至少 5 个刻度
+    let minVal = Number.POSITIVE_INFINITY;
+    let maxVal = Number.NEGATIVE_INFINITY;
+    try {
+      for (const s of series as any[]) {
+        const arr = Array.isArray(s?.data) ? s.data : [];
+        for (const pt of arr) {
+          const val = Array.isArray(pt) ? Number(pt[1]) : Number(pt);
+          if (!Number.isNaN(val)) {
+            if (val < minVal) minVal = val;
+            if (val > maxVal) maxVal = val;
+          }
+        }
+      }
+    } catch {}
+
+    if (!isFinite(minVal) || !isFinite(maxVal)) {
+      minVal = 0; maxVal = 1;
+    }
+
+    // 带宽为非负量，最小值从 0 开始更直观
+    let yMin = 0;
+    let yMax = maxVal;
+    if (maxVal <= 0) {
+      yMax = 1; // 避免 0~0 导致没有刻度
+    } else {
+      const pad = Math.max(1, (maxVal - Math.min(minVal, 0)) * 0.05);
+      yMax = maxVal + pad;
+    }
+
     this.revenueChart = {
       chart: {
         height: 200,
@@ -1497,6 +1607,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         },
       },
       yaxis: {
+        min: yMin,
+        max: yMax,
         tickAmount: 5,
         labels: {
           formatter: (value: number) => this.formatBps(value),

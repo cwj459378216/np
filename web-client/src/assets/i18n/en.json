@@ -158,6 +158,7 @@
     "autoUpdateOff": "Auto Update: OFF"
   },
   "collectorMessages": {
+    "waitingForAnalysis": "Waiting for Analysis",
     "cannotModifyDuringAnalysis": "Cannot modify during analysis",
     "analyzed": "Analyzed",
     "noSessionDataAvailable": "No session data available for this collector",
@@ -554,7 +555,7 @@
   "Rule enabled successfully": "Rule enabled successfully",
   "Rule disabled successfully": "Rule disabled successfully",
   "Minutes": "Minutes",
-  "Hours": "Hours", 
+  "Hours": "Hours",
   "Days": "Days",
   "Syslog": "Syslog",
   "Email": "Email",

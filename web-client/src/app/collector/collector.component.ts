@@ -133,6 +133,12 @@ export class CollectorComponent implements OnInit {
     };
   }
   ngOnInit() {
+    // 从localStorage加载显示类型设置
+    const savedDisplayType = localStorage.getItem('collector_displayType');
+    if (savedDisplayType && (savedDisplayType === 'list' || savedDisplayType === 'grid')) {
+      this.displayType = savedDisplayType;
+    }
+
     this.loadCollectors();
     this.loadStorageStrategies();
     this.http.get('assets/decode/index.html', { responseType: 'text' })
@@ -148,8 +154,6 @@ export class CollectorComponent implements OnInit {
   // 处理 tab 切换（模板中直接赋值 tab2，这里监听并在切到 profile 时加载文件）
   setTab(tab: string) {
     this.tab2 = tab;
-    // 切换标签页时重置表格显示类型为 list
-    this.displayType = 'list';
     // 重置搜索输入框内容
     this.searchUser = '';
 
@@ -715,7 +719,7 @@ export class CollectorComponent implements OnInit {
         // 将Collector数据转换为ContactList格式
         this.contactList = data.map(collector => ({
           ...collector,
-          role: 'Collector',
+          role: '',
           email: '-',
           location: '-',
           phone: '-',
@@ -729,7 +733,8 @@ export class CollectorComponent implements OnInit {
           uiAdapter: collector.interfaceName,
           uiDuration: null,
           uiLogs: null,
-          uiEvents: null
+          uiEvents: null,
+          uiTrafficSeries: (collector.status === 'completed' || collector.status === 'STATUS_FINISHED' || collector.status === 'running' || collector.status === 'STATUS_STARTED') ? null : [] // 分析完成或正在运行的设置为null等待数据，否则设置为空数组显示默认样式
         }));
 
         // 检查并为正在运行的抓包任务启动状态轮询
@@ -797,6 +802,21 @@ export class CollectorComponent implements OnInit {
 
   private loadSessionMetrics(collector: ContactList) {
     const sessionId = collector.sessionId as string;
+
+    // 判断是否应该加载带宽数据：分析完成 或 正在运行的状态
+    const shouldLoadBandwidth = collector.analysisCompleted ||
+                               collector.status === 'running' ||
+                               collector.status === 'STATUS_STARTED';
+
+    // 如果既未完成分析也不在运行状态，设置默认状态并跳过 Bandwidth 接口调用
+    if (!shouldLoadBandwidth) {
+      collector.uiLogs = 0;
+      collector.uiDuration = 0;
+      collector.uiEvents = 0;
+      collector.uiTrafficSeries = []; // 设置为空数组，显示默认样式
+      return;
+    }
+
     // 连接统计（与interval无关）
     this.collectorService.getSessionConnStats(sessionId).subscribe({
       next: (s: SessionConnStats) => {
@@ -827,7 +847,7 @@ export class CollectorComponent implements OnInit {
           this.loadTrafficFallback(sessionId, collector);
           return;
         }
-        const interval = this.computeAutoInterval(endMs - startMs, 200);
+        const interval = this.computeAutoInterval(endMs - startMs, 20);
         this.dashboardDataService.getBandwidthTrends(startMs, endMs, sessionId, interval).subscribe({
           next: (resp: BandwidthTrendsResponse) => {
             const series = Object.keys(resp || {}).sort().map((key) => {
@@ -887,22 +907,28 @@ export class CollectorComponent implements OnInit {
     const safeSpan = Math.max(1, spanMillis);
     const targetBucketMs = Math.max(60_000, Math.floor(safeSpan / Math.max(1, desiredPoints)));
     const steps: number[] = [
-      60_000,             // 1m
-      5 * 60_000,         // 5m
-      15 * 60_000,        // 15m
-      30 * 60_000,        // 30m
-      60 * 60_000,        // 1h
-      3 * 60 * 60_000,    // 3h
-      6 * 60 * 60_000,    // 6h
-      12 * 60 * 60_000,   // 12h
-      24 * 60 * 60_000,   // 1d
-      7 * 24 * 60 * 60_000 // 7d
+      60_000,               // 1m
+      5 * 60_000,           // 5m
+      15 * 60_000,          // 15m
+      30 * 60_000,          // 30m
+      60 * 60_000,          // 1h
+      3 * 60 * 60_000,      // 3h
+      6 * 60 * 60_000,      // 6h
+      12 * 60 * 60_000,     // 12h
+      24 * 60 * 60_000,     // 1d
+      3 * 24 * 60 * 60_000, // 3d
+      7 * 24 * 60 * 60_000, // 7d
+      14 * 24 * 60 * 60_000,// 14d
+      30 * 24 * 60 * 60_000,// 30d
+      90 * 24 * 60 * 60_000,// 90d
+      180 * 24 * 60 * 60_000,// 180d
+      365 * 24 * 60 * 60_000 // 1y
     ];
-    const labels: string[] = ['1m','5m','15m','30m','1h','3h','6h','12h','1d','7d'];
+    const labels: string[] = ['1m','5m','15m','30m','1h','3h','6h','12h','1d','3d','7d','14d','30d','90d','180d','1y'];
     for (let i = 0; i < steps.length; i++) {
       if (steps[i] >= targetBucketMs) return labels[i];
     }
-    return '7d';
+    return '1y';
   }
 
   loadStorageStrategies() {
@@ -1456,7 +1482,7 @@ export class CollectorComponent implements OnInit {
     // 将数据源信息存储到 localStorage，供 header 组件使用
     try {
       localStorage.setItem('selected_data_source', JSON.stringify(dataSource));
-      
+
       // 跳转到 dashboard
       this.router.navigate(['/']).then(() => {
         // 显示成功消息
@@ -1478,5 +1504,11 @@ export class CollectorComponent implements OnInit {
         this.showMessage(msg, 'error');
       });
     }
+  }
+
+  // 切换显示类型并持久化保存
+  setDisplayType(type: 'list' | 'grid') {
+    this.displayType = type;
+    localStorage.setItem('collector_displayType', type);
   }
 }

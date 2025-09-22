@@ -305,7 +305,8 @@ public class ElasticsearchSyncService {
         List<TrendingData> othersTrends = mergeOthersTrends(smbTrends, connTrends);
         result.put("Others", othersTrends);
         
-        return result;
+        // 统一时间轴，缺失补 0
+        return normalizeSeriesZeros(result);
     }
 
     public Map<String, List<TrendingData>> getBandwidthTrends(Long startTime, Long endTime, String filePath, String interval) throws IOException {
@@ -319,12 +320,13 @@ public class ElasticsearchSyncService {
     Set<Integer> availablePorts = getAvailablePortsWithFilter(startTimeStr, endTimeStr, "octopusx-data-*", filePath);
         
         // 为每个port/channel获取趋势数据
-        for (Integer port : availablePorts) {
-            List<TrendingData> channelTrends = getBandwidthTrendingWithFilter(startTimeStr, endTimeStr, port, "octopusx-data-*", interval, filePath);
-            result.put("channel" + port, channelTrends);
-        }
-        
-        return result;
+            for (Integer port : availablePorts) {
+                List<TrendingData> channelTrends = getBandwidthTrendingWithFilter(startTimeStr, endTimeStr, port, "octopusx-data-*", interval, filePath);
+                result.put("channel" + port, channelTrends);
+            }
+
+            // 统一时间轴，缺失补 0
+            return normalizeSeriesZeros(result);
     }
 
     /**
@@ -362,64 +364,83 @@ public class ElasticsearchSyncService {
                 )
             );
 
-        // 构建 date_histogram + terms 子聚合
+        // 重构：使用 terms(protoName) -> date_histogram 子聚合，时间桶补齐零
         var searchRequest = SearchRequest.of(s -> s
             .index("conn-*")
             .size(0)
             .query(query)
-            .aggregations("trend", a -> a
-                .dateHistogram(h -> {
-                    h.field("timestamp");
-                    applyInterval(h, interval);
-                    h.format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-                    h.minDocCount(0);
-                    return h;
-                })
-                .aggregations("by_proto", t -> t
-                    .terms(tt -> tt
-                        .field("protoName")
-                        .size(20)
-                    )
+            .aggregations("by_proto", a -> a
+                .terms(t -> t.field("protoName").size(50))
+                .aggregations("trend", sub -> sub
+                    .dateHistogram(h -> {
+                        h.field("timestamp");
+                        applyInterval(h, interval);
+                        h.format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                        h.minDocCount(0);
+                        return h;
+                    })
                 )
             )
         );
 
         var response = esClient.search(searchRequest, Void.class);
 
-        Map<String, java.util.Map<Long, Long>> seriesMap = new java.util.HashMap<>();
-
-        var trendAgg = response.aggregations().get("trend");
-        if (trendAgg == null || trendAgg.dateHistogram() == null) {
-            return java.util.Collections.emptyMap();
+        Map<String, List<TrendingData>> result = new java.util.HashMap<>();
+        var byProto = response.aggregations().get("by_proto");
+        if (byProto == null || byProto.sterms() == null) return java.util.Collections.emptyMap();
+        var protoBuckets = byProto.sterms().buckets().array();
+        for (var pb : protoBuckets) {
+            String proto = pb.key().stringValue();
+            var trendAgg = pb.aggregations().get("trend");
+            if (trendAgg == null || trendAgg.dateHistogram() == null) continue;
+            var buckets = trendAgg.dateHistogram().buckets().array();
+            List<TrendingData> series = buckets.stream()
+                .map(b -> new TrendingData(b.key(), b.docCount()))
+                .collect(Collectors.toList());
+            result.put(proto.toUpperCase(), series);
         }
 
-        var buckets = trendAgg.dateHistogram().buckets().array();
+        // 统一时间轴，缺失补 0
+        return normalizeSeriesZeros(result);
+    }
 
-        for (var bucket : buckets) {
-            long ts = bucket.key();
-            var protoAgg = bucket.aggregations().get("by_proto");
-            if (protoAgg == null || protoAgg.sterms() == null) continue;
-            var protoBuckets = protoAgg.sterms().buckets().array();
-            for (var pb : protoBuckets) {
-                String proto = pb.key().stringValue();
-                long count = pb.docCount();
-                seriesMap.computeIfAbsent(proto, k -> new java.util.HashMap<>()).put(ts, count);
+    /**
+     * 将每个系列的时间戳对齐到并集时间轴，并为缺失的时间桶补 0。
+     * 要求每个系列的点按时间升序或可无序；输出按时间升序。
+     */
+    private Map<String, List<TrendingData>> normalizeSeriesZeros(Map<String, List<TrendingData>> seriesMap) {
+        if (seriesMap == null || seriesMap.isEmpty()) return seriesMap;
+        java.util.Set<Long> allTs = new java.util.TreeSet<>();
+        for (var e : seriesMap.entrySet()) {
+            List<TrendingData> list = e.getValue();
+            if (list != null) {
+                for (var td : list) {
+                    if (td != null && td.getTimestamp() != null) allTs.add(td.getTimestamp());
+                }
             }
         }
+        if (allTs.isEmpty()) return seriesMap;
 
-        // 转换为 Map<String, List<TrendingData>> 并按时间排序
-        Map<String, List<TrendingData>> result = new java.util.HashMap<>();
-        for (var entry : seriesMap.entrySet()) {
-            String proto = entry.getKey();
-            var tsMap = entry.getValue();
-            var list = tsMap.entrySet().stream()
-                .sorted(java.util.Map.Entry.comparingByKey())
-                .map(e -> new TrendingData(e.getKey(), e.getValue()))
-                .collect(Collectors.toList());
-            result.put(proto.toUpperCase(), list);
+        Map<String, List<TrendingData>> out = new java.util.HashMap<>();
+        for (var e : seriesMap.entrySet()) {
+            String key = e.getKey();
+            List<TrendingData> list = e.getValue();
+            java.util.Map<Long, Long> valueByTs = new java.util.HashMap<>();
+            if (list != null) {
+                for (var td : list) {
+                    if (td != null && td.getTimestamp() != null) {
+                        valueByTs.put(td.getTimestamp(), td.getCount() == null ? 0L : td.getCount());
+                    }
+                }
+            }
+            List<TrendingData> filled = new java.util.ArrayList<>(allTs.size());
+            for (Long ts : allTs) {
+                Long v = valueByTs.getOrDefault(ts, 0L);
+                filled.add(new TrendingData(ts, v));
+            }
+            out.put(key, filled);
         }
-
-        return result;
+        return out;
     }
 
     private List<TrendingData> mergeOthersTrends(List<TrendingData> smbTrends, List<TrendingData> connTrends) {
@@ -676,8 +697,11 @@ public class ElasticsearchSyncService {
                     // 获取平均 bps
                     var avgBpsAgg = bucket.aggregations().get("avg_bps");
                     double avgBps = 0.0;
-                    if (avgBpsAgg != null && avgBpsAgg.avg() != null && avgBpsAgg.avg().value() != null) {
-                        avgBps = avgBpsAgg.avg().value();
+                    if (avgBpsAgg != null && avgBpsAgg.avg() != null) {
+                        try {
+                            Double v = avgBpsAgg.avg().value();
+                            if (v != null) avgBps = v.doubleValue();
+                        } catch (Exception ignore) {}
                     }
 
                     var trendData = new TrendingData();
@@ -743,8 +767,11 @@ public class ElasticsearchSyncService {
         return buckets.stream().map(b -> {
             double avgBps = 0.0;
             var avg = b.aggregations().get("avg_bps");
-            if (avg != null && avg.avg() != null && avg.avg().value() != null) {
-                avgBps = avg.avg().value();
+            if (avg != null && avg.avg() != null) {
+                try {
+                    Double v = avg.avg().value();
+                    if (v != null) avgBps = v.doubleValue();
+                } catch (Exception ignore) {}
             }
             TrendingData td = new TrendingData();
             td.setTimestamp(b.key());

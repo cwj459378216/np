@@ -47,14 +47,14 @@
                                     <div>
                                         <button type="button" class="btn btn-outline-primary p-2"
                                             [ngClass]="{ 'bg-primary text-white': displayType === 'list' }"
-                                            (click)="displayType = 'list'">
+                                            (click)="setDisplayType('list')">
                                             <icon-list-check />
                                         </button>
                                     </div>
                                     <div>
                                         <button type="button" class="btn btn-outline-primary p-2"
                                             [ngClass]="{ 'bg-primary text-white': displayType === 'grid' }"
-                                            (click)="displayType = 'grid'">
+                                            (click)="setDisplayType('grid')">
                                             <icon-layout-grid />
                                         </button>
                                     </div>
@@ -92,7 +92,7 @@
                                             <ng-container *ngFor="let contact of filterdContactsList" key="contact.id">
                                                 <tr>
                                                     <td>
-                                                        <a href="javascript:;" 
+                                                        <a href="javascript:;"
                                                            class="text-primary hover:text-primary-dark hover:underline cursor-pointer font-medium transition-colors duration-200"
                                                            (click)="navigateToDashboard(contact)"
                                                            [title]="contact.sessionId ? ('collectorMessages.clickToViewInDashboard' | translate) : ('collectorMessages.noSessionDataAvailable' | translate)"
@@ -203,43 +203,69 @@
                                                     [src]="'/assets/images/' + contact.path" />
                                             </ng-container> -->
                                             <div class="relative overflow-hidden">
-                                                <apx-chart [series]="contact.uiTrafficSeries || revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
+                                                <!-- 分析完成或正在运行且有数据时显示图表 -->
+                                                <apx-chart *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED') && contact.uiTrafficSeries && contact.uiTrafficSeries.length > 0"
+                                                  [series]="contact.uiTrafficSeries" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
                                                   [stroke]="revenueChart.stroke" [colors]="revenueChart.colors" [markers]="revenueChart.markers"
                                                   [labels]="revenueChart.labels" [xaxis]="revenueChart.xaxis" [yaxis]="revenueChart.yaxis"
                                                   [grid]="revenueChart.grid" [legend]="revenueChart.legend" [tooltip]="revenueChart.tooltip"
                                                   [fill]="revenueChart.fill" class="rounded-lg bg-white dark:bg-black">
-                                                  <!-- loader -->
-                                                  <div class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
-                                                    <span
-                                                      class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
-                                                  </div>
                                                 </apx-chart>
+
+                                                <!-- 未分析完成且非运行状态时显示默认状态 -->
+                                                <div *ngIf="!contact.analysisCompleted && contact.status !== 'running' && contact.status !== 'STATUS_STARTED'" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                                  <div class="text-center">
+                                                    <div class="text-gray-400 dark:text-gray-500 mb-2">
+                                                      <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                                      </svg>
+                                                    </div>
+                                                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'collectorMessages.waitingForAnalysis' | translate }}</span>
+                                                  </div>
+                                                </div>
+
+                                                <!-- 分析完成或运行中但无数据时显示空状态 -->
+                                                <div *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED') && (!contact.uiTrafficSeries || contact.uiTrafficSeries.length === 0)" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                                  <div class="text-center">
+                                                    <div class="text-gray-400 dark:text-gray-500 mb-2">
+                                                      <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                                      </svg>
+                                                    </div>
+                                                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'general.noData' | translate }}</span>
+                                                  </div>
+                                                </div>
+
+                                                <!-- 正在处理时显示 loader -->
+                                                <div *ngIf="contact.uiTrafficSeries === null" class="grid min-h-[200px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] rounded-lg">
+                                                  <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+                                                </div>
                                               </div>
                                         </div>
                                         <div class="relative -mt-10 px-6 pb-24">
                                             <div class="rounded-md bg-white px-2 py-4 shadow-md dark:bg-gray-900">
                                                 <div class="text-xl">{{ contact.name }}</div>
                                                 <div class="text-white-dark">{{ contact.role }}</div>
-                                                
+
                                                 <!-- 状态显示 -->
                                                 <div class="mt-2">
                                                     <!-- 错误状态 -->
-                                                    <span class="inline-block rounded bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-500/20 dark:text-red-300" 
+                                                    <span class="inline-block rounded bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-500/20 dark:text-red-300"
                                                           *ngIf="contact.status === 'error'">
                                                         {{ 'collectorStatus.partial' | translate }}
                                                     </span>
                                                     <!-- 运行中状态 -->
-                                                    <span class="inline-block rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-500/20 dark:text-blue-300" 
+                                                    <span class="inline-block rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
                                                           *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
                                                         {{ 'Running' | translate }}
                                                     </span>
                                                     <!-- 已完成状态 -->
-                                                    <span class="inline-block rounded bg-green-100 px-2 py-0.5 text-xs text-green-700 dark:bg-green-500/20 dark:text-green-300" 
+                                                    <span class="inline-block rounded bg-green-100 px-2 py-0.5 text-xs text-green-700 dark:bg-green-500/20 dark:text-green-300"
                                                           *ngIf="contact.status === 'completed' || contact.status === 'STATUS_FINISHED' || contact.analysisCompleted">
                                                         {{ 'collectorMessages.analyzed' | translate }}
                                                     </span>
                                                     <!-- 已创建但未启动状态 -->
-                                                    <span class="inline-block rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-500/20 dark:text-gray-300" 
+                                                    <span class="inline-block rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-500/20 dark:text-gray-300"
                                                           *ngIf="!contact.status || contact.status === 'start'">
                                                         {{ 'Ready' | translate }}
                                                     </span>
@@ -304,13 +330,39 @@
                                             </div>
                                         </div>
                                         <div
-                                            class="absolute bottom-0 mt-6 flex w-full gap-4 p-6 ltr:left-0 rtl:right-0">
-                                            <button type="button" class="btn btn-outline-primary w-1/2"
+                                            class="absolute bottom-0 mt-6 flex w-full gap-2 p-6 ltr:left-0 rtl:right-0">
+                                            <button type="button" class="btn btn-outline-primary flex-1"
                                                 (click)="editUser(contact)"
                                                 [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.analysisCompleted || contact.status === 'error'"
                                                 [title]="contact.status === 'error' ? ('collectorStatus.partial' | translate) : (contact.analysisCompleted ? ('collectorMessages.analyzed' | translate) : '')">{{ 'collector.edit' | translate }}</button>
-                                            <button type="button" class="btn btn-outline-danger w-1/2"
-                                                (click)="deleteUser(contact)">{{ 'Delete' | translate }}</button>
+                                            <button type="button" class="btn btn-outline-danger flex-1"
+                                                (click)="deleteUser(contact)"
+                                                [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">{{ 'Delete' | translate }}</button>
+
+                                            <!-- 分析按钮 - 和表格中的逻辑一致 -->
+                                            <ng-container *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED'; else notAnalyzingButtonCard">
+                                                <button type="button"
+                                                        class="btn btn-outline-success flex-1"
+                                                        (click)="confirmStopCapture(contact)">
+                                                    <app-analyze-animation></app-analyze-animation>
+                                                </button>
+                                            </ng-container>
+                                            <ng-template #notAnalyzingButtonCard>
+                                                <ng-container *ngIf="contact.analysisCompleted || contact.status === 'error'; else startButtonCard">
+                                                    <button type="button"
+                                                            class="btn btn-outline-secondary flex-1"
+                                                            disabled>
+                                                        {{ contact.status === 'error' ? ('collectorStatus.partial' | translate) : ('collectorMessages.analyzed' | translate) }}
+                                                    </button>
+                                                </ng-container>
+                                                <ng-template #startButtonCard>
+                                                    <button type="button"
+                                                            class="btn btn-outline-success flex-1"
+                                                            (click)="startCapture(contact)">
+                                                        {{ 'collector.start' | translate }}
+                                                    </button>
+                                                </ng-template>
+                                            </ng-template>
                                         </div>
                                     </div>
                                 </ng-container>
@@ -486,71 +538,46 @@
                             </div>
                         </div>
                         <div class="panel mt-5 overflow-hidden border-0 p-0">
-                            <ng-container *ngIf="displayType === 'list'">
-                                <div class="table-responsive">
-                                    <table class="table-striped table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>{{ 'collector.strategyName' | translate }}</th>
-                                                <th>{{ 'collector.fileSize' | translate }}</th>
-                                                <th>{{ 'collector.fileCount' | translate }}</th>
-                                                <th>{{ 'collector.outOfDiskAction' | translate }}</th>
-                                                <th>{{ 'collector.fileType' | translate }}</th>
-                                                <th class="!text-center">{{ 'Actions' | translate }}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr *ngFor="let strategy of searchStorageStrategies()">
-                                                <td>{{ strategy.name }}</td>
-                                                <td>{{ strategy.fileSize }}</td>
-                                                <td>{{ strategy.fileCount }}</td>
-                                                <td>{{ strategy.outOfDiskAction }}</td>
-                                                <td>{{ strategy.fileType }}</td>
-                                                <td class="!text-center">
-                                                    <div class="flex items-center justify-center gap-2">
-                                                        <button type="button" class="btn btn-sm btn-outline-primary w-20"
-                                                                (click)="editStorageStrategy(strategy)">
-                                                            {{ 'collector.edit' | translate }}
-                                                        </button>
-                                                        <button type="button" class="btn btn-sm btn-outline-danger w-20"
-                                                                (click)="deleteStorageStrategy(strategy)">
-                                                            {{ 'Delete' | translate }}
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr *ngIf="!searchStorageStrategies().length">
-                                                <td colspan="6" class="text-center text-white-dark py-4">
-                                                    {{ 'general.noData' | translate }}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </ng-container>
-
-                            <ng-container *ngIf="displayType === 'grid'">
-                                <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                                    <div *ngFor="let strategy of searchStorageStrategies()" class="panel p-4">
-                                        <h5 class="font-semibold mb-2">{{ strategy.name }}</h5>
-                                        <ul class="text-xs space-y-1 text-white-dark">
-                                            <li>{{ 'collector.fileSize' | translate }}: {{ strategy.fileSize }}</li>
-                                            <li>{{ 'collector.fileCount' | translate }}: {{ strategy.fileCount }}</li>
-                                            <li>{{ 'collector.outOfDiskAction' | translate }}: {{ strategy.outOfDiskAction }}</li>
-                                            <li>{{ 'collector.fileType' | translate }}: {{ strategy.fileType }}</li>
-                                        </ul>
-                                        <div class="mt-3 flex gap-2">
-                                            <button type="button" class="btn btn-xs btn-outline-primary flex-1"
-                                                    (click)="editStorageStrategy(strategy)">{{ 'collector.edit' | translate }}</button>
-                                            <button type="button" class="btn btn-xs btn-outline-danger flex-1"
-                                                    (click)="deleteStorageStrategy(strategy)">{{ 'Delete' | translate }}</button>
-                                        </div>
-                                    </div>
-                                    <div *ngIf="!searchStorageStrategies().length" class="col-span-full text-center text-white-dark py-6">
-                                        {{ 'general.noData' | translate }}
-                                    </div>
-                                </div>
-                            </ng-container>
+                            <div class="table-responsive">
+                                <table class="table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ 'collector.strategyName' | translate }}</th>
+                                            <th>{{ 'collector.fileSize' | translate }}</th>
+                                            <th>{{ 'collector.fileCount' | translate }}</th>
+                                            <th>{{ 'collector.outOfDiskAction' | translate }}</th>
+                                            <th>{{ 'collector.fileType' | translate }}</th>
+                                            <th class="!text-center">{{ 'Actions' | translate }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let strategy of searchStorageStrategies()">
+                                            <td>{{ strategy.name }}</td>
+                                            <td>{{ strategy.fileSize }}</td>
+                                            <td>{{ strategy.fileCount }}</td>
+                                            <td>{{ strategy.outOfDiskAction }}</td>
+                                            <td>{{ strategy.fileType }}</td>
+                                            <td class="!text-center">
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary w-20"
+                                                            (click)="editStorageStrategy(strategy)">
+                                                        {{ 'collector.edit' | translate }}
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger w-20"
+                                                            (click)="deleteStorageStrategy(strategy)">
+                                                        {{ 'Delete' | translate }}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr *ngIf="!searchStorageStrategies().length">
+                                            <td colspan="6" class="text-center text-white-dark py-4">
+                                                {{ 'general.noData' | translate }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                         <!-- 新增：抓包文件列表表格，显示 /datastore/neteyez/datastore/pcap/capture/ 下的文件 -->
                         <div class="panel mt-5 overflow-hidden border-0 p-0">
