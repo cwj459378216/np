@@ -29,11 +29,17 @@ public class CaptureRequest {
         private List<String> apps;
         private ZeekOpt zeek;
         private SavePacketOpt savePacket;
-        private SnortOpt snort;
+        private SuricataOpt suricata; // 新增：独立的 Suricata 配置
+        private SnortOpt snort;       // 保留 snort 以兼容旧字段
     }
 
     @Data
     public static class ZeekOpt {
+        private Boolean enable;
+    }
+
+    @Data
+    public static class SuricataOpt { // 新增：Suricata 配置
         private Boolean enable;
     }
 
@@ -53,4 +59,4 @@ public class CaptureRequest {
     public static class SnortOpt {
         private Boolean enable;
     }
-} 
+}

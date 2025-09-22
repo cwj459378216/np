@@ -474,17 +474,17 @@ export class CollectorComponent implements OnInit {
   // Storage Strategy 不是必填字段，移除验证
 
   const isFile = this.params.value.interfaceName === 'File';
-  // 后端 storage_strategy NOT NULL：File 模式写入占位值
-  const storageStrategyName = isFile ? 'FILE' : (this.params.value.storageStrategy || '');
+  // 后端 storage_strategy NOT NULL：File 模式写入占位值；非 File 未选则传 undefined
+  const storageStrategyName: string | undefined = isFile ? 'FILE' : (this.params.value.storageStrategy || undefined);
 
   const collectorData: Partial<Collector> = {
         name: this.params.value.name,
         interfaceName: this.params.value.interfaceName,
-    storageStrategy: storageStrategyName,
+        storageStrategy: storageStrategyName,
         filterStrategy: this.params.value.filterStrategy,
         protocolAnalysisEnabled: this.params.value.protocolAnalysisEnabled || false,
         idsEnabled: this.params.value.idsEnabled || false,
-  filePath: this.params.value.filePath || undefined,
+        filePath: this.params.value.filePath || undefined,
         status: this.params.value.id ? this.params.value.status : 'start',
         creationTime: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
@@ -1151,16 +1151,11 @@ export class CollectorComponent implements OnInit {
       return;
     }
 
-    // 获取对应的存储策略（仅非 File 模式需要）
+    // 获取对应的存储策略（仅非 File 模式尝试获取，未找到则继续，后续将不启用保存包）
     let storageStrategy: StorageStrategy | undefined;
     if (collector.interfaceName !== 'File') {
       storageStrategy = this.storageStrategies.find(s => s.name === collector.storageStrategy);
-      if (!storageStrategy) {
-        this.translate.get('collectorMessages.storageStrategyNotFound').subscribe(msg => {
-          this.showMessage(msg, 'error');
-        });
-        return;
-      }
+      // 如果未找到策略，不报错，继续执行（savePacket 将被禁用）
     }
 
     // 为非File模式设置接口信息（如果还没有设置的话）
@@ -1190,7 +1185,7 @@ export class CollectorComponent implements OnInit {
     // 构建基本请求参数
     const apps = [
       'zeek',
-    //   ...(collector.idsEnabled ? ['snort'] : [])
+      //   ...(collector.idsEnabled ? ['snort'] : [])
     ];
     const appOpt: any = {
       apps,
@@ -1198,7 +1193,7 @@ export class CollectorComponent implements OnInit {
       suricata: { enable: collector.idsEnabled || false }
     };
 
-    // 非 File 开启保存；File 关闭保存
+    // 非 File 开启保存；File 关闭保存；若未找到策略则禁用保存
     if (collector.interfaceName !== 'File' && storageStrategy) {
       appOpt.savePacket = {
         enable: true,

@@ -9,9 +9,7 @@ export interface TrendingData {
 }
 
 export interface ProtocolTrendsResponse {
-  HTTP: TrendingData[];
-  DNS: TrendingData[];
-  Others: TrendingData[];
+  [serviceName: string]: TrendingData[];
 }
 
 export interface NetworkProtocolTrendsResponse {

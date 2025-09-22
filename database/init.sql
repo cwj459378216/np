@@ -288,7 +288,7 @@ CREATE TABLE collectors (
     name VARCHAR(100) NOT NULL,
     creation_time TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
     interface_name VARCHAR(50) NOT NULL,
-    storage_strategy VARCHAR(50) NOT NULL,
+    storage_strategy VARCHAR(50),
     filter_strategy VARCHAR(50),
     protocol_analysis_enabled BOOLEAN DEFAULT false,
     ids_enabled BOOLEAN DEFAULT false,

@@ -96,7 +96,7 @@
             [fill]="revenueChart.fill" class="rounded-lg bg-white dark:bg-black">
           </apx-chart>
           <!-- empty state -->
-          <div *ngIf="revenueChart && !hasBandwidthData()" class="grid min-h-[325px] place-content-center bg-white dark:bg-black">
+          <div *ngIf="revenueChart && !hasBandwidthData()" class="grid min-h-[200px] place-content-center bg-white dark:bg-black">
             <span class="text-sm text-gray-500 dark:text-gray-300">{{ 'No data' | translate }}</span>
           </div>
           <!-- loader -->

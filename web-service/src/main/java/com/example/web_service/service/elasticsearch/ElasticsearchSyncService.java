@@ -283,28 +283,79 @@ public class ElasticsearchSyncService {
     }
 
     public Map<String, List<TrendingData>> getProtocolTrends(Long startTime, Long endTime, String filePath, String interval) throws IOException {
-        Map<String, List<TrendingData>> result = new java.util.HashMap<>();
-        
         // 将时间戳转换为ISO字符串格式
         String startTimeStr = java.time.Instant.ofEpochMilli(startTime).toString();
         String endTimeStr = java.time.Instant.ofEpochMilli(endTime).toString();
-        
-        // HTTP趋势 - 从http-realtime索引获取
-        List<TrendingData> httpTrends = getTrending(startTimeStr, endTimeStr, filePath, "http-*", interval);
-        result.put("HTTP", httpTrends);
-        
-        // DNS趋势 - 从dns-realtime索引获取
-        List<TrendingData> dnsTrends = getTrending(startTimeStr, endTimeStr, filePath, "dns-*", interval);
-        result.put("DNS", dnsTrends);
-        
-        // Others趋势 - 合并smb_cmd-realtime和conn-realtime索引的数据
-        List<TrendingData> smbTrends = getTrending(startTimeStr, endTimeStr, filePath, "smb_cmd-*", interval);
-        List<TrendingData> connTrends = getTrending(startTimeStr, endTimeStr, filePath, "conn-*", interval);
-        
-        // 合并Others数据 - 将smb和conn的数据合并
-        List<TrendingData> othersTrends = mergeOthersTrends(smbTrends, connTrends);
-        result.put("Others", othersTrends);
-        
+
+        // 构建查询条件
+        var rangeQuery = new Query.Builder()
+            .range(r -> r
+                .field("timestamp")
+                .gte(JsonData.of(startTimeStr))
+                .lte(JsonData.of(endTimeStr))
+            );
+
+        // 如果指定了filePath，添加过滤条件
+        var query = filePath != null
+            ? Query.of(q -> q
+                .bool(b -> b
+                    .must(rangeQuery.build())
+                    .must(m -> m
+                        .match(t -> t
+                            .field("filePath")
+                            .query(filePath)
+                        )
+                    )
+                )
+            )
+            : Query.of(q -> q
+                .bool(b -> b
+                    .must(rangeQuery.build())
+                )
+            );
+
+        // 使用 terms(serviceName) -> date_histogram 子聚合，按serviceName聚合前10个
+        var searchRequest = SearchRequest.of(s -> s
+            .index("conn-*")
+            .size(0)
+            .query(query)
+            .aggregations("by_service", a -> a
+                .terms(t -> t.field("serviceName").size(10)) // 获取前10个serviceName
+                .aggregations("trend", sub -> sub
+                    .dateHistogram(h -> {
+                        h.field("timestamp");
+                        applyInterval(h, interval);
+                        h.format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                        h.minDocCount(0);
+                        return h;
+                    })
+                )
+            )
+        );
+
+        var response = esClient.search(searchRequest, Void.class);
+
+        Map<String, List<TrendingData>> result = new java.util.HashMap<>();
+        var byService = response.aggregations().get("by_service");
+        if (byService == null || byService.sterms() == null) return java.util.Collections.emptyMap();
+        var serviceBuckets = byService.sterms().buckets().array();
+        for (var sb : serviceBuckets) {
+            String serviceName = sb.key().stringValue();
+            // 过滤掉无效的serviceName
+            if (serviceName != null && !serviceName.trim().isEmpty() && !"-".equals(serviceName.trim()) && !"null".equals(serviceName)) {
+                var trendAgg = sb.aggregations().get("trend");
+                if (trendAgg != null && trendAgg.dateHistogram() != null) {
+                    var buckets = trendAgg.dateHistogram().buckets().array();
+                    List<TrendingData> series = buckets.stream()
+                        .map(b -> new TrendingData(b.key(), b.docCount()))
+                        .collect(Collectors.toList());
+                    if (!series.isEmpty()) {
+                        result.put(serviceName, series);
+                    }
+                }
+            }
+        }
+
         // 统一时间轴，缺失补 0
         return normalizeSeriesZeros(result);
     }
@@ -441,36 +492,6 @@ public class ElasticsearchSyncService {
             out.put(key, filled);
         }
         return out;
-    }
-
-    private List<TrendingData> mergeOthersTrends(List<TrendingData> smbTrends, List<TrendingData> connTrends) {
-        Map<Long, TrendingData> mergedMap = new java.util.HashMap<>();
-        
-        // 添加SMB数据
-        for (TrendingData smb : smbTrends) {
-            mergedMap.put(smb.getTimestamp(), smb);
-        }
-        
-        // 合并CONN数据
-        for (TrendingData conn : connTrends) {
-            Long timestamp = conn.getTimestamp();
-            if (mergedMap.containsKey(timestamp)) {
-                // 如果时间戳已存在，合并count
-                TrendingData existing = mergedMap.get(timestamp);
-                TrendingData merged = new TrendingData();
-                merged.setTimestamp(timestamp);
-                merged.setCount(existing.getCount() + conn.getCount());
-                mergedMap.put(timestamp, merged);
-            } else {
-                // 如果时间戳不存在，直接添加
-                mergedMap.put(timestamp, conn);
-            }
-        }
-        
-        // 转换为List并按时间戳排序
-        return mergedMap.values().stream()
-                .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
-                .collect(Collectors.toList());
     }
 
     @SuppressWarnings("unused")
@@ -801,7 +822,7 @@ public class ElasticsearchSyncService {
      */
     public Map<String, Object> getServiceNameAggregation(Integer topN, Long startTime, Long endTime, String filePath) throws IOException {
         log.info("Getting serviceName aggregation with topN: {}, startTime: {}, endTime: {}, filePath: {}", topN, startTime, endTime, filePath);
-        String[] possibleFields = {"serviceName", "protoName", "serviceName.keyword", "protoName.keyword"};
+        String[] possibleFields = {"serviceName"};
         for (String field : possibleFields) {
             try {
                 log.info("Trying field: {}", field);

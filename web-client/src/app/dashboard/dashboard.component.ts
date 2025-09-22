@@ -576,11 +576,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       legend: { position: 'top', horizontalAlign: 'right', fontSize: '16px', markers: { width: 10, height: 10, offsetX: -2 }, itemMargin: { horizontal: 10, vertical: 5 } },
       tooltip: { marker: { show: true }, x: { show: false } },
       fill: { type: 'gradient', gradient: { shadeIntensity: 1, inverseColors: false, opacityFrom: isDark ? 0.19 : 0.28, opacityTo: 0.05, stops: isDark ? [100, 100] : [45, 100] } },
-      series: [
-        { name: 'HTTP', data: [] },
-        { name: 'DNS', data: [] },
-        { name: 'Others', data: [] }
-      ]
+      series: []
     };
 
     // 先销毁现有图表实例，避免冲突
@@ -600,16 +596,29 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const isDark = this.store?.theme === 'dark' || this.store?.isDarkMode ? true : false;
     const isRtl = this.store?.rtlClass === 'rtl' ? true : false;
 
-    // 转换数据格式为ApexCharts需要的格式
-    const httpData = data.HTTP.map(item => [item.timestamp, item.count]);
-    const dnsData = data.DNS.map(item => [item.timestamp, item.count]);
-    const othersData = data.Others.map(item => [item.timestamp, item.count]);
+    // 获取所有服务名称并转换数据格式为ApexCharts需要的格式
+    const serviceNames = Object.keys(data);
+    const seriesData: any[] = [];
+    let totalFlowCount = 0;
 
-    // 计算所有协议的总流量数
-    const httpTotal = data.HTTP.reduce((sum, item) => sum + item.count, 0);
-    const dnsTotal = data.DNS.reduce((sum, item) => sum + item.count, 0);
-    const othersTotal = data.Others.reduce((sum, item) => sum + item.count, 0);
-    this.totalFlowCount = httpTotal + dnsTotal + othersTotal;
+    // 为每个服务名称生成图表数据系列
+    serviceNames.forEach((serviceName, index) => {
+      if (data[serviceName] && Array.isArray(data[serviceName])) {
+        const serviceData = data[serviceName].map(item => [item.timestamp, item.count]);
+        const serviceTotal = data[serviceName].reduce((sum, item) => sum + item.count, 0);
+        totalFlowCount += serviceTotal;
+
+        seriesData.push({
+          name: serviceName,
+          data: serviceData,
+        });
+      }
+    });
+
+    this.totalFlowCount = totalFlowCount;
+
+    // 生成动态颜色
+    const colors = this.generateColors(seriesData.length, isDark);
 
     this.protocolTrending = {
       chart: {
@@ -640,10 +649,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         left: -7,
         top: 22,
       },
-      colors: isDark ? ['#2196f3', '#e7515a', '#00ab55'] : ['#1b55e2', '#e7515a', '#00ab55'],
+      colors: colors,
       markers: {
         size: 0,
-        colors: ['#1b55e2', '#e7515a', '#00ab55'],
+        colors: colors,
         strokeColor: '#fff',
         strokeWidth: 2,
         shape: 'circle',
@@ -740,20 +749,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
           stops: isDark ? [100, 100] : [45, 100],
         },
       },
-      series: [
-        {
-          name: 'HTTP',
-          data: httpData,
-        },
-        {
-          name: 'DNS',
-          data: dnsData,
-        },
-        {
-          name: 'Others',
-          data: othersData,
-        },
-      ],
+      series: seriesData,
     };
 
     // 直接触发图表重绘，确保在数据源切换后立即显示
@@ -1200,20 +1196,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
           stops: isDark ? [100, 100] : [45, 100],
         },
       },
-      series: [
-        {
-          name: 'HTTP',
-          data: [],
-        },
-        {
-          name: 'DNS',
-          data: [],
-        },
-        {
-          name: 'Others',
-          data: [],
-        },
-      ],
+      series: [],
     };
 
     // 如果数据加载成功，初始化其他图表

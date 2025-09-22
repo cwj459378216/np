@@ -108,7 +108,7 @@ public class ElasticsearchController {
     }
 
     @GetMapping("/protocol-trends")
-    @Operation(summary = "查询协议交易趋势", description = "获取HTTP、DNS和其他协议的趋势数据，时间参数使用毫秒时间戳")
+    @Operation(summary = "查询协议交易趋势", description = "按serviceName聚合获取前10个服务的时间序列趋势数据，时间参数使用毫秒时间戳")
     public Map<String, List<TrendingData>> getProtocolTrends(
             @RequestParam Long startTime,
             @RequestParam Long endTime,
