@@ -290,19 +290,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const endTimeTimestamp = timeRange.endTime.getTime();
     const filePath = timeRange.filePath; // 获取文件路径
 
-    // 根据时间范围长度决定间隔
+    // 根据时间范围长度自适应计算间隔（最小 1m，最大 1y）
     const timeSpan = endTimeTimestamp - startTimeTimestamp;
-    let interval = '1h';
-
-    if (timeSpan <= 1000 * 60 * 60 * 6) { // 6小时内
-      interval = '15m';
-    } else if (timeSpan <= 1000 * 60 * 60 * 24) { // 24小时内
-      interval = '1h';
-    } else if (timeSpan <= 1000 * 60 * 60 * 24 * 7) { // 7天内
-      interval = '6h';
-    } else { // 7天以上
-      interval = '1d';
-    }
+    const interval = this.computeAutoInterval(timeSpan, 20);
 
     console.log('Loading data for time range:', {
       startTime: timeRange.startTime.toISOString(),
@@ -497,6 +487,35 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.alarms = [];
       }
     });
+  }
+
+  // 依据时间跨度计算最接近目标点数的常用间隔（最小 1m，最大 1y）
+  private computeAutoInterval(spanMillis: number, desiredPoints: number): string {
+    const safeSpan = Math.max(1, spanMillis);
+    const targetBucketMs = Math.max(60_000, Math.floor(safeSpan / Math.max(1, desiredPoints)));
+    const steps: number[] = [
+      60_000,               // 1m
+      5 * 60_000,           // 5m
+      15 * 60_000,          // 15m
+      30 * 60_000,          // 30m
+      60 * 60_000,          // 1h
+      3 * 60 * 60_000,      // 3h
+      6 * 60 * 60_000,      // 6h
+      12 * 60 * 60_000,     // 12h
+      24 * 60 * 60_000,     // 1d
+      3 * 24 * 60 * 60_000, // 3d
+      7 * 24 * 60 * 60_000, // 7d
+      14 * 24 * 60 * 60_000,// 14d
+      30 * 24 * 60 * 60_000,// 30d
+      90 * 24 * 60 * 60_000,// 90d
+      180 * 24 * 60 * 60_000,// 180d
+      365 * 24 * 60 * 60_000 // 1y
+    ];
+    const labels: string[] = ['1m','5m','15m','30m','1h','3h','6h','12h','1d','3d','7d','14d','30d','90d','180d','1y'];
+    for (let i = 0; i < steps.length; i++) {
+      if (steps[i] >= targetBucketMs) return labels[i];
+    }
+    return '1y';
   }
 
   updateProtocolTrendingChart(data: ProtocolTrendsResponse) {
@@ -733,9 +752,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       yaxis: {
         tickAmount: 5,
         labels: {
-          formatter: (value: number) => {
-            return parseInt(value * 100 + "") + '%';
-          },
+          formatter: (value: number) => this.formatBps(value),
           offsetX: isRtl ? -30 : -10,
           offsetY: 0,
           style: {
@@ -786,6 +803,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         x: {
           show: false,
         },
+        y: {
+          formatter: (value: number) => this.formatBps(value)
+        }
       },
       fill: {
         type: 'gradient',
@@ -801,6 +821,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     };
     // 空数据时平均带宽为 0
     this.averageBandwidth = 0;
+  }
+
+  // 将 bps 数值转换为带单位的字符串（bps/Kbps/Mbps/Gbps）
+  public formatBps(value: number): string {
+    if (value == null || !isFinite(value)) return '0 bps';
+    const abs = Math.abs(value);
+    if (abs >= 1_000_000_000) return (value / 1_000_000_000).toFixed(2) + ' Gbps';
+    if (abs >= 1_000_000) return (value / 1_000_000).toFixed(2) + ' Mbps';
+    if (abs >= 1_000) return (value / 1_000).toFixed(2) + ' Kbps';
+    return Math.round(value) + ' bps';
   }
 
   initDefaultNetworkProtocolChart() {
@@ -1386,22 +1416,22 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       if (!Array.isArray(channelData)) {
         console.error(`Channel data for ${channelKey} is not an array:`, channelData);
         return {
-          name: `Channel ${channelKey.replace('channel', '')} Utilization`,
+          name: `Channel ${channelKey.replace('channel', '')} Throughput`,
           data: []
         };
       }
 
-      const processedData = channelData.map(item => [item.timestamp, item.count / 100]); // 转换回小数
+      const processedData = channelData.map(item => [item.timestamp, item.count]);
       return {
-        name: `Channel ${channelKey.replace('channel', '')} Utilization`,
+        name: `Channel ${channelKey.replace('channel', '')} Throughput`,
         data: processedData
       };
     });
 
-    // 计算平均带宽利用率
-    const allUtilizations = Object.values(data).flat().map(item => item.count);
-    this.averageBandwidth = allUtilizations.length > 0
-      ? allUtilizations.reduce((sum, util) => sum + util, 0) / allUtilizations.length
+    // 计算平均带宽（bps）
+    const allBps = Object.values(data).flat().map(item => item.count);
+    this.averageBandwidth = allBps.length > 0
+      ? allBps.reduce((sum, v) => sum + v, 0) / allBps.length
       : 0;
 
     this.revenueChart = {
@@ -1469,9 +1499,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       yaxis: {
         tickAmount: 5,
         labels: {
-          formatter: (value: number) => {
-            return parseInt(value * 100 + "") + '%';
-          },
+          formatter: (value: number) => this.formatBps(value),
           offsetX: isRtl ? -30 : -10,
           offsetY: 0,
           style: {
@@ -1522,6 +1550,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         x: {
           show: false,
         },
+        y: {
+          formatter: (value: number) => this.formatBps(value)
+        }
       },
       fill: {
         type: 'gradient',

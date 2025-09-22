@@ -301,7 +301,7 @@ export class CollectorComponent implements OnInit {
       yaxis: {
         tickAmount: 2,
         labels: {
-          formatter: (value: number) => `${Math.round(value)}%`,
+          formatter: (value: number) => this.formatBps(value),
           offsetX: isRtl ? -30 : -10,
           offsetY: 0,
           style: {
@@ -353,6 +353,9 @@ export class CollectorComponent implements OnInit {
         x: {
           show: false,
         },
+        y: {
+          formatter: (value: number) => this.formatBps(value)
+        }
       },
       fill: {
         type: 'gradient',
@@ -830,8 +833,8 @@ export class CollectorComponent implements OnInit {
             const series = Object.keys(resp || {}).sort().map((key) => {
               const arr = (resp as any)[key] as TrendingData[];
               const idx = key.match(/(\d+)/)?.[1];
-              const chName = idx != null ? `Channel ${Number(idx) + 1} Utilization` : key;
-              const data = (arr || []).map(p => [p.timestamp, p.count]);
+              const chName = idx != null ? `Channel ${Number(idx) + 1} Throughput` : key;
+              const data = (arr || []).map(p => [p.timestamp, p.count]); // bps 数值
               return { name: chName, data };
             });
             collector.uiTrafficSeries = series.length ? series : [];
@@ -851,13 +854,14 @@ export class CollectorComponent implements OnInit {
         for (const it of items || []) {
           const portKey = String(it.port ?? 0);
           const ts = typeof it.timestamp === 'number' ? (it.timestamp as unknown as number) : (it.timestamp ? new Date(it.timestamp).getTime() : Date.now());
-          const utilNum = it.util != null ? parseFloat(String(it.util)) : 0;
+          // 兼容回退：使用 util（百分比）已不再推荐；尽量从 bps 计算
+          const utilNum = it.bps != null ? parseFloat(String((it as any).bps)) : (it.util != null ? parseFloat(String(it.util)) : 0);
           if (!groups[portKey]) groups[portKey] = [];
           groups[portKey].push([ts, utilNum]);
         }
         Object.values(groups).forEach(arr => arr.sort((a, b) => a[0] - b[0]));
   const series = Object.keys(groups).map(k => ({
-          name: `Channel ${Number(k) + 1} Utilization`,
+          name: `Channel ${Number(k) + 1} Throughput`,
           data: groups[k]
         }));
   collector.uiTrafficSeries = series.length ? series : [];
@@ -866,6 +870,16 @@ export class CollectorComponent implements OnInit {
   collector.uiTrafficSeries = [];
       }
     });
+  }
+
+  // bps 格式化
+  public formatBps(value: number): string {
+    if (value == null || !isFinite(value)) return '0 bps';
+    const abs = Math.abs(value);
+    if (abs >= 1_000_000_000) return (value / 1_000_000_000).toFixed(2) + ' Gbps';
+    if (abs >= 1_000_000) return (value / 1_000_000).toFixed(2) + ' Mbps';
+    if (abs >= 1_000) return (value / 1_000).toFixed(2) + ' Kbps';
+    return Math.round(value) + ' bps';
   }
 
   // 依据时间跨度计算最接近目标点数的常用间隔
