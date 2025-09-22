@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import ApexCharts from 'apexcharts';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
@@ -10,7 +11,12 @@ import { TimeRangeService, TimeRange } from '../services/time-range.service';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit, OnDestroy {
+export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
+  // 模板引用，便于在需要时强制触发重绘
+  @ViewChild('bandwidthChartRef') bandwidthChartRef?: ElementRef;
+  @ViewChild('protocolTrendingChartRef') protocolTrendingChartRef?: ElementRef;
+  @ViewChild('serviceNameChartRef') serviceNameChartRef?: ElementRef;
+  @ViewChild('tcpTrendingChartRef') tcpTrendingChartRef?: ElementRef;
   store: any;
   totalVisit: any;
   paidVisit: any;
@@ -136,6 +142,44 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }, 30000);
   }
 
+  // 视图挂载后兜底初始化，避免路由切换回来时三个图表对象尚未准备导致 *ngIf 不渲染
+  ngAfterViewInit(): void {
+    // 若数据尚未到达，先绘制默认图，提升首屏可见性
+    if (!this.revenueChart) {
+      this.initDefaultBandwidthChart();
+    }
+    if (!this.protocolTrending) {
+      this.initDefaultProtocolTrendingChart();
+    }
+    if (!this.tcpTrending) {
+      this.initDefaultNetworkProtocolChart();
+    }
+    if (!this.salesByCategory) {
+      this.setEmptyServiceNameChart();
+    }
+
+    // 强制 ApexCharts 在路由切换后重新计算尺寸
+    setTimeout(() => {
+      this.ensureChartsVisibility();
+    }, 0);
+  }
+
+  // 强制图表重绘，修复从其它页面切回后需要拖拽窗口才能显示的问题
+  private ensureChartsVisibility(): void {
+    try {
+      // 1) 触发全局 resize（ApexCharts 会监听）
+      window.dispatchEvent(new Event('resize'));
+
+      // 2) 使用 ApexCharts.exec 针对具体图表触发重绘
+      const ids = ['bandwidthChart', 'protocolTrendingChart', 'serviceNameChart', 'tcpTrendingChart'];
+      ids.forEach((id) => {
+        try {
+          ApexCharts.exec(id, 'updateOptions', {} as any, false, true);
+        } catch { /* 忽略单个 chart 的异常 */ }
+      });
+    } catch { /* 忽略 */ }
+  }
+
   private loadNetworkProtocolTrends(startTimeTimestamp?: number, endTimeTimestamp?: number, interval: string = '1h', filePath?: string) {
     const endTime = endTimeTimestamp ? new Date(endTimeTimestamp) : new Date();
     const startTime = startTimeTimestamp ? new Date(startTimeTimestamp) : new Date(endTime.getTime() - 24 * 60 * 60 * 1000);
@@ -169,7 +213,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
           // 复用 tcpTrending 配置渲染该大图
           this.tcpTrending = {
-            chart: { height: 350, type: 'area', fontFamily: 'Nunito, sans-serif', zoom: { enabled: false }, toolbar: { show: false } },
+            chart: { height: 350, type: 'area', fontFamily: 'Nunito, sans-serif', id: 'tcpTrendingChart', zoom: { enabled: false }, toolbar: { show: false } },
             dataLabels: { enabled: false },
             stroke: { show: true, curve: 'smooth', width: 2, lineCap: 'square' },
             dropShadow: { enabled: true, opacity: 0.2, blur: 10, left: -7, top: 22 },
@@ -183,11 +227,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
             fill: { type: 'gradient', gradient: { shadeIntensity: 1, inverseColors: false, opacityFrom: isDark ? 0.19 : 0.28, opacityTo: 0.05, stops: isDark ? [100, 100] : [45, 100] } },
             series
           };
+          this.ensureChartsVisibility();
         },
         error: (err) => {
           console.error('Error loading network protocol trends:', err);
           // 提供默认的空图表
           this.initDefaultNetworkProtocolChart();
+          this.ensureChartsVisibility();
         }
       });
   }
@@ -473,6 +519,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         height: 350,
         type: 'area',
         fontFamily: 'Nunito, sans-serif',
+        id: 'protocolTrendingChart',
         zoom: {
           enabled: false,
         },
@@ -614,6 +661,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // 如果数据加载成功，初始化其他图表
     this.initCharts();
+    this.ensureChartsVisibility();
   }
 
   initDefaultBandwidthChart() {
@@ -625,6 +673,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         height: 200,
         type: 'area',
         fontFamily: 'Nunito, sans-serif',
+        id: 'bandwidthChart',
         zoom: {
           enabled: false,
         },
@@ -748,45 +797,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
           stops: isDark ? [100, 100] : [45, 100],
         },
       },
-      series: [
-        {
-          name: 'Channel 0 Utilization',
-          data: [
-            [1609459200000, 0.1],
-            [1612137600000, 0.2],
-            [1614556800000, 0.5],
-            [1617235200000, 0.8],
-            [1619827200000, 0.3],
-            [1622505600000, 0.6],
-            [1625097600000, 0.5],
-            [1627776000000, 0.9],
-            [1630454400000, 0.7],
-            [1633046400000, 0.4],
-            [1635724800000, 0.8],
-            [1638316800000, 0.6],
-          ],
-        },
-        {
-          name: 'Channel 1 Utilization',
-          data: [
-            [1609459200000, 0.2],
-            [1612137600000, 0.3],
-            [1614556800000, 0.1],
-            [1617235200000, 0.5],
-            [1619827200000, 0.2],
-            [1622505600000, 0.7],
-            [1625097600000, 0.8],
-            [1627776000000, 0.5],
-            [1630454400000, 0.1],
-            [1633046400000, 0.4],
-            [1635724800000, 0.3],
-            [1638316800000, 0.8],
-          ],
-        },
-      ],
+      series: [],
     };
-    // 设置默认平均带宽
-    this.averageBandwidth = 45.5;
+    // 空数据时平均带宽为 0
+    this.averageBandwidth = 0;
   }
 
   initDefaultNetworkProtocolChart() {
@@ -801,6 +815,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         height: 350,
         type: 'area',
         fontFamily: 'Nunito, sans-serif',
+        id: 'tcpTrendingChart',
         zoom: {
           enabled: false,
         },
@@ -951,6 +966,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         height: 350,
         type: 'area',
         fontFamily: 'Nunito, sans-serif',
+        id: 'protocolTrendingChart',
         zoom: {
           enabled: false,
         },
@@ -1136,7 +1152,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       chart: {
         type: 'donut',
         height: 520,
-        fontFamily: 'Nunito, sans-serif'
+        fontFamily: 'Nunito, sans-serif',
+        id: 'serviceNameChart'
       },
       dataLabels: {
         enabled: false
@@ -1212,6 +1229,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         ['#e2a03f','#5c1ac3','#e7515a','#00ab55','#4361ee','#f97316','#14b8a6','#dc2626','#2563eb','#7c3aed'],
       series: series
     };
+    // 确保图表立即重绘
+    this.ensureChartsVisibility();
   }
 
   // 空的 ServiceName 图表（无数据）
@@ -1222,7 +1241,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       chart: {
         type: 'donut',
         height: 460,
-        fontFamily: 'Nunito, sans-serif'
+        fontFamily: 'Nunito, sans-serif',
+        id: 'serviceNameChart'
       },
       dataLabels: {
         enabled: false
@@ -1297,6 +1317,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       colors: [],
       series: []
     };
+    // 确保空图表也能正确渲染
+    this.ensureChartsVisibility();
   }
 
   loadBandwidthChartTheme() {
@@ -1387,6 +1409,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         height: 200,
         type: 'area',
         fontFamily: 'Nunito, sans-serif',
+        id: 'bandwidthChart',
         zoom: {
           enabled: false,
         },
@@ -1512,6 +1535,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       series: series,
     };
+    this.ensureChartsVisibility();
   }
 
   initCharts() {
@@ -2715,6 +2739,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       ],
     };
     }
+
+    // 统一触发一次重绘，确保路由切回后尺寸与显示正确
+    this.ensureChartsVisibility();
   }
 
   // ================= 自定义时间格式化 =================
@@ -2746,7 +2773,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private pad(n: number): string { return n < 10 ? '0' + n : '' + n; }
 
+  // ================ 辅助：带宽图是否有数据 ================
+  public hasBandwidthData(): boolean {
+    try {
+      const series: any[] = (this.revenueChart && this.revenueChart.series) ? (this.revenueChart.series as any[]) : [];
+      if (!Array.isArray(series) || series.length === 0) return false;
+      return series.some((s: any) => {
+        const data = s?.data;
+        if (!Array.isArray(data) || data.length === 0) return false;
+        // 任意点存在数值即可认为有数据
+        return data.some((pt: any) => {
+          if (Array.isArray(pt) && pt.length >= 2) {
+            const v = Number(pt[1]);
+            return !Number.isNaN(v) && v !== 0;
+          }
+          const v = Number(pt);
+          return !Number.isNaN(v) && v !== 0;
+        });
+      });
+    } catch {
+      return false;
+    }
+  }
+
 }
-
-
-  // ================= 自定义时间格式化 =================

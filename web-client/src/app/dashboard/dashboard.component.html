@@ -87,12 +87,16 @@
         </div>
         <p class="text-lg dark:text-white-light/90"> {{ 'Average bandwidth' | translate }}<span class="ml-2 text-primary">{{ averageBandwidth | number:'1.0-1' }}%</span></p>
         <div class="relative overflow-hidden">
-          <apx-chart *ngIf="revenueChart" [series]="revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
+          <apx-chart #bandwidthChartRef *ngIf="revenueChart && hasBandwidthData()" [series]="revenueChart.series" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
             [stroke]="revenueChart.stroke" [colors]="revenueChart.colors" [markers]="revenueChart.markers"
             [labels]="revenueChart.labels" [xaxis]="revenueChart.xaxis" [yaxis]="revenueChart.yaxis"
             [grid]="revenueChart.grid" [legend]="revenueChart.legend" [tooltip]="revenueChart.tooltip"
             [fill]="revenueChart.fill" class="rounded-lg bg-white dark:bg-black">
           </apx-chart>
+          <!-- empty state -->
+          <div *ngIf="revenueChart && !hasBandwidthData()" class="grid min-h-[325px] place-content-center bg-white dark:bg-black">
+            <span class="text-sm text-gray-500 dark:text-gray-300">{{ 'No data' | translate }}</span>
+          </div>
           <!-- loader -->
           <div *ngIf="!revenueChart" class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
             <span
@@ -104,34 +108,12 @@
 
 
     <div class="mb-6 grid gap-6 lg:grid-cols-3">
-      <div class="panel h-full xl:col-span-2">
-        <div class="mb-5 flex items-center justify-between dark:text-white-light">
-          <h5 class="text-lg font-semibold">{{ 'Protocol Transaction Trends' | translate }}</h5>
-        </div>
-        <p class="text-lg dark:text-white-light/90">{{ 'dashboard.flowCount' | translate }}<span class="ml-2 text-primary">{{ totalFlowCount | number }}</span></p>
-        <div class="relative overflow-hidden">
-          <apx-chart *ngIf="protocolTrending" [series]="protocolTrending.series" [chart]="protocolTrending.chart"
-            [dataLabels]="protocolTrending.dataLabels" [stroke]="protocolTrending.stroke"
-            [colors]="protocolTrending.colors" [markers]="protocolTrending.markers" [labels]="protocolTrending.labels"
-            [xaxis]="protocolTrending.xaxis" [yaxis]="protocolTrending.yaxis" [grid]="protocolTrending.grid"
-            [legend]="protocolTrending.legend" [tooltip]="protocolTrending.tooltip" [fill]="protocolTrending.fill"
-            class="rounded-lg bg-white dark:bg-black">
-          </apx-chart>
-          <div *ngIf="!protocolTrending" class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
-            <span
-              class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
-          </div>
-        </div>
-      </div>
-
-
-
-  <div class="panel h-full overflow-visible">
+         <div class="panel h-full overflow-visible">
         <div class="mb-5 flex items-center">
           <h5 class="text-lg font-semibold dark:text-white-light">{{ 'Application Protocol' | translate }}</h5>
         </div>
         <div class="overflow-hidden">
-          <apx-chart *ngIf="salesByCategory" [series]="salesByCategory.series" [chart]="salesByCategory.chart"
+          <apx-chart #serviceNameChartRef *ngIf="salesByCategory" [series]="salesByCategory.series" [chart]="salesByCategory.chart"
             [dataLabels]="salesByCategory.dataLabels" [stroke]="salesByCategory.stroke"
             [colors]="salesByCategory.colors" [legend]="salesByCategory.legend"
             [plotOptions]="salesByCategory.plotOptions" [labels]="salesByCategory.labels"
@@ -140,6 +122,25 @@
 
           <!-- loader -->
           <div *ngIf="!salesByCategory" class="grid min-h-[520px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+            <span
+              class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+          </div>
+        </div>
+      </div>
+      <div class="panel h-full xl:col-span-2">
+        <div class="mb-5 flex items-center justify-between dark:text-white-light">
+          <h5 class="text-lg font-semibold">{{ 'Protocol Transaction Trends' | translate }}</h5>
+        </div>
+        <p class="text-lg dark:text-white-light/90">{{ 'dashboard.flowCount' | translate }}<span class="ml-2 text-primary">{{ totalFlowCount | number }}</span></p>
+        <div class="relative overflow-hidden">
+          <apx-chart #protocolTrendingChartRef *ngIf="protocolTrending" [series]="protocolTrending.series" [chart]="protocolTrending.chart"
+            [dataLabels]="protocolTrending.dataLabels" [stroke]="protocolTrending.stroke"
+            [colors]="protocolTrending.colors" [markers]="protocolTrending.markers" [labels]="protocolTrending.labels"
+            [xaxis]="protocolTrending.xaxis" [yaxis]="protocolTrending.yaxis" [grid]="protocolTrending.grid"
+            [legend]="protocolTrending.legend" [tooltip]="protocolTrending.tooltip" [fill]="protocolTrending.fill"
+            class="rounded-lg bg-white dark:bg-black">
+          </apx-chart>
+          <div *ngIf="!protocolTrending" class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
             <span
               class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
           </div>
@@ -216,7 +217,7 @@
         </div>
   <p class="text-lg dark:text-white-light/90">{{ 'Flow Count' | translate }}<span class="ml-2 text-primary">{{ networkProtocolFlowCount | number }}</span></p>
         <div class="relative overflow-hidden">
-          <apx-chart *ngIf="tcpTrending" [series]="tcpTrending.series" [chart]="tcpTrending.chart"
+          <apx-chart #tcpTrendingChartRef *ngIf="tcpTrending" [series]="tcpTrending.series" [chart]="tcpTrending.chart"
             [dataLabels]="tcpTrending.dataLabels" [stroke]="tcpTrending.stroke"
             [colors]="tcpTrending.colors" [markers]="tcpTrending.markers" [labels]="tcpTrending.labels"
             [xaxis]="tcpTrending.xaxis" [yaxis]="tcpTrending.yaxis" [grid]="tcpTrending.grid"
