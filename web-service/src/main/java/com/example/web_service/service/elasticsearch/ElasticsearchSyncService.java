@@ -5,6 +5,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval;
+import co.elastic.clients.elasticsearch._types.aggregations.DateHistogramAggregation;
+import co.elastic.clients.elasticsearch._types.Time;
 import co.elastic.clients.util.NamedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,32 +92,66 @@ public class ElasticsearchSyncService {
                 .toList();
     }
 
-    private CalendarInterval parseInterval(String interval) {
-        switch (interval.toUpperCase()) {
-            case "MINUTE":
-            case "1MIN":
-                return CalendarInterval.Minute;
-            case "HOUR":
-            case "1H":
-                return CalendarInterval.Hour;
-            case "DAY":
-            case "1D":
-                return CalendarInterval.Day;
-            case "WEEK":
-            case "1W":
-                return CalendarInterval.Week;
-            case "MONTH":
-            case "1MON":
-                return CalendarInterval.Month;
-            case "QUARTER":
-            case "1Q":
-                return CalendarInterval.Quarter;
-            case "YEAR":
-            case "1Y":
-                return CalendarInterval.Year;
+    // 统一设置 date_histogram 的 interval，支持 fixedInterval(如 5m/15m/3h/12h/3d/7d/14d/30d/90d/180d) 与 calendarInterval(如 1w/1mon/1q/1y)
+    private void applyInterval(DateHistogramAggregation.Builder h, String interval) {
+        String s = (interval == null ? "1h" : interval.trim()).toLowerCase();
+        // 首先处理日历型（ES 不支持以 fixed 表示年/月/周）
+        switch (s) {
+            case "1y":
+            case "year":
+                h.calendarInterval(CalendarInterval.Year);
+                return;
+            case "1q":
+            case "quarter":
+                h.calendarInterval(CalendarInterval.Quarter);
+                return;
+            case "1mon":
+            case "1mth":
+            case "1mo":
+            case "1month":
+            case "month":
+                h.calendarInterval(CalendarInterval.Month);
+                return;
+            case "1w":
+            case "week":
+                h.calendarInterval(CalendarInterval.Week);
+                return;
+            // 以下也可用 calendarInterval，但为统一我们优先走 fixedInterval（等距）
+            case "1d":
+                h.fixedInterval(Time.of(t -> t.time("1d")));
+                return;
+            case "1h":
+                h.fixedInterval(Time.of(t -> t.time("1h")));
+                return;
+            case "1min":
+            case "1m":
+                h.fixedInterval(Time.of(t -> t.time("1m")));
+                return;
             default:
-                return CalendarInterval.Hour;  // 默认使用小时
+                break;
         }
+
+        // 其次处理常见 fixed 间隔，格式为 <number><unit>，unit ∈ {ms,s,m,h,d}
+        if (s.matches("^\\d+(ms|s|m|h|d)$")) {
+            h.fixedInterval(Time.of(t -> t.time(s)));
+            return;
+        }
+
+        // 容错：常见别名
+        switch (s) {
+            case "minute":
+                h.fixedInterval(Time.of(t -> t.time("1m")));
+                return;
+            case "hour":
+                h.fixedInterval(Time.of(t -> t.time("1h")));
+                return;
+            case "day":
+                h.fixedInterval(Time.of(t -> t.time("1d")));
+                return;
+        }
+
+        // 兜底
+        h.fixedInterval(Time.of(t -> t.time("1h")));
     }
 
     public List<TrendingData> getTrending(String startTime, String endTime, String filePath, String index, String interval) throws IOException {
@@ -152,23 +188,24 @@ public class ElasticsearchSyncService {
                 .size(0)
                 .query(query)
                 .aggregations("trend", a -> a
-                    .dateHistogram(h -> h
-                        .field("timestamp")
-                        .calendarInterval(parseInterval(interval))
-                        .format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-                    )
+                    .dateHistogram(h -> {
+                        h.field("timestamp");
+                        applyInterval(h, interval);
+                        h.format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                        h.minDocCount(0);
+                        return h;
+                    })
                 )
         );
 
         // 执行查询
         var response = esClient.search(searchRequest, Void.class);
 
-        long totalHits = 0L;
-        try {
+        try { // 触发一次 hits.total 以验证响应结构，但不使用其值
             var hits = response.hits();
             var totalObj = (hits != null) ? hits.total() : null;
             if (totalObj != null) {
-                totalHits = totalObj.value();
+                totalObj.value();
             }
         } catch (Exception ignore) {}
 
@@ -331,11 +368,13 @@ public class ElasticsearchSyncService {
             .size(0)
             .query(query)
             .aggregations("trend", a -> a
-                .dateHistogram(h -> h
-                    .field("timestamp")
-                    .calendarInterval(parseInterval(interval))
-                    .format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-                )
+                .dateHistogram(h -> {
+                    h.field("timestamp");
+                    applyInterval(h, interval);
+                    h.format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                    h.minDocCount(0);
+                    return h;
+                })
                 .aggregations("by_proto", t -> t
                     .terms(tt -> tt
                         .field("protoName")
@@ -586,20 +625,22 @@ public class ElasticsearchSyncService {
             )
         );
 
-        // 创建完整的搜索请求
+        // 创建完整的搜索请求（按时间桶统计 bps 的平均值）
         var searchRequest = SearchRequest.of(s -> s
                 .index(index)
                 .size(0)
                 .query(query)
                 .aggregations("trend", a -> a
-                    .dateHistogram(h -> h
-                        .field("timestamp")
-                        .calendarInterval(parseInterval(interval))
-                        .format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-                    )
-                    .aggregations("avg_util", avg -> avg
+                    .dateHistogram(h -> {
+                        h.field("timestamp");
+                        applyInterval(h, interval);
+                        h.format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                        h.minDocCount(0);
+                        return h;
+                    })
+                    .aggregations("avg_bps", avg -> avg
                         .avg(av -> av
-                            .field("util")
+                            .field("bps")
                         )
                     )
                 )
@@ -632,17 +673,17 @@ public class ElasticsearchSyncService {
 
         var result = buckets.stream()
                 .map(bucket -> {
-                    // 获取平均利用率
-                    var avgUtil = bucket.aggregations().get("avg_util");
-                    double avgUtilValue = 0.0;
-                    if (avgUtil != null && avgUtil.avg() != null) {
-                        avgUtilValue = avgUtil.avg().value();
+                    // 获取平均 bps
+                    var avgBpsAgg = bucket.aggregations().get("avg_bps");
+                    double avgBps = 0.0;
+                    if (avgBpsAgg != null && avgBpsAgg.avg() != null && avgBpsAgg.avg().value() != null) {
+                        avgBps = avgBpsAgg.avg().value();
                     }
-                    
+
                     var trendData = new TrendingData();
                     trendData.setTimestamp(bucket.key());
-                    trendData.setCount((long) (avgUtilValue * 100)); // 转换为百分比
-                    
+                    trendData.setCount(Math.round(avgBps)); // 直接返回平均 bps
+
                     return trendData;
                 })
                 .collect(Collectors.toList());
@@ -650,7 +691,7 @@ public class ElasticsearchSyncService {
         return result;
     }
 
-    // 带 filePath 过滤的带宽趋势查询（util 时间桶平均）
+    // 带 filePath 过滤的带宽趋势查询（bps 时间桶平均）
     private List<TrendingData> getBandwidthTrendingWithFilter(String startTime, String endTime, int port, String index, String interval, String filePath) throws IOException {
         var rangeQuery = new Query.Builder()
             .range(r -> r
@@ -681,13 +722,15 @@ public class ElasticsearchSyncService {
             .size(0)
             .query(query)
             .aggregations("trend", a -> a
-                .dateHistogram(h -> h
-                    .field("timestamp")
-                    .calendarInterval(parseInterval(interval))
-                    .format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-                )
-                .aggregations("avg_util", avg -> avg
-                    .avg(av -> av.field("util"))
+                .dateHistogram(h -> {
+                    h.field("timestamp");
+                    applyInterval(h, interval);
+                    h.format("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                    h.minDocCount(0);
+                    return h;
+                })
+                .aggregations("avg_bps", avg -> avg
+                    .avg(av -> av.field("bps"))
                 )
             )
         );
@@ -698,15 +741,14 @@ public class ElasticsearchSyncService {
         if (trend == null || trend.dateHistogram() == null) return List.of();
         var buckets = trend.dateHistogram().buckets().array();
         return buckets.stream().map(b -> {
-            double avgUtil = 0.0;
-            var avg = b.aggregations().get("avg_util");
-            if (avg != null && avg.avg() != null) {
-                Double v = avg.avg().value();
-                if (v != null) avgUtil = v.doubleValue();
+            double avgBps = 0.0;
+            var avg = b.aggregations().get("avg_bps");
+            if (avg != null && avg.avg() != null && avg.avg().value() != null) {
+                avgBps = avg.avg().value();
             }
             TrendingData td = new TrendingData();
             td.setTimestamp(b.key());
-            td.setCount((long)Math.round(avgUtil * 100));
+            td.setCount((long) Math.round(avgBps));
             return td;
         }).collect(Collectors.toList());
     }
