@@ -734,7 +734,7 @@ export class CollectorComponent implements OnInit {
           uiDuration: null,
           uiLogs: null,
           uiEvents: null,
-          uiTrafficSeries: (collector.status === 'completed' || collector.status === 'STATUS_FINISHED' || collector.status === 'running' || collector.status === 'STATUS_STARTED') ? null : [] // 分析完成或正在运行的设置为null等待数据，否则设置为空数组显示默认样式
+          uiTrafficSeries: (collector.status === 'completed' || collector.status === 'STATUS_FINISHED' || collector.status === 'running' || collector.status === 'STATUS_STARTED' || collector.status === 'error') ? null : [] // 分析完成或正在运行的或部分完成的设置为null等待数据，否则设置为空数组显示默认样式
         }));
 
         // 检查并为正在运行的抓包任务启动状态轮询
@@ -788,7 +788,10 @@ export class CollectorComponent implements OnInit {
         // 为每个有sessionId的条目加载ES指标
         this.contactList.forEach(c => {
           if (c.sessionId) {
+            console.log('Loading metrics for collector:', c.name, 'with sessionId:', c.sessionId, 'status:', c.status);
             this.loadSessionMetrics(c);
+          } else {
+            console.log('Skipping metrics loading for collector:', c.name, 'no sessionId');
           }
         });
 
@@ -802,13 +805,17 @@ export class CollectorComponent implements OnInit {
 
   private loadSessionMetrics(collector: ContactList) {
     const sessionId = collector.sessionId as string;
+    console.log('Loading session metrics for collector:', collector.name, 'sessionId:', sessionId, 'status:', collector.status);
 
-    // 判断是否应该加载带宽数据：分析完成 或 正在运行的状态
+    // 判断是否应该加载带宽数据：分析完成 或 正在运行的状态 或 部分完成状态
     const shouldLoadBandwidth = collector.analysisCompleted ||
                                collector.status === 'running' ||
-                               collector.status === 'STATUS_STARTED';
+                               collector.status === 'STATUS_STARTED' ||
+                               collector.status === 'error';
 
-    // 如果既未完成分析也不在运行状态，设置默认状态并跳过 Bandwidth 接口调用
+    console.log('Should load bandwidth:', shouldLoadBandwidth);
+
+    // 如果既未完成分析也不在运行状态也不是部分完成状态，设置默认状态并跳过 Bandwidth 接口调用
     if (!shouldLoadBandwidth) {
       collector.uiLogs = 0;
       collector.uiDuration = 0;
@@ -850,6 +857,7 @@ export class CollectorComponent implements OnInit {
         const interval = this.computeAutoInterval(endMs - startMs, 20);
         this.dashboardDataService.getBandwidthTrends(startMs, endMs, sessionId, interval).subscribe({
           next: (resp: BandwidthTrendsResponse) => {
+            console.log('Bandwidth trends response:', resp);
             const series = Object.keys(resp || {}).sort().map((key) => {
               const arr = (resp as any)[key] as TrendingData[];
               const idx = key.match(/(\d+)/)?.[1];
@@ -857,7 +865,9 @@ export class CollectorComponent implements OnInit {
               const data = (arr || []).map(p => [p.timestamp, p.count]); // bps 数值
               return { name: chName, data };
             });
+            console.log('Processed series:', series);
             collector.uiTrafficSeries = series.length ? series : [];
+            console.log('Final uiTrafficSeries:', collector.uiTrafficSeries);
           },
           error: () => this.loadTrafficFallback(sessionId, collector)
         });
@@ -868,8 +878,10 @@ export class CollectorComponent implements OnInit {
 
   // 回退：不传 interval 的最少实现（最多20个点）
   private loadTrafficFallback(sessionId: string, collector: ContactList) {
+    console.log('Using fallback traffic loading for sessionId:', sessionId);
     this.collectorService.getSessionTraffic(sessionId, undefined, undefined, 20).subscribe({
       next: (items: SessionTrafficItem[]) => {
+        console.log('Fallback traffic items:', items);
         const groups: { [port: string]: [number, number][] } = {};
         for (const it of items || []) {
           const portKey = String(it.port ?? 0);
@@ -884,9 +896,11 @@ export class CollectorComponent implements OnInit {
           name: `Channel ${Number(k) + 1} Throughput`,
           data: groups[k]
         }));
+  console.log('Fallback series:', series);
   collector.uiTrafficSeries = series.length ? series : [];
       },
       error: () => {
+  console.log('Error in fallback traffic loading');
   collector.uiTrafficSeries = [];
       }
     });

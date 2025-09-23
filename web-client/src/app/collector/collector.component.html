@@ -203,8 +203,8 @@
                                                     [src]="'/assets/images/' + contact.path" />
                                             </ng-container> -->
                                             <div class="relative overflow-hidden">
-                                                <!-- 分析完成或正在运行且有数据时显示图表 -->
-                                                <apx-chart *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED') && contact.uiTrafficSeries && contact.uiTrafficSeries.length > 0"
+                                                <!-- 分析完成或正在运行或错误状态且有数据时显示图表 -->
+                                                <apx-chart *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') && contact.uiTrafficSeries && contact.uiTrafficSeries.length > 0"
                                                   [series]="contact.uiTrafficSeries" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
                                                   [stroke]="revenueChart.stroke" [colors]="revenueChart.colors" [markers]="revenueChart.markers"
                                                   [labels]="revenueChart.labels" [xaxis]="revenueChart.xaxis" [yaxis]="revenueChart.yaxis"
@@ -212,8 +212,8 @@
                                                   [fill]="revenueChart.fill" class="rounded-lg bg-white dark:bg-black">
                                                 </apx-chart>
 
-                                                <!-- 未分析完成且非运行状态时显示默认状态 -->
-                                                <div *ngIf="!contact.analysisCompleted && contact.status !== 'running' && contact.status !== 'STATUS_STARTED'" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                                <!-- 未分析完成且非运行状态且非错误状态时显示默认状态 -->
+                                                <div *ngIf="!contact.analysisCompleted && contact.status !== 'running' && contact.status !== 'STATUS_STARTED' && contact.status !== 'error'" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                                                   <div class="text-center">
                                                     <div class="text-gray-400 dark:text-gray-500 mb-2">
                                                       <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,8 +224,8 @@
                                                   </div>
                                                 </div>
 
-                                                <!-- 分析完成或运行中但无数据时显示空状态 -->
-                                                <div *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED') && (!contact.uiTrafficSeries || contact.uiTrafficSeries.length === 0)" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                                <!-- 分析完成或运行中或错误状态但无数据时显示空状态 -->
+                                                <div *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') && (!contact.uiTrafficSeries || contact.uiTrafficSeries.length === 0)" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                                                   <div class="text-center">
                                                     <div class="text-gray-400 dark:text-gray-500 mb-2">
                                                       <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
