@@ -11,7 +11,7 @@ import { CollectorService, Collector } from 'src/app/services/collector.service'
 import { TimeRangeService } from 'src/app/services/time-range.service';
 import { DashboardDataService } from 'src/app/services/dashboard-data.service';
 import { HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { AuthService } from 'src/app/services/auth/auth.service';
 
 @Component({
@@ -83,16 +83,10 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
     // 新增: 数据源与时间范围选择相关属性
     dataSources: { label: string; value: string; status: string }[] = [];
-    timeRanges = [
-        { label: this.translate.instant('Last 1 Hour') || '最近1小时', value: '1h' },
-        { label: this.translate.instant('Last 6 Hours') || '最近6小时', value: '6h' },
-        { label: this.translate.instant('Last 12 Hours') || '最近12小时', value: '12h' },
-        { label: this.translate.instant('Last 24 Hours') || '最近24小时', value: '24h' },
-        { label: this.translate.instant('Last 7 Days') || '最近7天', value: '7d' },
-    ];
+    timeRanges: { label: string; value: string }[] = []; // 初始化为空数组，稍后通过翻译更新
     selectedDataSource = { label: '', value: '', status: '' };
-    selectedTimeRange = this.timeRanges[3].value; // 默认24小时
-    selectedQuickRange = this.timeRanges[3].value;
+    selectedTimeRange = '24h'; // 默认24小时
+    selectedQuickRange = '24h';
 
     // 自动更新相关属性
     autoUpdateInterval: any = null;
@@ -127,6 +121,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
     private _flatpickrGuardsAdded = false;
 
+    // 订阅管理
+    private langChangeSubscription?: Subscription;
+
     currentUser: any = null;
 
     constructor(
@@ -160,18 +157,26 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         // 先尝试恢复（如果本次导航还没恢复过）
         const restored = this.restorePersistedState();
         this.loadCollectors();
-        
+
         // 检查是否有从 collector 页面传递过来的数据源
         this.checkForNavigatedDataSource();
             }
         });
 
-        // 初始化时间范围标签
-        this.updateTimeRangeLabels();
-    const restored = this.restorePersistedState();
+        // 初始化时间范围标签 - 使用 setTimeout 确保翻译服务已准备好
+        setTimeout(() => {
+            this.updateTimeRangeLabels();
+        }, 0);
+
+        // 监听翻译变化
+        this.langChangeSubscription = this.translate.onLangChange.subscribe(() => {
+            this.updateTimeRangeLabels();
+        });
+
+        const restored = this.restorePersistedState();
     this.loadCollectors();
     if (!restored) this.initializeDefaultTimeRange();
-    
+
     // 检查是否有从 collector 页面传递过来的数据源
     this.checkForNavigatedDataSource();
     }
@@ -325,13 +330,23 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     }
 
     updateTimeRangeLabels() {
-        this.timeRanges = [
-            { label: this.translate.instant('Last 1 Hour') || '最近1小时', value: '1h' },
-            { label: this.translate.instant('Last 6 Hours') || '最近6小时', value: '6h' },
-            { label: this.translate.instant('Last 12 Hours') || '最近12小时', value: '12h' },
-            { label: this.translate.instant('Last 24 Hours') || '最近24小时', value: '24h' },
-            { label: this.translate.instant('Last 7 Days') || '最近7天', value: '7d' },
+        const translations = [
+            { key: 'Last 1 Hour', value: '1h' },
+            { key: 'Last 6 Hours', value: '6h' },
+            { key: 'Last 12 Hours', value: '12h' },
+            { key: 'Last 24 Hours', value: '24h' },
+            { key: 'Last 7 Days', value: '7d' }
         ];
+
+        this.timeRanges = translations.map(t => {
+            const translated = this.translate.instant(t.key);
+            return {
+                label: translated || t.key, // 如果翻译失败，使用原始键
+                value: t.value
+            };
+        });
+
+        console.log('Time range labels updated:', this.timeRanges);
     }
 
     setActiveDropdown() {
@@ -489,6 +504,11 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         if (this.dataSourceChangeTimeout) {
             clearTimeout(this.dataSourceChangeTimeout);
             this.dataSourceChangeTimeout = null;
+        }
+
+        // 清理翻译订阅
+        if (this.langChangeSubscription) {
+            this.langChangeSubscription.unsubscribe();
         }
 
         // 不移除监听（菜单生命周期内复用），如需严格清理可记录并移除
@@ -1194,7 +1214,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             if (savedDataSource) {
                 const dataSource = JSON.parse(savedDataSource);
                 console.log('Found navigated data source:', dataSource);
-                
+
                 // 验证数据源格式
                 if (dataSource && dataSource.label && dataSource.value) {
                     // 等待 collectors 加载完成后再设置数据源
@@ -1213,10 +1233,10 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
                             setTimeout(checkCollectors, 500);
                         }
                     };
-                    
+
                     checkCollectors();
                 }
-                
+
                 // 清除 localStorage 中的数据源信息，避免重复应用
                 localStorage.removeItem('selected_data_source');
             }

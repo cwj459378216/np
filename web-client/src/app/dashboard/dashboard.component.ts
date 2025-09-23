@@ -397,7 +397,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
           this.systemInfo = data;
           this.cpuUsage = data.cpu.usage;
           this.memoryUsage = data.memory.usage;
-          this.diskInfos = data.disks || [];
+          // 翻译磁盘名称
+          this.diskInfos = (data.disks || []).map(disk => ({
+            ...disk,
+            name: this.translate.instant(disk.name)
+          }));
         },
         error: (error) => {
           console.error('Error loading system info:', error);
@@ -405,9 +409,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
           this.cpuUsage = 65;
           this.memoryUsage = 40;
           this.diskInfos = [
-            { name: 'OS', mountPoint: '/', usage: 25, total: 500, used: 125, free: 375 },
-            { name: 'Upload', mountPoint: '/datastore/pcap/upload', usage: 15, total: 1000, used: 150, free: 850 },
-            { name: 'Capture', mountPoint: '/datastore/pcap/capture', usage: 20, total: 2000, used: 400, free: 1600 }
+            { name: this.translate.instant('OS'), mountPoint: '/', usage: 25, total: 500, used: 125, free: 375 },
+            { name: this.translate.instant('Upload'), mountPoint: '/datastore/pcap/upload', usage: 15, total: 1000, used: 150, free: 850 },
+            { name: this.translate.instant('Capture'), mountPoint: '/datastore/pcap/capture', usage: 20, total: 2000, used: 400, free: 1600 }
           ];
         }
       });

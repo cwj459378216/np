@@ -274,7 +274,7 @@
                                     <div class="w-full">
                                         <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">
                                             {{ 'Time Range' | translate }}
-                                            <span *ngIf="isTimeRangeDisabled()" class="text-red-500 ml-1">(Disabled - Live Mode)</span>
+                                            <span *ngIf="isTimeRangeDisabled()" class="text-red-500 ml-1">({{ 'Disabled - Live Mode' | translate }})</span>
                                         </label>
                                         <div class="w-full">
                                             <input
@@ -288,7 +288,7 @@
                                                 [ngClass]="{
                                                     'opacity-50 cursor-not-allowed': isTimeRangeDisabled()
                                                 }"
-                                                placeholder="Select time range"
+                                                [placeholder]="'Select time range' | translate"
                                             />
                                         </div>
                                     </div>
