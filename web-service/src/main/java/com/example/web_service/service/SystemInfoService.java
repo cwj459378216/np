@@ -200,39 +200,85 @@ public class SystemInfoService {
         try {
             // 获取磁盘信息 - 使用df命令
             String diskStats = executeCommand("df -h " + mountPoint);
+            log.info("获取磁盘信息 - 挂载点: {}, df命令输出: {}", mountPoint, diskStats);
+            
             if (diskStats != null && !diskStats.isEmpty()) {
                 String[] lines = diskStats.split("\\n");
                 if (lines.length > 1) {
-                    // 有时df命令输出可能跨行，需要处理
-                    String dataLine = lines[1];
-                    if (lines.length > 2 && !dataLine.contains("%")) {
-                        // 如果第二行不包含百分号，说明数据跨行了
-                        dataLine = dataLine + " " + lines[2];
+                    // 找到包含数据的行
+                    String dataLine = null;
+                    for (int i = 1; i < lines.length; i++) {
+                        String line = lines[i].trim();
+                        if (!line.isEmpty()) {
+                            // 检查是否是跨行的情况
+                            if (!line.contains("%") && i + 1 < lines.length) {
+                                // 数据跨行，合并下一行
+                                dataLine = line + " " + lines[i + 1].trim();
+                                break;
+                            } else if (line.contains("%")) {
+                                // 数据在一行中
+                                dataLine = line;
+                                break;
+                            }
+                        }
                     }
                     
-                    String[] parts = dataLine.trim().split("\\s+");
-                    if (parts.length >= 5) {
-                        try {
-                            double total = parseSize(parts[1]);
-                            double used = parseSize(parts[2]);
-                            double free = parseSize(parts[3]);
-                            double usage = Double.parseDouble(parts[4].replace("%", ""));
-                            
-                            diskInfo.setTotal(Math.round(total * 100.0) / 100.0);
-                            diskInfo.setUsed(Math.round(used * 100.0) / 100.0);
-                            diskInfo.setFree(Math.round(free * 100.0) / 100.0);
-                            diskInfo.setUsage(Math.round(usage * 100.0) / 100.0);
-                        } catch (NumberFormatException e) {
-                            log.warn("解析磁盘大小失败，使用默认值: " + mountPoint, e);
+                    if (dataLine != null) {
+                        log.info("解析磁盘数据行: {}", dataLine);
+                        String[] parts = dataLine.trim().split("\\s+");
+                        log.info("分割后的部分数量: {}, 内容: {}", parts.length, String.join(",", parts));
+                        
+                        if (parts.length >= 5) {
+                            try {
+                                // 找到大小、已用、可用、使用率的位置
+                                int sizeIndex = -1, usedIndex = -1, availIndex = -1, useIndex = -1;
+                                
+                                // 从后往前找，因为使用率总是最后一个包含%的字段
+                                for (int i = parts.length - 1; i >= 0; i--) {
+                                    if (parts[i].contains("%")) {
+                                        useIndex = i;
+                                        availIndex = i - 1;
+                                        usedIndex = i - 2;
+                                        sizeIndex = i - 3;
+                                        break;
+                                    }
+                                }
+                                
+                                if (sizeIndex >= 0 && usedIndex >= 0 && availIndex >= 0 && useIndex >= 0) {
+                                    double total = parseSize(parts[sizeIndex]);
+                                    double used = parseSize(parts[usedIndex]);
+                                    double free = parseSize(parts[availIndex]);
+                                    double usage = Double.parseDouble(parts[useIndex].replace("%", ""));
+                                    
+                                    log.info("解析结果 - 总计: {}GB, 已用: {}GB, 可用: {}GB, 使用率: {}%", 
+                                            total, used, free, usage);
+                                    
+                                    diskInfo.setTotal(Math.round(total * 100.0) / 100.0);
+                                    diskInfo.setUsed(Math.round(used * 100.0) / 100.0);
+                                    diskInfo.setFree(Math.round(free * 100.0) / 100.0);
+                                    diskInfo.setUsage(Math.round(usage * 100.0) / 100.0);
+                                } else {
+                                    log.warn("无法找到正确的字段位置，使用默认值: " + mountPoint);
+                                    setDefaultDiskInfo(diskInfo);
+                                }
+                            } catch (NumberFormatException e) {
+                                log.warn("解析磁盘大小失败，使用默认值: " + mountPoint, e);
+                                setDefaultDiskInfo(diskInfo);
+                            }
+                        } else {
+                            log.warn("df输出字段不足，使用默认值: " + mountPoint + ", 字段数: " + parts.length);
                             setDefaultDiskInfo(diskInfo);
                         }
                     } else {
+                        log.warn("无法找到有效的数据行，使用默认值: " + mountPoint);
                         setDefaultDiskInfo(diskInfo);
                     }
                 } else {
+                    log.warn("df输出行数不足，使用默认值: " + mountPoint);
                     setDefaultDiskInfo(diskInfo);
                 }
             } else {
+                log.warn("df命令无输出，使用默认值: " + mountPoint);
                 setDefaultDiskInfo(diskInfo);
             }
         } catch (Exception e) {
@@ -364,11 +410,13 @@ public class SystemInfoService {
             String line;
             
             while ((line = reader.readLine()) != null) {
-                output.append(line).append("\\n");
+                output.append(line).append("\n");
             }
             
             process.waitFor();
-            return output.toString();
+            String result = output.toString();
+            log.debug("执行命令: {}, 输出: {}", command, result);
+            return result;
         } catch (Exception e) {
             log.error("执行命令失败: " + command, e);
             return null;
