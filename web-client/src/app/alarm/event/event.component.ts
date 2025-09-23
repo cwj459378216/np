@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 import { TimeRange, TimeRangeService } from '../../services/time-range.service';
+import { TimeIntervalUtil } from '../../shared/utils/time-interval.util';
 
 // 定义列接口
 interface TableColumn { title: string; field: string; hide?: boolean; }
@@ -250,18 +251,6 @@ export class EventComponent implements OnInit, OnDestroy {
         }
     }
 
-    // 趋势数据
-    private getTrendingInterval(rangeValue: string): string {
-        switch (rangeValue) {
-            case '1h': return '1m';
-            case '6h': return '5m';
-            case '12h': return '15m';
-            case '24h': return '1h';
-            case '7d': return '6h';
-            default: return '1h';
-        }
-    }
-
     private loadTrendingData() {
         if (!this.currentTimeRange) return;
 
@@ -273,7 +262,8 @@ export class EventComponent implements OnInit, OnDestroy {
 
         const endTime = this.currentTimeRange.endTime?.getTime() || Date.now();
         const startTime = this.currentTimeRange.startTime?.getTime() || (endTime - 24 * 60 * 60 * 1000);
-        const interval = this.getTrendingInterval(this.currentTimeRange.value || '24h');
+        const spanMillis = endTime - startTime;
+        const interval = TimeIntervalUtil.computeAutoInterval(spanMillis, 20);
         const filePath = this.currentTimeRange.filePath;
 
         const params: any = {

@@ -5,6 +5,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { DashboardDataService, ProtocolTrendsResponse, TrendingData, BandwidthTrendsResponse, SystemInfo, ServiceNameAggregationResponse } from '../services/dashboard-data.service';
 import { TimeRangeService, TimeRange } from '../services/time-range.service';
+import { TimeIntervalUtil } from '../shared/utils/time-interval.util';
 
 @Component({
   selector: 'app-dashboard',
@@ -322,7 +323,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // 根据时间范围长度自适应计算间隔（最小 1m，最大 1y）
     const timeSpan = endTimeTimestamp - startTimeTimestamp;
-    const interval = this.computeAutoInterval(timeSpan, 20);
+    const interval = TimeIntervalUtil.computeAutoInterval(timeSpan, 20);
 
     console.log('Loading data for time range:', {
       startTime: timeRange.startTime.toISOString(),
@@ -525,35 +526,6 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.alarms = [];
       }
     });
-  }
-
-  // 依据时间跨度计算最接近目标点数的常用间隔（最小 1m，最大 1y）
-  private computeAutoInterval(spanMillis: number, desiredPoints: number): string {
-    const safeSpan = Math.max(1, spanMillis);
-    const targetBucketMs = Math.max(60_000, Math.floor(safeSpan / Math.max(1, desiredPoints)));
-    const steps: number[] = [
-      60_000,               // 1m
-      5 * 60_000,           // 5m
-      15 * 60_000,          // 15m
-      30 * 60_000,          // 30m
-      60 * 60_000,          // 1h
-      3 * 60 * 60_000,      // 3h
-      6 * 60 * 60_000,      // 6h
-      12 * 60 * 60_000,     // 12h
-      24 * 60 * 60_000,     // 1d
-      3 * 24 * 60 * 60_000, // 3d
-      7 * 24 * 60 * 60_000, // 7d
-      14 * 24 * 60 * 60_000,// 14d
-      30 * 24 * 60 * 60_000,// 30d
-      90 * 24 * 60 * 60_000,// 90d
-      180 * 24 * 60 * 60_000,// 180d
-      365 * 24 * 60 * 60_000 // 1y
-    ];
-    const labels: string[] = ['1m','5m','15m','30m','1h','3h','6h','12h','1d','3d','7d','14d','30d','90d','180d','1y'];
-    for (let i = 0; i < steps.length; i++) {
-      if (steps[i] >= targetBucketMs) return labels[i];
-    }
-    return '1y';
   }
 
   // 在切换数据源时，先清空“Protocol Transaction Trends”的显示

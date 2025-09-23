@@ -9,6 +9,7 @@ import { SharedModule } from 'src/shared.module';
 import { ZeekConfigService, ZeekLogType } from 'src/app/services/zeek-config.service';
 import { co } from '@fullcalendar/core/internal-common';
 import { TimeRangeService, TimeRange } from 'src/app/services/time-range.service';
+import { TimeIntervalUtil } from 'src/app/shared/utils/time-interval.util';
 import { Subscription } from 'rxjs';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -476,7 +477,8 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
 
         const endTime = this.currentTimeRange?.endTime?.getTime() || Date.now();
         const startTime = this.currentTimeRange?.startTime?.getTime() || (endTime - 24 * 60 * 60 * 1000);
-        const interval = this.getTrendingInterval(this.currentTimeRange?.value || '24h');
+        const spanMillis = endTime - startTime;
+        const interval = TimeIntervalUtil.computeAutoInterval(spanMillis, 20);
         const filePath = this.currentTimeRange?.filePath; // 获取当前选择的文件路径
 
         // 构建请求参数
@@ -591,24 +593,6 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
                 this.cdr.detectChanges();
             }
         });
-    }
-
-    // 根据选择的时间范围值决定聚合间隔
-    private getTrendingInterval(rangeValue: string): string {
-        switch (rangeValue) {
-            case '1h':
-                return '5m';
-            case '6h':
-                return '15m';
-            case '12h':
-                return '30m';
-            case '24h':
-                return '1h';
-            case '7d':
-                return '6h';
-            default:
-                return '1h';
-        }
     }
 
     protected processQueryResponse(response: any): void {
