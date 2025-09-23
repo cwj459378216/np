@@ -35,7 +35,7 @@ public class LocalRuleService {
     @Autowired
     private LocalRuleRepository localRuleRepository;
 
-    @Value("${suricata.customer.rules.path:/datastore/user/admin/apps/suricata/share/suricata/rules/customer.rules}")
+    @Value("${suricata.customer.rules.path:/datastore/user/admin/apps/suricata/rules/load_rules.rules}")
     private String customerRulesPath;
     
     @Value("${third-party.base-url}")

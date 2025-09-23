@@ -91,17 +91,17 @@ export class RulesPolicyComponent implements AfterViewInit {
       name: [''],
       description: ['']
     });
-    
+
     // 等待翻译服务加载完成后初始化列配置
     this.translate.onLangChange.subscribe(() => {
       this.initializeColumns();
     });
-    
+
     // 立即尝试初始化一次
     setTimeout(() => {
       this.initializeColumns();
     }, 100);
-    
+
     this.loadPolicies();
     this.loadRules();
   }
@@ -126,7 +126,7 @@ export class RulesPolicyComponent implements AfterViewInit {
         { field: 'cve', title: translations['general.CVE'], hide: false },
         { field: 'filename', title: translations['general.File'], hide: true }
       ];
-      
+
       // 强制触发变更检测以更新视图
       this.cdr.detectChanges();
     });
@@ -167,24 +167,29 @@ export class RulesPolicyComponent implements AfterViewInit {
         this.totalPages = response.totalPages;
         this.loading = false;
 
-        // 立即标记需要应用选择状态
-        this.needsSelectionUpdate = true;
-
         // 强制触发变更检测
         this.cdr.detectChanges();
 
-        // 使用多个时间点尝试应用选择状态
-        setTimeout(() => {
-          this.applySelectionImmediately();
-        }, 100);
+        // 只有在有选中规则时才需要应用选择状态
+        if (this.selectedRules.length > 0) {
+          // 立即标记需要应用选择状态
+          this.needsSelectionUpdate = true;
 
-        setTimeout(() => {
-          this.applySelectionImmediately();
-        }, 300);
+          // 使用多个时间点尝试应用选择状态
+          setTimeout(() => {
+            this.applySelectionImmediately();
+          }, 100);
 
-        setTimeout(() => {
-          this.applySelectionImmediately();
-        }, 500);
+          setTimeout(() => {
+            this.applySelectionImmediately();
+          }, 300);
+
+          setTimeout(() => {
+            this.applySelectionImmediately();
+          }, 500);
+        } else {
+          console.log('No selected rules, skipping selection application');
+        }
       },
       (error: Error) => {
         console.error('Error loading rules:', error);
@@ -587,6 +592,15 @@ export class RulesPolicyComponent implements AfterViewInit {
   // 立即应用选择状态
   private applySelectionImmediately(): void {
     console.log('Applying selection immediately, selected rules:', this.selectedRules.length);
+
+    // 如果没有选中的规则，直接返回，不需要重试
+    if (this.selectedRules.length === 0) {
+      console.log('No selected rules, skipping selection application');
+      if (this._datatable) {
+        this._datatable.selectAll(false);
+      }
+      return;
+    }
 
     if (!this._datatable || !this._datatable.rows || this._datatable.rows.length === 0) {
       console.log('Datatable not ready, will retry...');
