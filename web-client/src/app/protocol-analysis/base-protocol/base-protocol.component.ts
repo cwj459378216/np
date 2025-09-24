@@ -37,6 +37,9 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
     // ViewChild 引用AI模态框内容区域
     @ViewChild('aiModalContent', { static: false }) aiModalContent!: ElementRef;
 
+    // 缓存的协议显示名称，避免模板中频繁调用方法
+    public protocolDisplayName: string = '';
+
     search = '';
     loading = false;
     chartLoading = false;
@@ -213,6 +216,8 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
         // 当 protocolName 或 indexName 变化时重新加载数据
         if ((changes['protocolName'] || changes['indexName']) && !changes['protocolName']?.firstChange) {
             console.log('Protocol or index changed, reloading data...');
+            // 更新协议显示名称
+            this.updateProtocolDisplayName();
             // 重置分页
             this.currentPage = 1;
             this.pageSize = 10;
@@ -221,9 +226,16 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
             this.loadData();
         }
 
-        // 当列配置变化时，确保操作列存在
+        // 当协议名称变化时，更新显示名称
+        if (changes['protocolName'] && this.protocolName) {
+            this.updateProtocolDisplayName();
+        }
+
+        // 当列配置变化时，确保操作列存在并格式化标题
         if (changes['cols'] && this.cols) {
+            console.log('Cols changed, ensuring action column and formatting titles');
             this.ensureActionColumn();
+            this.formatColumnTitles(); // 格式化列标题
         }
     }
 
@@ -237,16 +249,24 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
         // 初始化图表配置
         this.initChart();
 
-        // 监听语言变化，重新初始化图表
+        // 监听语言变化，重新初始化图表和列标题
         this.languageSubscription = this.translate.onLangChange.subscribe(() => {
             this.initChart();
+            this.updateProtocolDisplayName(); // 语言变化时更新协议显示名称
+            this.formatColumnTitles(); // 语言变化时重新格式化列标题
         });
+
+        // 初始化协议显示名称
+        this.updateProtocolDisplayName();
 
         // 预加载资产数据，用于 SrcIP/DstIp 替换显示
         this.loadAssetsForMapping();
 
         // 确保操作列存在
         this.ensureActionColumn();
+
+        // 格式化列标题
+        this.formatColumnTitles();
 
         // 如果没有字段描述信息，添加默认的字段描述
         this.addDefaultFieldDescriptions();
@@ -413,7 +433,7 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
                 // 添加操作列
                 this.cols.push({
                     field: 'actions',
-                    title: 'AI',
+                    title: this.translate.instant('tableFields.actions'),
                     sort: false,
                     width: '120px',
                     headerAlign: 'center',
@@ -421,6 +441,30 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
                     hide: false
                 });
             }
+        }
+    }
+
+    /**
+     * 格式化和翻译所有列标题
+     */
+    private formatColumnTitles() {
+        console.log('formatColumnTitles called, cols:', this.cols);
+        if (this.cols && this.cols.length > 0) {
+            this.cols.forEach((col, index) => {
+                console.log(`Processing column ${index}:`, col);
+                if (col.field && col.field !== 'actions') {
+                    // 始终尝试翻译字段标题（除非是已经被用户自定义的特殊标题）
+                    const newTitle = this.formatFieldTitle(col.field);
+                    console.log(`Updating column ${col.field} title from "${col.title}" to "${newTitle}"`);
+                    col.title = newTitle;
+                } else if (col.field === 'actions') {
+                    // 确保操作列标题始终翻译
+                    col.title = this.translate.instant('tableFields.actions') || '操作';
+                }
+            });
+            console.log('formatColumnTitles completed, updated cols:', this.cols);
+            // 触发变更检测
+            this.cdr.markForCheck();
         }
     }
 
@@ -917,6 +961,73 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
             .replace(/([A-Z])/g, '$1')
             .replace(/^./, str => str.toUpperCase())
             .trim();
+    }
+
+    // 格式化和本地化协议名称显示
+    public getProtocolDisplayName(protocolName: string): string {
+        if (!protocolName) return '';
+
+        const protocolKey = `protocols.${protocolName.toLowerCase()}`;
+        const translatedName = this.translate.instant(protocolKey);
+
+        // 如果找到翻译则使用翻译，否则使用大写的原始名称
+        return translatedName !== protocolKey ? translatedName : protocolName.toUpperCase();
+    }
+
+    /**
+     * 更新协议显示名称缓存
+     */
+    private updateProtocolDisplayName(): void {
+        this.protocolDisplayName = this.getProtocolDisplayName(this.protocolName);
+    }
+
+    /**
+     * 格式化和本地化表格字段标题
+     */
+    public formatFieldTitle(fieldName: string): string {
+        if (!fieldName) return '';
+
+        // 尝试从 tableFields 翻译中获取
+        const fieldKey = `tableFields.${fieldName}`;
+        const translatedField = this.translate.instant(fieldKey);
+
+        console.log('formatFieldTitle:', {
+            fieldName,
+            fieldKey,
+            translatedField,
+            isTranslated: translatedField !== fieldKey
+        });
+
+        // 如果翻译成功（不等于key），返回翻译后的名称
+        if (translatedField !== fieldKey) {
+            return translatedField;
+        }
+
+        // 否则返回格式化的字段名（首字母大写，处理下划线和驼峰）
+        return this.formatFieldName(fieldName);
+    }
+
+    /**
+     * 格式化字段名：处理下划线、驼峰命名等
+     */
+    private formatFieldName(fieldName: string): string {
+        if (!fieldName) return '';
+
+        // 处理下划线分隔的字段名
+        if (fieldName.includes('_')) {
+            return fieldName
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+        }
+
+        // 处理驼峰命名
+        const formatted = fieldName
+            .replace(/([a-z])([A-Z])/g, '$1 $2') // 在小写字母后跟大写字母之间添加空格
+            .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2'); // 在连续大写字母之间适当添加空格
+
+        // 首字母大写
+        return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     }
 
     // AI 解释功能

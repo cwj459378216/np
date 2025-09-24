@@ -146,6 +146,42 @@
                 <ng-template slot="dest_ip" let-row="data">
                     <span [title]="row?.dest_ip">{{ resolveIpToAsset(row?.dest_ip) }}</span>
                 </ng-template>
+                <!-- 严重程度显示，带颜色标识 -->
+                <ng-template slot="severity" let-row="data">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                          [ngClass]="{
+                              'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300': row?.severity === 'High' || row?.severity === '高',
+                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300': row?.severity === 'Medium' || row?.severity === '中',
+                              'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300': row?.severity === 'Low' || row?.severity === '低',
+                              'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300': !row?.severity || (row?.severity !== 'High' && row?.severity !== '高' && row?.severity !== 'Medium' && row?.severity !== '中' && row?.severity !== 'Low' && row?.severity !== '低')
+                          }">
+                        {{ row?.severity || '-' }}
+                    </span>
+                </ng-template>
+                <!-- 端口格式化显示 -->
+                <ng-template slot="src_port" let-row="data">
+                    <span class="font-mono text-sm">{{ row?.src_port || '-' }}</span>
+                </ng-template>
+                <ng-template slot="dest_port" let-row="data">
+                    <span class="font-mono text-sm">{{ row?.dest_port || '-' }}</span>
+                </ng-template>
+                <!-- 协议格式化显示 -->
+                <ng-template slot="proto" let-row="data">
+                    <span class="inline-flex items-center px-2 py-1 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 text-xs font-medium uppercase">
+                        {{ row?.proto || '-' }}
+                    </span>
+                </ng-template>
+                <ng-template slot="app_proto" let-row="data">
+                    <span class="inline-flex items-center px-2 py-1 rounded bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 text-xs font-medium">
+                        {{ row?.app_proto || '-' }}
+                    </span>
+                </ng-template>
+                <!-- 时间戳格式化显示 -->
+                <ng-template slot="timestamp" let-row="data">
+                    <span class="font-mono text-sm whitespace-nowrap" [title]="row?.timestamp">
+                        {{ row?.timestamp || '-' }}
+                    </span>
+                </ng-template>
                 <!-- AI 分析按钮列 -->
                 <ng-template slot="actions" let-row="data">
                     <div class="flex items-center justify-center">

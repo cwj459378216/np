@@ -202,7 +202,7 @@
                 <td>
                   <span [ngClass]="'badge shadow-md ' + getSeverityBadgeClass(al.severity)">{{ al.severityLabel | translate }}</span>
                 </td>
-                <td class="whitespace-nowrap">{{ al.signature }}</td>
+                <td class="max-w-0 truncate" [title]="al.signature">{{ al.signature }}</td>
                 <td class="text-xs text-gray-600 dark:text-gray-300">{{ al.lastTimestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
               </tr>
 

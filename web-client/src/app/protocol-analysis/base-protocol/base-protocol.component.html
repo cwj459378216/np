@@ -7,13 +7,13 @@
             <span>{{ 'Application Protocols' | translate }}</span>
         </li>
         <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
-            <span>{{protocolName}}</span>
+            <span>{{ protocolDisplayName }}</span>
         </li>
     </ul>
 
     <div class="panel h-full mt-6">
         <div class="mb-5 flex items-center justify-between dark:text-white-light">
-            <h5 class="text-lg font-semibold">{{protocolName}} {{ 'Traffic Trending' | translate }}</h5>
+            <h5 class="text-lg font-semibold">{{ protocolDisplayName }} {{ 'Traffic Trending' | translate }}</h5>
             <div class="dropdown ltr:ml-auto rtl:mr-auto">
                 <div hlMenu>
                     <!-- <a hlMenuButton href="javascript:;" class="align-middle">

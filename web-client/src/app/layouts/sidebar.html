@@ -197,7 +197,7 @@
                                                             routerLinkActive="active"
                                                             (click)="toggleMobileMenu()"
                                                         >
-                                                            {{ protocol.logName | uppercase }}
+                                                            {{ getProtocolDisplayName(protocol.logName) }}
                                                             <!-- <small class="ml-2">({{ protocol.attribute.length || 0 }} attrs)</small> -->
                                                         </a>
                                                     </li>

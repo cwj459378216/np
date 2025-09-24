@@ -17,7 +17,7 @@ export class SidebarComponent implements OnInit {
     activeDropdown: string[] = [];
     parentDropdown: string = '';
     zeekProtocols: ZeekLogType[] = [];
-    
+
     constructor(
         public translate: TranslateService,
         public storeData: Store<any>,
@@ -25,6 +25,17 @@ export class SidebarComponent implements OnInit {
         private zeekConfigService: ZeekConfigService
     ) {
         this.initStore();
+    }
+
+    // 格式化和本地化协议名称显示
+    public getProtocolDisplayName(protocolName: string): string {
+        if (!protocolName) return '';
+
+        const protocolKey = `protocols.${protocolName.toLowerCase()}`;
+        const translatedName = this.translate.instant(protocolKey);
+
+        // 如果找到翻译则使用翻译，否则使用大写的原始名称
+        return translatedName !== protocolKey ? translatedName : protocolName.toUpperCase();
     }
 
     async initStore() {
@@ -38,10 +49,10 @@ export class SidebarComponent implements OnInit {
     ngOnInit() {
         // 获取 Zeek 配置
         this.loadZeekProtocols();
-        
+
         // 初始化时检查当前路由
         this.setActiveDropdown();
-        
+
         // 监听路由变化
         this.router.events.pipe(
             filter(event => event instanceof NavigationEnd)
@@ -65,7 +76,7 @@ export class SidebarComponent implements OnInit {
 
     setActiveDropdown() {
         const currentPath = this.router.url;
-        
+
         // 检查是否是 report 相关路径
         if (currentPath.includes('/report')) {
             // 如果是 notification-rule，应该展开 eventAlarm 而不是 report
@@ -103,14 +114,14 @@ export class SidebarComponent implements OnInit {
                 }
             });
         }
-        
+
         // 检查是否是 alarm 相关路径
         if (currentPath.includes('/alarm/')) {
             if (!this.activeDropdown.includes('eventAlarm')) {
                 this.activeDropdown.push('eventAlarm');
             }
         }
-        
+
         // 检查是否是协议分析相关路径
         if (currentPath.includes('/protocol-analysis')) {
             if (!this.activeDropdown.includes('protocolAnalysis')) {
@@ -122,42 +133,42 @@ export class SidebarComponent implements OnInit {
                 }
             }
         }
-        
+
         // 检查是否是 collector 相关路径
         if (currentPath.includes('/collector')) {
             if (!this.activeDropdown.includes('collector')) {
                 this.activeDropdown.push('collector');
             }
         }
-        
+
         // 检查是否是系统设置相关路径
-        if (currentPath.includes('/user-management') || 
-            currentPath.includes('/role-management') || 
+        if (currentPath.includes('/user-management') ||
+            currentPath.includes('/role-management') ||
             currentPath.includes('/notification-settings') ||
-            currentPath.includes('/system-time') || 
-            currentPath.includes('/asset-book') || 
+            currentPath.includes('/system-time') ||
+            currentPath.includes('/asset-book') ||
             currentPath.includes('/interface-management')) {
             if (!this.activeDropdown.includes('systemSettings')) {
                 this.activeDropdown.push('systemSettings');
             }
         }
-        
+
         // 检查是否是 threat management 相关路径
         if (currentPath.includes('/threat-management')) {
             if (!this.activeDropdown.includes('threatManagement')) {
                 this.activeDropdown.push('threatManagement');
             }
             // 检查是否是 IDS 相关路径
-            if (currentPath.includes('/basic-configuration') || 
-                currentPath.includes('/rules-policy') || 
-                currentPath.includes('/rule-update') || 
+            if (currentPath.includes('/basic-configuration') ||
+                currentPath.includes('/rules-policy') ||
+                currentPath.includes('/rule-update') ||
                 currentPath.includes('/local-rules')) {
                 if (!this.activeDropdown.includes('ids')) {
                     this.activeDropdown.push('ids');
                 }
             }
         }
-        
+
         // 设置当前路径的 active 状态
         setTimeout(() => {
             const selector = document.querySelector('.sidebar ul a[routerLink="' + currentPath + '"]');

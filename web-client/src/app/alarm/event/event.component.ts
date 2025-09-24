@@ -52,30 +52,7 @@ export class EventComponent implements OnInit, OnDestroy {
     // 搜索与列
     search = '';
     rows: EventData[] = [];
-    cols: TableColumn[] = [
-        // 前置关键列：时间、IP、severity、signature
-        { title: 'timestamp', field: 'timestamp' },
-        { title: 'src_ip', field: 'src_ip' },
-        { title: 'dest_ip', field: 'dest_ip' },
-        { title: 'severity', field: 'severity' },
-        { title: 'signature', field: 'signature' },
-        // 其余列
-        { title: 'action', field: 'action' },
-        { title: 'category', field: 'category' },
-        { title: 'gid', field: 'gid' },
-        { title: 'rev', field: 'rev' },
-        { title: 'signature_id', field: 'signature_id' },
-        { title: 'app_proto', field: 'app_proto' },
-        { title: 'dest_port', field: 'dest_port' },
-        { title: 'direction', field: 'direction' },
-        { title: 'event_type', field: 'event_type' },
-        { title: 'in_iface', field: 'in_iface' },
-        { title: 'pkt_src', field: 'pkt_src' },
-        { title: 'proto', field: 'proto' },
-        { title: 'src_port', field: 'src_port' },
-    // AI 动作列
-    { title: 'actions', field: 'actions' }
-    ];
+    cols: TableColumn[] = [];
 
     // 趋势图 & 表格状态
     revenueChart: any;
@@ -114,7 +91,38 @@ export class EventComponent implements OnInit, OnDestroy {
         this.initChart();
     }
 
+    // 初始化表格列配置
+    private initTableColumns() {
+        this.cols = [
+            // 前置关键列：时间、IP、severity、signature
+            { title: this.translate.instant('eventTable.timestamp'), field: 'timestamp' },
+            { title: this.translate.instant('eventTable.src_ip'), field: 'src_ip' },
+            { title: this.translate.instant('eventTable.dest_ip'), field: 'dest_ip' },
+            { title: this.translate.instant('eventTable.severity'), field: 'severity' },
+            { title: this.translate.instant('eventTable.signature'), field: 'signature' },
+            // 其余列
+            { title: this.translate.instant('eventTable.action'), field: 'action' },
+            { title: this.translate.instant('eventTable.category'), field: 'category' },
+            { title: this.translate.instant('eventTable.gid'), field: 'gid' },
+            { title: this.translate.instant('eventTable.rev'), field: 'rev' },
+            { title: this.translate.instant('eventTable.signature_id'), field: 'signature_id' },
+            { title: this.translate.instant('eventTable.app_proto'), field: 'app_proto' },
+            { title: this.translate.instant('eventTable.dest_port'), field: 'dest_port' },
+            { title: this.translate.instant('eventTable.direction'), field: 'direction' },
+            { title: this.translate.instant('eventTable.event_type'), field: 'event_type' },
+            { title: this.translate.instant('eventTable.in_iface'), field: 'in_iface' },
+            { title: this.translate.instant('eventTable.pkt_src'), field: 'pkt_src' },
+            { title: this.translate.instant('eventTable.proto'), field: 'proto' },
+            { title: this.translate.instant('eventTable.src_port'), field: 'src_port' },
+            // AI 动作列
+            { title: this.translate.instant('eventTable.actions'), field: 'actions' }
+        ];
+    }
+
     ngOnInit() {
+        // 初始化表格列
+        this.initTableColumns();
+
         // 预加载资产映射
         this.loadAssetsForMapping();
 
@@ -123,15 +131,13 @@ export class EventComponent implements OnInit, OnDestroy {
             this.currentTimeRange = tr;
             this.currentPage = 1;
             // 使用微任务延迟执行，避免在同一变更检测周期内修改状态
-            Promise.resolve().then(() => {
-                this.loadTrendingData();
-                this.loadData();
-            });
+            Promise.resolve().then(() => {/* Lines 127-129 omitted */});
         });
 
-        // 订阅语言变化，重新初始化图表以更新下载按钮文本
+        // 订阅语言变化，重新初始化图表以更新下载按钮文本，并更新表格列翻译
         this.translate.onLangChange.subscribe(() => {
             this.initChart();
+            this.initTableColumns();
         });
 
         // 初始加载（如果有默认时间范围）
@@ -372,7 +378,13 @@ export class EventComponent implements OnInit, OnDestroy {
         });
     }
 
-    private mapSeverity(sev: any): string { const n = Number(sev); if (n === 1) return 'High'; if (n === 2) return 'Medium'; if (n === 3) return 'Low'; return String(sev ?? ''); }
+    private mapSeverity(sev: any): string {
+        const n = Number(sev);
+        if (n === 1) return this.translate.instant('common.high');
+        if (n === 2) return this.translate.instant('common.medium');
+        if (n === 3) return this.translate.instant('common.low');
+        return String(sev ?? '');
+    }
 
     // 事件：表格交互
     onServerChange(event: any) {
