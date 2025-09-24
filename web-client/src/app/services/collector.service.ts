@@ -243,10 +243,22 @@ export class CollectorService {
   // Upload pcap file to a target directory on server
   uploadPcap(file: File, targetPath: string): Observable<{ path: string }> {
     const formData = new FormData();
-  // 传入第三个参数以明确文件名，避免后端在某些环境下获取到空文件
-  formData.append('file', file, file.name);
+    // 传入第三个参数以明确文件名，避免后端在某些环境下获取到空文件
+    formData.append('file', file, file.name);
     formData.append('path', targetPath);
     return this.http.post<{ path: string }>(`${this.apiUrl}/capture-files/upload`, formData);
+  }
+
+  // 带进度监听的文件上传方法
+  uploadPcapWithProgress(file: File, targetPath: string): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('path', targetPath);
+    
+    return this.http.post<{ path: string }>(`${this.apiUrl}/capture-files/upload`, formData, {
+      reportProgress: true,
+      observe: 'events'
+    });
   }
 
   // Start async ES deletion for a collector

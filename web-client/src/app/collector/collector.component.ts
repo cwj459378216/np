@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpEvent } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { toggleAnimation } from 'src/app/shared/animations';
 import { NgxCustomModalComponent } from 'ngx-custom-modal';
@@ -50,6 +50,11 @@ export class CollectorComponent implements OnInit {
   selectedFile?: File;
   showTimeRange = false;
   showAlarm = false;
+
+  // 文件上传进度相关属性
+  uploadProgress = 0;
+  isUploading = false;
+  uploadStatusText = '';
 
   // Channel selection states
   channelStates: { [key: string]: boolean } = {
@@ -434,6 +439,12 @@ export class CollectorComponent implements OnInit {
     this.addContactModal.open();
     this.initForm();
 
+    // 重置文件上传状态
+    this.selectedFile = undefined;
+    this.uploadProgress = 0;
+    this.isUploading = false;
+    this.uploadStatusText = '';
+
     if (!this.storageStrategies.length) {
       this.loadStorageStrategies();
     }
@@ -447,12 +458,17 @@ export class CollectorComponent implements OnInit {
         filterStrategy: user.filterStrategy,
         protocolAnalysisEnabled: user.protocolAnalysisEnabled,
         idsEnabled: user.idsEnabled,
-  status: user.status,
-  filePath: (user as any).filePath || ''
+        status: user.status,
+        filePath: user.path || ''
       });
 
-  // 根据当前 Adapter 同步禁用/启用 Storage Strategy
-  this.onAdapterChange(this.params.value.interfaceName);
+      // 根据当前 Adapter 同步禁用/启用 Storage Strategy
+      this.onAdapterChange(this.params.value.interfaceName);
+      
+      // 如果是 File 适配器且有文件路径，重新设置文件路径（因为 onAdapterChange 会清空它）
+      if (user.interfaceName === 'File' && user.path) {
+        this.params.patchValue({ filePath: user.path });
+      }
     }
   }
 
@@ -681,6 +697,25 @@ export class CollectorComponent implements OnInit {
   onFileSelected(event: any) {
     const file: File | undefined = event?.target?.files?.[0];
     this.selectedFile = file;
+    // 重置上传状态
+    this.uploadProgress = 0;
+    this.isUploading = false;
+    this.uploadStatusText = '';
+  }
+
+  // 清除文件选择
+  clearFileSelection() {
+    this.selectedFile = undefined;
+    this.uploadProgress = 0;
+    this.isUploading = false;
+    this.uploadStatusText = '';
+    // 清空文件输入框的值
+    const fileInput = document.getElementById('fileUpload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    // 清空表单中的文件路径
+    this.params.patchValue({ filePath: '' });
   }
 
   // 上传文件到固定目录并保存路径
@@ -697,20 +732,62 @@ export class CollectorComponent implements OnInit {
       });
       return;
     }
+
+    // 重置进度状态
+    this.uploadProgress = 0;
+    this.isUploading = true;
+    this.uploadStatusText = '';
+
     const target = '/datastore/pcap/upload';
-    this.collectorService.uploadPcap(this.selectedFile, target).subscribe({
-      next: (resp) => {
-        this.params.patchValue({ filePath: resp.path });
-        this.translate.get('collectorMessages.fileUploadedSuccessfully').subscribe(msg => {
-          this.showMessage(msg);
-        });
+    this.collectorService.uploadPcapWithProgress(this.selectedFile, target).subscribe({
+      next: (event: HttpEvent<any>) => {
+        switch (event.type) {
+          case HttpEventType.UploadProgress:
+            if (event.total) {
+              this.uploadProgress = Math.round(100 * event.loaded / event.total);
+              this.uploadStatusText = `${this.formatFileSize(event.loaded)} / ${this.formatFileSize(event.total)}`;
+            }
+            break;
+          case HttpEventType.Response:
+            this.isUploading = false;
+            this.uploadProgress = 100;
+            this.params.patchValue({ filePath: event.body.path });
+            this.translate.get('collectorMessages.fileUploadedSuccessfully').subscribe(msg => {
+              this.showMessage(msg);
+              this.uploadStatusText = msg;
+            });
+            break;
+        }
       },
       error: () => {
+        this.isUploading = false;
+        this.uploadProgress = 0;
         this.translate.get('collectorMessages.fileUploadFailed').subscribe(msg => {
           this.showMessage(msg, 'error');
+          this.uploadStatusText = msg;
         });
       }
     });
+  }
+
+  // 格式化文件大小显示
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  // 从文件路径中提取文件名
+  getFileNameFromPath(filePath: string): string {
+    if (!filePath) return '';
+    return filePath.split('/').pop() || filePath.split('\\').pop() || filePath;
+  }
+
+  // 检查是否有已上传的文件
+  hasUploadedFile(): boolean {
+    return !!(this.params?.value?.filePath && this.params.value.filePath.trim() !== '');
   }
 
   loadCollectors() {
@@ -726,7 +803,7 @@ export class CollectorComponent implements OnInit {
           posts: 0,
           followers: '0',
           following: 0,
-          path: 'profile-35.png',
+          path: (collector as any).filePath || 'profile-35.png', // 使用后端返回的 filePath，如果没有则使用默认头像
           action: '',
           creationTime: this.formatDate(collector.creationTime),
           analysisCompleted: collector.status === 'completed' || collector.status === 'STATUS_FINISHED', // 初始化分析完成状态
