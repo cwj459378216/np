@@ -25,6 +25,7 @@ BeginAttr:
   - keyWord: "id.resp_h"
     keyAlias: "dstIp"
     keyType: "ip"
+    defaultShow: true
     description: "destination ip address"
 
   - keyWord: "id.resp_p"
@@ -37,7 +38,7 @@ EndAttr:
   - keyWord: "file_path"
     keyAlias: "filePath"
     keyType: "string"
-    description: "data source"
+    description: "The path of the data file that generated this analysis result"
 
   - keyWord: "ch_id"
     extended: true
@@ -146,6 +147,7 @@ Zeek:
       - keyWord: "method"
         keyAlias: "reqMethod"
         keyType: "string"
+        defaultShow: true
         description: "Verb used in the HTTP request (GET, POST, HEAD, etc.)."
       - keyWord: "host"
         keyAlias: "host"
@@ -154,6 +156,7 @@ Zeek:
       - keyWord: "uri"
         keyAlias: "URI"
         keyType: "string"
+        defaultShow: true
         description: "URI used in the request"
       - keyWord: "referrer"
         keyAlias: "referrer"
@@ -162,10 +165,12 @@ Zeek:
       - keyWord: "version"
         keyAlias: "verNumber"
         keyType: "string"
+        defaultShow: true
         description: "Value of the version portion of the reply"
       - keyWord: "user_agent"
         keyAlias: "userAgent"
         keyType: "string"
+        defaultShow: true
         description: "Value of the User-Agent header from the client"
 
       - keyWord: "origin"
@@ -181,6 +186,7 @@ Zeek:
       - keyWord: "response_body_len"
         keyAlias: "responseBodyLen"
         keyType: "uint32"
+        defaultShow: true
         description: "Actual uncompressed content size of the data transferred from the server."
 
       - keyWord: "status_code"
@@ -191,6 +197,7 @@ Zeek:
       - keyWord: "status_msg"
         keyAlias: "statusMsg"
         keyType: "string"
+        defaultShow: true
         description: "Status message returned by the server."
 
       - keyWord: "info_code"
@@ -262,6 +269,7 @@ Zeek:
       - keyWord: "proto"
         keyAlias: "proto"
         keyType: "string"
+        defaultShow: true
         description: "The transport layer protocol of the connection."
 
       - keyWord: "trans_id"
@@ -272,11 +280,13 @@ Zeek:
       - keyWord: "rtt"
         keyAlias: "rtt"
         keyType: "float"
+        defaultShow: true
         description: "Round trip time for the query and response. This indicates the delay between when the request was seen until the answer started."
 
       - keyWord: "query"
         keyAlias: "query"
         keyType: "string"
+        defaultShow: true
         description: "The domain name that is the subject of the DNS query."
 
       - keyWord: "qclass"
@@ -287,6 +297,7 @@ Zeek:
       - keyWord: "qclass_name"
         keyAlias: "qclassName"
         keyType: "string"
+        defaultShow: true
         description: "A descriptive name for the class of the query."
 
       - keyWord: "qtype"
@@ -297,6 +308,7 @@ Zeek:
       - keyWord: "qtype_name"
         keyAlias: "qtypeName"
         keyType: "string"
+        defaultShow: true
         description: "A descriptive name for the type of the query."
 
       - keyWord: "rcode"
@@ -307,6 +319,7 @@ Zeek:
       - keyWord: "rcode_name"
         keyAlias: "rcodeName"
         keyType: "string"
+        defaultShow: true
         description: "A descriptive name for the response code value."
 
       - keyWord: "AA"
@@ -337,11 +350,13 @@ Zeek:
       - keyWord: "answers"
         keyAlias: "answers"
         keyType: "string"
+        defaultShow: true
         description: "The set of resource descriptions in the query answer."
 
       - keyWord: "TTLs"
         keyAlias: "TTLs"
         keyType: "string"
+        defaultShow: true
         description: "The caching intervals of the associated RRs described by the answers field."
 
       - keyWord: "rejected"
@@ -350,36 +365,31 @@ Zeek:
         description: "The DNS query was rejected by the server."
 
   - logName: "dce_rpc"
-    needBeginAttr: false
+    needBeginAttr: true
     needEndAttr: true
     attribute:
-      - keyWord: "ts"
-        keyAlias: "timestamp"
-        keyType: "time"
-        defaultShow: true
-        description: "This is the time of the first packet"
-      - keyWord: "uid"
-        keyAlias: "id"
-        keyType: "string"
-        description: "A unique identifier of the connection"
       - keyWord: "rtt"
         keyAlias: "rtt"
         keyType: "float"
+        defaultShow: true
         description: "Round trip time from the request to the response. If either the request or response wasn’t seen, this will be null."
 
       - keyWord: "named_pipe"
         keyAlias: "namedPipe"
         keyType: "string"
+        defaultShow: true
         description: "Remote pipe name."
 
       - keyWord: "endpoint"
         keyAlias: "endpoint"
         keyType: "string"
+        defaultShow: true
         description: "Endpoint name looked up from the uuid."
 
       - keyWord: "operation"
         keyAlias: "operation"
         keyType: "string"
+        defaultShow: true
         description: "Operation seen in the call."
   
   - logName: "dhcp"
@@ -400,21 +410,25 @@ Zeek:
       - keyWord: "client_addr"
         keyAlias: "clientAddr"
         keyType: "ip"
+        defaultShow: true
         description: "IP address of the client. If a transaction is only a client sending INFORM messages then there is no lease information exchanged so this is helpful to know who sent the messages. Getting an address in this field does require that the client sources at least one DHCP message using a non-broadcast address."
 
       - keyWord: "server_addr"
         keyAlias: "serverAddr"
         keyType: "ip"
+        defaultShow: true
         description: "IP address of the server involved in actually handing out the lease. There could be other servers replying with OFFER messages which won’t be represented here. Getting an address in this field also requires that the server handing out the lease also sources packets from a non-broadcast IP address."
 
       - keyWord: "mac"
         keyAlias: "mac"
         keyType: "string"
+        defaultShow: true
         description: "Client’s hardware address."
 
       - keyWord: "host_name"
         keyAlias: "hostName"
         keyType: "string"
+        defaultShow: true
         description: "Name given by client in Hostname option 12."
 
       - keyWord: "client_fqdn"
@@ -430,16 +444,19 @@ Zeek:
       - keyWord: "requested_addr"
         keyAlias: "requestedAddr"
         keyType: "ip"
+        defaultShow: true
         description: "IP address requested by the client."
 
       - keyWord: "assigned_addr"
         keyAlias: "assignedAddr"
         keyType: "ip"
+        defaultShow: true
         description: "IP address assigned by the server."
 
       - keyWord: "lease_time"
         keyAlias: "leaseTime"
         keyType: "float"
+        defaultShow: true
         description: "IP address lease interval."
 
       - keyWord: "client_message"
@@ -469,16 +486,19 @@ Zeek:
       - keyWord: "fc_request"
         keyAlias: "fcRequest"
         keyType: "string"
+        defaultShow: true
         description: "The name of the function message in the request."
 
       - keyWord: "fc_reply"
         keyAlias: "fcReply"
         keyType: "string"
+        defaultShow: true
         description: "The name of the function message in the reply."
 
       - keyWord: "iin"
         keyAlias: "iin"
         keyType: "uint64"
+        defaultShow: true
         description: "The response’s “internal indication number”."
 
   - logName: "ftp"
@@ -488,16 +508,19 @@ Zeek:
       - keyWord: "user"
         keyAlias: "user"
         keyType: "string"
+        defaultShow: true
         description: "User name for the current FTP session."
 
       - keyWord: "password"
         keyAlias: "password"
         keyType: "string"
+        defaultShow: true
         description: "Password for the current FTP session if captured."
 
       - keyWord: "command"
         keyAlias: "command"
         keyType: "string"
+        deaultShow: true
         description: "Command given by the client."
 
       - keyWord: "arg"
@@ -513,6 +536,7 @@ Zeek:
       - keyWord: "file_size"
         keyAlias: "fileSize"
         keyType: "uint64"
+        defaultShow: true
         description: "Size of the file if the command indicates a file transfer."
 
       - keyWord: "reply_code"
@@ -525,40 +549,31 @@ Zeek:
         keyType: "string"
         description: "Reply message from the server in response to the command."
 
-      - keyWord: "data_channel"
-        keyAlias: "dataChannel"
-        keyType: "string"
-        description: "Expected FTP data channel."
-
-      - keyWord: "cwd"
-        keyAlias: "cwd"
-        keyType: "string"
-        description: "Current working directory that this session is in. By making the default value ‘.’, we can indicate that unless something more concrete is discovered that the existing but unknown directory is ok to use."
-
-      - keyWord: "cmdarg"
-        keyAlias: "cmdarg"
-        keyType: "string"
-        description: "Command that is currently waiting for a response."
-
-      - keyWord: "pending_commands"
-        keyAlias: "pendingCommands"
-        keyType: "string"
-        description: "Queue for commands that have been sent but not yet responded to are tracked here."
-
-      - keyWord: "command_seq"
-        keyAlias: "commandSeq"
-        keyType: "uint64"
-        description: "Sequence number of previous command."
-
-      - keyWord: "passive"
-        keyAlias: "passive"
+      - keyWord: "data_channel_passive"
+        keyAlias: "dataChannelPassive"
         keyType: "bool"
-        description: "Indicates if the session is in active or passive mode."
+        defaultShow: true
+        description: "FTP data channel mode."
 
-      - keyWord: "capture_password"
-        keyAlias: "capturePassword"
-        keyType: "bool"
-        description: "Determines if the password will be captured for this request."
+      - keyWord: "data_channel_orig_addr"
+        keyAlias: "dataChannelOrigAddr"
+        keyType: "ip"
+        description: "FTP data channel originator address."
+
+      - keyWord: "data_channel_resp_addr"
+        keyAlias: "dataChannelRespAddr"
+        keyType: "ip"
+        description: "FTP data channel responder address."
+
+      - keyWord: "data_channel_resp_port"
+        keyAlias: "dataChannelRespPort"
+        keyType: "uint32"
+        description: "FTP data channel responder port."
+
+      - keyWord: "fuid"
+        keyAlias: "fuid"
+        keyType: "string"
+        description: "File UID if a file was transferred."
 
   - logName: "irc"
     needBeginAttr: true
@@ -567,27 +582,51 @@ Zeek:
       - keyWord: "nick"
         keyAlias: "nick"
         keyType: "string"
+        defaultShow: true
         description: "Nickname given for the connection."
 
       - keyWord: "user"
         keyAlias: "user"
         keyType: "string"
+        defaultShow: true
         description: "Username given for the connection."
 
       - keyWord: "command"
         keyAlias: "command"
         keyType: "string"
+        defaultShow: true
         description: "Command given by the client."
 
       - keyWord: "value"
         keyAlias: "value"
         keyType: "string"
+        defaultShow: true
         description: "Value for the command given by the client."
 
       - keyWord: "addl"
         keyAlias: "addl"
         keyType: "string"
         description: "Any additional data for the command."
+      
+      - keyWord: "dcc_file_name"
+        keyAlias: "dccFileName"
+        keyType: "string"
+        description: "File name for DCC SEND command."
+
+      - keyWord: "dcc_file_size"
+        keyAlias: "dccFileSize"
+        keyType: "uint64"
+        description: "File size for DCC SEND command."
+
+      - keyWord: "dcc_mime_type"
+        keyAlias: "dccMimeType"
+        keyType: "string"
+        description: "Sniffed mime type of file transferred via DCC SEND command."
+
+      - keyWord: "fuid"
+        keyAlias: "fuid"
+        keyType: "string"
+        description: "File UID if a file was transferred via DCC SEND command."
 
   - logName: "kerberos"
     needBeginAttr: true
@@ -596,31 +635,31 @@ Zeek:
       - keyWord: "request_type"
         keyAlias: "requestType"
         keyType: "string"
+        defaultShow: true
         description: "Request type - Authentication Service (“AS”) or Ticket Granting Service (“TGS”)"
 
       - keyWord: "client"
         keyAlias: "client"
         keyType: "string"
+        defaultShow: true
         description: "Client"
 
       - keyWord: "service"
         keyAlias: "service"
         keyType: "string"
+        defaultShow: true
         description: "Service"
 
       - keyWord: "success"
         keyAlias: "success"
         keyType: "bool"
+        defaultShow: true
         description: "Request result"
-
-      - keyWord: "error_code"
-        keyAlias: "errorCode"
-        keyType: "uint64"
-        description: "Error code"
 
       - keyWord: "error_msg"
         keyAlias: "errorMsg"
         keyType: "string"
+        defaultShow: true
         description: "Error message"
 
       - keyWord: "from"
@@ -648,10 +687,26 @@ Zeek:
         keyType: "bool"
         description: "Renewable ticket requested"
 
-      - keyWord: "logged"
-        keyAlias: "logged"
-        keyType: "bool"
-        description: "We’ve already logged this"
+      - keyWord: "client_cert_subject"
+        keyAlias: "clientCertSubject"
+        keyType: "string"
+        description: "Subject of the client certificate if PKINIT was used"
+      
+      - keyWord: "client_cert_fuid"
+        keyAlias: "clientCertFuid"
+        keyType: "string"
+        description: "File UID of the client certificate if PKINIT was used"
+      
+      - keyWord: "server_cert_subject"
+        keyAlias: "serverCertSubject"
+        keyType: "string"
+        description: "Subject of the server certificate if PKINIT was used"
+
+      - keyWord: "server_cert_fuid"
+        keyAlias: "serverCertFuid"
+        keyType: "string"
+        description: "File UID of the server certificate if PKINIT was used"
+
 
   - logName: "modbus"
     needBeginAttr: true
@@ -660,16 +715,19 @@ Zeek:
       - keyWord: "tid"
         keyAlias: "tid"
         keyType: "uint64"
+        defaultShow: true
         description: "Modbus transaction ID"
 
       - keyWord: "unit"
         keyAlias: "unit"
         keyType: "uint64"
+        defaultShow: true
         description: "The terminal unit identifier for the message"
 
       - keyWord: "func"
         keyAlias: "func"
         keyType: "string"
+        defaultShow: true
         description: "The name of the function message that was sent."
 
       - keyWord: "pdu_type"
@@ -680,6 +738,7 @@ Zeek:
       - keyWord: "exception"
         keyAlias: "exception"
         keyType: "string"
+        defaultShow: true
         description: "The exception if the response was a failure."
         
   - logName: "mysql"
@@ -689,50 +748,59 @@ Zeek:
       - keyWord: "cmd"
         keyAlias: "cmd"
         keyType: "string"
+        defaultShow: true
         description: "The command that was issued"
 
       - keyWord: "arg"
         keyAlias: "arg"
         keyType: "string"
+        defaultShow: true
         description: "The argument issued to the command"
 
       - keyWord: "success"
         keyAlias: "success"
         keyType: "bool"
+        defaultShow: true
         description: "Did the server tell us that the command succeeded?"
 
       - keyWord: "rows"
         keyAlias: "rows"
         keyType: "uint64"
+        defaultShow: true
         description: "The number of affected rows, if any"
 
       - keyWord: "response"
         keyAlias: "response"
         keyType: "string"
+        defaultShow: true
         description: "Server message, if any"
   
-  - logName: "ntm"
+  - logName: "ntlm"
     needBeginAttr: true
     needEndAttr: true
     attribute:
       - keyWord: "username"
         keyAlias: "username"
         keyType: "string"
+        defaultShow: true
         description: "Username given by the client."
 
       - keyWord: "hostname"
         keyAlias: "hostname"
         keyType: "string"
+        defaultShow: true
         description: "Hostname given by the client."
 
       - keyWord: "domainname"
         keyAlias: "domainname"
         keyType: "string"
+        defaultShow: true
         description: "Domainname given by the client."
 
       - keyWord: "server_nb_computer_name"
         keyAlias: "serverNbComputerName"
         keyType: "string"
+        defaultShow: true
         description: "NetBIOS name given by the server in a CHALLENGE."
 
       - keyWord: "server_dns_computer_name"
@@ -743,17 +811,14 @@ Zeek:
       - keyWord: "server_tree_name"
         keyAlias: "serverTreeName"
         keyType: "string"
+        defaultShow: true
         description: "Tree name given by the server in a CHALLENGE."
 
       - keyWord: "success"
         keyAlias: "success"
         keyType: "bool"
+        defaultShow: true
         description: "Indicate whether or not the authentication was successful."
-
-      - keyWord: "done"
-        keyAlias: "done"
-        keyType: "bool"
-        description: "Internally used field to indicate if the login attempt has already been logged."
 
   - logName: "radius"
     needBeginAttr: true
@@ -762,41 +827,49 @@ Zeek:
       - keyWord: "username"
         keyAlias: "username"
         keyType: "string"
+        defaultShow: true
         description: "The username, if present."
 
       - keyWord: "mac"
         keyAlias: "mac"
         keyType: "string"
+        defaultShow: true
         description: "MAC address, if present."
 
       - keyWord: "framed_addr"
         keyAlias: "framedAddr"
         keyType: "ip"
+        defaultShow: true
         description: "The address given to the network access server, if present. This is only a hint from the RADIUS server and the network access server is not required to honor the address."
 
       - keyWord: "tunnel_client"
         keyAlias: "tunnelClient"
         keyType: "string"
+        defaultShow: true
         description: "Address (IPv4, IPv6, or FQDN) of the initiator end of the tunnel, if present. This is collected from the Tunnel-Client-Endpoint attribute."
 
       - keyWord: "connect_info"
         keyAlias: "connectInfo"
         keyType: "string"
+        defaultShow: true
         description: "Connect info, if present."
 
       - keyWord: "reply_msg"
         keyAlias: "replyMsg"
         keyType: "string"
+        defaultShow: true
         description: "Reply message from the server challenge. This is frequently shown to the user authenticating."
 
       - keyWord: "result"
         keyAlias: "result"
         keyType: "string"
+        defaultShow: true
         description: "Successful or failed authentication."
 
       - keyWord: "ttl"
         keyAlias: "ttl"
         keyType: "float"
+        defaultShow: true
         description: "The duration between the first request and either the “Access-Accept” message or an error. If the field is empty, it means that either the request or response was not seen."
 
       - keyWord: "logged"
@@ -811,6 +884,7 @@ Zeek:
       - keyWord: "cookie"
         keyAlias: "cookie"
         keyType: "string"
+        defaultShow: true
         description: "Cookie value used by the client machine. This is typically a username."
 
       - keyWord: "result"
@@ -888,16 +962,6 @@ Zeek:
         keyType: "string"
         description: "Encryption method of the connection."
 
-      - keyWord: "analyzer_id"
-        keyAlias: "analyzerId"
-        keyType: "uint64"
-        description: "The analyzer ID used for the analyzer instance attached to each connection. It is not used for logging since it’s a meaningless arbitrary number."
-
-      - keyWord: "done"
-        keyAlias: "done"
-        keyType: "bool"
-        description: "Track status of logging RDP connections."
-
   - logName: "rfb"
     needBeginAttr: true
     needEndAttr: true
@@ -925,21 +989,25 @@ Zeek:
       - keyWord: "authentication_method"
         keyAlias: "authenticationMethod"
         keyType: "string"
+        defaultShow: true
         description: "Identifier of authentication method used."
 
       - keyWord: "auth"
         keyAlias: "auth"
         keyType: "bool"
+        defaultShow: true
         description: "Whether or not authentication was successful."
 
       - keyWord: "share_flag"
         keyAlias: "shareFlag"
         keyType: "bool"
+        defaultShow: true
         description: "Whether the client has an exclusive or a shared session."
 
       - keyWord: "desktop_name"
         keyAlias: "desktopName"
         keyType: "string"
+        defaultShow: true
         description: "Name of the screen that is being shared."
 
       - keyWord: "width"
@@ -951,11 +1019,6 @@ Zeek:
         keyAlias: "height"
         keyType: "uint64"
         description: "Height of the screen that is being shared."
-
-      - keyWord: "done"
-        keyAlias: "done"
-        keyType: "bool"
-        description: "Internally used value to determine if this connection has already been logged."
 
   - logName: "sip"
     needBeginAttr: true
@@ -969,46 +1032,55 @@ Zeek:
       - keyWord: "method"
         keyAlias: "method"
         keyType: "string"
+        defaultShow: true
         description: "Verb used in the SIP request (INVITE, REGISTER etc.)."
 
       - keyWord: "uri"
         keyAlias: "uri"
         keyType: "string"
+        defaultShow: true
         description: "URI used in the request."
 
       - keyWord: "date"
         keyAlias: "date"
         keyType: "string"
+        defaultShow: true
         description: "Contents of the Date: header from the client."
 
       - keyWord: "request_from"
         keyAlias: "requestFrom"
         keyType: "string"
+        defaultShow: true
         description: "Contents of the request From: header Note: The tag= value that’s usually appended to the sender is stripped off and not logged."
 
       - keyWord: "request_to"
         keyAlias: "requestTo"
         keyType: "string"
+        defaultShow: true
         description: "Contents of the To: header."
 
       - keyWord: "response_from"
         keyAlias: "responseFrom"
         keyType: "string"
+        defaultShow: true
         description: "Contents of the response From: header Note: The tag= value that’s usually appended to the sender is stripped off and not logged."
 
       - keyWord: "response_to"
         keyAlias: "responseTo"
         keyType: "string"
+        defaultShow: true
         description: "Contents of the response To: header."
 
       - keyWord: "reply_to"
         keyAlias: "replyTo"
         keyType: "string"
+        defaultShow: true
         description: "Contents of the Reply-To: header."
 
       - keyWord: "call_id"
         keyAlias: "callId"
         keyType: "string"
+        defaultShow: true
         description: "Contents of the Call-ID: header from the client."
 
       - keyWord: "seq"
@@ -1019,6 +1091,7 @@ Zeek:
       - keyWord: "subject"
         keyAlias: "subject"
         keyType: "string"
+        defaultShow: true
         description: "Contents of the Subject: header from the client."
 
       - keyWord: "request_path"
@@ -1066,66 +1139,6 @@ Zeek:
         keyType: "string"
         description: "Contents of the Content-Type: header from the server."
 
-  - logName: "smb_cmd"
-    needBeginAttr: true
-    needEndAttr: true
-    attribute:
-      - keyWord: "command"
-        keyAlias: "command"
-        keyType: "string"
-        description: "The command sent by the client."
-
-      - keyWord: "sub_command"
-        keyAlias: "subCommand"
-        keyType: "string"
-        description: "The subcommand sent by the client, if present."
-
-      - keyWord: "argument"
-        keyAlias: "argument"
-        keyType: "string"
-        description: "Command argument sent by the client, if any."
-
-      - keyWord: "status"
-        keyAlias: "status"
-        keyType: "string"
-        description: "Server reply to the client’s command."
-
-      - keyWord: "rtt"
-        keyAlias: "rtt"
-        keyType: "float"
-        description: "Round trip time from the request to the response."
-
-      - keyWord: "version"
-        keyAlias: "version"
-        keyType: "string"
-        description: "Version of SMB for the command."
-
-      - keyWord: "username"
-        keyAlias: "username"
-        keyType: "string"
-        description: "Authenticated username, if available."
-
-      - keyWord: "tree"
-        keyAlias: "tree"
-        keyType: "string"
-        description: "If this is related to a tree, this is the tree that was used for the current command."
-
-      - keyWord: "tree_service"
-        keyAlias: "treeService"
-        keyType: "string"
-        description: "The type of tree (disk share, printer share, named pipe, etc.)."
-
-      - keyWord: "referenced_file"
-        keyAlias: "referencedFile"
-        keyType: "string"
-        description: "If the command referenced a file, store it here."
-
-      - keyWord: "referenced_tree"
-        keyAlias: "referencedTree"
-        keyType: "string"
-        description: "If the command referenced a tree, store it here."
-
-
   - logName: "smb_files"
     needBeginAttr: true
     needEndAttr: true
@@ -1138,42 +1151,52 @@ Zeek:
       - keyWord: "action"
         keyAlias: "action"
         keyType: "string"
+        defaultShow: true
         description: "Action this log record represents."
 
       - keyWord: "path"
         keyAlias: "path"
         keyType: "string"
+        defaultShow: true
         description: "Path pulled from the tree this file was transferred to or from."
 
       - keyWord: "name"
         keyAlias: "name"
         keyType: "string"
+        defaultShow: true
         description: "Filename if one was seen."
 
       - keyWord: "size"
         keyAlias: "size"
         keyType: "uint64"
+        defaultShow: true
         description: "Total size of the file."
 
       - keyWord: "prev_name"
         keyAlias: "prevName"
         keyType: "string"
+        defaultShow: true
         description: "If the rename action was seen, this will be the file’s previous name."
 
-      - keyWord: "times"
-        keyAlias: "times"
-        keyType: "string"
+      - keyWord: "modified_time"
+        keyAlias: "modifiedTime"
+        keyType: "float"
         description: "Last time this file was modified."
 
-      - keyWord: "fid"
-        keyAlias: "fid"
-        keyType: "uint64"
-        description: "ID referencing this file."
+      - keyWord: "accessed_time"
+        keyAlias: "accessedTime"
+        keyType: "float"
+        description: "Last time this file was accessed."
 
-      - keyWord: "uuid"
-        keyAlias: "uuid"
-        keyType: "string"
-        description: "UUID referencing this file if DCE/RPC."
+      - keyWord: "created_time"
+        keyAlias: "createdTime"
+        keyType: "float"
+        description: "Time this file was created."
+
+      - keyWord: "changed_time"
+        keyAlias: "changedTime"
+        keyType: "float"
+        description: "Last time this file’s metadata was changed."
 
   - logName: "smtp"
     needBeginAttr: true
@@ -1192,11 +1215,13 @@ Zeek:
       - keyWord: "mailfrom"
         keyAlias: "mailfrom"
         keyType: "string"
+        defaultShow: true
         description: "Email addresses found in the From header."
 
       - keyWord: "rcptto"
         keyAlias: "rcptTo"
         keyType: "string"
+        defaultShow: true
         description: "Email addresses found in the Rcpt header."
 
       - keyWord: "date"
@@ -1237,11 +1262,13 @@ Zeek:
       - keyWord: "subject"
         keyAlias: "subject"
         keyType: "string"
+        defaultShow: true
         description: "Contents of the Subject header."
 
       - keyWord: "x_originating_ip"
         keyAlias: "xOriginatingIp"
         keyType: "ip"
+        defaultShow: true
         description: "Contents of the X-Originating-IP header."
 
       - keyWord: "first_received"
@@ -1267,6 +1294,7 @@ Zeek:
       - keyWord: "user_agent"
         keyAlias: "userAgent"
         keyType: "string"
+        defaultShow: true
         description: "Value of the User-Agent header from the client."
 
       - keyWord: "tls"
@@ -1274,20 +1302,11 @@ Zeek:
         keyType: "bool"
         description: "Indicates that the connection has switched to using TLS."
 
-      - keyWord: "process_received_from"
-        keyAlias: "processReceivedFrom"
-        keyType: "bool"
-        description: "Indicates if the “Received: from” headers should still be processed."
+      - keyWord: "fuid"
+        keyAlias: "fuid"
+        keyType: "string"
+        description: "File UID if an attachment was transferred."
 
-      - keyWord: "has_client_activity"
-        keyAlias: "hasClientActivity"
-        keyType: "bool"
-        description: "Indicates if client activity has been seen, but not yet logged."
-
-      - keyWord: "process_smtp_headers"
-        keyAlias: "processSmtpHeaders"
-        keyType: "bool"
-        description: "Indicates if the SMTP headers should still be processed."
 
   - logName: "snmp"
     needBeginAttr: true
@@ -1296,41 +1315,49 @@ Zeek:
       - keyWord: "duration"
         keyAlias: "duration"
         keyType: "float"
+        defaultShow: true
         description: "The amount of time between the first packet belonging to the SNMP session and the latest one seen."
 
       - keyWord: "version"
         keyAlias: "version"
         keyType: "string"
+        defaultShow: true
         description: "The version of SNMP being used."
 
       - keyWord: "community"
         keyAlias: "community"
         keyType: "string"
+        defaultShow: true
         description: "The community string of the first SNMP packet associated with the session. This is used as part of SNMP’s (v1 and v2c) administrative/security framework. See RFC 1157 or RFC 1901."
 
       - keyWord: "get_requests"
         keyAlias: "getRequests"
         keyType: "uint64"
+        defaultShow: true
         description: "The number of variable bindings in GetRequest/GetNextRequest PDUs seen for the session."
 
       - keyWord: "get_bulk_requests"
         keyAlias: "getBulkRequests"
         keyType: "uint64"
+        defaultShow: true
         description: "The number of variable bindings in GetBulkRequest PDUs seen for the session."
 
       - keyWord: "get_responses"
         keyAlias: "getResponses"
         keyType: "uint64"
+        defaultShow: true
         description: "The number of variable bindings in GetResponse/Response PDUs seen for the session."
 
       - keyWord: "set_requests"
         keyAlias: "setRequests"
         keyType: "uint64"
+        defaultShow: true
         description: "The number of variable bindings in SetRequest PDUs seen for the session."
 
       - keyWord: "display_string"
         keyAlias: "displayString"
         keyType: "string"
+        defaultShow: true
         description: "A system description of the SNMP responder endpoint."
 
       - keyWord: "up_since"
@@ -1345,47 +1372,60 @@ Zeek:
       - keyWord: "version"
         keyAlias: "version"
         keyType: "uint64"
+        defaultShow: true
         description: "Protocol version of SOCKS."
 
       - keyWord: "user"
         keyAlias: "user"
         keyType: "string"
+        defaultShow: true
         description: "Username used to request a login to the proxy."
 
       - keyWord: "password"
         keyAlias: "password"
         keyType: "string"
+        defaultShow: true
         description: "Password used to request a login to the proxy."
 
       - keyWord: "status"
         keyAlias: "status"
         keyType: "string"
+        defaultShow: true
         description: "Server status for the attempt at using the proxy."
 
       - keyWord: "request"
         keyAlias: "request"
         keyType: "ip"
+        defaultShow: true
         description: "Client requested SOCKS address. Could be an address, a name or both."
+
+      - keyWord: "request_name"
+        keyAlias: "requestName"
+        keyType: "string"
+        description: "Client requested SOCKS name if a name was given."
 
       - keyWord: "request_p"
         keyAlias: "requestPort"
-        keyType: "port"
+        keyType: "uint32"
+        defaultShow: true
         description: "Client requested port."
 
       - keyWord: "bound"
         keyAlias: "bound"
         keyType: "ip"
+        defaultShow: true
         description: "Server bound address. Could be an address, a name or both."
+
+      - keyWord: "bound_name"
+        keyAlias: "boundName"
+        keyType: "string"
+        description: "Server bound name if a name was given."
 
       - keyWord: "bound_p"
         keyAlias: "boundPort"
-        keyType: "port"
+        keyType: "uint32"
+        defaultShow: true
         description: "Server bound port."
-
-      - keyWord: "capture_password"
-        keyAlias: "capturePassword"
-        keyType: "bool"
-        description: "Determines if the password will be captured for this request."
 
   - logName: "ssh"
     needBeginAttr: true
@@ -1394,41 +1434,49 @@ Zeek:
       - keyWord: "version"
         keyAlias: "version"
         keyType: "uint64"
+        defaultShow: true
         description: "SSH major version (1, 2, or unset). The version can be unset if the client and server version strings are unset, malformed or incompatible so no common version can be extracted. If no version can be extracted even though both client and server versions are set a weird will be generated."
 
       - keyWord: "auth_success"
         keyAlias: "authSuccess"
         keyType: "bool"
+        defaultShow: true
         description: "Authentication result (T=success, F=failure, unset=unknown)"
 
       - keyWord: "auth_attempts"
         keyAlias: "authAttempts"
         keyType: "uint64"
+        defaultShow: true
         description: "The number of authentication attempts we observed. There’s always at least one, since some servers might support no authentication at all. It’s important to note that not all of these are failures, since some servers require two-factor auth (e.g. password AND pubkey)"
 
       - keyWord: "direction"
         keyAlias: "direction"
         keyType: "string"
+        defaultShow: true
         description: "Direction of the connection. If the client was a local host logging into an external host, this would be OUTBOUND. INBOUND would be set for the opposite situation."
 
       - keyWord: "client"
         keyAlias: "client"
         keyType: "string"
+        defaultShow: true
         description: "The client’s version string"
 
       - keyWord: "server"
         keyAlias: "server"
         keyType: "string"
+        defaultShow: true
         description: "The server’s version string"
 
       - keyWord: "cipher_alg"
         keyAlias: "cipherAlgorithm"
         keyType: "string"
+        defaultShow: true
         description: "The encryption algorithm in use"
 
       - keyWord: "mac_alg"
         keyAlias: "macAlgorithm"
         keyType: "string"
+        defaultShow: true
         description: "The signing (MAC) algorithm in use"
 
       - keyWord: "compression_alg"
@@ -1451,21 +1499,6 @@ Zeek:
         keyType: "string"
         description: "The server’s key fingerprint"
 
-      - keyWord: "logged"
-        keyAlias: "logged"
-        keyType: "bool"
-        description: "Whether this has already been logged and can be ignored."
-
-      - keyWord: "capabilities"
-        keyAlias: "capabilities"
-        keyType: "string"
-        description: "SSH capabilities"
-
-      - keyWord: "analyzer_id"
-        keyAlias: "analyzerId"
-        keyType: "uint64"
-        description: "Analyzer ID"
-
   - logName: "ssl"
     needBeginAttr: true
     needEndAttr: true
@@ -1473,45 +1506,43 @@ Zeek:
       - keyWord: "version_num"
         keyAlias: "versionNum"
         keyType: "uint64"
+        defaultShow: true
         description: "Numeric SSL/TLS version that the server chose."
-
-      - keyWord: "version"
-        keyAlias: "version"
-        keyType: "string"
-        description: "SSL/TLS version that the server chose."
 
       - keyWord: "cipher"
         keyAlias: "cipher"
         keyType: "string"
+        defaultShow: true
         description: "SSL/TLS cipher suite that the server chose."
 
       - keyWord: "curve"
         keyAlias: "curve"
         keyType: "string"
+        defaultShow: true
         description: "Elliptic curve the server chose when using ECDH/ECDHE."
 
       - keyWord: "server_name"
         keyAlias: "serverName"
         keyType: "string"
+        defaultShow: true
         description: "Value of the Server Name Indicator SSL/TLS extension. It indicates the server name that the client was requesting."
 
       - keyWord: "resumed"
         keyAlias: "resumed"
         keyType: "bool"
+        defaultShow: true
         description: "Flag to indicate if the session was resumed reusing the key material exchanged in an earlier connection."
-      - keyWord: "client_ticket_empty_session_seen"
-        keyAlias: "clientTicketEmptySessionSeen"
-        keyType: "bool"
-        description: "Flag to indicate if we saw a non-empty session ticket being sent by the client using an empty session ID. This value is used to determine if a session is being resumed. It’s not logged."
 
       - keyWord: "last_alert"
         keyAlias: "lastAlert"
         keyType: "string"
+        defaultShow: true
         description: "Last alert that was seen during the connection."
 
       - keyWord: "next_protocol"
         keyAlias: "nextProtocol"
         keyType: "string"
+        defaultShow: true
         description: "Next protocol the server chose using the application layer next protocol extension, if present."
 
       - keyWord: "established"
@@ -1546,21 +1577,25 @@ Zeek:
       - keyWord: "proto"
         keyAlias: "proto"
         keyType: "string"
+        defaultShow: true
         description: "Protocol over which the message was seen."
 
       - keyWord: "facility"
         keyAlias: "facility"
         keyType: "string"
+        defaultShow: true
         description: "Syslog facility for the message."
 
       - keyWord: "severity"
         keyAlias: "severity"
         keyType: "string"
+        defaultShow: true
         description: "Syslog severity for the message."
 
       - keyWord: "message"
         keyAlias: "message"
         keyType: "string"
+        defaultShow: true
         description: "The plain text message."
 
   - logName: "tunnel"
@@ -1570,9 +1605,11 @@ Zeek:
       - keyWord: "tunnel_type"
         keyAlias: "tunnel_type"
         keyType: "string"
+        defaultShow: true
         description: "The type of tunnel."
 
       - keyWord: "action"
         keyAlias: "action"
         keyType: "string"
+        defaultShow: true
         description: "The type of activity that occurred."
