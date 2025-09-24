@@ -1,8 +1,14 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
 # Usage: run on Ubuntu 20.04+
 #   bash deploy.sh [--base-dir /opt/np] [--user npuser] [--port 8080] [--server-name example.com]
+
+# Ensure we're running with bash
+if [ -z "${BASH_VERSION:-}" ]; then
+  echo "This script requires bash. Please run with: bash deploy.sh"
+  exit 1
+fi
 
 BASE_DIR="/opt/np"
 RUN_USER="np"
@@ -64,7 +70,67 @@ EOF
   fi
   
   echo "Installing base packages..."
-  sudo apt-get install -y openjdk-21-jre-headless nginx postgresql postgresql-contrib curl wget gnupg2
+  sudo apt-get install -y openjdk-21-jre-headless nginx postgresql postgresql-contrib curl wget gnupg2 unzip
+  
+  # Create reports directory
+  echo "Creating reports directory..."
+  sudo mkdir -p /opt/np/reports
+  sudo chmod 777 /opt/np/reports
+  
+  # Install Google Chrome from offline package
+  echo "Installing Google Chrome from offline package..."
+  
+  # Install Chrome from local deb package
+  if [ -f "./apt/google-chrome-stable_current_amd64.deb" ]; then
+    echo "Installing Google Chrome from offline package..."
+    sudo dpkg -i ./apt/google-chrome-stable_current_amd64.deb || true
+    # Fix dependencies if needed
+    sudo apt-get install -f -y
+  else
+    echo "Error: google-chrome-stable_current_amd64.deb not found in ./apt/ directory"
+    echo "Please ensure the offline package is available"
+    exit 1
+  fi
+  
+  # Install ChromeDriver from offline package
+  echo "Installing ChromeDriver from offline package..."
+  
+  if [ -f "./apt/chromedriver" ]; then
+    echo "Installing ChromeDriver from offline package..."
+    sudo cp ./apt/chromedriver /usr/local/bin/chromedriver
+    sudo chmod +x /usr/local/bin/chromedriver
+    sudo chown root:root /usr/local/bin/chromedriver
+    echo "ChromeDriver installed at /usr/local/bin/chromedriver"
+  else
+    echo "Error: chromedriver not found in ./apt/ directory"
+    echo "Please ensure the offline chromedriver binary is available at './apt/chromedriver'"
+    exit 1
+  fi
+  
+  # Verify installations
+  echo "Verifying Chrome and ChromeDriver installation..."
+  
+  if command -v google-chrome >/dev/null 2>&1; then
+    google-chrome --version
+    echo "✓ Google Chrome installed successfully"
+  else
+    echo "✗ Google Chrome installation failed"
+  fi
+  
+  # Test ChromeDriver installation
+  if [ -f /usr/local/bin/chromedriver ]; then
+    echo "ChromeDriver found at /usr/local/bin/chromedriver"
+    if /usr/local/bin/chromedriver --version >/dev/null 2>&1; then
+      echo "✓ ChromeDriver installed and working"
+      /usr/local/bin/chromedriver --version
+    else
+      echo "✗ ChromeDriver found but not working properly"
+      echo "Error details:"
+      /usr/local/bin/chromedriver --version 2>&1 || true
+    fi
+  else
+    echo "✗ ChromeDriver not found at /usr/local/bin/chromedriver"
+  fi
   
   # Add Elasticsearch repository
   echo "Adding Elasticsearch repository..."
