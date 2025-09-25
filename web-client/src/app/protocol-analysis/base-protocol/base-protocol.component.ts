@@ -51,6 +51,8 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
     sortOrder?: 'asc' | 'desc';
     // 搜索输入防抖计时器，避免在同一变更检测周期内多次触发导致 NG0100
     private searchDebounce: any;
+    // 表格重新渲染标志位，用于强制重新渲染表格
+    tableRenderKey = 1;
 
     // AI 解释相关（基础文本 + Markdown 增强）
     showAiModal = false;
@@ -218,12 +220,24 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
             console.log('Protocol or index changed, reloading data...');
             // 更新协议显示名称
             this.updateProtocolDisplayName();
-            // 重置分页
-            this.currentPage = 1;
-            this.pageSize = 10;
-            // 重新加载数据
-            this.loadTrendingData();
-            this.loadData();
+
+            // 暂时销毁表格组件
+            this.tableRenderKey = 0;
+            this.cdr.detectChanges();
+
+            // 使用强制重置方法
+            this.forceResetTableState();
+
+            // 延迟重新创建表格并加载数据
+            setTimeout(() => {
+                this.tableRenderKey = Date.now();
+                this.cdr.detectChanges();
+
+                setTimeout(() => {
+                    this.loadTrendingData();
+                    this.loadData();
+                }, 50);
+            }, 50);
         }
 
         // 当协议名称变化时，更新显示名称
@@ -245,6 +259,11 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
         console.log('当前 indexName:', this.indexName);
         console.log('当前 rows:', this.rows);
         console.log('当前 cols:', this.cols);
+
+        // 确保表格渲染 key 已初始化
+        if (this.tableRenderKey === 0) {
+            this.tableRenderKey = Date.now();
+        }
 
         // 初始化图表配置
         this.initChart();
@@ -563,9 +582,8 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
         });
     }
 
-    // URL切换时重置状态 & 重新加载
-    private resetForUrlChange() {
-        // 重置分页、搜索、排序、图表选择范围
+    // 强制重置表格到初始状态
+    private forceResetTableState() {
         this.currentPage = 1;
         this.pageSize = 10;
         this.search = '';
@@ -573,15 +591,54 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
         this.sortOrder = undefined;
         this.selectedStartTime = undefined;
         this.selectedEndTime = undefined;
-        // 清空数据表与趋势图数据
         this.rows = [];
         this.total = 0;
-        this.revenueChart.series = [{ name: `${this.protocolName} Sessions`, data: [] }];
+        this.loading = false;
+        this.chartLoading = false;
+        // 注意：这里不更新 tableRenderKey，由调用方控制
+    }
+
+    // URL切换时重置状态 & 重新加载
+    private resetForUrlChange() {
+        console.log('resetForUrlChange called - resetting table state', {
+            currentPage: this.currentPage,
+            pageSize: this.pageSize,
+            protocolName: this.protocolName,
+            indexName: this.indexName
+        });
+
+        // 首先暂时销毁表格组件
+        this.tableRenderKey = 0;
         this.cdr.detectChanges();
-        if (this.protocolName && this.indexName) {
-            this.loadTrendingData();
-            this.loadData();
-        }
+
+        // 强制重置所有状态
+        this.forceResetTableState();
+
+        // 重置图表数据
+        this.revenueChart.series = [{ name: `${this.protocolName} Sessions`, data: [] }];
+
+        console.log('Table state reset to:', {
+            currentPage: this.currentPage,
+            pageSize: this.pageSize,
+            total: this.total,
+            rowsLength: this.rows.length,
+            renderKey: this.tableRenderKey
+        });
+
+        // 延迟重新创建表格组件和加载数据
+        setTimeout(() => {
+            // 重新创建表格组件
+            this.tableRenderKey = Date.now(); // 使用时间戳确保唯一性
+            this.cdr.detectChanges();
+
+            setTimeout(() => {
+                if (this.protocolName && this.indexName) {
+                    console.log('Reloading data after URL change with renderKey:', this.tableRenderKey);
+                    this.loadTrendingData();
+                    this.loadData();
+                }
+            }, 100);
+        }, 50);
     }
 
     // 使用当前时间范围加载表格数据
@@ -713,9 +770,13 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
     }
 
     onPageChange(event: any) {
-        console.log('Page change event:', event); // 调试日志
+        console.log('Page change event:', event, 'current state:', {
+            currentPage: this.currentPage,
+            tableRenderKey: this.tableRenderKey
+        }); // 调试日志
         if (this.currentPage !== event) {
             this.currentPage = event;
+            console.log('Page changed to:', this.currentPage);
             // 只有当配置了真实数据源时才重新加载
             if (this.protocolName && this.indexName) {
                 this.loadData();

@@ -106,6 +106,7 @@
 
         <div class="datatable">
             <ng-datatable
+                *ngIf="tableRenderKey > 0"
                 [rows]="rows"
                 [columns]="cols"
                 [sortable]="true"
