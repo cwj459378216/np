@@ -544,6 +544,7 @@
     "errorDeletingCollectorRecord": "删除收集器记录错误",
     "failedToQueryDeletionStatus": "查询删除状态失败",
     "failedToStartEsDeletionTask": "启动ES删除任务失败",
+    "esDeletionFailed": "ES删除失败：{{errorMessage}}",
     "errorLoadingStorageStrategies": "加载存储策略错误",
     "storageStrategyUpdatedSuccessfully": "存储策略已成功更新",
     "errorUpdatingStorageStrategy": "更新存储策略错误",

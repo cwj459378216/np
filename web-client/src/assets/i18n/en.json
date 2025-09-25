@@ -543,6 +543,7 @@
     "errorDeletingCollectorRecord": "Error deleting collector record",
     "failedToQueryDeletionStatus": "Failed to query deletion status",
     "failedToStartEsDeletionTask": "Failed to start ES deletion task",
+    "esDeletionFailed": "ES deletion failed: {{errorMessage}}",
     "errorLoadingStorageStrategies": "Error loading storage strategies",
     "storageStrategyUpdatedSuccessfully": "Storage strategy has been updated successfully",
     "errorUpdatingStorageStrategy": "Error updating storage strategy",

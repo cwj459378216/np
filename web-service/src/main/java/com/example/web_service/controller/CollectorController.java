@@ -33,7 +33,7 @@ public class CollectorController {
     
     @DeleteMapping("/{id}")
     public void deleteCollector(@PathVariable Long id) {
-        // Only delete collector record here. ES deletion is handled by async endpoints.
+        // Delete collector record and associated file (if filePath is not empty). ES deletion is handled by async endpoints.
         collectorService.deleteCollector(id);
         logService.warn("admin", "Collector", "Delete collector id=" + id);
     }

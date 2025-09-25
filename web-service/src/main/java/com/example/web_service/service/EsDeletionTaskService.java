@@ -42,14 +42,24 @@ public class EsDeletionTaskService {
         status.startedAt = Instant.now().toEpochMilli();
         tasks.put(taskId, status);
 
+        // Get collector info before starting async task to avoid "not found" issues
+        String sessionId = null;
+        try {
+            Collector c = collectorService.getCollectorById(collectorId);
+            sessionId = c != null ? c.getSessionId() : null;
+        } catch (Exception e) {
+            // If collector not found, still proceed with null sessionId
+            sessionId = null;
+        }
+        
+        final String finalSessionId = sessionId;
+
         executor.submit(() -> {
             status.state = "RUNNING";
             try {
-                Collector c = collectorService.getCollectorById(collectorId);
-                String sessionId = c != null ? c.getSessionId() : null;
                 long deleted = 0L;
-                if (sessionId != null && !sessionId.isBlank()) {
-                    deleted = elasticsearchSyncService.deleteBySessionId(sessionId);
+                if (finalSessionId != null && !finalSessionId.isBlank()) {
+                    deleted = elasticsearchSyncService.deleteBySessionId(finalSessionId);
                 }
                 status.deletedCount = deleted;
                 status.state = "DONE";
