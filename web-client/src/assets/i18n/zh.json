@@ -473,6 +473,11 @@
     "CVE": "CVE",
     "File": "文件"
   },
+  "rulesPolicy": {
+    "Default": "默认",
+    "Default Policy": "默认策略",
+    "Cannot delete the default policy": "无法删除默认策略"
+  },
   "collector": {
     "collectorName": "收集器名称",
     "creationTime": "创建时间",

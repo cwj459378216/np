@@ -472,6 +472,11 @@
     "CVE": "CVE",
     "File": "File"
   },
+  "rulesPolicy": {
+    "Default": "Default",
+    "Default Policy": "Default Policy",
+    "Cannot delete the default policy": "Cannot delete the default policy"
+  },
   "collector": {
     "collectorName": "Collector Name",
     "creationTime": "Creation Time",

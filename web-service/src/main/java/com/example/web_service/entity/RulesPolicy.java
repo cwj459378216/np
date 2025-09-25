@@ -17,7 +17,10 @@ public class RulesPolicy {
     private String description;
     private Boolean enabled = false;
     
-    @ManyToMany
+    @Column(name = "is_default")
+    private Boolean isDefault = false;
+    
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "policy_rules",
         joinColumns = @JoinColumn(name = "policy_id"),

@@ -180,6 +180,7 @@ CREATE TABLE rules_policy (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     enabled BOOLEAN DEFAULT true,
+    is_default BOOLEAN DEFAULT false,
     created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
 );

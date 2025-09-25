@@ -43,7 +43,12 @@
                         </thead>
                         <tbody>
                             <tr *ngFor="let policy of filteredPolicies">
-                                <td>{{policy.name}}</td>
+                                <td>
+                                    {{policy.name}}
+                                    <span *ngIf="policy.isDefault" class="inline-flex items-center px-2 py-1 ml-2 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+                                        {{ 'rulesPolicy.Default' | translate }}
+                                    </span>
+                                </td>
                                 <td>{{policy.description}}</td>
                                 <td>
                                     {{(policy.rules || []).length}} {{ 'Rules' | translate }}
@@ -60,8 +65,14 @@
                                     <div class="flex items-center justify-center gap-4">
                                         <button type="button" class="btn btn-sm btn-outline-primary"
                                             (click)="editRule(policy)">{{ 'general.edit' | translate }}</button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger"
-                                            (click)="deleteRule(policy.id!)">{{ 'general.delete' | translate }}</button>
+                                        <button type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            [class.opacity-50]="policy.isDefault"
+                                            [class.cursor-not-allowed]="policy.isDefault"
+                                            [disabled]="policy.isDefault"
+                                            (click)="deleteRule(policy.id!)">
+                                            {{ 'general.delete' | translate }}
+                                        </button>
                                     </div>
                                 </td>
                             </tr>

@@ -311,6 +311,15 @@ export class RulesPolicyComponent implements AfterViewInit {
   }
 
   deleteRule(id: number): void {
+    // 检查是否为默认策略
+    const policy = this.policies.find(p => p.id === id);
+    if (policy?.isDefault) {
+      this.translate.get('rulesPolicy.Cannot delete the default policy').subscribe(message => {
+        this.showMessage(message, 'error');
+      });
+      return;
+    }
+
     // 显示确认对话框
     this.translate.get(['Are you sure?', "You won't be able to revert this!", 'Yes, delete it!', 'Cancel', 'Policy has been deleted successfully', 'Failed to delete policy'])
       .subscribe(translations => {
@@ -496,12 +505,17 @@ export class RulesPolicyComponent implements AfterViewInit {
       console.log('Form data before save:', formData);
       console.log('Selected rules before save:', this.selectedRules);
 
-    const policy = {
+      // 如果是编辑现有策略，检查是否为默认策略
+      const existingPolicy = formData.id ? this.policies.find(p => p.id === formData.id) : null;
+      const isDefault = existingPolicy?.isDefault || false;
+
+      const policy = {
         ...formData,
         enabled: false,
+        isDefault: isDefault, // 保留默认策略标识
         rules: this.selectedRules.map(rule => ({
-      id: rule.id,
-      sid: rule.sid
+          id: rule.id,
+          sid: rule.sid
         }))
       };
 

@@ -96,6 +96,14 @@ public class RulesPolicyService {
     }
 
     public void deleteById(Long id) {
+        RulesPolicy policy = rulesPolicyRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Policy not found"));
+        
+        // 防止删除默认策略
+        if (Boolean.TRUE.equals(policy.getIsDefault())) {
+            throw new RuntimeException("Cannot delete the default policy");
+        }
+        
         rulesPolicyRepository.deleteById(id);
     }
 
@@ -132,6 +140,17 @@ public class RulesPolicyService {
                 throw new RuntimeException("Failed to write Suricata rules file", e);
             }
         } else {
+            // 防止禁用默认策略，除非有其他策略可以启用
+            if (Boolean.TRUE.equals(targetPolicy.getIsDefault())) {
+                List<RulesPolicy> nonDefaultPolicies = rulesPolicyRepository.findAll().stream()
+                    .filter(p -> !Objects.equals(p.getId(), id) && !Boolean.TRUE.equals(p.getIsDefault()))
+                    .toList();
+                
+                if (nonDefaultPolicies.isEmpty()) {
+                    throw new RuntimeException("Cannot disable the default policy when no other policies exist");
+                }
+            }
+
             // Disabling the target policy
             targetPolicy.setEnabled(false);
             targetPolicy = rulesPolicyRepository.save(targetPolicy);

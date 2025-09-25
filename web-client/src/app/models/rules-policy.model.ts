@@ -19,5 +19,6 @@ export interface RulesPolicy {
   name: string;
   description?: string;
   enabled: boolean;
+  isDefault?: boolean;
   rules: Rule[];
 }
