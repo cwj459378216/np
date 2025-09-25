@@ -464,7 +464,7 @@ export class CollectorComponent implements OnInit {
 
       // 根据当前 Adapter 同步禁用/启用 Storage Strategy
       this.onAdapterChange(this.params.value.interfaceName);
-      
+
       // 如果是 File 适配器且有文件路径，重新设置文件路径（因为 onAdapterChange 会清空它）
       if (user.interfaceName === 'File' && user.path) {
         this.params.patchValue({ filePath: user.path });
@@ -811,13 +811,13 @@ export class CollectorComponent implements OnInit {
           uiDuration: null,
           uiLogs: null,
           uiEvents: null,
-          uiTrafficSeries: (collector.status === 'completed' || collector.status === 'STATUS_FINISHED' || collector.status === 'running' || collector.status === 'STATUS_STARTED' || collector.status === 'error') ? null : [] // 分析完成或正在运行的或部分完成的设置为null等待数据，否则设置为空数组显示默认样式
+          uiTrafficSeries: (collector.status === 'completed' || collector.status === 'STATUS_FINISHED' || collector.status === 'running' || collector.status === 'STATUS_STARTED' || collector.status === 'STATUS_READ_PKT_FIN' || collector.status === 'error') ? null : [] // 分析完成或正在运行的或部分完成的设置为null等待数据，否则设置为空数组显示默认样式
         }));
 
         // 检查并为正在运行的抓包任务启动状态轮询
         this.contactList.forEach(collector => {
-          // 检查 status 为 running 或 STATUS_STARTED 的情况
-          if (collector.sessionId && (collector.status === 'running' || collector.status === 'STATUS_STARTED')) {
+          // 检查 status 为 running、STATUS_STARTED 或 STATUS_READ_PKT_FIN 的情况
+          if (collector.sessionId && (collector.status === 'running' || collector.status === 'STATUS_STARTED' || collector.status === 'STATUS_READ_PKT_FIN')) {
             // 如果当前为 running，进入页面即开始轮询
             if (collector.status === 'running') {
               this.startStatusPolling(collector);
@@ -838,25 +838,47 @@ export class CollectorComponent implements OnInit {
                 } else {
                   collector.status = response.status;
                 }
-                // 错误或会话不存在，标记为异常
+                // 错误或会话不存在，处理异常情况
                 if (response && response.error !== 0) {
                   const msg = (response.message || '').toLowerCase();
                   if (!response.status || msg.includes('no session found')) {
-                    collector.status = 'error';
-                    this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+                    // 如果是分析文件模式且找不到session，说明分析已完成并自动清理了sessionId
+                    if (collector.interfaceName === 'File') {
+                      collector.analysisCompleted = true;
+                      collector.status = 'completed';
+                      this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+                      this.translate.get('collectorMessages.analysisCompleted').subscribe(msg => {
+                        this.showMessage(msg);
+                      });
+                    } else {
+                      // 非文件模式的调用异常才标记为异常
+                      collector.status = 'error';
+                      this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+                    }
                     return;
                   }
                 }
-                // 如果状态是 STATUS_STARTED，启动轮询
-                if (response.status === 'STATUS_STARTED') {
+                // 如果状态是 STATUS_STARTED 或 STATUS_READ_PKT_FIN，启动轮询
+                if (response.status === 'STATUS_STARTED' || response.status === 'STATUS_READ_PKT_FIN') {
                   this.startStatusPolling(collector);
                 }
               },
               error => {
                 console.error('Error getting session info:', error);
-                // 调用异常时标记为异常
-                collector.status = 'error';
-                this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+                // 如果是分析文件模式且找不到session，说明分析已完成并自动清理了sessionId
+                // 这种情况应该认为是成功完成，而不是错误
+                if (collector.interfaceName === 'File') {
+                  collector.analysisCompleted = true;
+                  collector.status = 'completed';
+                  this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+                  this.translate.get('collectorMessages.analysisCompleted').subscribe(msg => {
+                    this.showMessage(msg);
+                  });
+                } else {
+                  // 非文件模式的调用异常才标记为异常
+                  collector.status = 'error';
+                  this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+                }
               }
             );
           }
@@ -888,6 +910,7 @@ export class CollectorComponent implements OnInit {
     const shouldLoadBandwidth = collector.analysisCompleted ||
                                collector.status === 'running' ||
                                collector.status === 'STATUS_STARTED' ||
+                               collector.status === 'STATUS_READ_PKT_FIN' ||
                                collector.status === 'error';
 
     console.log('Should load bandwidth:', shouldLoadBandwidth);
@@ -1233,7 +1256,7 @@ export class CollectorComponent implements OnInit {
     // 同一 Adapter 类型（如 File 或 ens33）只能同时分析一个
     const adapter = collector.interfaceName;
     const hasRunningSameAdapter = this.contactList.some(c =>
-      c.id !== collector.id && c.interfaceName === adapter && (c.status === 'running' || c.status === 'STATUS_STARTED')
+      c.id !== collector.id && c.interfaceName === adapter && (c.status === 'running' || c.status === 'STATUS_STARTED' || c.status === 'STATUS_READ_PKT_FIN')
     );
     if (hasRunningSameAdapter) {
       this.translate.get('Adapter {{adapter}} already has a running task.', { adapter: adapter }).subscribe(message => {
@@ -1399,19 +1422,32 @@ export class CollectorComponent implements OnInit {
             // 更新状态
             collector.status = response.status;
 
-            // 如果返回错误或会话不存在，则标记为异常并停止轮询
+            // 如果返回错误或会话不存在，处理异常情况
             if (response && response.error !== 0) {
               const msg = (response.message || '').toLowerCase();
               if (!response.status || msg.includes('no session found')) {
                 this.stopStatusPolling(collector.id);
-                collector.status = 'error';
-                this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+                // 如果是分析文件模式且找不到session，说明分析已完成并自动清理了sessionId
+                if (collector.interfaceName === 'File') {
+                  collector.analysisCompleted = true;
+                  collector.status = 'completed';
+                  this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+                  this.translate.get('collectorMessages.analysisCompleted').subscribe(msg => {
+                    this.showMessage(msg);
+                  });
+                  // 刷新列表以反映UI变化
+                  this.searchContacts();
+                } else {
+                  // 非文件模式的调用异常才标记为异常
+                  collector.status = 'error';
+                  this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+                }
                 return;
               }
             }
 
-            // 只有当状态不是 STATUS_STARTED 时才停止轮询
-            if (response.status !== 'STATUS_STARTED') {
+            // 只有当状态不是 STATUS_STARTED 或 STATUS_READ_PKT_FIN 时才停止轮询
+            if (response.status !== 'STATUS_STARTED' && response.status !== 'STATUS_READ_PKT_FIN') {
               this.stopStatusPolling(collector.id);
 
               // 统一完成状态：将 STATUS_FINISHED 视为 completed
@@ -1442,8 +1478,22 @@ export class CollectorComponent implements OnInit {
           error => {
             console.error('Error getting session info:', error);
             this.stopStatusPolling(collector.id);
-            collector.status = 'error';
-            this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+            // 如果是分析文件模式且找不到session，说明分析已完成并自动清理了sessionId
+            // 这种情况应该认为是成功完成，而不是错误
+            if (collector.interfaceName === 'File') {
+              collector.analysisCompleted = true;
+              collector.status = 'completed';
+              this.collectorService.updateCollectorStatus(collector.id, 'completed').subscribe();
+              this.translate.get('collectorMessages.analysisCompleted').subscribe(msg => {
+                this.showMessage(msg);
+              });
+              // 刷新列表以反映UI变化
+              this.searchContacts();
+            } else {
+              // 非文件模式的调用异常才标记为异常
+              collector.status = 'error';
+              this.collectorService.updateCollectorStatus(collector.id, 'error').subscribe();
+            }
           }
         );
       }

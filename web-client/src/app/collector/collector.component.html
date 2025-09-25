@@ -113,40 +113,40 @@
                                                     <!-- 移除表格中的 Filter Strategy 单元格 -->
                                                     <td class="whitespace-nowrap">
                                                         <label class="w-12 h-6 relative"
-                                                               [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error' }">
+                                                               [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error' }">
                                                             <input type="checkbox"
                                                                 [checked]="contact.protocolAnalysisEnabled"
                                                                 (change)="onProtocolAnalysisChange(contact, $event)"
                                                                 class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
                                                                 [id]="'protocol_switch_' + contact.id"
-                                                                [disabled]="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'"
-                                                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') ? ('collectorMessages.cannotModifyDuringAnalysis' | translate) : ''" />
+                                                                [disabled]="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error'"
+                                                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error') ? ('collectorMessages.cannotModifyDuringAnalysis' | translate) : ''" />
                                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
                                                             </span>
                                                         </label>
-                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'">{{ 'collectorMessages.cannotModifyDuringAnalysis' | translate }}</span>
+                                                        <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error'">{{ 'collectorMessages.cannotModifyDuringAnalysis' | translate }}</span>
                                                     </td>
                                                     <td class="whitespace-nowrap">
                                                         <label class="w-12 h-6 relative"
-                                   [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error' }">
+                                   [ngClass]="{ 'opacity-50 cursor-not-allowed': contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error' }">
                                                             <input type="checkbox"
                                                                 [checked]="contact.idsEnabled"
                                                                 (change)="onIdsChange(contact, $event)"
                                                                 class="custom_switch absolute w-full h-full opacity-0 z-10 cursor-pointer peer"
                                                                 [id]="'ids_switch_' + contact.id"
-                                [disabled]="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'"
-                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') ? ('collectorMessages.cannotModifyDuringAnalysis' | translate) : ''" />
+                                [disabled]="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error'"
+                                [title]="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error') ? ('collectorMessages.cannotModifyDuringAnalysis' | translate) : ''" />
                                                             <span class="outline_checkbox bg-icon border-2 border-[#ebedf2] dark:border-white-dark block h-full rounded-full before:absolute before:left-1 before:bg-[#ebedf2] dark:before:bg-white-dark before:bottom-1 before:w-4 before:h-4 before:rounded-full before:bg-[url(/assets/images/close.svg)] before:bg-no-repeat before:bg-center peer-checked:before:left-7 peer-checked:before:bg-[url(/assets/images/checked.svg)] peer-checked:border-primary peer-checked:before:bg-primary before:transition-all before:duration-300">
                                                             </span>
                                                         </label>
-                            <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error'">{{ 'collectorMessages.cannotModifyDuringAnalysis' | translate }}</span>
+                            <span class="ml-2 text-xs text-white-dark" *ngIf="contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error'">{{ 'collectorMessages.cannotModifyDuringAnalysis' | translate }}</span>
                                                     </td>
                                                     <td>
                                                         <div class="flex items-center justify-center gap-2">
                                                             <button type="button"
                                                                     class="btn btn-sm btn-outline-primary w-20"
                                                                     (click)="editUser(contact)"
-                                                                    [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.analysisCompleted || contact.status === 'error'"
+                                                                    [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.analysisCompleted || contact.status === 'error'"
                                                                     [title]="contact.status === 'error' ? ('collectorStatus.partial' | translate) : (contact.analysisCompleted ? ('collectorMessages.analyzed' | translate) : '')">
                                                                 {{ 'collector.edit' | translate }}
                                                             </button>
@@ -154,12 +154,12 @@
                                                             <button type="button"
                                                                     class="btn btn-sm btn-outline-danger w-20"
                                                                     (click)="deleteUser(contact)"
-                                                                    [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
+                                                                    [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN'">
                                                                 {{ 'Delete' | translate }}
                                                             </button>
 
                                                             <!-- 使用 ngIf 来切换显示不同的按钮状态 -->
-                                                            <ng-container *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED'; else notAnalyzingButton">
+                                                            <ng-container *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN'; else notAnalyzingButton">
                                                                 <button type="button"
                                                                         class="btn btn-sm btn-outline-success w-20"
                                                                         (click)="confirmStopCapture(contact)">
@@ -204,7 +204,7 @@
                                             </ng-container> -->
                                             <div class="relative overflow-hidden">
                                                 <!-- 分析完成或正在运行或错误状态且有数据时显示图表 -->
-                                                <apx-chart *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') && contact.uiTrafficSeries && contact.uiTrafficSeries.length > 0"
+                                                <apx-chart *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error') && contact.uiTrafficSeries && contact.uiTrafficSeries.length > 0"
                                                   [series]="contact.uiTrafficSeries" [chart]="revenueChart.chart" [dataLabels]="revenueChart.dataLabels"
                                                   [stroke]="revenueChart.stroke" [colors]="revenueChart.colors" [markers]="revenueChart.markers"
                                                   [labels]="revenueChart.labels" [xaxis]="revenueChart.xaxis" [yaxis]="revenueChart.yaxis"
@@ -213,7 +213,7 @@
                                                 </apx-chart>
 
                                                 <!-- 未分析完成且非运行状态且非错误状态时显示默认状态 -->
-                                                <div *ngIf="!contact.analysisCompleted && contact.status !== 'running' && contact.status !== 'STATUS_STARTED' && contact.status !== 'error'" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                                <div *ngIf="!contact.analysisCompleted && contact.status !== 'running' && contact.status !== 'STATUS_STARTED' && contact.status !== 'STATUS_READ_PKT_FIN' && contact.status !== 'error'" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                                                   <div class="text-center">
                                                     <div class="text-gray-400 dark:text-gray-500 mb-2">
                                                       <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -225,7 +225,7 @@
                                                 </div>
 
                                                 <!-- 分析完成或运行中或错误状态但无数据时显示空状态 -->
-                                                <div *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'error') && (!contact.uiTrafficSeries || contact.uiTrafficSeries.length === 0)" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                                <div *ngIf="(contact.analysisCompleted || contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.status === 'error') && (!contact.uiTrafficSeries || contact.uiTrafficSeries.length === 0)" class="grid min-h-[200px] place-content-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                                                   <div class="text-center">
                                                     <div class="text-gray-400 dark:text-gray-500 mb-2">
                                                       <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +256,7 @@
                                                     </span>
                                                     <!-- 运行中状态 -->
                                                     <span class="inline-block rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
-                                                          *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED'">
+                                                          *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN'">
                                                         {{ 'Running' | translate }}
                                                     </span>
                                                     <!-- 已完成状态 -->
@@ -333,14 +333,14 @@
                                             class="absolute bottom-0 mt-6 flex w-full gap-2 p-6 ltr:left-0 rtl:right-0">
                                             <button type="button" class="btn btn-outline-primary flex-1"
                                                 (click)="editUser(contact)"
-                                                [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.analysisCompleted || contact.status === 'error'"
+                                                [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN' || contact.analysisCompleted || contact.status === 'error'"
                                                 [title]="contact.status === 'error' ? ('collectorStatus.partial' | translate) : (contact.analysisCompleted ? ('collectorMessages.analyzed' | translate) : '')">{{ 'collector.edit' | translate }}</button>
                                             <button type="button" class="btn btn-outline-danger flex-1"
                                                 (click)="deleteUser(contact)"
-                                                [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED'">{{ 'Delete' | translate }}</button>
+                                                [disabled]="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN'">{{ 'Delete' | translate }}</button>
 
                                             <!-- 分析按钮 - 和表格中的逻辑一致 -->
-                                            <ng-container *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED'; else notAnalyzingButtonCard">
+                                            <ng-container *ngIf="contact.status === 'running' || contact.status === 'STATUS_STARTED' || contact.status === 'STATUS_READ_PKT_FIN'; else notAnalyzingButtonCard">
                                                 <button type="button"
                                                         class="btn btn-outline-success flex-1"
                                                         (click)="confirmStopCapture(contact)">
@@ -441,7 +441,7 @@
                                         <div class="mt-2 flex items-center gap-3">
                                             <!-- 隐藏的原生文件输入框 -->
                                             <input #fileInput id="fileUpload" type="file" (change)="onFileSelected($event)" accept=".pcap,.pcapng" [disabled]="isUploading" style="display: none;" />
-                                            
+
                                             <!-- 自定义文件选择按钮 -->
                                             <button type="button" class="btn btn-outline-secondary flex-1" (click)="fileInput.click()" [disabled]="isUploading">
                                                 <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -451,14 +451,14 @@
                                                 <span *ngIf="selectedFile" class="truncate">{{ selectedFile.name }}</span>
                                                 <span *ngIf="!selectedFile && hasUploadedFile()" class="truncate text-green-600">{{ getFileNameFromPath(params.value.filePath) }}</span>
                                             </button>
-                                            
+
                                             <!-- 清除文件按钮 -->
                                             <button type="button" class="btn btn-outline-danger p-2" (click)="clearFileSelection()" [disabled]="isUploading" *ngIf="selectedFile || hasUploadedFile()">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                                 </svg>
                                             </button>
-                                            
+
                                             <button type="button" class="btn btn-outline-primary" (click)="uploadSelectedFile()" [disabled]="!selectedFile || isUploading">
                                                 <span *ngIf="!isUploading">{{ 'Upload' | translate }}</span>
                                                 <span *ngIf="isUploading" class="flex items-center gap-2">
@@ -467,7 +467,7 @@
                                                 </span>
                                             </button>
                                         </div>
-                                        
+
                                         <!-- 新选择的文件信息显示 -->
                                         <div class="mt-2 text-xs text-white-dark" *ngIf="selectedFile && !isUploading">
                                             {{ 'Selected file' | translate }}: {{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})
