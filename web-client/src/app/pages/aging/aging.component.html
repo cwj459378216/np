@@ -1,0 +1,164 @@
+<div>
+    <ul class="flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="javascript:;" class="text-primary hover:underline">{{ 'navigation.systemSettings' | translate }}</a>
+        </li>
+        <li class="before:mr-2 before:content-['/'] rtl:before:ml-2">
+            <span>{{ 'navigation.aging' | translate }}</span>
+        </li>
+    </ul>
+    <div class="pt-5">
+
+        <!-- 目标信息 -->
+        <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <h6 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                {{ 'aiAssistant.aging.targetInfo' | translate }}
+            </h6>
+            <div class="text-sm flex items-center flex-wrap gap-2">
+                <span class="font-medium">{{ 'collector.collectorName' | translate }}:</span>
+                <span class="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-800 rounded font-mono text-xs">
+                    {{ ens33CollectorNames || '-' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- 手动删除 -->
+            <div class="panel">
+                <h6 class="text-lg font-semibold mb-4">{{ 'aiAssistant.aging.manual.title' | translate }}</h6>
+                
+                <div class="mb-4">
+                    <p class="text-gray-600 dark:text-gray-400 mb-3">
+                        {{ 'aiAssistant.aging.manual.description' | translate }}
+                    </p>
+                </div>
+
+                <!-- 当前任务状态 -->
+                <div *ngIf="currentTask" class="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">{{ 'aiAssistant.aging.currentTask' | translate }}</span>
+                        <span class="badge" 
+                              [ngClass]="{
+                                  'badge-outline-info': currentTask.state === 'PENDING',
+                                  'badge-outline-warning': currentTask.state === 'RUNNING',
+                                  'badge-outline-success': currentTask.state === 'DONE',
+                                  'badge-outline-danger': currentTask.state === 'FAILED'
+                              }">
+                            {{ getStateLabel(currentTask.state) }}
+                        </span>
+                    </div>
+                    <div *ngIf="currentTask.state === 'RUNNING'" class="mt-2">
+                        <div class="progress">
+                            <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" 
+                                 style="width: 100%">
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="currentTask.state === 'DONE'" class="text-sm text-green-600 mt-2">
+                        {{ 'aiAssistant.aging.deletedCount' | translate:{ count: currentTask.deletedCount } }}
+                    </div>
+                    <div *ngIf="currentTask.state === 'FAILED' && currentTask.errorMessage" class="text-sm text-red-600 mt-2">
+                        {{ currentTask.errorMessage }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">{{ 'aiAssistant.aging.manual.beforeTime' | translate }}</label>
+                    <input 
+                        type="datetime-local" 
+                        class="form-input"
+                        [(ngModel)]="manualBeforeTime">
+                    <p class="text-xs text-gray-500 mt-1">{{ 'aiAssistant.aging.manual.beforeTimeHint' | translate }}</p>
+                </div>
+
+                <button 
+                    type="button" 
+                    class="btn btn-danger w-full"
+                    [disabled]="isLoading || isTaskRunning()"
+                    (click)="executeManualAging()">
+                    <icon-trash class="w-4 h-4 mr-2" />
+                    {{ 'aiAssistant.aging.manual.execute' | translate }}
+                </button>
+
+                <!-- <div class="mt-3" *ngIf="currentTask">
+                    <div class="small text-muted">
+                        {{ 'aiAssistant.aging.manual.taskId' | translate }}: {{ currentTask.taskId }}
+                    </div>
+                    <div class="small">
+                        {{ 'aiAssistant.aging.manual.status' | translate }}:
+                        <span class="badge bg-info">{{ getStateLabel(currentTask.state) }}</span>
+                    </div>
+                    <div class="small" *ngIf="currentTask.deletedCount >= 0">
+                        {{ 'aiAssistant.aging.manual.deletedCount' | translate }}: {{ currentTask.deletedCount }}
+                    </div>
+                </div> -->
+            </div>
+
+            <!-- 自动删除设置 -->
+            <div class="panel">
+                <h6 class="text-lg font-semibold mb-4">{{ 'aiAssistant.aging.schedule.title' | translate }}</h6>
+                
+                <div class="space-y-4">
+                    <!-- 启用开关 -->
+                    <div class="flex items-center justify-between">
+                        <label class="font-medium">{{ 'aiAssistant.aging.schedule.enabled' | translate }}</label>
+                        <input 
+                            type="checkbox" 
+                            [(ngModel)]="schedule.enabled"
+                            class="form-checkbox">
+                    </div>
+
+                    <!-- 调度设置 -->
+                    <div *ngIf="schedule.enabled" class="space-y-4 pl-4 border-l-2 border-blue-200">
+                        <!-- 周期选择 -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                {{ 'aiAssistant.aging.schedule.frequency' | translate }}
+                            </label>
+                            <select [(ngModel)]="schedule.scheduleType" class="form-select">
+                                <option *ngFor="let option of scheduleOptions" [value]="option.value">
+                                    {{ option.label | translate }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- 执行时间 -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                {{ 'aiAssistant.aging.schedule.time' | translate }}
+                            </label>
+                            <input 
+                                type="time" 
+                                [(ngModel)]="schedule.executionTime"
+                                class="form-input">
+                        </div>
+
+                        <!-- 保留天数 -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                {{ 'aiAssistant.aging.schedule.retentionDays' | translate }}
+                            </label>
+                            <input 
+                                type="number" 
+                                [(ngModel)]="schedule.retentionDays"
+                                min="1"
+                                max="365"
+                                class="form-input">
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ 'aiAssistant.aging.schedule.retentionDaysHelp' | translate }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 保存按钮 -->
+                    <button 
+                        type="button" 
+                        class="btn btn-primary w-full"
+                        (click)="saveScheduleSettings()">
+                        {{ 'common.save' | translate }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -317,6 +317,21 @@ CREATE TABLE storage_strategies (
 -- 修改 collectors 表，添加 session_id 字段
 ALTER TABLE collectors ADD COLUMN session_id VARCHAR(100);
 
+-- 创建老化调度配置表
+CREATE TABLE aging_schedules (
+    id SERIAL PRIMARY KEY,
+    enabled BOOLEAN DEFAULT FALSE,
+    schedule_type VARCHAR(20) DEFAULT 'daily', -- daily, weekly, monthly
+    execution_time VARCHAR(10) DEFAULT '02:00',
+    retention_days INTEGER DEFAULT 30,
+    created_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入默认的老化调度配置
+INSERT INTO aging_schedules (enabled, schedule_type, execution_time, retention_days) 
+VALUES (false, 'daily', '02:00', 30);
+
 
 
 

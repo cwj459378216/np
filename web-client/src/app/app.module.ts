@@ -81,6 +81,8 @@ import { LocalRulesComponent } from './pages/threat-management/local-rules/local
 import { LogComponent } from './log/log.component';
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
+import { AgingComponent } from './pages/aging/aging.component';
+
 import { RulesPolicyService } from './services/rules-policy.service';
 import { RuleUpdateService } from './services/rule-update.service';
 import { LocalRuleService } from './services/local-rule.service';
@@ -105,6 +107,7 @@ import { AuthInterceptor } from './services/auth/auth.interceptor';
             },
         }),
         StoreModule.forRoot({ index: indexReducer }),
+        SharedModule,
         SharedModule.forRoot(),
         NgxEchartsModule.forRoot({
             echarts: () => import('echarts')
@@ -151,6 +154,7 @@ import { AuthInterceptor } from './services/auth/auth.interceptor';
       LogComponent,
       AssetBookComponent,
       NotificationSettingsComponent,
+      AgingComponent,
     ],
 
     providers: [

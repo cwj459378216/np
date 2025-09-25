@@ -30,9 +30,11 @@ import com.example.web_service.model.es.widget.WidgetQueryRequest;
 import com.example.web_service.model.es.widget.WidgetFilter;
 import java.util.Optional;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
 import co.elastic.clients.elasticsearch.core.DeleteByQueryResponse;
 import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
 import co.elastic.clients.elasticsearch._types.Conflicts;
+import co.elastic.clients.elasticsearch.cat.indices.IndicesRecord;
 
 @Service
 public class ElasticsearchSyncService {
@@ -938,7 +940,6 @@ public class ElasticsearchSyncService {
         return result;
     }
 
-// ... existing code ...
     /**
      * 获取serviceName字段的聚合统计数据（支持时间范围过滤）
      * @param topN 返回Top N的数据条数
@@ -2289,6 +2290,89 @@ public class ElasticsearchSyncService {
                 totalDeleted += deleted;
             } catch (Exception e) {
                 log.warn("deleteBySessionId failed on index {}: {}", index, e.getMessage());
+            }
+        }
+        return totalDeleted;
+    }
+
+    /**
+     * Delete documents where filePath contains ANY of the given values, and
+     * optionally timestamp <= beforeMillis. Works across all non-system indices.
+     */
+    public long deleteByFilePathsBefore(List<String> filePaths, Long beforeMillis) throws IOException {
+        if (filePaths == null || filePaths.isEmpty()) {
+            return 0L;
+        }
+
+        // Build bool query: (match filePath X) OR (match filePath Y) ...
+        BoolQuery.Builder shoulds = new BoolQuery.Builder();
+        for (String fp : filePaths) {
+            if (fp == null || fp.isBlank()) continue;
+            shoulds.should(s -> s.match(m -> m.field("filePath").query(fp)));
+            // 兼容一些索引使用 sessionId/uuid 字段
+            shoulds.should(s -> s.term(t -> t.field("sessionId").value(v -> v.stringValue(fp))));
+            shoulds.should(s -> s.term(t -> t.field("uuid").value(v -> v.stringValue(fp))));
+        }
+        BoolQuery.Builder bool = new BoolQuery.Builder()
+            .minimumShouldMatch("1")
+            .should(shoulds.build().should());
+
+        // Add time filter if provided
+        if (beforeMillis != null && beforeMillis > 0) {
+            RangeQuery timeRange = RangeQuery.of(r -> r
+                .field("timestamp")
+                .lte(JsonData.of(beforeMillis))
+            );
+            bool.filter(f -> f.range(timeRange));
+        }
+        Query query = Query.of(q -> q.bool(bool.build()));
+
+        long totalDeleted = 0L;
+
+        List<IndicesRecord> all;
+        try {
+            all = esClient.cat().indices(c -> c).valueBody();
+        } catch (Exception e) {
+            log.warn("deleteByFilePathsBefore: failed to list indices via _cat/indices: {}", e.getMessage());
+            all = java.util.Collections.emptyList();
+        }
+        if (all.isEmpty()) {
+            log.warn("deleteByFilePathsBefore: no indices found (cat empty). Nothing to delete.");
+            return 0L;
+        }
+
+        for (var rec : all) {
+            String index = rec.index();
+            if (index == null || index.isBlank()) continue;
+            if (index.startsWith(".")
+                || index.startsWith("kibana")
+                || index.startsWith("security")
+                || index.startsWith(".security")
+                || index.startsWith(".tasks")
+                || index.startsWith(".monitoring")
+                || index.startsWith(".kibana")
+                || index.startsWith(".apm")
+                || index.startsWith("apm-")
+                || index.startsWith(".ds-")
+            ) {
+                log.debug("deleteByFilePathsBefore: skip system/internal index: {}", index);
+                continue;
+            }
+
+            try {
+                DeleteByQueryRequest req = new DeleteByQueryRequest.Builder()
+                    .index(index)
+                    .query(query)
+                    .conflicts(Conflicts.Proceed)
+                    .refresh(true)
+                    .build();
+                DeleteByQueryResponse resp = esClient.deleteByQuery(req);
+                Long delBoxed = resp.deleted();
+                long deleted = delBoxed != null ? delBoxed.longValue() : 0L;
+                log.info("deleteByFilePathsBefore: index={}, deleted={}", index, deleted);
+                totalDeleted += deleted;
+            } catch (Exception e) {
+                log.warn("deleteByFilePathsBefore failed on index {}: {}", index, e.getMessage());
             }
         }
         return totalDeleted;

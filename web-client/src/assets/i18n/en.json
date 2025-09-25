@@ -29,6 +29,7 @@
     "systemTime": "System Time",
     "interfaceManagement": "Interface Management",
     "assetBook": "Asset Book",
+    "aging": "Aging",
     "log": "Log",
     "authentication": "Authentication",
     "dataBackup": "Data Backup",
@@ -693,7 +694,11 @@
     "Daily": "Daily",
     "Weekly": "Weekly",
     "Monthly": "Monthly",
-    "Yearly": "Yearly"
+    "Yearly": "Yearly",
+    "save": "Save",
+    "cancel": "Cancel",
+    "success": "Success",
+    "error": "Error"
   },
   "System Info": "System Info",
   "CPU": "CPU",
@@ -1293,6 +1298,47 @@
       "guidance": "Please answer in English and maintain professionalism and accuracy. When explaining fields, please refer to the field documentation provided above. If any anomalies or suspicious patterns are found, please highlight them specifically.",
       "defaultProtocol": "Network",
       "languageInstruction": "Please answer in English."
+    },
+    "aging": {
+      "title": "Aging Management",
+      "targetInfo": "Target Information",
+      "targetSessionId": "Target Session ID",
+      "currentTask": "Current Task",
+      "completed": "Aging process completed successfully. Deleted {{count}} documents.",
+      "failed": "Aging process failed: {{error}}",
+      "deletedCount": "Deleted {{count}} documents",
+      "manual": {
+        "title": "Manual Delete",
+        "description": "Immediately delete all data associated with the target session ID. This action cannot be undone.",
+        "execute": "Execute Manual Delete",
+        "confirmTitle": "Confirm Manual Delete",
+        "confirmMessage": "Are you sure you want to delete all data for session ID '{{sessionId}}'? This action will permanently delete all associated data and cannot be undone.",
+        "started": "Manual aging task started successfully",
+        "beforeTime": "Delete data before",
+        "beforeTimeHint": "Only delete records with timestamp earlier than the selected time.",
+        "confirmMessageMultiple": "Are you sure you want to delete all data for collectors {{collectors}} before {{time}}? This action cannot be undone.",
+        "taskId": "Task ID",
+        "status": "Status",
+        "deletedCount": "Deleted Count"
+      },
+      "schedule": {
+        "title": "Automatic Delete Schedule",
+        "enabled": "Enable Automatic Delete",
+        "frequency": "Delete Frequency",
+        "time": "Execution Time",
+        "retentionDays": "Data Retention (Days)",
+        "retentionDaysHelp": "Data older than this many days will be automatically deleted",
+        "saved": "Schedule settings saved successfully",
+        "daily": "Daily",
+        "weekly": "Weekly", 
+        "monthly": "Monthly"
+      },
+      "states": {
+        "pending": "Pending",
+        "running": "Running",
+        "done": "Completed",
+        "failed": "Failed"
+      }
     }
   }
 }

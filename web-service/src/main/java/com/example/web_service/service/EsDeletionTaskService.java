@@ -1,6 +1,7 @@
 package com.example.web_service.service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,6 +77,74 @@ public class EsDeletionTaskService {
 
     public TaskStatus getStatus(String taskId) {
         return tasks.get(taskId);
+    }
+
+    /**
+     * 直接根据sessionId启动删除任务（不需要collector信息）
+     * @param sessionId 会话ID
+     * @return 任务ID
+     */
+    public String startDeletionBySessionId(String sessionId) {
+        String taskId = UUID.randomUUID().toString();
+        TaskStatus status = new TaskStatus();
+        status.taskId = taskId;
+        status.state = "PENDING";
+        status.deletedCount = 0L;
+        status.startedAt = Instant.now().toEpochMilli();
+        tasks.put(taskId, status);
+
+        executor.submit(() -> {
+            status.state = "RUNNING";
+            try {
+                long deleted = 0L;
+                if (sessionId != null && !sessionId.isBlank()) {
+                    deleted = elasticsearchSyncService.deleteBySessionId(sessionId);
+                }
+                status.deletedCount = deleted;
+                status.state = "DONE";
+            } catch (Exception e) {
+                status.state = "FAILED";
+                status.errorMessage = e.getMessage();
+            } finally {
+                status.finishedAt = Instant.now().toEpochMilli();
+            }
+        });
+
+        return taskId;
+    }
+
+    /**
+     * 按 filePath 列表与 before 时间删除。
+     * @param filePaths 多个 filePath 关键字（通常为 sessionId）
+     * @param beforeMillis 删除 beforeMillis 之前的数据（可空）
+     */
+    public String startDeletionByFilePathsBefore(List<String> filePaths, Long beforeMillis) {
+        String taskId = UUID.randomUUID().toString();
+        TaskStatus status = new TaskStatus();
+        status.taskId = taskId;
+        status.state = "PENDING";
+        status.deletedCount = 0L;
+        status.startedAt = Instant.now().toEpochMilli();
+        tasks.put(taskId, status);
+
+        executor.submit(() -> {
+            status.state = "RUNNING";
+            try {
+                long deleted = 0L;
+                if (filePaths != null && !filePaths.isEmpty()) {
+                    deleted = elasticsearchSyncService.deleteByFilePathsBefore(filePaths, beforeMillis);
+                }
+                status.deletedCount = deleted;
+                status.state = "DONE";
+            } catch (Exception e) {
+                status.state = "FAILED";
+                status.errorMessage = e.getMessage();
+            } finally {
+                status.finishedAt = Instant.now().toEpochMilli();
+            }
+        });
+
+        return taskId;
     }
 }
 

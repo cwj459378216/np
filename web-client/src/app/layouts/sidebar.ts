@@ -147,7 +147,9 @@ export class SidebarComponent implements OnInit {
             currentPath.includes('/notification-settings') ||
             currentPath.includes('/system-time') ||
             currentPath.includes('/asset-book') ||
-            currentPath.includes('/interface-management')) {
+            currentPath.includes('/interface-management') ||
+            currentPath.includes('/aging') // ensure /aging expands System Settings
+        ) {
             if (!this.activeDropdown.includes('systemSettings')) {
                 this.activeDropdown.push('systemSettings');
             }

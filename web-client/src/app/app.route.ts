@@ -28,6 +28,7 @@ import { AuthLayout } from './layouts/auth-layout';
 // pages
 import { KnowledgeBaseComponent } from './pages/knowledge-base';
 import { FaqComponent } from './pages/faq';
+import { AgingComponent } from './pages/aging/aging.component';
 
 import {DashboardComponent} from './dashboard/dashboard.component'
 import { CollectorComponent } from './collector/collector.component';
@@ -53,7 +54,7 @@ import { ReportSchedulerComponent } from './report/report-scheduler/report-sched
 import { AssetBookComponent } from './pages/asset-book/asset-book.component';
 import { NotificationSettingsComponent } from './pages/notification-settings/notification-settings.component';
 import { PreviewComponent } from './report/template/preview/preview.component';
-import { CommonProtocolComponent } from './protocol-analysis/application-protocols/common-protocol/common-protocol.component';
+
 
 export const routes: Routes = [
     {
@@ -84,7 +85,10 @@ export const routes: Routes = [
             { path: 'collector', component: CollectorComponent, data: { title: 'Collector' } },
             { path: 'interface-management', component: InterfaceManagementComponent, data: { title: 'Interface Management' } },
             { path: 'protocol-analysis/session-info', component: SessionInfoComponent, data: { title: 'Session Info' } },
-            { path: 'protocol-analysis/application-protocols/:protocol', component: CommonProtocolComponent },
+            { 
+                path: 'protocol-analysis/application-protocols/:protocol', 
+                loadComponent: () => import('./protocol-analysis/application-protocols/common-protocol/common-protocol.component').then(m => m.CommonProtocolComponent)
+            },
             { path: 'protocol-analysis/settings', component: SettingsComponent, data: { title: 'Settings' } },
             { path: 'alarm/event', component: EventComponent, data: { title: 'Event' } },
             { path: 'alarm/settings', component: AlarmSettingsComponent, data: { title: 'Alarm Settings' } },
@@ -123,6 +127,11 @@ export const routes: Routes = [
                 data: { standalone: true }
             },
             { path: 'asset-book', component: AssetBookComponent, data: { title: 'Asset Book' } },
+            {
+                path: 'aging', 
+                component: AgingComponent,
+                data: { title: 'Aging' } 
+            },
             { path: 'notification-settings', component: NotificationSettingsComponent, data: { title: 'Notification Settings' } }
         ]
     },

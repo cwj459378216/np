@@ -29,6 +29,7 @@
     "systemTime": "系统时间",
     "interfaceManagement": "网络控制",
     "assetBook": "资产簿",
+    "aging": "老化管理",
     "log": "日志",
     "authentication": "身份验证",
     "dataBackup": "数据备份",
@@ -695,7 +696,11 @@
     "Daily": "每日",
     "Weekly": "每周",
     "Monthly": "每月",
-    "Yearly": "每年"
+    "Yearly": "每年",
+    "save": "保存",
+    "cancel": "取消",
+    "success": "成功",
+    "error": "错误"
   },
   "System Info": "系统信息",
   "CPU": "CPU",
@@ -1294,6 +1299,47 @@
       "guidance": "请用中文回答，并保持专业性和准确性。在解释字段时，请参考上面提供的字段说明文档。如果发现任何异常或可疑的模式，请特别指出。",
       "defaultProtocol": "网络",
       "languageInstruction": "请用中文回答。"
+    },
+    "aging": {
+      "title": "老化管理",
+      "targetInfo": "目标信息",
+      "targetSessionId": "目标会话ID",
+      "currentTask": "当前任务",
+      "completed": "老化操作已成功完成，删除了 {{count}} 条记录。",
+      "failed": "老化操作失败：{{error}}",
+      "deletedCount": "已删除 {{count}} 条记录",
+      "manual": {
+        "title": "手动删除",
+        "description": "立即删除与目标会话ID相关的所有数据。此操作无法撤销。",
+        "execute": "执行手动删除",
+        "confirmTitle": "确认手动删除",
+        "confirmMessage": "确定要删除会话ID '{{sessionId}}' 的所有数据吗？此操作将永久删除所有相关数据且无法撤销。",
+        "beforeTime": "删除该时间之前的数据",
+        "beforeTimeHint": "仅删除时间早于所选时间的记录。",
+        "confirmMessageMultiple": "确定要删除采集器 {{collectors}} 在 {{time}} 之前的所有数据吗？此操作无法撤销。",
+        "started": "手动老化任务已成功启动",
+        "taskId": "任务ID",
+        "status": "状态",
+        "deletedCount": "删除数量"
+      },
+      "schedule": {
+        "title": "自动删除计划",
+        "enabled": "启用自动删除",
+        "frequency": "删除频率",
+        "time": "执行时间",
+        "retentionDays": "数据保留天数",
+        "retentionDaysHelp": "超过此天数的数据将被自动删除",
+        "saved": "计划设置已成功保存",
+        "daily": "每日",
+        "weekly": "每周",
+        "monthly": "每月"
+      },
+      "states": {
+        "pending": "等待中",
+        "running": "运行中",
+        "done": "已完成",
+        "failed": "失败"
+      }
     }
   }
 }
