@@ -843,11 +843,15 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         console.log('checkAndStartAutoUpdate called:', {
             status: this.selectedDataSource.status,
             isRunning: this.selectedDataSource.status === 'running',
-            currentAutoUpdate: this.isAutoUpdateEnabled
+            currentAutoUpdate: this.isAutoUpdateEnabled,
+            hasInterval: !!this.autoUpdateInterval
         });
 
         if (this.selectedDataSource.status === 'running') {
-            this.startAutoUpdate();
+            // 如果状态恢复时标记了自动更新已启用，或者当前需要启动自动更新
+            if (this.isAutoUpdateEnabled || !this.autoUpdateInterval) {
+                this.startAutoUpdate();
+            }
         } else {
             this.stopAutoUpdate();
         }
@@ -855,7 +859,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
     // 启动自动更新
     private startAutoUpdate() {
-        if (this.isAutoUpdateEnabled) {
+        if (this.isAutoUpdateEnabled && this.autoUpdateInterval) {
             return; // 已经在运行
         }
 
@@ -896,7 +900,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         // 每6秒更新一次结束时间
         this.autoUpdateInterval = setInterval(() => {
             this.updateEndTimeToNow();
-        }, 6000);
+        }, 60000);
 
         console.log('Auto update started for running data source, start time:', this.autoUpdateStartTime?.toISOString());
     }
@@ -1318,6 +1322,15 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
             if (state.rangeMode === 'custom' || state.rangeMode === 'live') {
                 this.customRangeValue = this.formatDateLocal(start) + ' to ' + this.formatDateLocal(end);
             }
+
+            // 如果恢复的状态显示自动更新已启用，需要重新启动自动更新
+            if (this.isAutoUpdateEnabled && this.selectedDataSource.status === 'running') {
+                // 延迟启动自动更新，确保所有初始化完成
+                setTimeout(() => {
+                    this.startAutoUpdate();
+                }, 100);
+            }
+
             return true;
         } catch (e) {
             console.warn('Restore state failed', e);

@@ -130,8 +130,8 @@ export class EventComponent implements OnInit, OnDestroy {
         this.timeRangeSubscription = this.timeRangeService.timeRange$.subscribe(tr => {
             this.currentTimeRange = tr;
             this.currentPage = 1;
-            // 使用微任务延迟执行，避免在同一变更检测周期内修改状态
-            Promise.resolve().then(() => {/* Lines 127-129 omitted */});
+            // 时间范围变化后重新加载趋势与表格数据（使用微任务延迟避免同周期变更检测冲突）
+            this.deferDataReload();
         });
 
         // 订阅语言变化，重新初始化图表以更新下载按钮文本，并更新表格列翻译
@@ -143,10 +143,7 @@ export class EventComponent implements OnInit, OnDestroy {
         // 初始加载（如果有默认时间范围）
         this.currentTimeRange = this.timeRangeService.getCurrentTimeRange();
         // 使用微任务延迟执行，避免在同一变更检测周期内修改状态
-        Promise.resolve().then(() => {
-            this.loadTrendingData();
-            this.loadData();
-        });
+        this.deferDataReload();
     }
 
     ngOnDestroy(): void {
@@ -342,6 +339,14 @@ export class EventComponent implements OnInit, OnDestroy {
                 this.loading = false;
                 this.cdr.detectChanges();
             }
+        });
+    }
+
+    // 统一的延迟加载方法（微任务队列），避免在同一个变更检测周期内修改绑定值
+    private deferDataReload() {
+        Promise.resolve().then(() => {
+            this.loadTrendingData();
+            this.loadData();
         });
     }
 
