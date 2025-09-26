@@ -3,6 +3,7 @@ package com.example.web_service.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.example.web_service.service.AgingService;
+import com.example.web_service.service.AgingScheduleService;
 import com.example.web_service.service.EsDeletionTaskService;
 import com.example.web_service.entity.AgingSchedule;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,9 @@ public class AgingController {
     
     @Autowired
     private EsDeletionTaskService esDeletionTaskService;
+    
+    @Autowired
+    private AgingScheduleService agingScheduleService;
 
     // 用于接收手动删除请求（支持多个 sessionIds 与 before 时间）
     public static class ManualAgingRequest {
@@ -70,5 +74,27 @@ public class AgingController {
     @Operation(summary = "获取自动删除计划", description = "获取当前配置的自动删除计划")
     public AgingSchedule getSchedule() {
         return agingService.getSchedule();
+    }
+
+    @PostMapping("/execute-auto")
+    @Operation(summary = "手动执行自动老化", description = "手动触发针对ens33接口的自动老化删除")
+    public Map<String, String> executeAutoAging() {
+        String taskId = agingService.executeAutoAging();
+        if (taskId != null) {
+            return Map.of("taskId", taskId, "message", "Auto aging task started successfully");
+        } else {
+            return Map.of("message", "Auto aging is disabled or no data to process");
+        }
+    }
+    
+    @PostMapping("/trigger")
+    @Operation(summary = "手动触发老化任务", description = "通过调度服务手动触发老化任务")
+    public Map<String, String> triggerAging() {
+        String taskId = agingScheduleService.triggerManualAging();
+        if (taskId != null) {
+            return Map.of("taskId", taskId, "message", "Manual aging triggered successfully");
+        } else {
+            return Map.of("message", "Aging is disabled or no data to process");
+        }
     }
 }
