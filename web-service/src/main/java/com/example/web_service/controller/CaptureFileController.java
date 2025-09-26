@@ -92,6 +92,22 @@ public class CaptureFileController {
                 .body(resource);
     }
 
+    @GetMapping("/upload")
+    @Operation(summary = "列出上传目录文件", description = "返回上传目录下的文件名、大小与创建时间")
+    public List<CaptureFileDto> listUploadFiles() throws Exception {
+        Path dir = Paths.get(DEFAULT_UPLOAD_DIR);
+        if (!Files.exists(dir) || !Files.isDirectory(dir)) {
+            return new ArrayList<>();
+        }
+        try (java.util.stream.Stream<Path> stream = Files.list(dir)) {
+            return stream
+                .filter(Files::isRegularFile)
+                .sorted(Comparator.comparingLong((Path p) -> p.toFile().lastModified()).reversed())
+                .map(this::toDto)
+                .collect(Collectors.toList());
+        }
+    }
+
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "上传抓包文件", description = "接收 multipart 文件并保存到指定目录，返回保存路径")
     public ResponseEntity<Map<String, String>> upload(@RequestParam("file") MultipartFile file,
@@ -109,9 +125,52 @@ public class CaptureFileController {
         String original = file.getOriginalFilename();
         String cleanName = StringUtils.hasText(original) ? Paths.get(original).getFileName().toString() : ("upload-" + System.currentTimeMillis());
 
-        Path dest = Paths.get(targetDir, cleanName);
+        // 处理文件名冲突，如果文件已存在则重命名
+        String finalFileName = resolveFileNameConflict(targetDir, cleanName);
+        
+        Path dest = Paths.get(targetDir, finalFileName);
         Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
 
-        return ResponseEntity.ok(Map.of("path", dest.toString()));
+        return ResponseEntity.ok(Map.of("path", dest.toString(), "fileName", finalFileName));
+    }
+
+    /**
+     * 解决文件名冲突问题
+     * 如果文件已存在，则在文件名后添加数字后缀
+     * 例如：file.pcap -> file(1).pcap -> file(2).pcap
+     */
+    private String resolveFileNameConflict(String targetDir, String originalFileName) {
+        Path originalPath = Paths.get(targetDir, originalFileName);
+        
+        // 如果文件不存在，直接返回原文件名
+        if (!Files.exists(originalPath)) {
+            return originalFileName;
+        }
+        
+        // 分离文件名和扩展名
+        String nameWithoutExt;
+        String extension;
+        int lastDotIndex = originalFileName.lastIndexOf('.');
+        
+        if (lastDotIndex > 0 && lastDotIndex < originalFileName.length() - 1) {
+            nameWithoutExt = originalFileName.substring(0, lastDotIndex);
+            extension = originalFileName.substring(lastDotIndex);
+        } else {
+            nameWithoutExt = originalFileName;
+            extension = "";
+        }
+        
+        // 寻找可用的文件名
+        int counter = 1;
+        String newFileName;
+        Path newPath;
+        
+        do {
+            newFileName = nameWithoutExt + "(" + counter + ")" + extension;
+            newPath = Paths.get(targetDir, newFileName);
+            counter++;
+        } while (Files.exists(newPath));
+        
+        return newFileName;
     }
 }
