@@ -62,7 +62,7 @@
                                         <tr *ngFor="let row of item['tableData']">
                                             <td *ngFor="let title of item.titles || ['timestamp']"
                                                 class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">
-                                                {{formatTableCellValue(row[title], title)}}
+                                                {{formatTableCellValue(row, title)}}
                                             </td>
                                         </tr>
                                         <tr *ngIf="!item['tableData'] || item['tableData'].length === 0">

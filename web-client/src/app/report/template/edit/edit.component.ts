@@ -197,12 +197,12 @@ export class EditComponent implements OnInit {
     ngOnInit() {
         this.initializeFilterOperators();
         this.loadIndices();
-        
+
         // 监听语言变化，重新初始化翻译相关的数据
         this.translate.onLangChange.subscribe(() => {
             this.initializeFilterOperators();
         });
-        
+
         this.route.queryParams.subscribe(params => {
             // 模板 id
             this.id = params['id'];
@@ -442,7 +442,22 @@ export class EditComponent implements OnInit {
                 const options = fields.map(f => ({ value: f.name, label: f.name, type: f.type }));
                 this.filterFields = options;
                 this.dateFields = options.filter(o => o.type === 'date');
-                this.titleOptions = options.map(o => ({ value: o.value, label: o.label }));
+
+                // 设置表格字段选项（所有字段都可以作为表格列）
+                // 为表格添加常见的嵌套字段
+                const commonNestedFields = [
+                    'alert.signature', 'alert.category', 'alert.severity', 'alert.action',
+                    'flow.src_ip', 'flow.dest_ip', 'flow.src_port', 'flow.dest_port',
+                    'flow.bytes_toserver', 'flow.bytes_toclient'
+                ];
+
+                const allTableFields = [
+                    ...options.map(o => ({ value: o.value, label: o.label })),
+                    ...commonNestedFields.map(field => ({ value: field, label: this.formatTableHeader(field) }))
+                ];
+
+                this.titleOptions = allTableFields;
+
                 const keywordFields = options.filter(o => o.type === 'keyword');
                 this.yAxisCandidates = [...this.dateFields, ...keywordFields].map(o => ({ value: o.value, label: o.label, type: o.type }));
 
@@ -649,14 +664,63 @@ export class EditComponent implements OnInit {
                         };
                     }
                 } else if (item.type === 'table') {
-                    (item as any).tableData = res.data || [];
-                    console.log('Table data loaded:', res.data);
+                    // 确保表格数据正确设置
+                    const tableData = res.data || [];
+                    (item as any).tableData = tableData;
+
+                    console.log('Table data set:', tableData);
+                    console.log('Table total records:', res.total);
+                    console.log('Table columns to display:', item.titles);
+
+                    // 如果没有设置列标题，使用数据的键作为默认列
+                    if (!item.titles || item.titles.length === 0) {
+                        if (tableData.length > 0) {
+                            // 从第一行数据中提取字段名，包括嵌套字段
+                            const firstRow = tableData[0];
+                            const allFields = this.extractAllFields(firstRow);
+
+                            // 选择前5个字段作为默认列
+                            item.titles = allFields.slice(0, 5);
+                            console.log('Auto-selected table columns:', item.titles);
+                        }
+                    }
                 }
             },
             error: () => {
                 this.translate.get('Load data failed').subscribe(msg => this.showMessage(msg, 'error'));
             }
         });
+    }
+
+    // 提取对象的所有字段路径（包括嵌套字段）
+    private extractAllFields(obj: any, prefix: string = ''): string[] {
+        const fields: string[] = [];
+
+        if (!obj || typeof obj !== 'object') {
+            return fields;
+        }
+
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                const fullPath = prefix ? `${prefix}.${key}` : key;
+                const value = obj[key];
+
+                if (value === null || value === undefined) {
+                    fields.push(fullPath);
+                } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+                    // 递归处理嵌套对象，但限制深度
+                    if (prefix.split('.').length < 2) { // 限制最多2层嵌套
+                        fields.push(...this.extractAllFields(value, fullPath));
+                    }
+                    // 也添加对象本身的路径
+                    fields.push(fullPath);
+                } else {
+                    fields.push(fullPath);
+                }
+            }
+        }
+
+        return fields;
     }
 
     private generateChartConfig(chartType: string) {
@@ -738,11 +802,11 @@ export class EditComponent implements OnInit {
     // 编辑Widget
     editWidget(item: CustomGridsterItem) {
         this.currentEditingWidget = item;
-        
+
         // 填充编辑表单数据
         // 判断实际的widget类型：如果是chart类型，使用chartType，否则使用type
         const actualType = item.type === 'chart' ? item.chartType : item.type;
-        
+
         this.editFormData = {
             name: (item as any).name || '',
             type: actualType as 'line' | 'bar' | 'pie' | 'table' | '',
@@ -761,7 +825,7 @@ export class EditComponent implements OnInit {
 
         // 填充过滤器
         this.editFilters = (item as any).filters ? [...(item as any).filters] : [{ field: '', operator: 'eq', value: '' }];
-        
+
         // 填充表格标题
         this.editSelectedTitles = item.titles ? [...item.titles] : [];
 
@@ -833,8 +897,22 @@ export class EditComponent implements OnInit {
                 const options = fields.map(f => ({ value: f.name, label: f.name, type: f.type }));
                 this.filterFields = options;
                 this.dateFields = options.filter(o => o.type === 'date');
-                this.titleOptions = options.map(o => ({ value: o.value, label: o.label }));
-                
+
+                // 设置表格字段选项（所有字段都可以作为表格列）
+                // 为表格添加常见的嵌套字段
+                const commonNestedFields = [
+                    'alert.signature', 'alert.category', 'alert.severity', 'alert.action',
+                    'flow.src_ip', 'flow.dest_ip', 'flow.src_port', 'flow.dest_port',
+                    'flow.bytes_toserver', 'flow.bytes_toclient'
+                ];
+
+                const allTableFields = [
+                    ...options.map(o => ({ value: o.value, label: o.label })),
+                    ...commonNestedFields.map(field => ({ value: field, label: this.formatTableHeader(field) }))
+                ];
+
+                this.titleOptions = allTableFields;
+
                 const keywordFields = options.filter(o => o.type === 'keyword');
                 this.yAxisCandidates = [...this.dateFields, ...keywordFields].map(o => ({ value: o.value, label: o.label }));
 
@@ -1007,8 +1085,37 @@ export class EditComponent implements OnInit {
         return 'Select configuration';
     }
 
+    // 获取嵌套对象的值
+    getNestedValue(obj: any, path: string): any {
+        if (!obj || !path) {
+            return '';
+        }
+
+        // 如果不是嵌套路径，直接返回
+        if (!path.includes('.')) {
+            return obj[path];
+        }
+
+        // 处理嵌套路径
+        const parts = path.split('.');
+        let current = obj;
+
+        for (const part of parts) {
+            if (current && typeof current === 'object' && current[part] !== undefined) {
+                current = current[part];
+            } else {
+                return '';
+            }
+        }
+
+        return current;
+    }
+
     // 格式化表格单元格值
-    formatTableCellValue(value: any, fieldName?: string): string {
+    formatTableCellValue(row: any, fieldName: string): string {
+        // 使用嵌套值获取方法
+        const value = this.getNestedValue(row, fieldName);
+
         if (value === null || value === undefined) {
             return '';
         }
@@ -1051,9 +1158,35 @@ export class EditComponent implements OnInit {
             });
         }
 
-        // 如果是对象，转换为JSON字符串
+        // 如果是数组，显示数组长度或第一个元素
+        if (Array.isArray(value)) {
+            if (value.length === 0) {
+                return '';
+            } else if (value.length === 1) {
+                return String(value[0]);
+            } else {
+                return `${value[0]} (+${value.length - 1} more)`;
+            }
+        }
+
+        // 如果是对象，转换为简化的JSON字符串
         if (typeof value === 'object') {
-            return JSON.stringify(value);
+            try {
+                // 对于小对象，显示关键信息
+                if (Object.keys(value).length <= 3) {
+                    return JSON.stringify(value);
+                } else {
+                    // 对于大对象，只显示前几个属性
+                    const keys = Object.keys(value).slice(0, 2);
+                    const simplified = keys.reduce((acc: any, key) => {
+                        acc[key] = value[key];
+                        return acc;
+                    }, {});
+                    return JSON.stringify(simplified) + '...';
+                }
+            } catch (e) {
+                return '[Object]';
+            }
         }
 
         return String(value);

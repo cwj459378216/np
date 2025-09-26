@@ -304,10 +304,26 @@ export class PreviewComponent implements OnInit {
                         };
                     }
                 } else if (item.type === 'table') {
-                    (item as any).tableData = res.data || [];
-                    console.log('Table data loaded:', res.data);
+                    // 确保表格数据正确设置
+                    const tableData = res.data || [];
+                    (item as any).tableData = tableData;
+
+                    console.log('Table data set:', tableData);
                     console.log('Table total records:', res.total);
                     console.log('Table columns to display:', item.titles);
+
+                    // 如果没有设置列标题，使用数据的键作为默认列
+                    if (!item.titles || item.titles.length === 0) {
+                        if (tableData.length > 0) {
+                            // 从第一行数据中提取字段名，包括嵌套字段
+                            const firstRow = tableData[0];
+                            const allFields = this.extractAllFields(firstRow);
+
+                            // 选择前5个字段作为默认列
+                            item.titles = allFields.slice(0, 5);
+                            console.log('Auto-selected table columns:', item.titles);
+                        }
+                    }
                 }
                 // 每个 widget 完成后递减计数
                 this.pendingWidgets = Math.max(0, this.pendingWidgets - 1);
@@ -332,6 +348,37 @@ export class PreviewComponent implements OnInit {
                 }
             }
         });
+    }
+
+    // 提取对象的所有字段路径（包括嵌套字段）
+    private extractAllFields(obj: any, prefix: string = ''): string[] {
+        const fields: string[] = [];
+
+        if (!obj || typeof obj !== 'object') {
+            return fields;
+        }
+
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                const fullPath = prefix ? `${prefix}.${key}` : key;
+                const value = obj[key];
+
+                if (value === null || value === undefined) {
+                    fields.push(fullPath);
+                } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+                    // 递归处理嵌套对象，但限制深度
+                    if (prefix.split('.').length < 2) { // 限制最多2层嵌套
+                        fields.push(...this.extractAllFields(value, fullPath));
+                    }
+                    // 也添加对象本身的路径
+                    fields.push(fullPath);
+                } else {
+                    fields.push(fullPath);
+                }
+            }
+        }
+
+        return fields;
     }
 
     // 获取数据属性名
@@ -401,8 +448,37 @@ export class PreviewComponent implements OnInit {
             });
     }
 
+    // 获取嵌套对象的值
+    getNestedValue(obj: any, path: string): any {
+        if (!obj || !path) {
+            return '';
+        }
+
+        // 如果不是嵌套路径，直接返回
+        if (!path.includes('.')) {
+            return obj[path];
+        }
+
+        // 处理嵌套路径
+        const parts = path.split('.');
+        let current = obj;
+
+        for (const part of parts) {
+            if (current && typeof current === 'object' && current[part] !== undefined) {
+                current = current[part];
+            } else {
+                return '';
+            }
+        }
+
+        return current;
+    }
+
     // 格式化表格单元格值
-    formatTableCellValue(value: any, fieldName?: string): string {
+    formatTableCellValue(row: any, fieldName: string): string {
+        // 使用嵌套值获取方法
+        const value = this.getNestedValue(row, fieldName);
+
         if (value === null || value === undefined) {
             return '';
         }
@@ -445,9 +521,35 @@ export class PreviewComponent implements OnInit {
             });
         }
 
-        // 如果是对象，转换为JSON字符串
+        // 如果是数组，显示数组长度或第一个元素
+        if (Array.isArray(value)) {
+            if (value.length === 0) {
+                return '';
+            } else if (value.length === 1) {
+                return String(value[0]);
+            } else {
+                return `${value[0]} (+${value.length - 1} more)`;
+            }
+        }
+
+        // 如果是对象，转换为简化的JSON字符串
         if (typeof value === 'object') {
-            return JSON.stringify(value);
+            try {
+                // 对于小对象，显示关键信息
+                if (Object.keys(value).length <= 3) {
+                    return JSON.stringify(value);
+                } else {
+                    // 对于大对象，只显示前几个属性
+                    const keys = Object.keys(value).slice(0, 2);
+                    const simplified = keys.reduce((acc: any, key) => {
+                        acc[key] = value[key];
+                        return acc;
+                    }, {});
+                    return JSON.stringify(simplified) + '...';
+                }
+            } catch (e) {
+                return '[Object]';
+            }
         }
 
         return String(value);

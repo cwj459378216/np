@@ -84,7 +84,7 @@
                                 <tr *ngFor="let row of item['tableData']" class="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td *ngFor="let header of getTableHeaders(item)"
                                         class="border-b border-[#e5e7eb] p-2 dark:border-[#191e3a]">
-                                        {{formatTableCellValue(row[header], header)}}
+                                        {{formatTableCellValue(row, header)}}
                                     </td>
                                 </tr>
                                 <tr *ngIf="!item['tableData'] || item['tableData'].length === 0">
