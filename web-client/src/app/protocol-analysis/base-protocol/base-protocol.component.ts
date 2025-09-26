@@ -715,7 +715,13 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
                     this.cols.forEach(col => {
                         const key = col?.field;
                         if (!key) return;
-                        const value = updated[key];
+                        let value = updated[key];
+
+                        // 处理空值，转换为 'N/A'（排除 actions 列）
+                        if (key !== 'actions' && (value === null || value === undefined || value === '')) {
+                            value = 'N/A';
+                            updated[key] = value;
+                        }
 
                         // 处理 IP 字段
                         if (isIpAlias(key) || isIpvXLike(value)) {
@@ -723,7 +729,7 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
                         }
 
                         // 处理时间字段 - 在数据层面进行预处理
-                        if (this.isTimeField(key) && value) {
+                        if (this.isTimeField(key) && value && value !== 'N/A') {
                             // 为时间字段创建一个显示用的副本字段
                             const displayKey = key + '_display';
                             updated[displayKey] = this.formatTimeField(value);
@@ -861,9 +867,9 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
     }
     resolveIpToAsset(value: any): string {
         const ip = this.extractIp(value);
-        if (!ip) return value ?? '';
+        if (!ip) return value ?? 'N/A';
         const hit = this.assetMap.get(ip);
-        return hit?.asset_name || value;
+        return hit?.asset_name || value || 'N/A';
     }
 
     formatDate(date: string) {
@@ -884,7 +890,7 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
 
     // 通用时间格式化方法，支持多种时间格式
     formatTimeField(value: any): string {
-        if (!value) return '';
+        if (!value || value === 'N/A') return 'N/A';
 
         try {
             let date: Date;
@@ -916,7 +922,7 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
 
             // 验证日期是否有效
             if (isNaN(date.getTime())) {
-                return String(value); // 如果无法解析，返回原值
+                return value ? String(value) : 'N/A'; // 如果无法解析，返回原值或N/A
             }
 
             // 使用中文本地化格式
@@ -931,7 +937,7 @@ export class BaseProtocolComponent implements OnInit, AfterViewInit, OnDestroy, 
             });
         } catch (error) {
             console.warn('Error formatting time field:', value, error);
-            return String(value); // 格式化失败时返回原值
+            return value ? String(value) : 'N/A'; // 格式化失败时返回原值或N/A
         }
     }
 

@@ -94,26 +94,27 @@ export class EventComponent implements OnInit, OnDestroy {
     // 初始化表格列配置
     private initTableColumns() {
         this.cols = [
-            // 前置关键列：时间、IP、severity、signature
+            // 前置关键列：时间、IP、端口、severity、signature
             { title: this.translate.instant('eventTable.timestamp'), field: 'timestamp' },
             { title: this.translate.instant('eventTable.src_ip'), field: 'src_ip' },
+            { title: this.translate.instant('eventTable.src_port'), field: 'src_port' },
             { title: this.translate.instant('eventTable.dest_ip'), field: 'dest_ip' },
+            { title: this.translate.instant('eventTable.dest_port'), field: 'dest_port' },
             { title: this.translate.instant('eventTable.severity'), field: 'severity' },
             { title: this.translate.instant('eventTable.signature'), field: 'signature' },
             // 其余列
-            { title: this.translate.instant('eventTable.action'), field: 'action' },
             { title: this.translate.instant('eventTable.category'), field: 'category' },
-            { title: this.translate.instant('eventTable.gid'), field: 'gid' },
-            { title: this.translate.instant('eventTable.rev'), field: 'rev' },
             { title: this.translate.instant('eventTable.signature_id'), field: 'signature_id' },
             { title: this.translate.instant('eventTable.app_proto'), field: 'app_proto' },
-            { title: this.translate.instant('eventTable.dest_port'), field: 'dest_port' },
             { title: this.translate.instant('eventTable.direction'), field: 'direction' },
-            { title: this.translate.instant('eventTable.event_type'), field: 'event_type' },
-            { title: this.translate.instant('eventTable.in_iface'), field: 'in_iface' },
-            { title: this.translate.instant('eventTable.pkt_src'), field: 'pkt_src' },
             { title: this.translate.instant('eventTable.proto'), field: 'proto' },
-            { title: this.translate.instant('eventTable.src_port'), field: 'src_port' },
+            // 默认隐藏的列
+            { title: this.translate.instant('eventTable.gid'), field: 'gid', hide: true },
+            { title: this.translate.instant('eventTable.rev'), field: 'rev', hide: true },
+            { title: this.translate.instant('eventTable.action'), field: 'action', hide: true },
+            { title: this.translate.instant('eventTable.event_type'), field: 'event_type', hide: true },
+            { title: this.translate.instant('eventTable.in_iface'), field: 'in_iface', hide: true },
+            { title: this.translate.instant('eventTable.pkt_src'), field: 'pkt_src', hide: true },
             // AI 动作列
             { title: this.translate.instant('eventTable.actions'), field: 'actions' }
         ];
@@ -359,23 +360,23 @@ export class EventComponent implements OnInit, OnDestroy {
             // 字段容错：支持 alert.* 嵌套 & 点号扁平
             const sevValue = src?.severity ?? alert?.severity ?? src?.['alert.severity'] ?? '';
             const row: EventData = {
-                action: src?.action ?? alert?.action ?? src?.['alert.action'],
-                category: src?.category ?? alert?.category ?? src?.['alert.category'] ?? '',
-                gid: Number(src?.gid ?? alert?.gid ?? src?.['alert.gid'] ?? ''),
-                rev: Number(src?.rev ?? alert?.rev ?? src?.['alert.rev'] ?? ''),
+                action: src?.action ?? alert?.action ?? src?.['alert.action'] ?? 'N/A',
+                category: src?.category ?? alert?.category ?? src?.['alert.category'] ?? 'N/A',
+                gid: Number(src?.gid ?? alert?.gid ?? src?.['alert.gid'] ?? 0) || 0,
+                rev: Number(src?.rev ?? alert?.rev ?? src?.['alert.rev'] ?? 0) || 0,
                 severity: this.mapSeverity(sevValue),
-                signature: src?.signature ?? alert?.signature ?? src?.['alert.signature'] ?? '',
-                signature_id: Number(src?.signature_id ?? alert?.signature_id ?? src?.['alert.signature_id'] ?? ''),
-                app_proto: src?.app_proto ?? src?.appProto ?? '',
-                dest_ip: src?.dest_ip ?? src?.dst_ip ?? src?.['destination.ip'] ?? '',
-                dest_port: Number(src?.dest_port ?? src?.dst_port ?? src?.['destination.port'] ?? ''),
-                direction: src?.direction ?? '',
-                event_type: src?.event_type ?? src?.eventType ?? '',
-                in_iface: src?.in_iface ?? src?.iface ?? src?.inIface ?? '',
-                pkt_src: src?.pkt_src ?? '',
-                proto: src?.proto ?? src?.protocol ?? '',
-                src_ip: src?.src_ip ?? src?.srcIp ?? src?.['source.ip'] ?? '',
-                src_port: Number(src?.src_port ?? src?.['source.port'] ?? ''),
+                signature: src?.signature ?? alert?.signature ?? src?.['alert.signature'] ?? 'N/A',
+                signature_id: Number(src?.signature_id ?? alert?.signature_id ?? src?.['alert.signature_id'] ?? 0) || 0,
+                app_proto: src?.app_proto ?? src?.appProto ?? 'N/A',
+                dest_ip: src?.dest_ip ?? src?.dst_ip ?? src?.['destination.ip'] ?? 'N/A',
+                dest_port: Number(src?.dest_port ?? src?.dst_port ?? src?.['destination.port'] ?? 0) || 0,
+                direction: src?.direction ?? 'N/A',
+                event_type: src?.event_type ?? src?.eventType ?? 'N/A',
+                in_iface: src?.in_iface ?? src?.iface ?? src?.inIface ?? 'N/A',
+                pkt_src: src?.pkt_src ?? 'N/A',
+                proto: src?.proto ?? src?.protocol ?? 'N/A',
+                src_ip: src?.src_ip ?? src?.srcIp ?? src?.['source.ip'] ?? 'N/A',
+                src_port: Number(src?.src_port ?? src?.['source.port'] ?? 0) || 0,
                 timestamp: this.formatDateLocal(tsRaw),
                 _raw: src
             };
@@ -388,7 +389,7 @@ export class EventComponent implements OnInit, OnDestroy {
         if (n === 1) return this.translate.instant('common.high');
         if (n === 2) return this.translate.instant('common.medium');
         if (n === 3) return this.translate.instant('common.low');
-        return String(sev ?? '');
+        return sev ? String(sev) : 'N/A';
     }
 
     // 事件：表格交互
@@ -518,9 +519,9 @@ export class EventComponent implements OnInit, OnDestroy {
     }
     resolveIpToAsset(value: any): string {
         const ip = this.extractIp(value);
-        if (!ip) return value ?? '';
+        if (!ip) return value ?? 'N/A';
         const hit = this.assetMap.get(ip);
-        return hit?.asset_name || (value ?? '');
+        return hit?.asset_name || (value ?? 'N/A');
     }
 
     // 可见列

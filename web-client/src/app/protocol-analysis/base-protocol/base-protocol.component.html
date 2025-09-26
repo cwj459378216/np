@@ -132,30 +132,30 @@
             >
                 <!-- 自定义显示：源/目的 IP 显示资产名（找不到则显示原值） -->
                 <ng-template slot="SrcIP" let-row="data">
-                    <span [title]="row?.SrcIP">{{ resolveIpToAsset(row?.SrcIP) }}</span>
+                    <span [title]="row?.SrcIP">{{ resolveIpToAsset(row?.SrcIP) || 'N/A' }}</span>
                 </ng-template>
                 <ng-template slot="DstIp" let-row="data">
-                    <span [title]="row?.DstIp">{{ resolveIpToAsset(row?.DstIp) }}</span>
+                    <span [title]="row?.DstIp">{{ resolveIpToAsset(row?.DstIp) || 'N/A' }}</span>
                 </ng-template>
 
                 <!-- 时间字段自定义显示模板 -->
                 <ng-template slot="timestamp" let-value="data">
-                    <span [title]="value.timestamp">{{ formatTimeField(value.timestamp) }}</span>
+                    <span [title]="value.timestamp">{{ formatTimeField(value.timestamp) || 'N/A' }}</span>
                 </ng-template>
                 <ng-template slot="lastUpdateTime" let-value="data">
-                    <span [title]="value.lastUpdateTime">{{ formatTimeField(value.lastUpdateTime) }}</span>
+                    <span [title]="value.lastUpdateTime">{{ formatTimeField(value.lastUpdateTime) || 'N/A' }}</span>
                 </ng-template>
                 <ng-template slot="ts" let-value="data">
-                    <span [title]="value.ts">{{ formatTimeField(value.ts) }}</span>
+                    <span [title]="value.ts">{{ formatTimeField(value.ts) || 'N/A' }}</span>
                 </ng-template>
                 <ng-template slot="from" let-value="data">
-                    <span [title]="value.from">{{ formatTimeField(value.from) }}</span>
+                    <span [title]="value.from">{{ formatTimeField(value.from) || 'N/A' }}</span>
                 </ng-template>
                 <ng-template slot="till" let-value="data">
-                    <span [title]="value.till">{{ formatTimeField(value.till) }}</span>
+                    <span [title]="value.till">{{ formatTimeField(value.till) || 'N/A' }}</span>
                 </ng-template>
                 <ng-template slot="date" let-value="data">
-                    <span [title]="value.date">{{ formatTimeField(value.date) }}</span>
+                    <span [title]="value.date">{{ formatTimeField(value.date) || 'N/A' }}</span>
                 </ng-template>
 
                 <!-- AI 解释操作列 -->

@@ -155,31 +155,31 @@
                               'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300': row?.severity === 'Low' || row?.severity === '低',
                               'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300': !row?.severity || (row?.severity !== 'High' && row?.severity !== '高' && row?.severity !== 'Medium' && row?.severity !== '中' && row?.severity !== 'Low' && row?.severity !== '低')
                           }">
-                        {{ row?.severity || '-' }}
+                        {{ row?.severity || 'N/A' }}
                     </span>
                 </ng-template>
                 <!-- 端口格式化显示 -->
                 <ng-template slot="src_port" let-row="data">
-                    <span class="font-mono text-sm">{{ row?.src_port || '-' }}</span>
+                    <span class="font-mono text-sm">{{ row?.src_port || 'N/A' }}</span>
                 </ng-template>
                 <ng-template slot="dest_port" let-row="data">
-                    <span class="font-mono text-sm">{{ row?.dest_port || '-' }}</span>
+                    <span class="font-mono text-sm">{{ row?.dest_port || 'N/A' }}</span>
                 </ng-template>
                 <!-- 协议格式化显示 -->
                 <ng-template slot="proto" let-row="data">
                     <span class="inline-flex items-center px-2 py-1 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 text-xs font-medium uppercase">
-                        {{ row?.proto || '-' }}
+                        {{ row?.proto || 'N/A' }}
                     </span>
                 </ng-template>
                 <ng-template slot="app_proto" let-row="data">
                     <span class="inline-flex items-center px-2 py-1 rounded bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 text-xs font-medium">
-                        {{ row?.app_proto || '-' }}
+                        {{ row?.app_proto || 'N/A' }}
                     </span>
                 </ng-template>
                 <!-- 时间戳格式化显示 -->
                 <ng-template slot="timestamp" let-row="data">
                     <span class="font-mono text-sm whitespace-nowrap" [title]="row?.timestamp">
-                        {{ row?.timestamp || '-' }}
+                        {{ row?.timestamp || 'N/A' }}
                     </span>
                 </ng-template>
                 <!-- AI 分析按钮列 -->
